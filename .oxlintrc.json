@@ -1,0 +1,52 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "vitest", "node"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": ["packages/web/**", "android/**", "docs/**", "**/dist/**", "**/coverage/**"],
+  "rules": {
+    "typescript/consistent-type-imports": "error",
+    "eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["packages/engine/**/*.ts", "packages/ai/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-globals": [
+          "error",
+          {
+            "name": "setTimeout",
+            "message": "엔진·AI는 타이머를 쓰지 않는다 (AGENTS.md 3장)."
+          },
+          {
+            "name": "setInterval",
+            "message": "엔진·AI는 타이머를 쓰지 않는다 (AGENTS.md 3장)."
+          },
+          {
+            "name": "fetch",
+            "message": "엔진·AI는 I/O를 하지 않는다 (AGENTS.md 3장)."
+          }
+        ],
+        "eslint/no-restricted-properties": [
+          "error",
+          {
+            "object": "Math",
+            "property": "random",
+            "message": "엔진·AI는 시드 PRNG(packages/engine/src/rng.ts)만 쓴다 (AGENTS.md 3장, plan.md 원칙 6)."
+          }
+        ]
+      }
+    }
+  ]
+}

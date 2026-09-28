@@ -1,0 +1,42 @@
+{
+  "name": "@p2p-gostop/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "웹 앱 (Vite + Svelte 5): 호스트·게스트·솔로 모드",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/check-bundle.mjs",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
+    "lint": "eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix && prettier --write .",
+    "format": "prettier --write .",
+    "test:browser": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@p2p-gostop/engine": "0.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@types/node": "24.13.6",
+    "@vitest/browser-playwright": "5.0.2",
+    "eslint": "10.11.0",
+    "eslint-plugin-svelte": "3.23.0",
+    "globals": "17.12.0",
+    "playwright": "1.63.0",
+    "prettier": "3.9.9",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte": "5.57.1",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vite": "8.3.1",
+    "vitest": "5.0.2",
+    "vitest-browser-svelte": "3.1.0"
+  }
+}

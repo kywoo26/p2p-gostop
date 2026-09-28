@@ -1,0 +1,20 @@
+{
+  "name": "@p2p-gostop/protocol",
+  "version": "0.0.0",
+  "private": true,
+  "description": "호스트↔게스트 메시지 타입·버전·직렬화 (spec 5장)",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@p2p-gostop/engine": "0.0.0"
+  },
+  "devDependencies": {
+    "vitest": "5.0.2"
+  }
+}

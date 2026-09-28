@@ -24,6 +24,7 @@ val buildTime = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString()
 // 릴리스 서명: 환경변수가 있으면 고정 키, 없으면 디버그 키로 폴백(로컬 빌드용).
 // CI(release.yml)는 secrets에서 키스토어를 복원해 아래 변수를 넘긴다.
 val releaseStorePath: String = providers.environmentVariable("ANDROID_KEYSTORE_PATH").orNull
+    ?.takeIf { it.isNotBlank() } // compose가 빈 문자열을 넘길 수 있다
     ?: rootProject.file("../secrets/release.jks").path
 val releaseStorePassword: String? = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
 val releaseKeyAlias: String? = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull

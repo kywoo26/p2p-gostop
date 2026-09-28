@@ -1,0 +1,34 @@
+# 의존성 갱신 (plan.md 1.8). 쿨다운은 Dependabot 기본값(3일)을 유지해 .npmrc min-release-age=3과 맞춘다.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # packages/web은 TypeScript 6 고정 (typescript-eslint <6.1, svelte-check ^5||^6). 7은 별칭 typescript-7로만 쓴다.
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
+      # 런타임은 Node 24 LTS
+      - dependency-name: '@types/node'
+        versions: ['>=25.0.0']
+      # Playwright는 Docker 이미지 태그(v1.63.0-noble)와 함께 올린다
+      - dependency-name: '@playwright/test'
+        update-types: [version-update:semver-minor, version-update:semver-major]
+      - dependency-name: playwright
+        update-types: [version-update:semver-minor, version-update:semver-major]
+
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

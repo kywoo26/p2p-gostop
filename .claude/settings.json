@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'f=$(jq -r .tool_input.file_path); case \"$f\" in *.ts|*.svelte|*.json|*.css|*.md|*.js) [ -d node_modules/.bin ] || exit 0; docker compose -f docker/compose.yml run --rm -T node npx prettier --log-level warn --write \"${f#$PWD/}\" >/dev/null 2>&1 || true;; esac'",
+            "command": "bash -c 'f=$(jq -r .tool_input.file_path); \"${CLAUDE_PROJECT_DIR:-.}/dev.sh\" format:file \"$f\" >/dev/null 2>&1 || true'",
             "timeout": 60
           }
         ]

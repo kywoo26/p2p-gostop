@@ -1,0 +1,35 @@
+{
+  "name": "p2p-gostop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "오프라인 P2P 2인 맞고 (Android 호스트 + iPhone Safari 게스트)",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "tools/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "npm run lint:oxc && npm run lint -w packages/web",
+    "lint:oxc": "oxlint --type-aware --deny-warnings && oxfmt --check",
+    "lint:fix": "oxlint --type-aware --fix && oxfmt && npm run lint:fix -w packages/web",
+    "format": "oxfmt && npm run format -w packages/web",
+    "check": "npm run check --workspaces --if-present && knip",
+    "build": "npm run build -w packages/web",
+    "e2e": "npm run e2e -w packages/web",
+    "sim": "npm run sim -w tools/sim --"
+  },
+  "devDependencies": {
+    "knip": "6.38.0",
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "typescript-7": "npm:typescript@7.0.2",
+    "vitest": "5.0.2"
+  },
+  "engines": {
+    "node": ">=24.20.0 <25"
+  }
+}

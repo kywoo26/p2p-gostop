@@ -1,0 +1,20 @@
+{
+  "name": "@p2p-gostop/ai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "CPU 상대: 평가 함수·그리디·ISMCTS (engine에만 의존)",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@p2p-gostop/engine": "0.0.0"
+  },
+  "devDependencies": {
+    "vitest": "5.0.2"
+  }
+}

@@ -1,0 +1,76 @@
+/*
+ * 디자인 토큰 (plan.md 1.6). 다크 배경, OKLCH 팔레트, 애니메이션 시간 예산(spec 6.4).
+ * 모든 --dur-*는 --dur-scale 배율 하나로 조절한다: 빠름 1(기준) / 보통 1.5 / 매우 빠름 0.6 / E2E 즉시 0.
+ */
+:root {
+  color-scheme: dark;
+
+  /* 표면과 글자 */
+  --color-bg: oklch(17% 0.015 260);
+  --color-surface: oklch(23% 0.02 260);
+  --color-surface-raised: oklch(29% 0.025 260);
+  --color-border: oklch(40% 0.025 260);
+  --color-text: oklch(95% 0.01 260);
+  --color-text-muted: oklch(75% 0.02 260);
+  --color-accent: oklch(78% 0.14 165);
+  --color-accent-pressed: oklch(70% 0.14 165);
+  --color-on-accent: oklch(20% 0.03 165);
+  /* 게임판 바탕 */
+  --color-felt: oklch(33% 0.06 160);
+
+  /* 이벤트 배너 색 (spec 6.5). 색만으로 구분하지 않고 문구를 함께 쓴다 (NF-08). */
+  --color-event-ppeok: oklch(64% 0.21 27);
+  --color-event-jjok: oklch(66% 0.16 255);
+  --color-event-ttadak: oklch(74% 0.16 60);
+  --color-event-sseul: oklch(72% 0.17 150);
+  --color-event-shake: oklch(64% 0.19 305);
+  --color-event-go: oklch(84% 0.15 88);
+  --color-event-stop: oklch(97% 0 0);
+
+  /* 간격·모서리·글자 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --radius-s: 0.375rem;
+  --radius-m: 0.75rem;
+  --touch-min: 48px; /* spec 6.1 최소 터치 영역 48×48dp */
+  --font-body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-size-s: 0.8125rem;
+  --font-size-m: 1rem;
+  --font-size-l: 1.125rem;
+  --font-size-title: 2rem;
+
+  /* 애니메이션 시간 예산 (spec 6.4, "빠름" 기준) */
+  --dur-scale: 1;
+  --dur-hand-to-floor: calc(120ms * var(--dur-scale));
+  --dur-match-highlight: calc(80ms * var(--dur-scale));
+  --dur-flip: calc(140ms * var(--dur-scale));
+  --dur-capture: calc(160ms * var(--dur-scale));
+  --dur-capture-stagger: calc(30ms * var(--dur-scale));
+  --dur-steal: calc(200ms * var(--dur-scale));
+  --dur-banner: calc(350ms * var(--dur-scale));
+  --dur-modal: calc(150ms * var(--dur-scale));
+  --dur-deal-total: calc(1200ms * var(--dur-scale));
+  --dur-turn-budget: calc(700ms * var(--dur-scale));
+}
+
+:root[data-speed='normal'] {
+  --dur-scale: 1.5;
+}
+
+:root[data-speed='very-fast'] {
+  --dur-scale: 0.6;
+}
+
+/* E2E·스냅샷 즉시 모드 */
+:root[data-speed='instant'] {
+  --dur-scale: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-scale: 0;
+  }
+}

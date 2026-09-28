@@ -13,15 +13,17 @@
 ## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`agent-era-stack.md`)
 | 항목 | 버전 |
 |---|---|
-| Node / npm | 24.21.0 LTS / 11.x, npm workspaces |
-| TypeScript | **6.0.3** (7.x 금지: svelte-check·typescript-eslint 비호환) |
+| Node / npm | 24.21.0 LTS / 11.x, npm workspaces (`engines >=24.20.0`: Playwright 이미지의 Node가 24.20.0) |
+| TypeScript (하이브리드) | `packages/web`: **6.0.3** (7.x 금지: svelte-check `^5‖^6`·typescript-eslint `<6.1` 비호환) / 순수 TS 패키지(engine·ai·protocol·relay-dev·sim): **7.0.2**(tsgo, 타입 검사 전용, 루트 npm 별칭 `typescript-7`) |
 | Vite / Svelte / vite-plugin-svelte | 8.3.1 / 5.57.1 / 7.3.1 |
 | svelte-check | 4.7.6 |
-| Vitest / fast-check | 5.0.2 / 4.10.2 |
+| Vitest / fast-check | 5.0.2 / 4.10.2 (vitest·@vitest/* 5.0.2는 2026-09-25 09:00Z 게시라 첫 lock 생성 때만 `--min-release-age-exclude`로 예외, 09-28 09:00Z 이후 정상 충족) |
 | @vitest/browser-playwright / vitest-browser-svelte | 5.0.2 / 3.1.0 |
-| @playwright/test / @axe-core/playwright | 1.63.0 (Docker 이미지 `mcr.microsoft.com/playwright:v1.63.0-noble`) / 4.13.0 |
-| ESLint / eslint-plugin-svelte / typescript-eslint | 10.11.0 / 3.23.0 / 8.70.1 |
-| Prettier / prettier-plugin-svelte | 3.9.9 / 4.1.1 |
+| @playwright/test · playwright / @axe-core/playwright | 1.63.0 (Docker 이미지 `mcr.microsoft.com/playwright:v1.63.0-noble`, `playwright`는 Vitest 브라우저 모드 provider용) / 4.13.0 |
+| ws / @types/ws / @types/node | 8.21.3 (relay-dev. 최신 8.22.0은 2026-09-26 게시라 `min-release-age=3` 미충족) / 8.18.1 / 24.13.6 (Node 24 라인, 24.19.0은 3일 미경과) |
+| Svelte MCP (에이전트 도구, 로컬 stdio) | `@sveltejs/mcp` 0.1.26 (`npx -y @sveltejs/mcp@0.1.26`, 무료·오픈소스, 원격 엔드포인트 미사용) |
+| 순수 TS 린트·포맷 (Oxc) | oxlint 1.85.0 + oxlint-tsgolint 7.0.2003(type-aware, stable) / oxfmt 0.70.0 |
+| web 린트·포맷 | ESLint 10.11.0 / @eslint/js 10.0.1 / eslint-plugin-svelte 3.23.0 / typescript-eslint 8.70.1 / globals 17.12.0, Prettier 3.9.9 / prettier-plugin-svelte 4.1.1 |
 | knip / svgo / uqr / zod | 6.38.0 / 4.1.0 / 0.1.3 / 4.6.5 (`zod/mini`, TRIAL) |
 | Kotlin / AGP / Gradle / JDK | 2.4.20 / 9.4.1(내장 Kotlin, `org.jetbrains.kotlin.android` 플러그인 적용 금지) / 9.8.0 / Temurin 21 |
 | compileSdk / targetSdk / minSdk | 36 / **36**(37 금지: LAN 인바운드 권한) / 33 |
@@ -34,16 +36,21 @@
 - **Svelte 4 문법 금지**: `export let`, `$:`, `on:click`, `createEventDispatcher`, `<slot>`. Svelte 5 runes(`$state`, `$derived`, `$effect`, `$props`), `onclick`, `{@render children()}`, snippets를 쓴다.
 - **SvelteKit 아님**: 순수 Vite + Svelte. `$app/*`, `+page.svelte`, `load` 함수 없음. 라우팅은 앱 내부 상태로 처리.
 - **Tailwind·shadcn·Storybook·Capacitor·Biome·pnpm·Turborepo·Pixi·Phaser·GSAP 도입 금지** (plan.md 1.8).
+- **툴체인 경계**: `packages/web`에 TS 7·oxlint·oxfmt를 쓰지 않는다(.svelte 미지원). 순수 TS 패키지에 ESLint·Prettier를 추가하지 않는다. 루트 `typescript`는 6.0.3이며 TS 7은 `node ../../node_modules/typescript-7/bin/tsc`로만 부른다.
+- **TS 문법**: Node가 `.ts`를 직접 실행(type stripping)하므로 `erasableSyntaxOnly` — `enum`, `namespace`, 생성자 매개변수 프로퍼티 금지. 상대 import는 `.ts` 확장자를 붙인다.
 - **비보안 컨텍스트 금지 API**(게스트는 `http://192.168.x.y`): `navigator.wakeLock`, `navigator.share`, `navigator.clipboard`, `navigator.serviceWorker`, `caches`, `crypto.subtle`, `crypto.randomUUID`, `navigator.vibrate`(iPhone 없음), `screen.orientation.lock`, 요소 전체 화면. 난수는 `crypto.getRandomValues`, 해시는 순수 JS SHA-256.
 - **Android**: `usesCleartextTraffic` 대신 Network Security Config(127.0.0.1만). `kapt` 금지(KSP). Netty 금지(CIO). Compose 도입 금지(WebView 셸).
-- **엔진**: 부수효과·타이머·I/O·`Math.random` 금지. 좌석은 인덱스 0/1, `human`/`computer` 같은 이름 금지. 상태에는 카드 ID(0~50)만.
+- **엔진**: 부수효과·타이머·I/O·`Math.random` 금지(oxlint `no-restricted-properties`·`no-restricted-globals`로 강제). 좌석은 인덱스 0/1, `human`/`computer` 같은 이름 금지. 상태에는 카드 ID(0~50)만.
 
 ## 4. 구조와 관례
 - 모노레포: `packages/{engine,ai,protocol,web,relay-dev}`, `tools/sim`, `android/`, `docker/`, `docs/`. 의존 방향: engine ← ai ← web, engine ← protocol ← web. android는 TS 패키지에 의존하지 않고 `packages/web/dist`만 `android/app/src/main/assets/web`으로 복사.
 - 엔진 API: `reduce(state, action) → {state, events}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules)`. 모두 순수 함수, 시드 PRNG는 상태 안.
 - 웹: Svelte scoped CSS + `src/styles/tokens.css`(OKLCH, `--dur-*`). 카드 애니메이션은 `src/anim/`의 WAAPI FLIP 헬퍼, 모달·배너는 Svelte transition. 카드는 `<img>`로 svgo 최적화 SVG.
 - 테스트: JSON 규칙 벡터(`packages/engine/test/vectors/*.json`, 각 항목에 규칙 ID R/B/S/E/G/M와 한국어 설명) + fast-check 속성 테스트. 특수 이벤트는 정상·경계·반례 3종. "서로 다른 월 두 쌍 먹기는 따닥이 아니다" 반례 필수.
-- 스타일: ESLint + Prettier 설정을 따른다. 한국어 주석·문서, 영어 식별자.
+- 툴체인(plan.md 1.8 하이브리드): 순수 TS 패키지는 루트 `.oxlintrc.json`(oxlint, `--type-aware`)·`.oxfmtrc.json`(oxfmt)·TS 7 `tsc --noEmit`. `packages/web`은 `packages/web/eslint.config.js`(ESLint, 금지 API 규칙)·`packages/web/.prettierrc`(Prettier)·`svelte-check`(TS 6). 루트 `npm run lint|check|format`이 둘 다 돌린다. 한국어 주석·문서, 영어 식별자.
+- 패키지: 워크스페이스 패키지는 빌드 없이 `exports: ./src/index.ts`로 소스를 직접 내보낸다. 공용 컴파일 옵션은 `tsconfig.base.json`(strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, TS 6 기본값 변경으로 `types`를 패키지마다 명시).
+- 테스트 위치: 루트 `npm test`(Vitest, Node)는 web을 제외한 모든 패키지. web 컴포넌트 테스트(`*.test.ts`, Vitest 브라우저 모드)와 E2E(`e2e/`, Playwright)는 e2e 컨테이너에서 돈다.
+- 의존성 추가: `./dev.sh npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-`./dev.sh lint` · `./dev.sh check` · `./dev.sh test` · `./dev.sh e2e` · `./dev.sh apk:debug` · `./dev.sh android:test`. PR은 이 전부가 통과해야 한다.
+`./dev.sh lint` · `./dev.sh check` · `./dev.sh test` · `./dev.sh test:browser` · `./dev.sh build:web` · `./dev.sh e2e` · `./dev.sh apk:debug` · `./dev.sh android:test`. PR은 이 전부가 통과해야 한다.

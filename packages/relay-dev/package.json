@@ -1,0 +1,24 @@
+{
+  "name": "@p2p-gostop/relay-dev",
+  "version": "0.0.0",
+  "private": true,
+  "description": "개발·E2E용 Node WebSocket 중계 서버 (Android Ktor 중계와 같은 규칙)",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json",
+    "start": "node src/cli.ts"
+  },
+  "dependencies": {
+    "@p2p-gostop/protocol": "0.0.0",
+    "ws": "8.21.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "@types/ws": "8.18.1",
+    "vitest": "5.0.2"
+  }
+}

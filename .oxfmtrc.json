@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "printWidth": 100,
+  "ignorePatterns": [
+    "packages/web/**",
+    "android/**",
+    "docs/**",
+    "**/*.md",
+    "package-lock.json",
+    ".claude/**",
+    "**/dist/**",
+    "**/coverage/**",
+    ".github/workflows/release.yml"
+  ]
+}

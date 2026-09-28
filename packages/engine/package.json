@@ -1,0 +1,18 @@
+{
+  "name": "@p2p-gostop/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "맞고 규칙 엔진: 순수 TypeScript, 부수효과 없음, 시드 PRNG",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2",
+    "vitest": "5.0.2"
+  }
+}

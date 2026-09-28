@@ -1,0 +1,107 @@
+// packages/web 전용 ESLint 10 flat config (plan.md 1.8: .svelte 템플릿 린트는 Oxc 미지원 → web만 ESLint).
+// 순수 TS 패키지는 루트 .oxlintrc.json(oxlint)을 쓴다. 규칙은 문서가 아니라 린트로 강제한다 (plan.md 원칙 9).
+import js from '@eslint/js';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import svelte from 'eslint-plugin-svelte';
+import globals from 'globals';
+import ts from 'typescript-eslint';
+import svelteConfig from './svelte.config.js';
+
+// 게스트 페이지는 비보안 컨텍스트(http://192.168.x.y)에서 돈다. Secure Context 전용 API 금지 (spec NF-02, AGENTS.md 3장).
+const insecureContextMessage =
+  '비보안 컨텍스트(게스트 http origin)에서 쓸 수 없는 API입니다 (spec NF-02, AGENTS.md 3장).';
+const bannedNavigatorProps = [
+  'wakeLock',
+  'share',
+  'canShare',
+  'clipboard',
+  'serviceWorker',
+  'vibrate',
+];
+const bannedCryptoProps = ['subtle', 'randomUUID'];
+const bannedFullscreen = ['requestFullscreen', 'webkitRequestFullscreen', 'webkitEnterFullscreen'];
+
+const webRestrictions = {
+  'no-restricted-properties': [
+    'error',
+    ...bannedNavigatorProps.map((property) => ({
+      object: 'navigator',
+      property,
+      message: insecureContextMessage,
+    })),
+    ...bannedCryptoProps.map((property) => ({
+      object: 'crypto',
+      property,
+      message: `${insecureContextMessage} 난수는 crypto.getRandomValues, 해시는 순수 JS SHA-256.`,
+    })),
+    ...bannedFullscreen.map((property) => ({ property, message: insecureContextMessage })),
+  ],
+  'no-restricted-syntax': [
+    'error',
+    {
+      // window.navigator.share, globalThis.navigator.clipboard 같은 우회 접근
+      selector: `MemberExpression[object.property.name='navigator'][property.name=/^(${bannedNavigatorProps.join('|')})$/]`,
+      message: insecureContextMessage,
+    },
+    {
+      selector: `MemberExpression[object.property.name='crypto'][property.name=/^(${bannedCryptoProps.join('|')})$/]`,
+      message: insecureContextMessage,
+    },
+    {
+      // screen.orientation.lock()
+      selector: "MemberExpression[object.property.name='orientation'][property.name='lock']",
+      message: insecureContextMessage,
+    },
+    {
+      selector:
+        "MemberExpression[object.name=/^(window|self|globalThis)$/][property.name='caches']",
+      message: insecureContextMessage,
+    },
+  ],
+  'no-restricted-globals': ['error', { name: 'caches', message: insecureContextMessage }],
+};
+
+export default defineConfig(
+  globalIgnores(['dist/', 'test-results/', 'playwright-report/']),
+  js.configs.recommended,
+  ts.configs.recommended,
+  svelte.configs.recommended,
+  svelte.configs.prettier,
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
+  {
+    files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
+    languageOptions: {
+      parserOptions: {
+        extraFileExtensions: ['.svelte'],
+        parser: ts.parser,
+        svelteConfig,
+      },
+    },
+  },
+  {
+    // Node에서 도는 설정 파일·빌드 스크립트·Playwright 테스트
+    files: ['*.{js,ts}', 'scripts/**/*.mjs', 'e2e/**/*.ts'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
+  {
+    // 브라우저에서 도는 앱 코드
+    files: ['src/**/*.{ts,js,svelte}'],
+    languageOptions: {
+      globals: { ...globals.browser },
+    },
+  },
+  {
+    files: ['src/**/*.{ts,js,svelte}'],
+    rules: webRestrictions,
+  },
+);

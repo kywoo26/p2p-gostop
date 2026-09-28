@@ -1,0 +1,23 @@
+{
+  "name": "@p2p-gostop/sim",
+  "version": "0.0.0",
+  "private": true,
+  "description": "셀프플레이 시뮬레이션 CLI",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json",
+    "sim": "node src/cli.ts"
+  },
+  "dependencies": {
+    "@p2p-gostop/ai": "0.0.0",
+    "@p2p-gostop/engine": "0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "vitest": "5.0.2"
+  }
+}
