@@ -7,3 +7,17 @@ build/
 local.properties
 .env
 .DS_Store
+# android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/web/
+*.jks
+*.keystore
+secrets/
+# web
+packages/web/dist/
+packages/web/test-results/
+packages/web/playwright-report/
+coverage/
