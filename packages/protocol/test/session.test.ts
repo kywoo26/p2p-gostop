@@ -63,7 +63,14 @@ function setup(
 /** 재접속: 소켓이 끊겨 대기 프레임이 사라지고, 새 소켓에 중계가 present를 알린다 */
 function reconnect(h: Harness): void {
   h.gw.disconnect();
+  // 새 게스트 소켓: 중계가 호스트에 joined, 게스트에 present를 알린다(호스트는 소켓 인증을 되돌린다)
+  h.link.notify(0, 'joined');
   h.link.notify(1, 'present');
+}
+/** 대기열에서 받는 쪽이 to인 n번째 프레임의 전체 색인 (없으면 -1) */
+function nth(link: QueuedLink, to: 0 | 1, n: number): number {
+  const indexes = link.queue.flatMap((f, i) => (f.to === to ? [i] : []));
+  return indexes.length === 0 ? -1 : indexes[n % indexes.length]!;
 }
 /** 한 수 (게스트는 자기 화면의 legal에서만 고른다). 둘 다 없으면 false */
 function move(h: Harness, picker: Picker): boolean {
@@ -141,22 +148,27 @@ describe('#13 판 사이 commit-reveal 핸드셰이크 복구', () => {
     expect(commitInvalid(h)).toBe(0);
   });
 
-  it('fast-check: 무작위 유실·중복·순서 바꿈·재접속 속에서도 수렴하고 검증 실패가 없다', () => {
+  it('fast-check: 유실·중복·순서 바꿈·재접속 속에서도 수렴하고 검증 실패가 없다', () => {
+    // 전송 모형: 게스트→호스트 프레임은 아무렇게나 유실·중복·순서 바꿈. 호스트→게스트는 WebSocket처럼 한 소켓 안에서
+    // 순서가 지켜지고(유실은 재접속으로만), 중복은 나중에 한 번 더 도착한다. 정직한 호스트는 revealHost를 다음
+    // commitHost보다 먼저 보내므로 missingReveal 거짓 실패가 없어야 한다.
     const op = record({
       kind: constantFrom(
-        'deliver',
-        'deliver',
-        'deliver',
-        'deliver',
-        'drop',
-        'dup',
-        'defer',
+        'toGuest',
+        'toGuest',
+        'toGuest',
+        'toHost',
+        'toHost',
+        'dropHost',
+        'dupHost',
+        'deferHost',
+        'dupGuest',
         'move',
         'move',
         'reconnect',
         'next',
       ),
-      at: nat({ max: 5 }),
+      at: nat({ max: 7 }),
     });
     assert(
       property(
@@ -166,20 +178,29 @@ describe('#13 판 사이 commit-reveal 핸드셰이크 복구', () => {
           const picker = new Picker(seed);
           h.guest.join();
           for (const { kind, at } of ops) {
-            const index = h.link.queue.length === 0 ? 0 : at % h.link.queue.length;
+            const guestFirst = nth(h.link, 1, 0);
+            const host = nth(h.link, 0, at);
             switch (kind) {
-              case 'deliver':
-                h.link.deliver(index);
+              case 'toGuest':
+                if (guestFirst >= 0) h.link.deliver(guestFirst);
                 break;
-              case 'drop':
-                h.link.drop(index);
+              case 'toHost':
+                if (host >= 0) h.link.deliver(host);
                 break;
-              case 'dup':
-                h.link.duplicate(index);
+              case 'dropHost':
+                if (host >= 0) h.link.drop(host);
                 break;
-              case 'defer':
-                h.link.defer(index);
+              case 'dupHost':
+                if (host >= 0) h.link.duplicate(host);
                 break;
+              case 'deferHost':
+                if (host >= 0) h.link.defer(host);
+                break;
+              case 'dupGuest': {
+                const index = nth(h.link, 1, at);
+                if (index >= 0) h.link.inject(1, h.link.queue[index]!.raw);
+                break;
+              }
               case 'move':
                 move(h, picker);
                 break;
@@ -204,7 +225,6 @@ describe('#13 판 사이 commit-reveal 핸드셰이크 복구', () => {
           expect(h.guest.status).toEqual(h.host.status);
           expect(h.guest.view).toEqual(h.host.guestView());
           // 진행 중인 판을 끝까지 두고 다음 판도 한 판 둔다: 모두 검증되어야 한다.
-          if (h.host.stage === 'handshake') h.link.flush();
           if (h.host.stage === 'playing') playRound(h, picker);
           if (h.host.stage === 'settled') {
             h.host.nextRound();
@@ -358,6 +378,191 @@ describe('#16 commit-reveal 검증은 게스트가 본 판과 묶인다', () => 
       playRound(h, picker);
       expect(h.guest.checks.at(-1)).toEqual({ round: 2, result: 'verified' });
     }
+  });
+});
+
+/** 호스트→게스트 revealHost 중 rounds에 든 판의 것을 지운다 (그 판의 revealHost를 보내지 않는 호스트) */
+function withholdReveals(link: QueuedLink, rounds: ReadonlySet<number>): void {
+  for (let i = link.queue.length - 1; i >= 0; i--) {
+    const frame = link.queue[i]!;
+    if (frame.to !== 1 || frameType(frame.raw) !== 'revealHost') continue;
+    const parsed = decode(frame.raw, 'host');
+    if (parsed.ok && parsed.message.t === 'revealHost' && rounds.has(parsed.message.round))
+      link.drop(i);
+  }
+}
+/** 공개를 빠뜨릴 판의 revealHost를 지우며 배달 */
+function flushWithout(link: QueuedLink, rounds: ReadonlySet<number>): void {
+  for (let i = 0; i < 100_000 && link.queue.length > 0; i++) {
+    withholdReveals(link, rounds);
+    if (link.queue.length > 0) link.deliver();
+  }
+}
+
+describe('#16 재검토: revealHost를 빠뜨리거나 판을 건너뛰는 호스트', () => {
+  it('fast-check: 판마다 정직·revealHost 누락·판 건너뛰기 중 하나 → 누락 판은 missingReveal, 건너뛴 판은 roundSkip, 나머지는 verified', () => {
+    assert(
+      property(
+        tuple(
+          nat({ max: 1_000 }),
+          array(constantFrom('honest', 'omit', 'jump'), { minLength: 2, maxLength: 6 }),
+          nat({ max: 2 }),
+        ),
+        ([seed, plan, skip]) => {
+          const h = setup({ seed });
+          const picker = new Picker(seed);
+          h.guest.join();
+          const want: { round: number; result: string; reason?: string }[] = [];
+          const omitted = new Set(plan.flatMap((kind, i) => (kind === 'omit' ? [i + 1] : [])));
+          const flush = () => flushWithout(h.link, omitted);
+          const refused: boolean[] = [];
+          for (const [i, kind] of plan.entries()) {
+            const round = i + 1;
+            flush();
+            // (분배 직후 총통 등으로 곧바로 끝나는 판도 있다)
+            for (let n = 0; n < 400 && h.host.stage === 'playing'; n++) {
+              move(h, picker);
+              flush();
+            }
+            if (kind === 'omit') {
+              want.push({ round, result: 'failed', reason: 'missingReveal' });
+              // 다음 판 커밋이 오면 게스트는 누락을 기록하고 응답하지 않는다.
+              h.host.nextRound();
+              flush();
+              refused.push(h.host.stage === 'handshake');
+              // 재접속해도 (계속 누락하는 호스트라) 판정은 바뀌지 않고, 게스트는 다음 판부터 이어 간다.
+              reconnect(h);
+              flush();
+              continue;
+            }
+            want.push({ round, result: 'verified' });
+            if (kind === 'jump') {
+              const jumped = round + 2 + skip;
+              want.push({ round: jumped, result: 'failed', reason: 'roundSkip' });
+              h.link.inject(1, encode({ t: 'commitHost', round: jumped, hash: 'd'.repeat(64) }));
+              flush();
+              refused.push(!h.link.queue.some((f) => f.to === 0));
+            }
+            h.host.nextRound();
+            flush();
+          }
+          // 판 번호를 뛰게 한 위조 판정은 그 판 번호로 남는다. 정직하게 이어 간 판은 따로 검증된다.
+          const checks = h.guest.checks.map((c) => ({ ...c }));
+          expect(checks.filter((c) => c.result === 'verified' || 'reason' in c)).toEqual(
+            expect.arrayContaining(want),
+          );
+          expect(refused.every(Boolean)).toBe(true);
+          expect(checks.filter((c) => c.result === 'failed').length).toBe(
+            want.filter((w) => w.result === 'failed').length,
+          );
+          expect(h.guest.verifiedRounds.filter((r) => r <= plan.length)).toEqual(
+            plan.flatMap((kind, i) => (kind === 'omit' ? [] : [i + 1])),
+          );
+        },
+      ),
+      { numRuns: 40 },
+    );
+  }, 60_000);
+
+  it('revealHost를 끝내 보내지 않고 세션을 끝내면 빈 checks가 아니라 missingReveal 실패', () => {
+    const h = setup({ seed: 5 });
+    const picker = new Picker(5);
+    h.guest.join();
+    h.link.flush();
+    for (let n = 0; n < 400 && h.host.stage === 'playing'; n++) {
+      move(h, picker);
+      flushWithout(h.link, new Set([1]));
+    }
+    expect(h.guest.checks).toEqual([]);
+    h.host.end();
+    flushWithout(h.link, new Set([1]));
+    expect(h.guest.checks).toEqual([{ round: 1, result: 'failed', reason: 'missingReveal' }]);
+    expect(commitInvalid(h)).toBe(1);
+  });
+
+  it('원문 공개 뒤 분배·revealHost 없이 다음 판 commitHost → 판 1 missingReveal, commitGuest 응답 없음 (재현)', () => {
+    const h = setup({ seed: 6 });
+    h.guest.join();
+    h.link.flush();
+    expect(h.host.stage).toBe('playing');
+    h.link.inject(1, encode({ t: 'commitHost', round: 2, hash: 'e'.repeat(64) }));
+    h.link.deliver();
+    expect(hostFrames(h.link, 'commitGuest')).toHaveLength(0);
+    expect(h.guest.checks).toEqual([{ round: 1, result: 'failed', reason: 'missingReveal' }]);
+    // 뒤늦은 revealHost로 판정을 되돌릴 수 없다
+    const picker = new Picker(6);
+    playRound(h, picker);
+    expect(h.guest.checks).toEqual([{ round: 1, result: 'failed', reason: 'missingReveal' }]);
+  });
+});
+
+/** 게스트 확인 뒤 게스트 차례까지 진행 */
+function confirmedAtGuestTurn(seed: number): { h: Harness; picker: Picker } {
+  const h = setup({ seed });
+  const picker = new Picker(seed);
+  h.guest.join();
+  h.link.flush();
+  for (let n = 0; n < 50 && (!h.host.guestConfirmed || guestMoves(h.guest).length === 0); n++) {
+    move(h, picker);
+    h.link.flush();
+  }
+  expect(h.host.guestConfirmed).toBe(true);
+  expect(guestMoves(h.guest).length).toBeGreaterThan(0);
+  return { h, picker };
+}
+
+describe('재검토 중요 2: 소켓 인증 (NF-06, FR-07)', () => {
+  it('확인된 게스트 뒤 새 소켓(joined)에서 hello 없이 보낸 action·ledgerGet·ready·log에는 응답도 상태 변화도 없다', () => {
+    const { h } = confirmedAtGuestTurn(9);
+    const before = { seq: h.host.seq, state: h.host.state, json: JSON.stringify(h.host.toJSON()) };
+    const action = h.host.guestView()!.legal[0]!;
+    h.link.notify(0, 'joined'); // 낯선 기기가 최신 우선으로 게스트 자리를 차지
+    h.link.inject(0, encode({ t: 'action', seq: h.host.seq, payload: action }));
+    h.link.inject(0, encode({ t: 'action', seq: 0, payload: action }));
+    h.link.inject(0, encode({ t: 'ledgerGet', from: 0 }));
+    h.link.inject(0, encode({ t: 'ready', round: 1 }));
+    h.link.inject(0, JSON.stringify({ t: 'log', entries: ['x'] }));
+    h.link.inject(0, '{"t":"action","seq":"bad"}');
+    while (h.link.queue.some((f) => f.to === 0)) h.link.deliver(nth(h.link, 0, 0));
+    expect(h.link.queue).toEqual([]);
+    expect(h.host.seq).toBe(before.seq);
+    expect(h.host.state).toBe(before.state);
+    expect(JSON.stringify(h.host.toJSON())).toBe(before.json);
+    // 토큰 없는 hello는 거절만 한다(환영·스냅샷 없음)
+    h.link.inject(0, encode({ t: 'hello', v: 2, name: '낯선 이', lastSeq: 0 }));
+    h.link.deliver(nth(h.link, 0, 0));
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['reject']);
+    expect(h.link.queue[0]!.raw).toContain('TOKEN_INVALID');
+    h.link.drop();
+    // 진짜 게스트가 토큰 hello로 돌아오면 다시 둘 수 있다
+    reconnect(h);
+    h.link.flush();
+    expect(h.guest.seq).toBe(h.host.seq);
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+  });
+
+  it('ping은 인증 전에도 pong만 돌려준다', () => {
+    const { h } = confirmedAtGuestTurn(10);
+    h.link.notify(0, 'left');
+    h.link.inject(0, encode({ t: 'ping' }));
+    h.link.deliver(nth(h.link, 0, 0));
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['pong']);
+  });
+
+  it('끊긴 동안의 게스트 요청은 welcome 뒤에 보낸다(인증 전 소켓에서 버려지지 않게)', () => {
+    const { h } = confirmedAtGuestTurn(11);
+    h.gw.disconnect();
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    expect(h.link.queue).toEqual([]);
+    h.link.notify(0, 'joined');
+    h.link.notify(1, 'present');
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+    expect(h.host.diagnostics.filter((d) => d.includes('인증 전'))).toEqual([]);
   });
 });
 

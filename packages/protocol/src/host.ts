@@ -141,6 +141,13 @@ export class HostSession {
    * 확인 전에는 welcome을 잃은 게스트의 토큰 없는 hello를 다시 받아 준다. 확인 뒤에는 토큰 없는 hello를 거절한다(NF-06).
    */
   guestConfirmed = false;
+  /**
+   * 지금 게스트 소켓이 인증됐는지: 이 소켓에서 받아들인 hello(토큰이 생긴 뒤에는 토큰 hello)가 있어야 true.
+   * 중계 알림(joined·left·present·absent)과 전송 끊김에서 false로 되돌린다. false인 동안에는 hello·ping만
+   * 처리하고 나머지는 응답 없이 버린다: 최신 우선 중계에서 LAN의 다른 기기가 게스트 자리를 밀어내도
+   * 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다(재검토 중요 2, NF-06).
+   */
+  authenticated = false;
   guestLogs: string[] = [];
   ended = false;
   settlement: Settlement | null = null;
@@ -186,6 +193,7 @@ export class HostSession {
     transport.onMessage((raw) => this.receive(raw));
     transport.onClose(() => {
       this.connected = false;
+      this.authenticated = false;
       this.changed();
     });
     transport.onRelay?.((notice) => this.relayNotice(notice));
@@ -573,6 +581,7 @@ export class HostSession {
       return;
     }
     if (message.sessionToken === this.token) this.guestConfirmed = true;
+    this.authenticated = true;
     this.guestName = message.name;
     this.send({
       t: 'welcome',
@@ -630,6 +639,8 @@ export class HostSession {
     this.send({ t: 'ledgerPage', from, total: this.ledger.entries.length, entries });
   }
   private relayNotice(notice: RelayNotice): void {
+    // 게스트 소켓이 바뀌었거나(joined·present) 없어졌다(left·absent): 새 소켓은 hello로 다시 인증해야 한다.
+    this.authenticated = false;
     if (notice.peer === 'left' || notice.peer === 'absent') this.connected = false;
     this.changed();
   }
@@ -641,12 +652,18 @@ export class HostSession {
     }
     const parsed = decode(raw, 'guest');
     if (!parsed.ok) {
-      this.reject(parsed.reason);
+      // 인증 전 소켓에는 버전 안내(NP-04)만 답한다.
+      if (this.authenticated || parsed.reason === 'VERSION_MISMATCH') this.reject(parsed.reason);
+      else this.diag(`인증 전 잘못된 메시지 버림 (${parsed.reason})`);
+      return;
+    }
+    const message = parsed.message;
+    if (!this.authenticated && message.t !== 'hello' && message.t !== 'ping') {
+      this.diag(`인증 전 ${message.t} 버림`);
       return;
     }
     this.lastGuestActivity = this.logicalTime;
     this.connected = true;
-    const message = parsed.message;
     // welcome 뒤에만 보낼 수 있는 메시지: 게스트가 토큰을 가졌다는 증거
     if (message.t !== 'hello' && message.t !== 'ping' && message.t !== 'log')
       this.guestConfirmed = true;

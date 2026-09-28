@@ -121,10 +121,15 @@ const pick = <T>(items: readonly T[]): T | undefined => {
   seed = (seed * 1103515245 + 12345) % 2147483648;
   return items[seed % Math.max(1, items.length)];
 };
-async function until(check: () => boolean, what: string, limit = 5000): Promise<void> {
+async function until(
+  check: () => boolean,
+  what: string | (() => string),
+  limit = 5000,
+): Promise<void> {
   const deadline = Date.now() + limit;
   while (!check()) {
-    if (Date.now() > deadline) throw new Error(`relay session timeout: ${what}`);
+    if (Date.now() > deadline)
+      throw new Error(`relay session timeout: ${typeof what === 'string' ? what : what()}`);
     await new Promise((resolve) => setTimeout(resolve, 1));
   }
 }
@@ -246,7 +251,7 @@ it('실제 ws 중계로 20판: 게스트 자기 화면만으로 진행, 판 사�
         guestMoveCount++;
         await until(
           () => host.state !== before,
-          `게스트 액션 반영 ${JSON.stringify(action)} errors=${guest.errors.join(',')}`,
+          () => `게스트 액션 반영 ${JSON.stringify(action)} errors=${guest.errors.join(',')}`,
         );
       }
       expect(host.ledger.balances[0] + host.ledger.balances[1]).toBe(2_000_000_000);
@@ -277,3 +282,54 @@ it('실제 ws 중계로 20판: 게스트 자기 화면만으로 진행, 판 사�
     await relay.close();
   }
 }, 60_000);
+
+it('최신 우선으로 진짜 게스트를 밀어낸 낯선 소켓은 hello 없이 둘 수도, 손패를 받을 수도 없다 (NF-06)', async () => {
+  const relay = await startRelay({ port: 0 });
+  const url = (role: Role) => `ws://127.0.0.1:${relay.port}${RELAY_PATH}?role=${role}`;
+  const hostWire = new RelayTransport(url('host'));
+  const guestWire = new RelayTransport(url('guest'));
+  const stranger: { ws: WebSocket | null } = { ws: null };
+  try {
+    const host = new HostSession(hostWire, {
+      rules: PRESETS.standard,
+      names: ['호스트', '게스트'],
+      random32: secret(0),
+    });
+    const guest = new GuestSession(guestWire, { name: '게스트', random32: secret(10_000) });
+    await until(() => host.stage === 'playing' && guest.view !== null, '첫 판');
+    expect(host.guestConfirmed).toBe(true);
+    const action = host.guestView()!.legal[0]!;
+    const before = { state: host.state, seq: host.seq };
+    // 낯선 기기가 role=guest로 붙는다 → 진짜 게스트는 4001로 멈춘다
+    const received: string[] = [];
+    const ws = new WebSocket(url('guest'));
+    stranger.ws = ws;
+    ws.on('message', (data: RawData) =>
+      received.push(
+        Array.isArray(data)
+          ? Buffer.concat(data).toString('utf8')
+          : (data instanceof ArrayBuffer ? Buffer.from(data) : data).toString('utf8'),
+      ),
+    );
+    await new Promise<void>((resolve) => ws.once('open', () => resolve()));
+    await until(() => guestWire.stopped, '진짜 게스트 4001');
+    for (const frame of [
+      { t: 'action', seq: host.seq, payload: action },
+      { t: 'action', seq: 0, payload: action },
+      { t: 'ledgerGet', from: 0 },
+      { t: 'ready', round: 1 },
+    ])
+      ws.send(JSON.stringify(frame));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(host.state).toBe(before.state);
+    expect(host.seq).toBe(before.seq);
+    // 중계 알림(present) 말고는 아무것도 받지 못했다: 스냅샷(손패)·거부 응답 없음
+    expect(received).toEqual(['{"t":"relay","peer":"present"}']);
+    expect(host.diagnostics.filter((d) => d.includes('인증 전'))).toHaveLength(4);
+  } finally {
+    stranger.ws?.terminate();
+    hostWire.kill();
+    guestWire.kill();
+    await relay.close();
+  }
+}, 30_000);

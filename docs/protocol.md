@@ -115,7 +115,9 @@
 - 게스트: 같은 판·같은 해시의 `commitHost`를 다시 받으면 **저장해 둔 같은 `commitGuest`**를 다시 보낸다(새 난수 금지). 같은 해시의 `revealGuestRequest`에는 같은 원문을 다시 보낸다. 지난 판 메시지는 무시한다.
 - 호스트: 분배 전이면 게스트가 다른 해시로 다시 커밋해도 받아 준다(새로고침으로 원문을 잃은 경우. 호스트 원문은 아직 비밀이라 안전). 분배 뒤 들어온 지난 핸드셰이크 메시지는 무시한다.
 - 토큰: 게스트가 토큰을 받았음이 확인되기 전(welcome 뒤에만 보낼 수 있는 메시지나 토큰 실은 hello를 받기 전)에는 토큰 없는 hello를 다시 받아 준다(welcome 유실 복구). 확인 뒤에는 토큰 없는 hello를 거절한다(NF-06). 게스트는 welcome 전에는 판 메시지에 응답하지 않는다.
-- 검증: `session.test.ts`가 판 1·2에서 commitHost·commitGuest·revealGuestRequest·revealGuest를 하나씩 떨어뜨리는 표 테스트와, 유실·중복·순서 바꿈·재접속을 무작위로 섞는 fast-check 속성 테스트(120회, 로컬 2,000회 확인)를 돌린다.
+- **소켓 인증(재검토 중요 2)**: 호스트는 지금 게스트 소켓이 인증됐는지(`host.authenticated`)를 따로 든다. 중계 알림 joined·left·present·absent와 전송 끊김에서 false로 되돌리고, 그 소켓에서 hello를 받아들이면(토큰이 생긴 뒤에는 토큰 hello만) true가 된다. false인 동안에는 `hello`·`ping`만 처리하고 나머지(action·ready·bankruptcy·ledgerGet·log·잘못된 메시지)는 **응답 없이 버린다**(STALE_SEQ 거부나 스냅샷도 보내지 않는다. 버전 불일치 hello만 안내). 그래서 최신 우선 중계에서 LAN의 다른 기기가 진짜 게스트를 4001로 밀어내도 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다. 알림이 없는 전송(메모리)은 끊김 알림이 없으므로 첫 hello 뒤 계속 인증 상태다.
+- **게스트 outbox**: 게스트는 지금 소켓에서 welcome을 받기 전(끊김·present·joined 뒤)에 만든 요청(action·ready·bankruptcy·ledgerGet)을 보내지 않고 들고 있다가 welcome 뒤에 보낸다(액션은 마지막 것 하나). 인증 전 소켓에서 말없이 버려지지 않게 하기 위해서다.
+- 검증: `session.test.ts`가 판 1·2에서 commitHost·commitGuest·revealGuestRequest·revealGuest를 하나씩 떨어뜨리는 표 테스트와 fast-check 속성 테스트(120회, 로컬 1,500회 확인)를 돌린다. 전송 모형: 게스트→호스트 프레임은 아무렇게나 유실·중복·순서 바꿈, 호스트→게스트는 WebSocket처럼 한 소켓 안에서 순서가 지켜지고(유실은 재접속으로만) 중복은 나중에 한 번 더 도착한다.
 
 ## 6. commit-reveal 검증 (#16, NP-06 v0.5)
 
@@ -129,10 +131,14 @@
 6. 게스트가 받은 뷰의 카드 배치·점수·배수·선(순번별)이 그 순번의 리플레이 상태와 같다.
 7. 받은 정산의 승패·사유·최종 점수·배수 단계가 리플레이 `settle`과 같다.
 
-- 원문을 공개한 판에 다른 해시의 `commitHost`가 오면 응답하지 않고 `COMMIT_INVALID`(재추첨 방지). 판 번호는 단조 증가만.
+- 원문을 공개한 판에 다른 해시의 `commitHost`가 오면 응답하지 않고 `COMMIT_INVALID`(재추첨 방지).
+- **revealHost 누락(재검토 중요 1)**: 원문을 공개한 판의 결과(검사)가 없는데 더 큰 판의 `commitHost`가 오거나 `sessionEnd`가 오면 그 판을 `failed{missingReveal}`로 기록하고 그 `commitHost`에 응답하지 않는다. 정상 호스트는 판 종료 때와 재접속 resync에서 늘 `revealHost`를 다음 `commitHost`보다 먼저 보내므로 거짓 실패가 없다. 뒤늦은 `revealHost`로 판정을 되돌리지 않는다. 세션 도중 호스트가 판을 끝내지 않고 종료해도 같은 실패다.
+- **판 번호**: 직전 커밋 판 + 1만 받는다. 더 크게 뛴 `commitHost`는 그 판 번호로 `failed{roundSkip}`을 기록하고 응답하지 않는다(위조 커밋의 기록이라, 그 번호의 판이 나중에 정상으로 진행되면 따로 검증한다).
 - 결과는 `guest.checks`(`verified`·`unverifiable{noCommitment}`·`failed{reason}`)와 `verifiedRounds`. 실패면 `errors`에 `COMMIT_INVALID`.
 - 게스트 새로고침: `guest.toJSON()`(토큰·순번·세대·최근 두 판의 커밋·관찰)을 탭 수명 저장소(`sessionStorage`, 비보안 컨텍스트에서도 동작)에 두고 `new GuestSession(..., { restore })`로 이어 가면 그 판도 검증된다. 저장본이 없으면 그 판은 `unverifiable`이고 거짓 `COMMIT_INVALID`를 내지 않는다. `sendAction`은 보내기 전에 `onChange`를 부르므로 저장본의 `sent`가 실제보다 적지 않다.
-- UI 통합(I1) 체크리스트: `checks`의 `failed`를 정산 화면에 "공정성 검증 실패"로, `unverifiable`을 "검증 불가(새로고침)"로 표시한다.
+- UI 통합(I1) 체크리스트:
+  - `checks`의 `failed`를 정산 화면에 "공정성 검증 실패"(이유 `missingReveal`·`roundSkip`·`events` 등)로, `unverifiable`을 "검증 불가(새로고침)"로 표시한다.
+  - **게스트 UI는 `guest.onChange`에서 `toJSON()`을 동기로 저장해야 한다**(예: `sessionStorage.setItem(k, JSON.stringify(g.toJSON()))`를 콜백 안에서 바로). `sendAction`은 보내기 직전에 `onChange`를 부르므로 동기 저장이면 저장본의 `sent`가 실제로 보낸 액션보다 적을 수 없다. 비동기로 미루면 새로고침 타이밍에 따라 `sent`가 빠져 정상 판이 `actions`로 거짓 실패할 수 있다.
 
 ## 7. 순번·재동기화·호스트 복원 (#25)
 
@@ -170,9 +176,9 @@
 
 - `packages/protocol/test/m4.test.ts`: 계약 벡터(`vectors/wire.json` 36개), SHA-256 NIST·경계 벡터, 동기 메모리 전송 20판(게스트는 자기 `BoardView.legal`만으로 선 고르기부터 진행).
 - `packages/protocol/test/view.test.ts`: BoardView 상세 필드 속성 테스트(합법 수·선 고르기·폭탄·고스톱·배수·inFlight·가림).
-- `packages/protocol/test/session.test.ts`: 핸드셰이크 복구·fast-check 혼돈, 재추첨·조작 수열·새로고침, 원장 500항목·여분 필드·송신 예외, 호스트 저장·복원, 판 사이 대기·나가리·파산.
+- `packages/protocol/test/session.test.ts`: 핸드셰이크 복구·fast-check 혼돈, 재추첨·조작 수열·새로고침, revealHost 누락·판 건너뛰기 fast-check, 소켓 인증, 원장 500항목·여분 필드·송신 예외, 호스트 저장·복원, 판 사이 대기·나가리·파산.
 - `packages/relay-dev/test/relay.test.ts` + `relay-scenarios.json`: 중계 규칙 시나리오.
-- `packages/relay-dev/test/session-relay.test.ts`: 실제 ws 중계 20판(판 중간 끊김, 핸드셰이크 중 끊김, 게스트 탭 교체 4001 + 저장본 복원, 호스트 재시작 복원).
+- `packages/relay-dev/test/session-relay.test.ts`: 실제 ws 중계 20판(판 중간 끊김, 핸드셰이크 중 끊김, 게스트 탭 교체 4001 + 저장본 복원, 호스트 재시작 복원), 낯선 소켓의 최신 우선 탈취 시도(응답·상태 변화 없음).
 - `packages/web/src/net/ws-transport.node.test.ts`: `npm run test:net -w packages/web`(Node)와 브라우저 모드에서 WsTransport 정책 + 가짜 Android 중계 위 세션 한 판.
 
 실기기 검증은 Android와 iPhone Safari 통합 단계(M5)에서 진행한다.
