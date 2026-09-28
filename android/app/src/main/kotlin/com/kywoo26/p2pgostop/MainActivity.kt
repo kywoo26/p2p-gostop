@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private var diagnosticsOnly = false
     private var fromGame = false
     private var gameLaunched = false
+    private val webBundlePresent by lazy { GameActivity.bundlePresent(this) }
 
     private val handler = Handler(Looper.getMainLooper())
     private val ticker = object : Runnable {
@@ -219,8 +220,8 @@ class MainActivity : Activity() {
     private fun render() {
         val s = AppState.hotspot.value
         findViewById<Button>(R.id.btnGame).visibility =
-            if (GameActivity.bundlePresent(this)) View.VISIBLE else View.GONE
-        if (!diagnosticsOnly && !gameLaunched && GameActivity.bundlePresent(this)) {
+            if (webBundlePresent) View.VISIBLE else View.GONE
+        if (!diagnosticsOnly && !gameLaunched && webBundlePresent) {
             gameLaunched = true
             startActivity(Intent(this, GameActivity::class.java))
         }

@@ -23,12 +23,14 @@ import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.CloseReason
+import io.ktor.websocket.ChannelOverflow
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.seconds
 
@@ -40,6 +42,7 @@ const val SERVER_PORT = 17777
  * 넘는 프레임이 오면 Ktor가 1009(Message Too Big)로 연결을 닫는다.
  */
 const val MAX_MESSAGE_BYTES = 64 * 1024
+const val MAX_OUTGOING_FRAMES = 64
 
 /**
  * 게스트 페이지가 로그 본문을 자르는 상한(UTF-8 바이트). 접두어 `log:`를 붙여도 [MAX_MESSAGE_BYTES]보다 작다.
@@ -93,6 +96,8 @@ fun Application.smokeModule(env: ServerEnv) {
         timeout = 60.seconds
         maxFrameSize = MAX_MESSAGE_BYTES.toLong()
         masking = false
+        // 멈춘 수신자에게 쌓이는 메시지를 소켓당 64프레임으로 제한한다.
+        channels { outgoing = bounded(MAX_OUTGOING_FRAMES, ChannelOverflow.SUSPEND) }
     }
     val relay = RelayRoles(env)
     routing {
@@ -129,10 +134,6 @@ fun Application.smokeModule(env: ServerEnv) {
                 for (frame in incoming) {
                     if (frame !is Frame.Text) {
                         close(CloseReason(1003.toShort(), "text frames only"))
-                        break
-                    }
-                    if (frame.data.size > MAX_MESSAGE_BYTES) {
-                        close(CloseReason(1009.toShort(), "message too large"))
                         break
                     }
                     relay.forward(role, this, frame)
@@ -238,6 +239,7 @@ private class RelayRoles(private val env: ServerEnv) {
     private var host: DefaultWebSocketServerSession? = null
     private var guest: DefaultWebSocketServerSession? = null
     private val absenceNotified = mutableSetOf<DefaultWebSocketServerSession>()
+    private val closing = mutableSetOf<DefaultWebSocketServerSession>()
 
     // M4 릴레이 정책(오케스트레이터 결정): 호스트는 127.0.0.1만, 두 역할 모두 최신 연결이 이전 연결을 교체한다.
     // 접속·해제·알림 enqueue·전달을 이 잠금 하나로 직렬화해 joined/left 순서가 뒤집히지 않게 한다.
@@ -259,13 +261,14 @@ private class RelayRoles(private val env: ServerEnv) {
         val peer = peer(role)
         if (peer == null) absenceNotified.add(session)
         if (peer != null) absenceNotified.remove(peer)
-        session.outgoing.trySend(notice(if (peer == null) "absent" else "present"))
-        peer?.outgoing?.trySend(notice("joined"))
+        enqueue(session, notice(if (peer == null) "absent" else "present"))
+        peer?.let { enqueue(it, notice("joined")) }
         env.log("relay $role ${if (old == null) "연결" else "교체"} (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
     }
 
     @Synchronized fun leave(role: String, session: DefaultWebSocketServerSession) {
         absenceNotified.remove(session)
+        closing.remove(session)
         if (role == "host" && host === session) {
             host = null
             env.roles.host.set(false)
@@ -278,7 +281,7 @@ private class RelayRoles(private val env: ServerEnv) {
         env.roleChanged(role, false)
         peer(role)?.let { target ->
             absenceNotified.remove(target)
-            target.outgoing.trySend(notice("left"))
+            enqueue(target, notice("left"))
         }
         env.log("relay $role 종료 (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
     }
@@ -291,23 +294,30 @@ private class RelayRoles(private val env: ServerEnv) {
 
     private fun notice(peer: String) = Frame.Text("{\"t\":\"relay\",\"peer\":\"$peer\"}")
 
+    private fun enqueue(target: DefaultWebSocketServerSession, frame: Frame): Boolean {
+        if (target in closing) return false
+        if (target.outgoing.trySend(frame).isSuccess) return true
+        if (!closing.add(target)) return false
+        env.log("relay 송신 큐 초과 또는 종료: ${MAX_OUTGOING_FRAMES}프레임")
+        target.launch { target.close(CloseReason(1008.toShort(), "slow peer")) }
+        return false
+    }
+
     @Synchronized fun forward(role: String, sender: DefaultWebSocketServerSession, frame: Frame.Text) {
         if (current(role) !== sender) return // 교체된 소켓에서 늦게 도착한 프레임
         val target = peer(role)
         if (target == null) {
-            if (absenceNotified.add(sender)) sender.outgoing.trySend(notice("absent"))
+            if (absenceNotified.add(sender)) enqueue(sender, notice("absent"))
         } else {
             absenceNotified.remove(sender)
-            if (target.outgoing.trySend(Frame.Text(frame.readText())).isSuccess) {
-                env.log("relay $role 전달 ${frame.data.size}바이트")
-            } else if (absenceNotified.add(sender)) {
-                sender.outgoing.trySend(notice("absent"))
+            if (!enqueue(target, Frame.Text(true, frame.data)) && absenceNotified.add(sender)) {
+                enqueue(sender, notice("absent"))
             }
         }
     }
 }
 
-private val HASHED_ASSET = Regex("[.-][A-Za-z0-9_-]{8,}\\.")
+private val HASHED_ASSET = Regex("^assets/[A-Za-z0-9_/-]+-[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9]+$")
 
 private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall, env: ServerEnv, path: String) {
     if (path.startsWith('/') || path.split('/').any { it == ".." || it == "." || it.isEmpty() } ||
@@ -321,17 +331,18 @@ private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall,
         return
     }
     val type = when (path.substringAfterLast('.', "")) {
-        "html" -> ContentType.Text.Html
-        "js" -> ContentType.parse("text/javascript")
-        "css" -> ContentType.Text.CSS
+        "html" -> ContentType.Text.Html.withParameter("charset", "utf-8")
+        "js" -> ContentType.parse("text/javascript; charset=utf-8")
+        "css" -> ContentType.Text.CSS.withParameter("charset", "utf-8")
         "svg" -> ContentType.Image.SVG
-        "json" -> ContentType.Application.Json
-        "md" -> ContentType.parse("text/markdown")
+        "json" -> ContentType.Application.Json.withParameter("charset", "utf-8")
+        "md" -> ContentType.parse("text/markdown; charset=utf-8")
+        "txt", "" -> ContentType.Text.Plain.withParameter("charset", "utf-8")
         "woff2" -> ContentType.parse("font/woff2")
         else -> ContentType.Application.OctetStream
     }
     call.response.header(HttpHeaders.CacheControl, if (path != "index.html" && HASHED_ASSET.containsMatchIn(path))
         "public, max-age=31536000, immutable" else CacheControl.NoStore(null).toString())
-    val content = bytes ?: "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><title>맞고</title><body><p>web bundle is missing</p></body></html>".toByteArray()
+    val content = bytes ?: "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><title>맞고</title><body><p>웹 번들이 없습니다.</p><a href=\"/smoke\">연결 확인</a></body></html>".toByteArray()
     call.respondBytes(content, type)
 }

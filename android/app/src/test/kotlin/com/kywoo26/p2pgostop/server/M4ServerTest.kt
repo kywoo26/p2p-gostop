@@ -28,7 +28,8 @@ class M4ServerTest {
         application { smokeModule(e) }
         val page = client.get("/")
         assertEquals(HttpStatusCode.OK, page.status)
-        assertTrue(page.bodyAsText().contains("web bundle is missing"))
+        assertTrue(page.bodyAsText().contains("웹 번들이 없습니다"))
+        assertTrue(page.bodyAsText().contains("/smoke"))
         assertTrue(page.headers[HttpHeaders.CacheControl]!!.contains("no-store"))
         assertTrue(client.get("/health").bodyAsText().contains("\"bundlePresent\":false"))
         assertEquals(HttpStatusCode.NotFound, client.get("/assets/missing.js").status)
@@ -37,9 +38,11 @@ class M4ServerTest {
     @Test fun `번들 파일을 MIME과 캐시 정책에 맞게 제공한다`() = testApplication {
         val e = env(mapOf(
             "index.html" to "<html><body>게임</body></html>",
-            "assets/app.abcdef1234.js" to "export const x = 1;",
+            "assets/app-abcdef1234.js" to "export const x = 1;",
+            "assets/custom.abcdef1234.js" to "export const y = 1;",
             "style.css" to "body{}", "card.svg" to "<svg/>",
             "manifest.json" to "{}", "about.md" to "# hello", "font.abcdef1234.woff2" to "font",
+            "cards/LICENSE" to "license", "notes.txt" to "text",
         ))
         application { smokeModule(e) }
         val page = client.get("/")
@@ -47,11 +50,16 @@ class M4ServerTest {
         assertTrue(page.headers[HttpHeaders.CacheControl]!!.contains("no-store"))
         assertTrue(client.get("/health").bodyAsText().contains("\"bundlePresent\":true"))
         for ((path, mime) in listOf(
-            "assets/app.abcdef1234.js" to "text/javascript", "style.css" to "text/css",
+            "assets/app-abcdef1234.js" to "text/javascript", "style.css" to "text/css",
             "card.svg" to "image/svg+xml", "manifest.json" to "application/json",
             "about.md" to "text/markdown", "font.abcdef1234.woff2" to "font/woff2",
+            "cards/LICENSE" to "text/plain", "notes.txt" to "text/plain",
         )) assertTrue(client.get("/$path").headers[HttpHeaders.ContentType]!!.startsWith(mime), path)
-        assertTrue(client.get("/assets/app.abcdef1234.js").headers[HttpHeaders.CacheControl]!!.contains("immutable"))
+        for (path in listOf("index.html", "style.css", "about.md", "cards/LICENSE")) {
+            assertTrue(client.get("/$path").headers[HttpHeaders.ContentType]!!.contains("charset=utf-8"), path)
+        }
+        assertTrue(client.get("/assets/app-abcdef1234.js").headers[HttpHeaders.CacheControl]!!.contains("immutable"))
+        assertTrue(client.get("/assets/custom.abcdef1234.js").headers[HttpHeaders.CacheControl]!!.contains("no-store"))
         assertTrue(client.get("/style.css").headers[HttpHeaders.CacheControl]!!.contains("no-store"))
         assertEquals(HttpStatusCode.NotFound, client.get("/../secret").status)
         assertFalse(page.bodyAsText().contains("https://"), "인덱스에 외부 URL 없음(NP-08)")
@@ -88,6 +96,46 @@ class M4ServerTest {
         assertEquals("{\"t\":\"relay\",\"peer\":\"left\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
         host.send(Frame.Text("no peer"))
         assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        host.close()
+    }
+
+    @Test fun `게스트가 남아 있을 때 호스트 재접속은 새 호스트가 현재 상대를 알고 이전 호스트를 교체한다`() = testApplication {
+        val e = env()
+        application { smokeModule(e) }
+        val c = createClient { install(WebSockets) }
+        val host1 = c.webSocketSession("/ws?role=host")
+        assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { host1.incoming.receive() } as Frame.Text).readText())
+        val guest = c.webSocketSession("/ws?role=guest")
+        assertEquals("{\"t\":\"relay\",\"peer\":\"present\"}", (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { host1.incoming.receive() } as Frame.Text).readText())
+        val host2 = c.webSocketSession("/ws?role=host")
+        assertEquals(4001, withTimeout(2000) { host1.closeReason.await() }?.code?.toInt())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"present\"}", (withTimeout(2000) { host2.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
+        assertEquals(null, withTimeoutOrNull(100) { guest.incoming.receive() }, "옛 호스트 종료는 left를 보내지 않는다")
+        guest.send(Frame.Text("to-new-host"))
+        assertEquals("to-new-host", (withTimeout(2000) { host2.incoming.receive() } as Frame.Text).readText())
+        assertEquals(2, e.clients.get())
+        host2.close()
+        guest.close()
+    }
+
+    @Test fun `호스트가 남아 있을 때 게스트 재접속은 새 게스트가 현재 상대를 알고 이전 게스트를 교체한다`() = testApplication {
+        application { smokeModule(env()) }
+        val c = createClient { install(WebSockets) }
+        val guest1 = c.webSocketSession("/ws?role=guest")
+        assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { guest1.incoming.receive() } as Frame.Text).readText())
+        val host = c.webSocketSession("/ws?role=host")
+        assertEquals("{\"t\":\"relay\",\"peer\":\"present\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { guest1.incoming.receive() } as Frame.Text).readText())
+        val guest2 = c.webSocketSession("/ws?role=guest")
+        assertEquals(4001, withTimeout(2000) { guest1.closeReason.await() }?.code?.toInt())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"present\"}", (withTimeout(2000) { guest2.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        assertEquals(null, withTimeoutOrNull(100) { host.incoming.receive() })
+        host.send(Frame.Text("to-new-guest"))
+        assertEquals("to-new-guest", (withTimeout(2000) { guest2.incoming.receive() } as Frame.Text).readText())
+        guest2.close()
         host.close()
     }
 
