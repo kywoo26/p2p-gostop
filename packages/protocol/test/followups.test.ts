@@ -63,7 +63,10 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     expect(h.guest.view?.multiplier).toBeGreaterThanOrEqual(2);
     finish(h.host, h.guest, 11);
     expect(h.host.settlement).toBeNull();
-    h.guest.requestNextRound();
+    if (h.host.state?.result?.winner === 1) {
+      if (h.host.nextRound()) throw new Error('게스트 선택 전 다음 판 시작');
+      h.guest.requestNextRound();
+    } else if (!h.host.acceptRound()) throw new Error('호스트 받기 거부');
     expect(h.host.settlement?.pushed).toBe(false);
     expect(h.guest.settlement?.steps.some((step) => step.origin === 'push')).toBe(true);
     expect(h.guest.checks.at(-1)).toEqual({ round: 2, result: 'verified' });
@@ -95,6 +98,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
       finish(h.host, h.guest, seed);
       if (h.host.state?.result?.winner !== 1) continue;
       guestWin = true;
+      if (h.host.nextRound()) throw new Error('게스트 선택 전 다음 판 시작');
       const seq = h.host.seq;
       const balances = h.host.ledger.balances;
       h.guest.push();

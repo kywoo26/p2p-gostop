@@ -265,6 +265,19 @@ export class HostSession {
     if (ok) this.changed();
     return ok;
   }
+  /** 호스트 승자가 밀지 않고 정산을 받는다. 다음 판은 별도로 시작한다 */
+  acceptRound(): boolean {
+    if (
+      this.stageValue !== 'settled' ||
+      this.state?.phase !== 'end' ||
+      this.state.result?.winner !== 0 ||
+      this.settlement !== null
+    )
+      return false;
+    this.finishRound();
+    this.changed();
+    return true;
+  }
   /** 3분 이상 게스트가 부재한 진행 중 판을 무효로 한다 */
   abortRound(reason: string): boolean {
     if (
@@ -287,7 +300,10 @@ export class HostSession {
   /** settled에서 다음 판을 시작한다 (#26). 게스트 ready 없이도 호스트가 시작할 수 있다 */
   nextRound(): boolean {
     if (this.stageValue !== 'settled') return false;
-    if (this.state?.phase === 'end' && this.settlement === null) this.finishRound();
+    if (this.state?.phase === 'end' && this.settlement === null) {
+      if (this.state.result?.winner === 1) return false;
+      this.finishRound();
+    }
     if (this.stageValue !== 'settled') return false;
     this.roundNumber++;
     this.beginRound();
@@ -768,7 +784,12 @@ export class HostSession {
         break;
       case 'ready':
         if (this.stageValue === 'settled' && message.round === this.roundNumber) {
-          if (this.state?.phase === 'end' && this.settlement === null) this.finishRound();
+          if (
+            this.state?.phase === 'end' &&
+            this.settlement === null &&
+            this.state.result?.winner === 1
+          )
+            this.finishRound();
           if (!this.guestReady) {
             this.guestReady = true;
             this.bump();
