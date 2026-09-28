@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private var diagnosticsOnly = false
     private var fromGame = false
     private var gameLaunched = false
+    private val webBundlePresent by lazy { GameActivity.bundlePresent(this) }
 
     private val handler = Handler(Looper.getMainLooper())
     private val ticker = object : Runnable {
@@ -219,8 +220,8 @@ class MainActivity : Activity() {
     private fun render() {
         val s = AppState.hotspot.value
         findViewById<Button>(R.id.btnGame).visibility =
-            if (GameActivity.bundlePresent(this)) View.VISIBLE else View.GONE
-        if (!diagnosticsOnly && !gameLaunched && GameActivity.bundlePresent(this)) {
+            if (webBundlePresent) View.VISIBLE else View.GONE
+        if (!diagnosticsOnly && !gameLaunched && webBundlePresent) {
             gameLaunched = true
             startActivity(Intent(this, GameActivity::class.java))
         }
@@ -323,9 +324,10 @@ class MainActivity : Activity() {
 
     private fun diagnosticsLines(): List<String> = Diagnostics.lines(this, AppState.hotspot.value)
 
-    /** 호스트·게스트 로그 전체(파일 첨부용). 두 버퍼가 합쳐 최대 약 768KB(UTF-8). */
+    /** 네이티브·웹 호스트·게스트 로그 전체(파일 첨부용). 세 버퍼 합계 최대 약 1MB(UTF-8). */
     private fun fullLogText(): String =
-        LogReport.full(DeviceInfo.header(), diagnosticsLines(), AppState.logs.snapshot(), AppState.guestLogs.snapshot())
+        LogReport.full(DeviceInfo.header(), diagnosticsLines(), AppState.logs.snapshot() + AppState.webLogs.snapshot(),
+            AppState.guestLogs.snapshot())
 
     private fun copyLog() {
         // 클립보드도 바인더를 거치므로 바이트 상한 안에서 최근 부분만 복사한다(M0 리뷰 L-2).
@@ -355,7 +357,7 @@ class MainActivity : Activity() {
         val summary = LogReport.summary(
             header = DeviceInfo.header(),
             diagnostics = diagnosticsLines(),
-            host = AppState.logs.snapshot(),
+            host = AppState.logs.snapshot() + AppState.webLogs.snapshot(),
             guest = AppState.guestLogs.snapshot(),
             note = if (uri != null) getString(R.string.share_note, name) else getString(R.string.share_file_failed),
         )
