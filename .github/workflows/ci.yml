@@ -53,8 +53,19 @@ jobs:
       - name: E2E (Playwright, Chromium + WebKit)
         if: env.FULL == 'true'
         run: docker compose run --rm --user root dev npm run e2e -w packages/web
+      # Gradle 의존성·배포판 캐시(약 0.9GB). 일회용 러너라 compose의 명명 볼륨은 매번 비므로, 러너 폴더를 컨테이너의
+      # Gradle 홈(/root/.gradle)에 붙이고 actions/cache로 보존한다. build-cache-1은 파일 권한이 0600(root 소유)이라
+      # 러너 사용자가 읽지 못해 제외한다.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ${{ runner.temp }}/gradle-home/caches
+            ${{ runner.temp }}/gradle-home/wrapper
+            !${{ runner.temp }}/gradle-home/caches/build-cache-1
+          key: gradle-${{ hashFiles('android/gradle/libs.versions.toml', 'android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle.kts') }}
+          restore-keys: gradle-
       - name: android (assembleDebug · test · lint)
-        run: docker compose run --rm --user root dev android/gradlew -p android assembleDebug testDebugUnitTest lint
+        run: docker compose run --rm --user root -v "$RUNNER_TEMP/gradle-home:/root/.gradle" dev android/gradlew -p android assembleDebug testDebugUnitTest lint
 
       - uses: actions/upload-artifact@v7
         if: failure() && env.FULL == 'true'
