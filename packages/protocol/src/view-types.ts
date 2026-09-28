@@ -44,6 +44,11 @@ export interface SeatView {
   /** 가상 머니 잔액 (MN-01, 단위는 설정) */
   readonly balance: number;
   readonly progress: JokboProgress;
+  // STUB(I1): M3 리뷰 S-2 표시값. fix/protocol-review가 정식으로 더한다
+  /** 엔진 score.gukjinAsPi (국진을 쌍피로 센다) */
+  readonly gukjinAsPi?: boolean;
+  /** 배수가 붙는 폭탄 횟수 (모르면 null: M3 표시 코드와 같은 모양) */
+  readonly bombs?: number | null;
 }
 
 export interface FloorGroupView {

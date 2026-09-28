@@ -143,6 +143,8 @@ export function toBoardView(view: PlayerView, ctx: ViewContext): BoardView {
       ppeokCount: current.ppeokCount,
       balance: ctx.ledger.balances[seat],
       progress: progressOf(current.captured, current.score.gukjinAsPi),
+      gukjinAsPi: current.score.gukjinAsPi,
+      bombs: current.bombs,
     };
   };
   const seats: BoardView['seats'] = [seatView(0), seatView(1)];
