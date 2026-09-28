@@ -43,22 +43,39 @@ function deepFreeze<T>(value: T): T {
 }
 
 /**
- * onStep(state, action, events): 매 단계 뒤(처음에는 action = null, events = 분배 이벤트).
+ * onStep(state, action, events, before): 매 단계 뒤(처음에는 action = null, events = 분배 이벤트, before = null).
  * 모든 상태를 reduce에 넘기기 전에 deepFreeze한다.
+ * 판이 끝난 뒤 승자가 밀기(push)를 할 수 있으면 정책 난수로 절반쯤 민다(12.7 밀기 경로도 같은 불변식으로 검사).
  */
 export function playRandomRound(
   rules: RuleOptions,
   seed: number,
   opts: RoundOptions,
   policySeed: number,
-  onStep?: (state: GameState, action: Action | null, events: readonly EngineEvent[]) => void,
+  onStep?: (
+    state: GameState,
+    action: Action | null,
+    events: readonly EngineEvent[],
+    before: GameState | null,
+  ) => void,
 ): PlayedRound {
   const started = newRound(rules, seed, opts);
   let state = started.state;
   const events: EngineEvent[] = [...started.events];
   const actions: Action[] = [];
   let rng = createRng(policySeed);
-  onStep?.(state, null, started.events);
+  onStep?.(state, null, started.events, null);
+  const apply = (action: Action): void => {
+    const before = deepFreeze(state);
+    const result = reduce(before, action);
+    if (!result.ok) {
+      throw new Error(`합법 수가 거부됨: ${result.message}`);
+    }
+    actions.push(action);
+    events.push(...result.events);
+    state = result.state;
+    onStep?.(state, action, result.events, before);
+  };
   for (let step = 0; state.phase !== 'end'; step++) {
     if (step > MAX_STEPS) {
       throw new Error('판이 끝나지 않습니다');
@@ -74,14 +91,15 @@ export function playRandomRound(
     if (action === undefined) {
       throw new Error('합법 수가 없습니다');
     }
-    const result = reduce(deepFreeze(state), action);
-    if (!result.ok) {
-      throw new Error(`합법 수가 거부됨: ${result.message}`);
+    apply(action);
+  }
+  const winner = state.result?.winner ?? null;
+  const push = winner === null ? undefined : legalActions(state, winner)[0];
+  if (push !== undefined) {
+    const [coin] = nextInt(rng, 2);
+    if (coin === 1) {
+      apply(push);
     }
-    actions.push(action);
-    events.push(...result.events);
-    state = result.state;
-    onStep?.(state, action, result.events);
   }
   return { start: started.state, state, actions, events };
 }
