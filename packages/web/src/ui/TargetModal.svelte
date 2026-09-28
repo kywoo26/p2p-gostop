@@ -23,7 +23,12 @@
   </p>
   <div class="options">
     {#each options as id (id)}
-      <button type="button" aria-label={`${cardLabel(id)} 먹기`} onclick={() => onchoose?.(id)}>
+      <button
+        type="button"
+        aria-label={`${cardLabel(id)} 먹기`}
+        data-choice={`target-${id}`}
+        onclick={() => onchoose?.(id)}
+      >
         <Card {id} size="m" />
         <span aria-hidden="true">{cardLabel(id)}</span>
       </button>

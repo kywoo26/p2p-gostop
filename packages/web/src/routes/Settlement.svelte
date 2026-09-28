@@ -1,92 +1,97 @@
 <script lang="ts">
-  // 정산 (spec 6.2): 점수 분해 표, 배수 체인, 금액, 잔액 변화, 다음 판/종료
+  // 정산 (spec 6.2, FR-18): 점수 분해 표, 배수 체인, 금액, 잔액 변화, 다음 판/종료.
+  // 잔액 0이면 재충전(시작 잔액으로)·세션 종료를 묻는다(MN-02).
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
-  import type { ScoreRowKind, SettleStepKind, SettlementView } from '../lib/view-types.ts';
+  import type { SettlementView } from '../lib/view-types.ts';
   import Screen from '../ui/Screen.svelte';
+  import { REASON_LABEL, SCORE_LABEL, stepLabel } from '../ui/settle-labels.ts';
 
   interface Props {
     view: SettlementView;
+    /** 이 판의 즉시 정산 (첫뻑·첫따닥 등, FR-18 "별도 원장 항목") */
+    instant?: readonly { readonly label: string; readonly name: string; readonly points: number }[];
+    /** 나가리면 다음 판 배수 (G9) */
+    nextCarry?: number | null;
+    /** 누군가 잔액 0 (MN-02) */
+    bankrupt?: boolean;
+    onnext?: (() => void) | undefined;
+    onend?: (() => void) | undefined;
+    onrefill?: (() => void) | undefined;
   }
 
-  let { view }: Props = $props();
-
-  const SCORE_LABEL: Record<ScoreRowKind, string> = {
-    gwang: '광',
-    yeol: '열끗',
-    godori: '고도리',
-    tti: '띠',
-    hongdan: '홍단',
-    cheongdan: '청단',
-    chodan: '초단',
-    pi: '피',
-  };
-
-  const STEP_LABEL: Record<SettleStepKind, string> = {
-    base: '족보 점수',
-    goBonus: '고 가산',
-    goMultiplier: '3고 이상 배수',
-    shake: '흔들기',
-    bomb: '폭탄',
-    piBak: '피박',
-    gwangBak: '광박',
-    meongtta: '멍따',
-    goBak: '고박',
-    nagariCarry: '나가리 이월',
-    jackpot: '대박판',
-  };
-
-  const REASON_LABEL: Record<SettlementView['reason'], string> = {
-    stop: '스톱',
-    autoStop: '자동 스톱',
-    threePpeok: '3뻑',
-    chongtong: '총통',
-    exhausted: '패 소진',
-    hudang: '허당',
-  };
+  let {
+    view,
+    instant = [],
+    nextCarry = null,
+    bankrupt = false,
+    onnext,
+    onend,
+    onrefill,
+  }: Props = $props();
 
   const headline = $derived(
     view.winner === null
-      ? '무승부'
+      ? `나가리${nextCarry !== null && nextCarry > 1 ? ` · 다음 판 ×${nextCarry}` : ''}`
       : `${view.names[view.winner]} 승리 · ${REASON_LABEL[view.reason]}`,
   );
   const baseTotal = $derived(view.breakdown.reduce((sum, row) => sum + row.points, 0));
 </script>
 
 <Screen title="정산" back={null}>
-  <p class="headline">{headline}</p>
+  <p class="headline" data-testid="settlement-headline">{headline}</p>
 
-  <section aria-labelledby="settle-score">
-    <h2 id="settle-score">점수</h2>
-    <table>
-      <tbody>
-        {#each view.breakdown as row (row.kind)}
-          <tr><th scope="row">{SCORE_LABEL[row.kind]}</th><td class="num">{row.points}점</td></tr>
+  {#if view.breakdown.length > 0}
+    <section aria-labelledby="settle-score">
+      <h2 id="settle-score">점수</h2>
+      <table>
+        <tbody>
+          {#each view.breakdown as row (row.kind)}
+            <tr><th scope="row">{SCORE_LABEL[row.kind]}</th><td class="num">{row.points}점</td></tr>
+          {/each}
+          <tr class="total"><th scope="row">합계</th><td class="num">{baseTotal}점</td></tr>
+        </tbody>
+      </table>
+    </section>
+  {/if}
+
+  {#if view.steps.length > 0}
+    <section aria-labelledby="settle-chain">
+      <h2 id="settle-chain">배수</h2>
+      <ol class="chain">
+        {#each view.steps as step, i (i)}
+          <li>
+            <span>{stepLabel(step.kind)}</span>
+            <span class="op">{step.op === 'add' ? (i === 0 ? '' : '+') : '×'}{step.value}</span>
+            <span class="num">{step.total}점</span>
+          </li>
         {/each}
-        <tr class="total"><th scope="row">합계</th><td class="num">{baseTotal}점</td></tr>
-      </tbody>
-    </table>
-  </section>
+      </ol>
+    </section>
+  {/if}
 
-  <section aria-labelledby="settle-chain">
-    <h2 id="settle-chain">배수</h2>
-    <ol class="chain">
-      {#each view.steps as step, i (i)}
-        <li>
-          <span>{STEP_LABEL[step.kind]}</span>
-          <span class="op">{step.op === 'add' ? (i === 0 ? '' : '+') : '×'}{step.value}</span>
-          <span class="num">{step.total}점</span>
-        </li>
-      {/each}
-    </ol>
-  </section>
+  {#if view.winner !== null}
+    <section aria-labelledby="settle-amount">
+      <h2 id="settle-amount">금액</h2>
+      <p class="amount">
+        {view.finalPoints}점 × {formatMoney(view.pointValue, view.unit)} =
+        <strong>{formatMoney(view.amount, view.unit)}</strong>
+        {#if view.amount < view.finalPoints * view.pointValue}<span class="muted">
+            (잔액까지만)</span
+          >{/if}
+      </p>
+    </section>
+  {/if}
 
-  <section aria-labelledby="settle-amount">
-    <h2 id="settle-amount">금액</h2>
-    <p class="amount">
-      {view.finalPoints}점 × {formatMoney(view.pointValue, view.unit)} =
-      <strong>{formatMoney(view.amount, view.unit)}</strong>
-    </p>
-  </section>
+  {#if instant.length > 0}
+    <section aria-labelledby="settle-instant">
+      <h2 id="settle-instant">즉시 정산</h2>
+      <ul class="instant">
+        {#each instant as row, i (i)}
+          <li>{row.name} {row.label} +{row.points}점</li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 
   <section aria-labelledby="settle-balance">
     <h2 id="settle-balance">잔액</h2>
@@ -104,7 +109,7 @@
           <tr>
             <th scope="row">{view.names[seat]}</th>
             <td class="num">{formatNumber(balance.before)}</td>
-            <td class="num">{formatNumber(balance.after)}</td>
+            <td class="num" data-testid={`balance-${seat}`}>{formatNumber(balance.after)}</td>
             <td class={['num', balance.after >= balance.before ? 'gain' : 'loss']}>
               {formatSignedMoney(balance.after - balance.before, view.unit)}
             </td>
@@ -114,9 +119,23 @@
     </table>
   </section>
 
+  {#if bankrupt}
+    <p class="bankrupt" role="alert">
+      잔액이 0이 되었습니다. 시작 잔액으로 재충전하거나 끝낼 수 있습니다.
+    </p>
+  {/if}
+
   {#snippet actions()}
-    <button type="button" class="button">종료</button>
-    <button type="button" class="button primary">다음 판</button>
+    <button type="button" class="button" data-choice="end" onclick={() => onend?.()}>종료</button>
+    {#if bankrupt}
+      <button type="button" class="button primary" data-choice="refill" onclick={() => onrefill?.()}
+        >재충전</button
+      >
+    {:else}
+      <button type="button" class="button primary" data-choice="next" onclick={() => onnext?.()}
+        >다음 판</button
+      >
+    {/if}
   {/snippet}
 </Screen>
 
@@ -158,6 +177,24 @@
   }
 
   .amount strong {
+    color: var(--color-event-go);
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
+  }
+
+  .instant {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .bankrupt {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-m);
+    background: var(--color-surface-raised);
     color: var(--color-event-go);
   }
 
