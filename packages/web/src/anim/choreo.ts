@@ -29,7 +29,7 @@ export interface AnimStep {
  * 한 턴의 계획 시간 상한(빠름 기준 ms). 단계 사이의 프레임 지연(단계당 최대 1~2프레임)을 더해도
  * spec 6.4의 700ms 안에 들도록 여유를 둔다.
  */
-const TURN_PLAN_MS = 540;
+const TURN_PLAN_MS = 500;
 
 function kindOf(event: EngineEvent): StepKind {
   switch (event.type) {

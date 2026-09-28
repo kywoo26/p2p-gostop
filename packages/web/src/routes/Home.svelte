@@ -113,8 +113,13 @@
     color: var(--color-text-muted);
   }
 
-  /* 커밋 해시는 글자마다 폭이 달라 푸터 배치가 빌드마다 흔들린다: 고정폭 글꼴로 스크린샷을 안정시킨다 */
+  /* 빌드 식별자(커밋 해시 7자 또는 dev)는 빌드마다 글자·길이가 달라 푸터 배치가 흔들린다:
+     고정폭 글꼴 + 고정 폭 상자로 스크린샷을 안정시킨다 */
   [data-testid='build-id'] {
+    display: inline-block;
+    width: 8.5em;
     font-family: ui-monospace, monospace;
+    text-align: right;
+    white-space: nowrap;
   }
 </style>

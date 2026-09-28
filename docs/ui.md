@@ -32,13 +32,13 @@
 
 - **순수 층**: `game/session.ts`(세션 = GameState + Ledger + 기록, 다음 판 선·나가리 이월·재충전), `game/display.ts`(이벤트 재생 리듀서), `game/adapter.ts`(PlayerView → BoardView).
 - **반응형 층**: `game/solo.svelte.ts`의 `SoloSession`(runes 클래스). 화면은 `board`·`extras`·`banner`·`toast`·`busy`·`thinking`·`settlementReady`·`timings`만 읽는다.
-- **애니메이션**: `anim/choreo.ts`가 이벤트 묶음을 단계(낸 패 120 → 뒤집기 140 → 매칭 80 → 획득 160+30 스태거, 뺏기 200 병렬)로 나누고, 카드가 어디서 어디로 갔는지로 시간을 고른다. 계획 합이 540ms를 넘으면 비율로 줄인다(프레임 지연 여유 포함 700ms 예산). 판을 탭하면 `--dur-scale: 0` + `finishAll`로 건너뛴다.
+- **애니메이션**: `anim/choreo.ts`가 이벤트 묶음을 단계(낸 패 120 → 뒤집기 140 → 매칭 80 → 획득 160+30 스태거, 뺏기 200 병렬)로 나누고, 카드가 어디서 어디로 갔는지로 시간을 고른다. 계획 합이 500ms를 넘으면 비율로 줄인다(느린 기기의 프레임 지연 여유를 둔 700ms 예산). 판을 탭하면 `--dur-scale: 0` + `finishAll`로 건너뛴다.
 - **검증**: `game/display.test.ts`가 무작위 합법 수 80여 판에서 매 액션 "이전 뷰 + 가려진 이벤트 재생 = 새 뷰"(카드 배치)를 확인한다. 그래서 스냅은 누락 대비 안전망이고 평소에는 튀지 않는다.
 - **CPU**: `game/ai-client.ts`가 Worker를 만들고, 실패·무응답(시간 제한 + 5초)이면 메인 스레드 인라인(시간 제한 300ms 상한)으로 넘어간다. CPU 뷰는 `playerView(state, 1)`만 넘긴다(AI-01).
 
 ## 3. 계측 (AC-06)
 
-탭(click `timeStamp`) → 그 액션의 이벤트 재생·스냅 완료까지를 `SoloSession.timings`에 남기고 진단 로그에 쓴다. 게임 루트 `data-play-timings`로 E2E가 읽는다. 2026-09-28 도커 e2e 이미지(빠름): Chromium p50 568~571ms·최대 596ms, WebKit p50 578~635ms·최대 599~737ms(12개 병렬 실행 부하에서 1회 초과). E2E는 중앙값 ≤ 700ms를 검사한다.
+탭(click `timeStamp`) → 그 액션의 이벤트 재생·스냅 완료까지를 `SoloSession.timings`에 남기고 진단 로그에 쓴다. 게임 루트 `data-play-timings`로 E2E가 읽는다. 2026-09-28 도커 e2e 이미지(빠름): Chromium p50 568~571ms·최대 596ms, WebKit p50 578~635ms·최대 599~737ms(12개 병렬 실행 부하에서 1회 초과). E2E는 지금 기록만 한다(2코어 CI 러너의 WebKit은 p50 660ms·최대 849ms까지 흔들렸다). 계획 상한을 540 → 500ms로 낮춰 여유를 늘렸다.
 
 ## 4. M4 protocol로 넘길 것 (어댑터 교체)
 
