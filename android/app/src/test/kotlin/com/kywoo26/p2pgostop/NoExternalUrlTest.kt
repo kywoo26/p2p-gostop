@@ -24,7 +24,12 @@ class NoExternalUrlTest {
     @Test
     fun `src main에 외부 URL 리터럴이 없다`() {
         val root = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }
-        val files = root.walkTopDown().filter { it.isFile && it.extension in setOf("kt", "xml", "java", "html", "js") }.toList()
+        // assets/web(웹 번들)은 packages/web의 check-bundle 게이트가 별도로 검사한다(허용 목록: 저작자 표기 URL 등).
+        val webAssets = File(root, "assets/web")
+        val files = root.walkTopDown()
+            .onEnter { dir -> dir.canonicalFile != webAssets.canonicalFile }
+            .filter { it.isFile && it.extension in setOf("kt", "xml", "java", "html", "js") }
+            .toList()
         assertTrue(files.size > 5, "소스를 찾지 못함: ${root.absolutePath}")
         val offenders = files.flatMap { f ->
             f.readLines().withIndex()
