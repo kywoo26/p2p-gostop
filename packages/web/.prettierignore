@@ -4,3 +4,4 @@ playwright-report/
 public/cards/
 .cache/
 .vitest/
+public/p2p/

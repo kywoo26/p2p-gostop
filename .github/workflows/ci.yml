@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: "24.21.0" # AGENTS.md 버전 표·release.yml과 같은 고정 버전
+          node-version: '24.21.0' # AGENTS.md 버전 표·release.yml과 같은 고정 버전
           cache: npm
       - run: npm ci
       - name: lint (oxlint + oxfmt / ESLint + Prettier)

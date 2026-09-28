@@ -4,22 +4,29 @@ import com.kywoo26.p2pgostop.log.Utf8
 import io.ktor.http.CacheControl
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.header
+import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
+import io.ktor.websocket.close
 import io.ktor.websocket.readText
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.cancellation.CancellationException
@@ -61,6 +68,10 @@ class ServerEnv(
     val startedAtMs: Long = System.currentTimeMillis(),
     val nowMs: () -> Long = System::currentTimeMillis,
     val guestLogMinIntervalMs: Long = GUEST_LOG_MIN_INTERVAL_MS,
+    val asset: (String) -> ByteArray? = { null },
+    val roles: RoleCounts = RoleCounts(),
+    val roleChanged: (String, Boolean) -> Unit = { _, _ -> },
+    val remoteAddress: (ApplicationCall) -> String = { it.request.local.remoteAddress },
 ) {
     private val lastGuestLogAt = AtomicLong(-1)
 
@@ -75,17 +86,27 @@ class ServerEnv(
     }
 }
 
-/** M0 스모크 서버 모듈: `GET /`(연결 성공 페이지), `GET /health`(JSON), `WS /ws`(에코). */
+/** 앱 정적 페이지, 역할별 중계, M0 진단을 제공한다. */
 fun Application.smokeModule(env: ServerEnv) {
     install(WebSockets) {
-        pingPeriod = 15.seconds
-        timeout = 15.seconds
+        pingPeriod = 25.seconds
+        timeout = 60.seconds
         maxFrameSize = MAX_MESSAGE_BYTES.toLong()
         masking = false
     }
+    val relay = RelayRoles(env)
     routing {
         get("/") {
-            env.log("HTTP GET / from ${call.request.origin.remoteAddress} UA=${call.request.headers[HttpHeaders.UserAgent].orEmpty().take(160)}")
+            serveAsset(call, env, "index.html")
+        }
+        get("/{path...}") {
+            val path = call.parameters.getAll("path")?.joinToString("/").orEmpty()
+            if (path.isEmpty() || path.startsWith("smoke") || path == "health") {
+                call.respondText("Not found", status = HttpStatusCode.NotFound)
+            } else serveAsset(call, env, path)
+        }
+        get("/smoke") {
+            env.log("HTTP GET /smoke from ${call.request.origin.remoteAddress} UA=${call.request.headers[HttpHeaders.UserAgent].orEmpty().take(160)}")
             call.response.header(HttpHeaders.CacheControl, CacheControl.NoStore(null).toString())
             call.respondText(SmokePage.render(env), ContentType.Text.Html.withParameter("charset", "utf-8"))
         }
@@ -94,6 +115,37 @@ fun Application.smokeModule(env: ServerEnv) {
             call.respondText(healthJson(env), ContentType.Application.Json)
         }
         webSocket("/ws") {
+            val role = call.request.queryParameters["role"]
+            if (role != "host" && role != "guest") {
+                close(CloseReason(1008.toShort(), "{\"error\":\"invalid role\"}"))
+                return@webSocket
+            }
+            if (role == "host" && env.remoteAddress(call) != "127.0.0.1") {
+                close(CloseReason(1008.toShort(), "{\"error\":\"host requires loopback\"}"))
+                return@webSocket
+            }
+            relay.join(role, this)
+            try {
+                for (frame in incoming) {
+                    if (frame !is Frame.Text) {
+                        close(CloseReason(1003.toShort(), "text frames only"))
+                        break
+                    }
+                    if (frame.data.size > MAX_MESSAGE_BYTES) {
+                        close(CloseReason(1009.toShort(), "message too large"))
+                        break
+                    }
+                    relay.forward(role, this, frame)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                env.log("relay $role 오류: ${e.javaClass.simpleName} ${e.message.orEmpty()}")
+            } finally {
+                relay.leave(role, this)
+            }
+        }
+        webSocket("/smoke/ws") {
             val peer = call.request.origin.remoteAddress
             val n = env.clients.incrementAndGet()
             env.onClientsChanged(n)
@@ -149,6 +201,9 @@ internal fun healthJson(env: ServerEnv): String {
         "buildTime" to jsonString(env.buildTime),
         "port" to SERVER_PORT.toString(),
         "wsClients" to env.clients.get().toString(),
+        "hostConnected" to (env.roles.host.get()).toString(),
+        "guestConnected" to (env.roles.guest.get()).toString(),
+        "bundlePresent" to (env.asset("index.html") != null).toString(),
         "uptimeMs" to (System.currentTimeMillis() - env.startedAtMs).toString(),
     )
     return fields.entries.joinToString(prefix = "{", postfix = "}", separator = ",") { (k, v) -> "\"$k\":$v" }
@@ -173,3 +228,110 @@ internal fun jsonString(s: String): String = buildString {
 /** 0.0.0.0:17777에 CIO 서버를 띄운다. 메인 스레드에서 호출하지 않는다. */
 fun startSmokeServer(env: ServerEnv, port: Int = SERVER_PORT): EmbeddedServer<*, *> =
     embeddedServer(CIO, host = "0.0.0.0", port = port) { smokeModule(env) }.start(wait = false)
+
+class RoleCounts {
+    val host = AtomicBoolean(false)
+    val guest = AtomicBoolean(false)
+}
+
+private class RelayRoles(private val env: ServerEnv) {
+    private var host: DefaultWebSocketServerSession? = null
+    private var guest: DefaultWebSocketServerSession? = null
+    private val absenceNotified = mutableSetOf<DefaultWebSocketServerSession>()
+
+    // M4 릴레이 정책(오케스트레이터 결정): 호스트는 127.0.0.1만, 두 역할 모두 최신 연결이 이전 연결을 교체한다.
+    // 접속·해제·알림 enqueue·전달을 이 잠금 하나로 직렬화해 joined/left 순서가 뒤집히지 않게 한다.
+    @Synchronized fun join(role: String, session: DefaultWebSocketServerSession) {
+        val old = current(role)
+        old?.outgoing?.trySend(Frame.Close(CloseReason(4001.toShort(), "replaced")))
+        if (role == "host") {
+            host = session
+            env.roles.host.set(true)
+        } else {
+            guest = session
+            env.roles.guest.set(true)
+        }
+        if (old == null) {
+            env.clients.incrementAndGet()
+            env.onClientsChanged(env.clients.get())
+            env.roleChanged(role, true)
+        }
+        val peer = peer(role)
+        if (peer == null) absenceNotified.add(session)
+        if (peer != null) absenceNotified.remove(peer)
+        session.outgoing.trySend(notice(if (peer == null) "absent" else "present"))
+        peer?.outgoing?.trySend(notice("joined"))
+        env.log("relay $role ${if (old == null) "연결" else "교체"} (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
+    }
+
+    @Synchronized fun leave(role: String, session: DefaultWebSocketServerSession) {
+        absenceNotified.remove(session)
+        if (role == "host" && host === session) {
+            host = null
+            env.roles.host.set(false)
+        } else if (role == "guest" && guest === session) {
+            guest = null
+            env.roles.guest.set(false)
+        } else return
+        env.clients.decrementAndGet()
+        env.onClientsChanged(env.clients.get())
+        env.roleChanged(role, false)
+        peer(role)?.let { target ->
+            absenceNotified.remove(target)
+            target.outgoing.trySend(notice("left"))
+        }
+        env.log("relay $role 종료 (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
+    }
+
+    private fun current(role: String): DefaultWebSocketServerSession? =
+        if (role == "host") host else guest
+
+    private fun peer(role: String): DefaultWebSocketServerSession? =
+        if (role == "host") guest else host
+
+    private fun notice(peer: String) = Frame.Text("{\"t\":\"relay\",\"peer\":\"$peer\"}")
+
+    @Synchronized fun forward(role: String, sender: DefaultWebSocketServerSession, frame: Frame.Text) {
+        if (current(role) !== sender) return // 교체된 소켓에서 늦게 도착한 프레임
+        val target = peer(role)
+        if (target == null) {
+            if (absenceNotified.add(sender)) sender.outgoing.trySend(notice("absent"))
+        } else {
+            absenceNotified.remove(sender)
+            if (target.outgoing.trySend(Frame.Text(frame.readText())).isSuccess) {
+                env.log("relay $role 전달 ${frame.data.size}바이트")
+            } else if (absenceNotified.add(sender)) {
+                sender.outgoing.trySend(notice("absent"))
+            }
+        }
+    }
+}
+
+private val HASHED_ASSET = Regex("[.-][A-Za-z0-9_-]{8,}\\.")
+
+private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall, env: ServerEnv, path: String) {
+    if (path.startsWith('/') || path.split('/').any { it == ".." || it == "." || it.isEmpty() } ||
+        !path.matches(Regex("[A-Za-z0-9_./-]+"))) {
+        call.respondText("Not found", status = HttpStatusCode.NotFound)
+        return
+    }
+    val bytes = env.asset(path)
+    if (bytes == null && path != "index.html") {
+        call.respondText("Not found", status = HttpStatusCode.NotFound)
+        return
+    }
+    val type = when (path.substringAfterLast('.', "")) {
+        "html" -> ContentType.Text.Html
+        "js" -> ContentType.parse("text/javascript")
+        "css" -> ContentType.Text.CSS
+        "svg" -> ContentType.Image.SVG
+        "json" -> ContentType.Application.Json
+        "md" -> ContentType.parse("text/markdown")
+        "woff2" -> ContentType.parse("font/woff2")
+        else -> ContentType.Application.OctetStream
+    }
+    call.response.header(HttpHeaders.CacheControl, if (path != "index.html" && HASHED_ASSET.containsMatchIn(path))
+        "public, max-age=31536000, immutable" else CacheControl.NoStore(null).toString())
+    val content = bytes ?: "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><title>맞고</title><body><p>web bundle is missing</p></body></html>".toByteArray()
+    call.respondBytes(content, type)
+}
