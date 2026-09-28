@@ -1,6 +1,7 @@
 // 게스트 세션. 호스트가 보낸 가린 뷰만 들고, 액션은 요청으로 보낸다(FR-11).
 // - commit-reveal 메시지는 중복·재전송을 견딘다: 같은 판·같은 해시면 같은 응답을 다시 보내고 새 난수를 뽑지 않는다(#13).
-// - 원문을 공개한 판에 다른 commitHost가 오면 거부한다(재추첨 방지, #16).
+// - 원문을 공개한 판에 다른 commitHost가 오면 거부한다(재추첨 방지, #16). 공개한 판의 revealHost 없이 다음 판
+//   커밋·세션 종료가 오면 그 판을 missingReveal 실패로 기록하고, 판 번호는 1씩만 늘도록 한다(재검토 중요 1).
 // - 판마다 받은 이벤트·뷰·정산 요약과 보낸 액션을 기록해 revealHost 때 리플레이와 대조한다(#16).
 // - toJSON()을 탭 수명 저장소(sessionStorage 등)에 두면 새로고침 뒤에도 커밋 상태를 잃지 않는다. 잃었으면 그 판은
 //   COMMIT_INVALID가 아니라 '검증 불가'로 표시한다.
@@ -106,6 +107,12 @@ export class GuestSession {
   readonly checks: RoundCheck[] = [];
   readonly errors: ErrorCode[] = [];
   private commitments: Commitment[] = [];
+  /**
+   * 지금 소켓에서 welcome을 받았는지. 호스트는 소켓마다 hello로 인증하므로(재검토 중요 2) 그 전에 보낸 게임 메시지는
+   * 말없이 버려진다. 연결이 끊긴 동안의 요청은 outbox에 두었다가 welcome 뒤에 보낸다(액션은 마지막 것 하나).
+   */
+  private linked = false;
+  private readonly outbox = new Map<string, GuestMessage>();
   private observations: MutableObservation[] = [];
   private readonly changeHandlers = new Set<(guest: GuestSession) => void>();
   private readonly logLine: (line: string) => void;
@@ -134,13 +141,14 @@ export class GuestSession {
         if (check.result === 'verified') this.verifiedRounds.push(check.round);
     }
     transport.onMessage((raw) => this.receive(raw));
-    if (transport.onRelay) {
-      // 알림이 있는 전송: 호스트가 있다고 알려질 때(present·joined) hello를 보낸다. 끊김마다 hello를 쌓지 않는다(L-4).
-      transport.onRelay((notice) => this.relayNotice(notice));
-    } else {
+    const relays = transport.onRelay !== undefined;
+    // 알림이 있는 전송: 호스트가 있다고 알려질 때(present·joined) hello를 보낸다. 끊김마다 hello를 쌓지 않는다(L-4).
+    transport.onRelay?.((notice) => this.relayNotice(notice));
+    transport.onClose(() => {
+      this.linked = false;
       // 알림이 없는 전송: 전송이 다시 열리면 대기 중인 hello가 나간다. 백오프 시간은 전송 구현이 정한다.
-      transport.onClose(() => this.join());
-    }
+      if (!relays) this.join();
+    });
   }
 
   onChange(handler: (guest: GuestSession) => void): () => void {
@@ -206,6 +214,7 @@ export class GuestSession {
     this.bankruptcy = null;
     this.ended = null;
     this.connection = 'joining';
+    this.outbox.clear();
     this.join();
     this.changed();
   }
@@ -217,18 +226,23 @@ export class GuestSession {
       // 보내기 전에 저장 기회를 준다: 저장본의 sent가 실제로 보낸 것보다 적으면 검증이 거짓 실패한다.
       this.changed();
     }
-    this.send({ t: 'action', seq: this.seq, payload });
+    this.sendGame({ t: 'action', seq: this.seq, payload });
   }
   /** settled 단계에서 다음 판을 요청한다. 시작은 호스트가 한다 */
   requestNextRound(): void {
-    if (this.status?.stage === 'settled') this.send({ t: 'ready', round: this.status.round });
+    if (this.status?.stage === 'settled') this.sendGame({ t: 'ready', round: this.status.round });
   }
   chooseBankruptcy(choice: 'recharge' | 'end'): void {
-    this.send({ t: 'bankruptcy', choice });
+    this.sendGame({ t: 'bankruptcy', choice });
   }
   /** 원장 전체 이력을 쪽 단위로 받는다 (ledgerHistory에 채워진다) */
   requestLedgerHistory(from = 0): void {
-    this.send({ t: 'ledgerGet', from });
+    this.sendGame({ t: 'ledgerGet', from });
+  }
+  /** 게임 요청: 인증된 소켓이면 바로, 아니면 welcome 뒤로 미룬다 */
+  private sendGame(message: GuestMessage): void {
+    if (this.linked) this.send(message);
+    else this.outbox.set(message.t, message);
   }
   sendLogs(entries: readonly string[]): void {
     let batch: string[] = [];
@@ -277,6 +291,8 @@ export class GuestSession {
   // ---- 수신 ----
 
   private relayNotice(notice: RelayNotice): void {
+    // 새 소켓(present)이거나 호스트 소켓이 바뀌었다(joined·left·absent): hello로 다시 인증할 때까지 미룬다.
+    this.linked = false;
     this.hostPresent = notice.peer === 'present' || notice.peer === 'joined';
     if (this.hostPresent) this.join();
     this.changed();
@@ -338,9 +354,44 @@ export class GuestSession {
     } else if (restarted) this.status = null;
     this.applyStatus(m.status);
   }
+  private recordCheck(check: RoundCheck): void {
+    this.checks.push(check);
+    if (this.checks.length > CHECK_LIMIT) this.checks.shift();
+    if (check.result === 'verified') this.verifiedRounds.push(check.round);
+    if (check.result === 'failed') {
+      this.error('COMMIT_INVALID');
+      this.logLine(`판 ${check.round} 검증 실패: ${check.reason}`);
+    }
+  }
+  /**
+   * 그 판의 결과가 정해졌는지 (verified·unverifiable·missingReveal 등). roundSkip은 위조된 커밋 메시지에 대한 기록일 뿐
+   * 그 번호의 판 결과가 아니므로 세지 않는다: 그 판이 나중에 정상으로 진행되면 따로 검증하고, 공개를 빠뜨리면 따로 잡는다.
+   */
+  private decided(round: number): boolean {
+    return this.checks.some(
+      (c) => c.round === round && !(c.result === 'failed' && c.reason === 'roundSkip'),
+    );
+  }
+  /** 원문을 공개했는데 검사 결과가 없는 판을 missingReveal로 기록한다. 기록했으면 true */
+  private flagMissingReveal(): boolean {
+    const c = this.commitment;
+    if (c === null || !c.revealed || this.decided(c.round)) return false;
+    this.recordCheck({ round: c.round, result: 'failed', reason: 'missingReveal' });
+    return true;
+  }
   private commitHost(m: Extract<HostMessage, { t: 'commitHost' }>): void {
     const c = this.commitment;
     if (c !== null && m.round < c.round) return; // 지난 판의 재전송
+    if (c !== null && m.round > c.round) {
+      // 정상 호스트는 판 종료 때(재접속이면 resync에서) revealHost를 다음 commitHost보다 먼저 보낸다.
+      // 공개한 판의 결과를 보이지 않고 다음 판으로 넘어가면 게스트 원문으로 덱을 본 뒤 다시 뽑는 재추첨이다.
+      if (this.flagMissingReveal()) return;
+      if (m.round !== c.round + 1) {
+        if (!this.checks.some((x) => x.round === m.round && x.result === 'failed'))
+          this.recordCheck({ round: m.round, result: 'failed', reason: 'roundSkip' });
+        return;
+      }
+    }
     if (c !== null && m.round === c.round) {
       if (m.hash !== c.hostHash) {
         if (c.revealed) {
@@ -382,7 +433,9 @@ export class GuestSession {
     this.send({ t: 'revealGuest', round: c.round, secret: c.guestSecret });
   }
   private revealHost(m: Extract<HostMessage, { t: 'revealHost' }>): void {
-    if (this.checks.some((check) => check.round === m.round)) return; // 중복
+    // 중복, 또는 이미 missingReveal로 판정한 판(뒤늦은 공개로 되돌리지 않는다). roundSkip은 위조된 커밋 메시지에 대한
+    // 기록이라 그 번호의 판이 나중에 정상으로 진행되면 따로 검증한다.
+    if (this.decided(m.round)) return;
     const c = this.commitmentFor(m.round);
     let check: RoundCheck;
     if (this.rules === null || c === undefined || !c.revealed) {
@@ -417,13 +470,7 @@ export class GuestSession {
         ? { round: m.round, result: 'verified' }
         : { round: m.round, result: 'failed', reason: result.reason };
     }
-    this.checks.push(check);
-    if (this.checks.length > CHECK_LIMIT) this.checks.shift();
-    if (check.result === 'verified') this.verifiedRounds.push(m.round);
-    if (check.result === 'failed') {
-      this.error('COMMIT_INVALID');
-      this.logLine(`판 ${m.round} 검증 실패: ${check.reason}`);
-    }
+    this.recordCheck(check);
   }
   private receive(raw: string): void {
     if (isRelayFrame(raw)) return; // 전송이 거르지 못한 알림은 메시지로 쓰지 않는다
@@ -444,6 +491,9 @@ export class GuestSession {
     switch (m.t) {
       case 'welcome':
         this.welcome(m);
+        this.linked = true;
+        for (const pending of this.outbox.values()) this.send(pending);
+        this.outbox.clear();
         break;
       case 'snapshot':
         if (m.seq >= this.seq) this.accept(m, m.seq);
@@ -484,6 +534,7 @@ export class GuestSession {
         break;
       case 'sessionEnd':
         this.ended = { reason: m.reason, seat: m.seat };
+        this.flagMissingReveal();
         break;
       case 'ledgerPage':
         for (const [i, entry] of m.entries.entries()) this.ledgerHistory[m.from + i] = entry;

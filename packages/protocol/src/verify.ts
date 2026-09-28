@@ -52,7 +52,11 @@ export type VerifyFailure =
   | 'events'
   | 'views'
   | 'actions'
-  | 'settlement';
+  | 'settlement'
+  /** 원문을 공개한 판의 revealHost 없이 다음 판 커밋이나 세션 종료가 왔다 (재추첨 의심) */
+  | 'missingReveal'
+  /** 판 번호가 1보다 크게 뛰었다 */
+  | 'roundSkip';
 export type VerifyResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: VerifyFailure };
