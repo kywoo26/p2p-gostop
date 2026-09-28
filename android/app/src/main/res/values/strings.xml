@@ -13,15 +13,17 @@
 
     <string name="start_hotspot">핫스팟 시작</string>
     <string name="stop_hotspot">핫스팟 중지</string>
+    <string name="stop_fallback">서버 중지(폴백 종료)</string>
     <string name="address_only">주소만 표시</string>
     <string name="request_permissions">권한 허용</string>
 
     <string name="status_idle">대기 중. 비행기 모드 ON → Wi-Fi ON 후 \'핫스팟 시작\'을 누르세요.</string>
     <string name="status_starting">핫스팟을 켜는 중…</string>
     <string name="status_running">핫스팟 실행 중</string>
-    <string name="status_address_only">주소만 표시 모드 (기존 Wi-Fi 또는 시스템 핫스팟 사용)</string>
+    <string name="status_address_only">주소만 표시 모드 (기존 Wi-Fi 또는 시스템 핫스팟 사용). 같은 Wi-Fi의 모든 기기가 이 서버에 접속할 수 있으니 확인이 끝나면 \'서버 중지\'를 누르세요.</string>
     <string name="status_failed">핫스팟 실패: %1$s</string>
-    <string name="status_stopped">핫스팟이 꺼졌습니다. 다시 시작하세요.</string>
+    <string name="status_stopped">핫스팟이 꺼졌습니다(서버는 유지). \'서버 중지\' 후 다시 시작하세요.</string>
+    <string name="status_failed_hint">\n서버는 폴백용으로 켜 둡니다. 다시 시도하려면 \'서버 중지\' 후 \'핫스팟 시작\'.</string>
 
     <string name="label_ssid">Wi-Fi 이름: %1$s</string>
     <string name="label_password">비밀번호: %1$s</string>
@@ -46,8 +48,17 @@
     <string name="log_copied">로그를 복사했습니다</string>
     <string name="share_chooser">로그 보내기</string>
     <string name="share_subject">맞고 P2P 로그</string>
+    <string name="share_note">전체 로그는 첨부 파일(%1$s)에 있습니다. 아래는 요약입니다.</string>
+    <string name="share_file_failed">로그 파일을 만들지 못해 요약만 보냅니다</string>
+    <string name="open_failed">화면을 열 수 없습니다</string>
 
     <string name="notif_channel">핫스팟</string>
-    <string name="notif_title">맞고 P2P 핫스팟 실행 중</string>
+    <string name="notif_title_running">맞고 P2P 핫스팟 실행 중</string>
+    <string name="notif_title_starting">맞고 P2P 핫스팟 준비 중</string>
+    <string name="notif_title_address_only">맞고 P2P 주소만 표시 모드</string>
+    <string name="notif_title_failed">맞고 P2P 핫스팟 실패 · 폴백 서버 유지 중</string>
+    <string name="notif_title_stopped">맞고 P2P 핫스팟 꺼짐 · 서버 유지 중</string>
     <string name="notif_starting">핫스팟을 준비하는 중</string>
+    <string name="notif_text_no_ip">IP 찾는 중</string>
+    <string name="notif_text_url">%1$s · 접속 %2$d</string>
 </resources>

@@ -38,5 +38,12 @@
             android:name=".HotspotService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- 로그 파일 공유(EXTRA_STREAM) 전용 읽기 전용 provider. 공유 인텐트로 권한을 받은 앱만 읽는다(M0 리뷰 L-2) -->
+        <provider
+            android:name=".share.LogShareProvider"
+            android:authorities="${applicationId}.logshare"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>

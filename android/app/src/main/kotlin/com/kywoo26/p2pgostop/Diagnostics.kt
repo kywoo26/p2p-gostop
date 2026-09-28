@@ -30,13 +30,15 @@ object Diagnostics {
         add("권한 POST_NOTIFICATIONS: ${if (granted(ctx, Manifest.permission.POST_NOTIFICATIONS)) "허용" else "거부"}")
         add("Wi-Fi 켜짐: ${yn(wifiEnabled(ctx))}")
         add("비행기 모드: ${yn(airplaneMode(ctx))}")
+        add("서비스: ${if (s.serviceRunning) "실행 중" else "중지"}")
         add("핫스팟 상태: ${s.status}${s.apiVariant?.let { " ($it)" } ?: ""}")
         add("마지막 오류: ${s.lastError ?: "없음"}")
         add("보안 유형: ${s.securityType ?: "-"}")
         add("서버: ${if (s.serverRunning) "실행 중 0.0.0.0:$SERVER_PORT" else "중지"}${s.serverError?.let { " / 오류 $it" } ?: ""}")
-        add("WebSocket 접속 수: ${AppState.wsClients.get()}")
+        add("WebSocket 접속 수: ${s.wsClients}")
         add("배터리 최적화 예외: ${yn(batteryExempt(ctx))}")
         add("선택된 IP: ${s.ip ?: "없음"}")
         add("IPv4 후보: ${if (s.candidates.isEmpty()) "없음" else s.candidates.joinToString { "${it.iface}=${it.ip}" }}")
+        add("로그 보관: 호스트 ${AppState.logs.size()}줄 ${AppState.logs.bytes() / 1024}KB / 게스트 ${AppState.guestLogs.size()}줄 ${AppState.guestLogs.bytes() / 1024}KB")
     }
 }

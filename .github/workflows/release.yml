@@ -1,13 +1,24 @@
 # 태그(v*) 푸시 → 서명된 릴리스 APK를 GitHub Releases에 올린다 (plan.md 5장, M0).
-# 필요한 저장소 Secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# 저장소 Secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD
+# 저장소 Variables: ANDROID_KEY_ALIAS — alias는 비밀이 아니다. secret으로 두면 로그의 모든 "app"이 ***로 가려진다(M0 리뷰 R-5).
+#
+# 공급망 방어(M0 리뷰 R-1, plan.md 5장 "읽기 전용 웹 빌드와 서명 분리"):
+# - 웹 빌드(npm ci + vite)는 서명 비밀·토큰이 전혀 없는 Docker 컨테이너에서 돈다. 저장소는 읽기 전용으로만 보이고
+#   컨테이너가 쓸 수 있는 곳은 산출물 폴더 하나뿐이라, 악성 패키지가 gradlew·build.gradle.kts·러너의 액션 코드를
+#   바꿔 뒤 단계의 비밀을 빼낼 수 없다. `--ignore-scripts`로 설치 스크립트도 막는다(lockfile에서 설치 스크립트가
+#   있는 패키지는 macOS 전용 fsevents뿐).
+# - 별도 잡 + 아티팩트 전달이 계획이었으나 계정 아티팩트 저장 할당량이 차서(2026-09-28 CI 실행에서 "Artifact storage
+#   quota has been hit") 업로드가 실패하면 릴리스 자체가 멈춘다. 그래서 같은 잡 안에서, 키스토어 복원 전에,
+#   격리 컨테이너로 빌드한다. 할당량 문제가 풀리면 읽기 전용 잡 + upload/download-artifact로 나눌 수 있다.
+# - checkout은 `persist-credentials: false`(토큰을 .git/config에 남기지 않음).
+# - 서명자 인증서 SHA-256을 고정해 다른 키(디버그 키 포함)로 서명된 APK는 올리지 않는다(M0 리뷰 R-4).
 name: release
 
 on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: release-${{ github.ref }}
@@ -17,35 +28,63 @@ jobs:
   apk:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: write # Releases 업로드(마지막 단계)에만 필요
     env:
       APK_NAME: p2p-gostop-${{ github.ref_name }}.apk
+      # 릴리스 키 인증서 지문(공개 정보, APK에서 누구나 읽을 수 있다). 키를 바꾸면 이 값도 바꾼다.
+      EXPECTED_CERT_SHA256: c83292d046a6419f76666f102cbc573dab822a78897b4c2d37a66d96fdef5944
+      # AGENTS.md 버전 표의 Node 24.21.0. 웹 빌드 컨테이너 이미지.
+      WEB_BUILD_IMAGE: node:24.21.0-bookworm-slim
     steps:
       - uses: actions/checkout@v7
         with:
           # versionName(git describe --tags)과 versionCode(커밋 수)를 위해 전체 이력과 태그가 필요하다.
           fetch-depth: 0
+          persist-credentials: false
 
-      # ---- 웹 앱(M4 이후). packages/web이 아직 없으면 건너뛴다. ----
-      - name: Node 설정 (웹 앱이 있을 때만)
-        if: hashFiles('packages/web/package.json') != ''
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24.21.0"
-          cache: npm
-      - name: 웹 빌드 (웹 앱이 있을 때만)
-        if: hashFiles('packages/web/package.json') != ''
+      - name: 태그가 main 이력 위에 있는지 확인
         run: |
-          npm ci
-          npm run build -w packages/web
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::태그 ${GITHUB_REF_NAME}(${GITHUB_SHA})가 origin/main 이력에 없습니다. main에 병합한 커밋에만 태그를 붙입니다."
+            exit 1
+          fi
+
+      # ---- 웹 앱: 격리 컨테이너에서 빌드 (비밀 없음, 저장소 읽기 전용, 설치 스크립트 없음) ----
+      - name: 웹 빌드 (격리 컨테이너)
+        run: |
+          out="$RUNNER_TEMP/web-dist"
+          rm -rf "$out" && mkdir -p "$out"
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp -e GITHUB_SHA \
+            -v "$GITHUB_WORKSPACE:/src:ro" \
+            -v "$out:/out" \
+            "$WEB_BUILD_IMAGE" \
+            sh -euc 'mkdir /tmp/build && cd /tmp/build
+                     tar -C /src --exclude=.git -cf - . | tar -xf -
+                     node --version
+                     npm ci --ignore-scripts --no-audit --no-fund
+                     npm run build -w packages/web
+                     cp -R packages/web/dist/. /out/'
       - name: 웹 산출물을 assets/web으로 복사
         run: |
-          if [ -d packages/web/dist ]; then
-            rm -rf android/app/src/main/assets/web
-            mkdir -p android/app/src/main/assets/web
-            cp -R packages/web/dist/. android/app/src/main/assets/web/
-            echo "assets/web 복사 완료: $(find android/app/src/main/assets/web -type f | wc -l)개 파일"
-          else
-            echo "packages/web/dist 없음 → 건너뜀 (M0는 내장 테스트 페이지만 사용)"
+          out="$RUNNER_TEMP/web-dist"
+          if [ ! -f "$out/index.html" ]; then
+            echo "::error::웹 빌드 산출물(index.html)이 없습니다."
+            exit 1
+          fi
+          rm -rf android/app/src/main/assets/web
+          mkdir -p android/app/src/main/assets/web
+          cp -R "$out/." android/app/src/main/assets/web/
+          echo "assets/web 복사 완료: $(find android/app/src/main/assets/web -type f | wc -l)개 파일 (M0 APK는 내장 테스트 페이지를 쓰고, assets/web은 M4부터 쓴다)"
+      - name: 작업 트리가 커밋과 같은지 확인
+        run: |
+          # assets/web은 .gitignore 대상이라 여기 나오지 않는다. 그 밖의 변경·새 파일이 있으면 멈춘다.
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::빌드 중 추적 파일이 바뀌었거나 새 파일이 생겼습니다."
+            exit 1
           fi
 
       # ---- Android ----
@@ -58,11 +97,17 @@ jobs:
       - name: 서명 키스토어 복원
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "::error::ANDROID_KEYSTORE_BASE64 secret이 없습니다. 디버그 키로 서명된 APK는 배포하지 않습니다."
             exit 1
           fi
+          if [ -z "$ANDROID_KEY_ALIAS" ]; then
+            echo "::error::저장소 Variables에 ANDROID_KEY_ALIAS가 없습니다 (Settings → Secrets and variables → Actions → Variables)."
+            exit 1
+          fi
+          umask 077
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
@@ -70,24 +115,34 @@ jobs:
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
 
-      - name: 서명 확인, 이름 변경, 체크섬
+      - name: 서명자 인증서 확인, 이름 변경, 체크섬
         run: |
           APK=android/app/build/outputs/apk/release/app-release.apk
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1)
           "$APKSIGNER" verify --print-certs "$APK" | tee signer.txt
-          if grep -q "CN=Android Debug" signer.txt; then
-            echo "::error::디버그 키로 서명되었습니다. 서명 Secrets를 확인하세요."
+          # 출력 형식: "V2 Signer: certificate SHA-256 digest: <hex>" (구버전은 "Signer #1 certificate SHA-256 digest: <hex>")
+          digests=$(grep -oE 'certificate SHA-256 digest: [0-9a-f]{64}' signer.txt | awk '{print $NF}' | sort -u)
+          if [ "$(printf '%s\n' "$digests" | grep -c .)" != 1 ]; then
+            echo "::error::서명자 인증서가 정확히 하나가 아닙니다: $(tr '\n' ' ' <<<"$digests")"
             exit 1
           fi
+          if [ "$digests" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::서명자 인증서 지문이 다릅니다. 기대 $EXPECTED_CERT_SHA256, 실제 $digests (디버그 키나 다른 키로 서명됨)"
+            exit 1
+          fi
+          echo "서명자 인증서 지문 일치: $digests"
           mkdir -p dist
           cp "$APK" "dist/$APK_NAME"
           (cd dist && sha256sum "$APK_NAME" > "$APK_NAME.sha256" && cat "$APK_NAME.sha256")
           echo "APK 크기: $(stat -c %s "dist/$APK_NAME") bytes"
-          rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: 키스토어 삭제
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
 
       - name: GitHub Release 업로드
         uses: softprops/action-gh-release@v3
@@ -107,4 +162,4 @@ jobs:
             ## 실기기 테스트 절차
             - M0 핫스팟 스모크: [docs/device-test/M0.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/docs/device-test/M0.md)
 
-            빌드 커밋: `${{ github.sha }}` · 체크섬: `${{ env.APK_NAME }}.sha256`
+            빌드 커밋: `${{ github.sha }}` · 서명 인증서 SHA-256: `${{ env.EXPECTED_CERT_SHA256 }}` · 체크섬: `${{ env.APK_NAME }}.sha256`

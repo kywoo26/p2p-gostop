@@ -84,14 +84,16 @@ object IpSelector {
             .sortedWith(compareByDescending<IpCandidate> { it.score }.thenBy { it.iface }.thenBy { it.ip })
             .toList()
 
-    /** 핫스팟 URL에 쓸 IP. 사설 IPv4 후보가 없으면 null. */
     /**
-     * 핫스팟 게이트웨이로 볼 수 있는 후보만 고른다. 점수가 음수인 후보(VPN tun0 등)는
-     * 핫스팟 인터페이스(swlan0)가 뜨기 전 잠깐 잘못 선택되는 문제가 실기기(S25 Ultra)에서
-     * 확인되어 제외한다. 폴백 화면은 [rank] 전체를 따로 보여 준다.
+     * 핫스팟 URL에 쓸 IP. 없으면 null. 폴백 화면은 [rank] 전체를 따로 보여 준다.
+     *
+     * 이름 점수와 주소를 **따로** 거른다(M0 리뷰 I-1). 합계 점수만 보면 가상 인터페이스(−30)라도
+     * 192.168 주소(+30)면 0점이 되어 통과했다. 실기기(S25 Ultra, 회차 1)에서 VPN `tun0 = 10.5.0.2`가
+     * 핫스팟 인터페이스(`swlan0`)가 뜨기 전 약 3초간 선택됐고, 삼성의 Wi-Fi Direct `p2p-wlan0-0 = 192.168.49.1`
+     * (Quick Share·Smart View)이나 192.168 대역 VPN도 같은 식으로 잘못 뽑힐 수 있다.
      */
     fun selectHotspotIp(ifaces: List<NetIf>): String? =
-        rank(ifaces).firstOrNull { it.score >= 0 && isPrivateIpv4(it.ip) }?.ip
+        rank(ifaces).firstOrNull { nameScore(it.iface) >= 0 && isPrivateIpv4(it.ip) }?.ip
 
     /** 현재 기기의 인터페이스 스냅샷(Android/JVM 공통). */
     fun snapshot(): List<NetIf> =

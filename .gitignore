@@ -13,9 +13,17 @@ android/build/
 android/app/build/
 android/local.properties
 android/app/src/main/assets/web/
+# Kotlin 2.x 세션·오류 로그 폴더
+android/.kotlin/
+# 서명 키·인증서 (M0 리뷰 4.4)
 *.jks
 *.keystore
+*.p12
+*.pem
 secrets/
+# IDE
+.idea/
+*.iml
 # web
 packages/web/dist/
 packages/web/test-results/

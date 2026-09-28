@@ -1,5 +1,7 @@
 # CI (plan.md 5장). 러너는 ubuntu-24.04 고정. 로컬의 ./dev.sh와 같은 명령을 쓴다.
 # 비공개 저장소 월 2,000분 예산: Node 검사는 한 잡으로 묶고, E2E는 PR·수동 실행에서만 돈다.
+# 아티팩트(web-dist, debug APK)는 계정 공용 저장 할당량을 아끼려고 PR·수동 실행에서만 올린다(M0 리뷰 4.2).
+# 배포용 APK의 정본은 Releases(release.yml)다.
 name: ci
 
 on:
@@ -22,9 +24,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version-file: .nvmrc
+          node-version: "24.21.0" # AGENTS.md 버전 표·release.yml과 같은 고정 버전
           cache: npm
       - run: npm ci
       - name: lint (oxlint + oxfmt / ESLint + Prettier)
@@ -36,6 +40,7 @@ jobs:
       - name: build + 번들 예산·외부 URL 검사
         run: npm run build
       - uses: actions/upload-artifact@v7
+        if: github.event_name != 'push'
         continue-on-error: true # 계정 공용 아티팩트 용량(500MB) 초과 시에도 CI는 통과
         with:
           name: web-dist
@@ -55,6 +60,8 @@ jobs:
       HOME: /root
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - run: npm ci
       - name: 컴포넌트 테스트 (Vitest 브라우저 모드)
         run: npm run test:browser -w packages/web
@@ -76,21 +83,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      # android/ 골격이 생기기 전에는 건너뛴다 (hashFiles는 잡 수준 if에서 쓸 수 없어 스텝마다 검사)
-      - id: detect
-        run: echo "present=${{ hashFiles('android/settings.gradle.kts') != '' }}" >> "$GITHUB_OUTPUT"
-      - if: steps.detect.outputs.present == 'true'
-        uses: actions/setup-java@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
-      - if: steps.detect.outputs.present == 'true'
-        uses: gradle/actions/setup-gradle@v6
-      - if: steps.detect.outputs.present == 'true'
-        working-directory: android
+      - uses: gradle/actions/setup-gradle@v6
+      - working-directory: android
         run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lint
-      - if: steps.detect.outputs.present == 'true'
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
+        if: github.event_name != 'push'
         continue-on-error: true # 배포 APK는 Releases로 나가므로 CI 아티팩트는 보조
         with:
           name: app-debug-apk

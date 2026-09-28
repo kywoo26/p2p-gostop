@@ -19,7 +19,11 @@ fun git(vararg args: String): String? =
 val gitDescribe = git("describe", "--tags", "--always", "--dirty") ?: "0.0.0-dev"
 val gitSha = git("rev-parse", "--short=7", "HEAD") ?: "unknown"
 val gitCommitCount = git("rev-list", "--count", "HEAD")?.toIntOrNull() ?: 1
-val buildTime = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString()
+// 빌드 시각 = HEAD 커밋 시각(UTC). 구성 단계에서 현재 시각을 쓰면 빌드마다 BuildConfig가 바뀌어
+// Gradle 캐시가 무효화되고 같은 커밋의 빌드가 재현되지 않는다(M0 리뷰 B-1). git이 없을 때만 현재 시각.
+val buildTime = git("show", "-s", "--format=%ct", "HEAD")?.toLongOrNull()
+    ?.let { Instant.ofEpochSecond(it).toString() }
+    ?: Instant.now().truncatedTo(ChronoUnit.SECONDS).toString()
 
 // 릴리스 서명: 환경변수가 있으면 고정 키, 없으면 디버그 키로 폴백(로컬 빌드용).
 // CI(release.yml)는 secrets에서 키스토어를 복원해 아래 변수를 넘긴다.
@@ -105,6 +109,7 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.websockets)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.zxing.core)
 
     testImplementation(libs.ktor.server.test.host)

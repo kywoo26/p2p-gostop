@@ -81,6 +81,45 @@ class IpSelectorTest {
         assertEquals(listOf("ap0=192.168.3.1", "swlan0=192.168.1.1", "swlan0=192.168.2.1"), ranked)
     }
 
+    // ---- 회귀: 회차 1(S25 Ultra, Android 16)에서 관찰한 인터페이스 (M0 리뷰 I-1, I-2) ----
+
+    @Test
+    fun `VPN tun0 10_5_0_2만 있으면 핫스팟 IP가 없다`() {
+        val ifaces = listOf(nif("lo", "127.0.0.1", loopback = true), nif("tun0", "10.5.0.2"))
+        assertNull(IpSelector.selectHotspotIp(ifaces))
+    }
+
+    @Test
+    fun `S25 Ultra 회차 1 - tun0 10_5_0_2와 swlan0 10_252_26_140이 함께 있으면 swlan0`() {
+        val ifaces = listOf(
+            nif("tun0", "10.5.0.2"),
+            nif("swlan0", "10.252.26.140"),
+            nif("rmnet_data0", "100.72.10.3"),
+            nif("lo", "127.0.0.1", loopback = true),
+        )
+        assertEquals("10.252.26.140", IpSelector.selectHotspotIp(ifaces))
+    }
+
+    @Test
+    fun `삼성 Wi-Fi Direct p2p-wlan0-0 192_168_49_1은 합계 0점이어도 고르지 않는다`() {
+        val p2p = nif("p2p-wlan0-0", "192.168.49.1")
+        assertEquals(0, IpSelector.rank(listOf(p2p)).single().score) // 이름 −30 + 주소 +30: 예전 `score >= 0` 경계
+        assertNull(IpSelector.selectHotspotIp(listOf(p2p)))
+    }
+
+    @Test
+    fun `192_168 대역 VPN tun0도 고르지 않고 뒤에 뜬 swlan0을 고른다`() {
+        val vpnOnly = listOf(nif("tun0", "192.168.100.2"))
+        assertNull(IpSelector.selectHotspotIp(vpnOnly))
+        assertEquals("10.252.26.140", IpSelector.selectHotspotIp(vpnOnly + nif("swlan0", "10.252.26.140")))
+    }
+
+    @Test
+    fun `p2p와 기존 Wi-Fi wlan0이 함께 있으면 주소만 표시 모드에서 wlan0`() {
+        val ifaces = listOf(nif("p2p-wlan0-0", "192.168.49.1"), nif("wlan0", "192.168.0.23"))
+        assertEquals("192.168.0.23", IpSelector.selectHotspotIp(ifaces))
+    }
+
     @Test
     fun `JVM에서 실제 스냅샷도 예외 없이 동작`() {
         val snap = IpSelector.snapshot()

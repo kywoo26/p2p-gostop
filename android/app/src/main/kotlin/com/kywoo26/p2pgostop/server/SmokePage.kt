@@ -23,7 +23,9 @@ object SmokePage {
             val info = linkedMapOf("앱 버전" to env.appVersion, "빌드" to "${env.gitSha} · ${env.buildTime}") + env.deviceInfo()
             for ((k, v) in info) append("<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>")
         }
-        return TEMPLATE.replace("{{ROWS}}", rows).replace("{{SHA}}", escapeHtml(env.gitSha))
+        return TEMPLATE.replace("{{ROWS}}", rows)
+            .replace("{{SHA}}", escapeHtml(env.gitSha))
+            .replace("{{UPLOAD_MAX}}", GUEST_UPLOAD_MAX_BYTES.toString())
     }
 
     private val TEMPLATE = """
@@ -86,8 +88,9 @@ object SmokePage {
       var text = String(e.data);
       var m = /^ping:(\d+):(\d+)$/.exec(text);
       if (m && sent[m[1]]) { var rtt = Date.now() - sent[m[1]]; delete sent[m[1]]; rttEl.textContent = '왕복 시간: ' + rtt + ' ms (#' + m[1] + ')'; log('에코 수신 #' + m[1] + ' ' + rtt + 'ms'); }
-      else if (text.indexOf('log:') !== 0) { log('수신: ' + text.slice(0, 80)); }
-      else { log('호스트가 로그를 받았습니다 (' + text.length + '자)'); }
+      else if (text.indexOf('ack:log:') === 0) { log('호스트가 로그를 받았습니다 (' + text.slice(8) + '바이트)'); }
+      else if (text.indexOf('nack:log:') === 0) { log('호스트가 로그를 거절했습니다(너무 잦음). 5초 뒤 다시 누르세요.'); }
+      else { log('수신: ' + text.slice(0, 80)); }
     };
     s.onclose = function (e) { if (ws === s) setStatus('닫힘 (code ' + e.code + ')'); log('WS 닫힘 code=' + e.code + ' clean=' + e.wasClean); };
     s.onerror = function () { log('WS 오류'); };
@@ -97,7 +100,17 @@ object SmokePage {
   }
   document.getElementById('echo').onclick = function () { seq += 1; sent[seq] = Date.now(); log('에코 전송 #' + seq); sendOrQueue('ping:' + seq + ':' + sent[seq]); };
   document.getElementById('reconnect').onclick = function () { connect('버튼'); };
-  document.getElementById('sendlog').onclick = function () { sendOrQueue('log:' + logEl.value.slice(-60000)); log('로그 전송 요청'); };
+  // 서버 상한은 UTF-8 바이트(spec NP-09)라서 문자 수가 아니라 바이트로 자른다. 한국어는 글자당 3바이트.
+  // TextEncoder/TextDecoder는 비보안 컨텍스트(http://)에서도 쓸 수 있다.
+  var UPLOAD_MAX = {{UPLOAD_MAX}};
+  function tailBytes(str, max) {
+    var bytes = new TextEncoder().encode(str);
+    if (bytes.length <= max) return str;
+    var i = bytes.length - max;
+    while (i < bytes.length && (bytes[i] & 0xC0) === 0x80) i++; // UTF-8 연속 바이트에서 시작하지 않게
+    return '(앞부분 생략)\n' + new TextDecoder().decode(bytes.subarray(i));
+  }
+  document.getElementById('sendlog').onclick = function () { sendOrQueue('log:' + tailBytes(logEl.value, UPLOAD_MAX - 64)); log('로그 전송 요청'); };
   document.addEventListener('visibilitychange', function () { log('visibility=' + document.visibilityState); if (document.visibilityState === 'visible') connect('화면 복귀'); });
   window.addEventListener('pageshow', function (e) { if (e.persisted) connect('pageshow(bfcache)'); });
   window.addEventListener('online', function () { log('online 이벤트'); });

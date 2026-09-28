@@ -2,35 +2,25 @@ package com.kywoo26.p2pgostop
 
 import android.util.Log
 import com.kywoo26.p2pgostop.log.LogBuffer
-import com.kywoo26.p2pgostop.net.IpCandidate
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
-enum class HotspotStatus { IDLE, STARTING, RUNNING, ADDRESS_ONLY, FAILED, STOPPED }
-
-/** 서비스가 갱신하고 화면이 읽는 핫스팟·서버 상태. */
-data class HotspotState(
-    val status: HotspotStatus = HotspotStatus.IDLE,
-    val ssid: String? = null,
-    val password: String? = null,
-    val securityType: String? = null,
-    val ip: String? = null,
-    val candidates: List<IpCandidate> = emptyList(),
-    val lastError: String? = null,
-    val serverRunning: Boolean = false,
-    val serverError: String? = null,
-    val apiVariant: String? = null,
-) {
-    val serviceActive: Boolean
-        get() = status == HotspotStatus.STARTING || status == HotspotStatus.RUNNING || status == HotspotStatus.ADDRESS_ONLY
-}
-
-/** 프로세스 전역 상태. 서비스와 액티비티가 같은 프로세스에서 공유한다. */
+/** 프로세스 전역 상태. 서비스와 액티비티가 같은 프로세스에서 공유한다. 상태 규칙은 HotspotModel.kt. */
 object AppState {
     private const val TAG = "p2pgostop"
-    val logs = LogBuffer(2000)
+
+    /** 호스트 진단 로그: 2,000줄, 줄당 2KB, 총 512KB(UTF-8). */
+    val logs = LogBuffer(capacity = 2000, maxTotalBytes = 512 * 1024)
+
+    /**
+     * 게스트가 올린 로그: 2,000줄, 줄당 2KB, 총 256KB(UTF-8, spec NP-09).
+     * 호스트 로그와 버퍼를 나눠 게스트 업로드가 호스트 진단 이력을 밀어내지 못하게 한다(M0 리뷰 L-1).
+     * 줄마다 `G| `를 붙여 호스트 줄로 위장하지 못하게 한다(M0 리뷰 L-4).
+     */
+    val guestLogs = LogBuffer(capacity = 2000, maxTotalBytes = 256 * 1024, linePrefix = "G| ")
+
     val wsClients = AtomicInteger(0)
     private val _hotspot = MutableStateFlow(HotspotState())
     val hotspot: StateFlow<HotspotState> = _hotspot
