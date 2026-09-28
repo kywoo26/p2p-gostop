@@ -35,28 +35,32 @@
 
   <section aria-labelledby="rec-rows">
     <h2 id="rec-rows">판별 결과</h2>
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">판</th>
-          <th scope="col">승자</th>
-          <th scope="col" class="num">점수</th>
-          <th scope="col" class="num">금액</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each view.rows as row (row.round)}
+    {#if view.rows.length === 0}
+      <p class="summary">아직 끝난 판이 없습니다.</p>
+    {:else}
+      <table>
+        <thead>
           <tr>
-            <td>{row.round}</td>
-            <td>{row.winner === null ? '나가리' : view.names[row.winner]}</td>
-            <td class="num">{row.points}</td>
-            <td class={['num', row.amount >= 0 ? 'gain' : 'loss']}>
-              {formatSignedMoney(row.amount, view.unit)}
-            </td>
+            <th scope="col">판</th>
+            <th scope="col">승자</th>
+            <th scope="col" class="num">점수</th>
+            <th scope="col" class="num">금액</th>
           </tr>
-        {/each}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {#each view.rows as row (row.round)}
+            <tr>
+              <td>{row.round}</td>
+              <td>{row.winner === null ? '나가리' : view.names[row.winner]}</td>
+              <td class="num">{row.points}</td>
+              <td class={['num', row.amount >= 0 ? 'gain' : 'loss']}>
+                {formatSignedMoney(row.amount, view.unit)}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {/if}
   </section>
 </Screen>
 

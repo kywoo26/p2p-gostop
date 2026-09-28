@@ -1,21 +1,39 @@
 <script lang="ts">
-  // 홈 화면 (spec 6.2). 메뉴 동작은 M3·M4에서 연결한다.
+  // 홈 화면 (spec 6.2). 친구와 대전은 M4(호스트/게스트)에서 연결한다.
   import { BUILD_ID, BUILD_TIME } from '../lib/build-info.ts';
 
+  interface Props {
+    /** 이어할 수 있는 혼자 연습 세션 (MN-05). 있으면 맨 위에 "이어하기" */
+    resume?: { readonly round: number; readonly label: string } | null;
+    onresume?: (() => void) | undefined;
+  }
+
+  let { resume = null, onresume }: Props = $props();
+
   const menu = [
-    { id: 'versus', label: '친구와 대전', primary: true },
-    { id: 'solo', label: '혼자 연습', primary: true },
-    { id: 'records', label: '기록', primary: false },
-    { id: 'settings', label: '설정', primary: false },
-    { id: 'diagnostics', label: '진단', primary: false },
+    { id: 'versus', label: '친구와 대전', primary: true, href: '#/versus' },
+    { id: 'solo', label: '혼자 연습', primary: true, href: '#/solo' },
+    { id: 'records', label: '기록', primary: false, href: '#/records' },
+    { id: 'settings', label: '설정', primary: false, href: '#/settings' },
+    { id: 'diagnostics', label: '진단', primary: false, href: '#/diagnostics' },
   ] as const;
 </script>
 
 <main class="home">
   <h1>맞고 P2P</h1>
   <nav aria-label="메인 메뉴">
+    {#if resume}
+      <button type="button" class="menu-button resume" onclick={() => onresume?.()}>
+        이어하기 · {resume.label}
+        {resume.round}판째
+      </button>
+    {/if}
     {#each menu as item (item.id)}
-      <button type="button" class={['menu-button', item.primary && 'primary']}>
+      <button
+        type="button"
+        class={['menu-button', item.primary && 'primary']}
+        onclick={() => (location.hash = item.href)}
+      >
         {item.label}
       </button>
     {/each}
@@ -70,6 +88,10 @@
     font-weight: 700;
   }
 
+  .menu-button.resume {
+    border-color: var(--color-accent);
+  }
+
   .menu-button:active {
     background: var(--color-surface-raised);
   }
@@ -89,5 +111,15 @@
 
   footer a {
     color: var(--color-text-muted);
+  }
+
+  /* 빌드 식별자(커밋 해시 7자 또는 dev)는 빌드마다 글자·길이가 달라 푸터 배치가 흔들린다:
+     고정폭 글꼴 + 고정 폭 상자로 스크린샷을 안정시킨다 */
+  [data-testid='build-id'] {
+    display: inline-block;
+    width: 8.5em;
+    font-family: ui-monospace, monospace;
+    text-align: right;
+    white-space: nowrap;
   }
 </style>

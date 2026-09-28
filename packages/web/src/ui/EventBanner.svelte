@@ -60,12 +60,20 @@
   }
 
   .kind-shake,
-  .kind-bomb {
+  .kind-bomb,
+  .kind-chongtong {
     --bg: var(--color-event-shake);
     --fg: var(--color-banner-light-text);
   }
 
   .kind-go {
     --bg: var(--color-event-go);
+  }
+
+  /* 나가리·허당: 판이 그냥 끝남 (중립색) */
+  .kind-nagari,
+  .kind-hudang {
+    --bg: var(--color-surface-raised);
+    --fg: var(--color-text);
   }
 </style>

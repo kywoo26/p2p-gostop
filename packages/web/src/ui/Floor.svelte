@@ -1,24 +1,34 @@
 <script lang="ts">
-  // 바닥: 월별 무더기 격자 + 더미 (spec 6.2 게임판 중앙)
+  // 바닥: 월별 무더기 격자 + 더미 + 뒤집기 자리 (spec 6.2 게임판 중앙)
+  // data-anchor: 애니메이션 기준점(더미 = 뒤집기·분배의 출발점, src/anim/choreo.ts)
   import type { CardId, FloorGroupView } from '../lib/view-types.ts';
   import Card from './Card.svelte';
 
   interface Props {
     groups: readonly FloorGroupView[];
     deckCount: number;
-    /** 강조할 바닥 카드 (대상 선택, 먹게 될 카드) */
+    /** 강조할 바닥 카드 (대상 선택, 먹게 될 카드 미리보기, 매칭 강조) */
     highlight?: readonly CardId[];
+    /** 바닥에 놓이기 전 잠시 머무는 카드 (뒤집은 카드, 낸 보너스) */
+    staging?: readonly CardId[];
   }
 
-  let { groups, deckCount, highlight = [] }: Props = $props();
+  let { groups, deckCount, highlight = [], staging = [] }: Props = $props();
 </script>
 
 <div class="table">
-  <div class="deck" role="img" aria-label={`더미 ${deckCount}장`}>
-    <span class="deck-stack">
-      <Card id={null} size="m" />
-    </span>
-    <span class="deck-count" aria-hidden="true">{deckCount}</span>
+  <div class="deck-area">
+    <div class="deck" role="img" aria-label={`더미 ${deckCount}장`} data-anchor="deck">
+      <span class="deck-stack">
+        <Card id={null} size="m" />
+      </span>
+      <span class="deck-count" aria-hidden="true">{deckCount}</span>
+    </div>
+    <div class="staging">
+      {#each staging as id (id)}
+        <Card {id} size="m" flippable />
+      {/each}
+    </div>
   </div>
   <ul class="floor" aria-label="바닥">
     {#each groups as group (group.month)}
@@ -27,7 +37,7 @@
         aria-label={`${group.month}월 ${group.cards.length}장${group.kind === 'loose' ? '' : ' 뻑'}`}
       >
         {#each group.cards as id (id)}
-          <Card {id} size="m" highlight={highlight.includes(id)} />
+          <Card {id} size="m" flippable highlight={highlight.includes(id)} />
         {/each}
         {#if group.kind !== 'loose'}
           <span class="ppeok-tag" aria-hidden="true">뻑</span>
@@ -43,6 +53,10 @@
     grid-template-columns: auto 1fr;
     gap: var(--space-3);
     align-items: center;
+  }
+
+  .deck-area {
+    position: relative;
   }
 
   .deck {
@@ -74,6 +88,21 @@
     font-weight: 700;
     text-align: center;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* 뒤집기 자리: 더미 오른쪽 위에 겹쳐 떠 있다(격자 배치를 흔들지 않는다) */
+  .staging {
+    position: absolute;
+    left: calc(100% + var(--space-2));
+    top: -8px;
+    display: flex;
+    gap: var(--space-1);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .staging > :global(.card) {
+    box-shadow: 0 0.4rem 1rem oklch(0% 0 0 / 0.5);
   }
 
   .floor {

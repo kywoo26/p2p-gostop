@@ -1,69 +1,104 @@
 <script lang="ts">
-  // 설정 (spec 6.2): 프리셋, 토글, 금액, 속도, 효과음·진동, 라이선스·저작자 표시. 정적 틀.
-  import type { SettingsView, SpeedSetting } from '../lib/view-types.ts';
+  // 설정 (spec 6.2, FR-20·FR-22·FR-23): 규칙 프리셋, 점당 금액(시작 잔액 자동 제안), 진행 속도, 효과음.
+  // 규칙·금액은 새 세션부터 적용된다(FR-24). 24개 개별 토글(FR-21)과 진동은 M6.
+  import { PER_POINT_OPTIONS, type PerPoint } from '@p2p-gostop/ai';
+  import { PRESETS, type PresetId } from '@p2p-gostop/engine';
+  import { formatMoney } from '../lib/format.ts';
+  import type { SpeedSetting } from '../lib/view-types.ts';
+  import { effectiveStartBalance, type AppSettings } from '../settings/settings.svelte.ts';
   import Screen from '../ui/Screen.svelte';
 
   interface Props {
-    view: SettingsView;
+    settings: AppSettings;
+    onchange?: ((patch: Partial<AppSettings>) => void) | undefined;
+    /** 진행 중인 세션이 있으면 규칙·금액 변경이 다음 세션부터라고 알린다 */
+    sessionActive?: boolean;
   }
 
-  let { view }: Props = $props();
+  let { settings, onchange, sessionActive = false }: Props = $props();
 
-  const PRESETS: { id: SettingsView['preset']; label: string }[] = [
+  const PRESET_OPTIONS: { id: PresetId; label: string }[] = [
     { id: 'traditional', label: '정통' },
     { id: 'standard', label: '표준' },
     { id: 'arcade', label: '아케이드' },
   ];
   // spec 6.4: 보통 ×1.5, 빠름 ×1, 매우 빠름 ×0.6
-  const SPEEDS: { id: SpeedSetting; label: string }[] = [
+  const SPEED_OPTIONS: { id: SpeedSetting; label: string }[] = [
     { id: 'normal', label: '보통' },
     { id: 'fast', label: '빠름' },
     { id: 'very-fast', label: '매우 빠름' },
   ];
-  const POINT_VALUES = [50, 100, 200, 500, 1000];
+
+  const rules = $derived(PRESETS[settings.preset]);
+  const ruleSummary = $derived([
+    `보너스 카드 ${rules.bonusCards}장`,
+    `보너스 뺏기 ${rules.bonusSteal ? '켬' : '끔'}`,
+    `2장 폭탄 ${rules.twoCardBomb === 'off' ? '끔' : '켬'}`,
+    `대박판 ${rules.jackpotRound === null ? '끔' : `${rules.jackpotRound.every}판마다 ×${rules.jackpotRound.multiplier}`}`,
+    `나가리 배수 상한 ${rules.nagariCap === null ? '없음' : `×${rules.nagariCap}`}`,
+  ]);
 </script>
 
 <Screen title="설정">
   <fieldset>
     <legend>규칙 프리셋</legend>
     <div class="segmented">
-      {#each PRESETS as preset (preset.id)}
+      {#each PRESET_OPTIONS as preset (preset.id)}
         <label>
-          <input type="radio" name="preset" value={preset.id} checked={view.preset === preset.id} />
+          <input
+            type="radio"
+            name="preset"
+            value={preset.id}
+            checked={settings.preset === preset.id}
+            onchange={() => onchange?.({ preset: preset.id })}
+          />
           <span>{preset.label}</span>
         </label>
       {/each}
     </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>규칙</legend>
-    {#each view.toggles as toggle (toggle.id)}
-      <label class="switch">
-        <span>{toggle.label}</span>
-        <input type="checkbox" role="switch" checked={toggle.on} />
-      </label>
-    {/each}
+    <ul class="summary">
+      {#each ruleSummary as line (line)}<li>{line}</li>{/each}
+    </ul>
   </fieldset>
 
   <fieldset>
     <legend>금액</legend>
     <label class="row">
       <span>점당</span>
-      <select value={view.pointValue}>
-        {#each POINT_VALUES as value (value)}
-          <option {value}>{value}{view.unit}</option>
+      <select
+        value={settings.perPoint}
+        onchange={(e) =>
+          onchange?.({ perPoint: Number(e.currentTarget.value) as PerPoint, startBalance: null })}
+      >
+        {#each PER_POINT_OPTIONS as value (value)}
+          <option {value}>{formatMoney(value, settings.unit)}</option>
         {/each}
       </select>
     </label>
+    <p class="row">
+      <span>시작 잔액</span>
+      <strong>{formatMoney(effectiveStartBalance(settings), settings.unit)}</strong>
+    </p>
+    <p class="help">
+      30판 세션에서 파산 확률 5% 이하가 되도록 셀프플레이로 산정한 값입니다(점당 금액에 비례).
+    </p>
+    {#if sessionActive}
+      <p class="help">규칙·금액은 새 세션부터 적용됩니다.</p>
+    {/if}
   </fieldset>
 
   <fieldset>
-    <legend>애니메이션 속도</legend>
+    <legend>진행 속도</legend>
     <div class="segmented">
-      {#each SPEEDS as speed (speed.id)}
+      {#each SPEED_OPTIONS as speed (speed.id)}
         <label>
-          <input type="radio" name="speed" value={speed.id} checked={view.speed === speed.id} />
+          <input
+            type="radio"
+            name="speed"
+            value={speed.id}
+            checked={settings.speed === speed.id}
+            onchange={() => onchange?.({ speed: speed.id })}
+          />
           <span>{speed.label}</span>
         </label>
       {/each}
@@ -71,14 +106,15 @@
   </fieldset>
 
   <fieldset>
-    <legend>소리·진동</legend>
+    <legend>소리</legend>
     <label class="switch">
       <span>효과음</span>
-      <input type="checkbox" role="switch" checked={view.sound} />
-    </label>
-    <label class="switch">
-      <span>진동</span>
-      <input type="checkbox" role="switch" checked={view.vibration} />
+      <input
+        type="checkbox"
+        role="switch"
+        checked={settings.sound}
+        onchange={(e) => onchange?.({ sound: e.currentTarget.checked })}
+      />
     </label>
   </fieldset>
 
@@ -145,6 +181,13 @@
     outline-offset: 2px;
   }
 
+  .summary {
+    margin: var(--space-2) 0 0;
+    padding-left: 1.2rem;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
+  }
+
   .switch,
   .row {
     display: flex;
@@ -152,12 +195,19 @@
     justify-content: space-between;
     min-height: var(--touch-min);
     gap: var(--space-3);
+    margin: 0;
   }
 
   .switch input {
     width: 2.75rem;
     height: 1.5rem;
     accent-color: var(--color-accent);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
   }
 
   select {
