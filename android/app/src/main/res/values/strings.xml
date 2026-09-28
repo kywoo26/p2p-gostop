@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="open_game">게임 화면 열기</string>
     <string name="app_name">맞고 P2P</string>
     <string name="title">핫스팟 스모크 테스트 (M0)</string>
     <string name="build_info">빌드 %1$s · git %2$s · %3$s</string>

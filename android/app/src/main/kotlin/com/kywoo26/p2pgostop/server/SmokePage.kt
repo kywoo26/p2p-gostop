@@ -1,7 +1,7 @@
 package com.kywoo26.p2pgostop.server
 
 /**
- * M0 테스트 페이지. 외부 리소스 없이 한 파일로 끝난다(NP-08). M4에서 assets/web의 웹 앱으로 대체된다.
+ * M0 테스트 페이지. M4부터 /smoke에서 진단용으로 유지한다.
  * iPhone Safari(비보안 컨텍스트)에서 동작해야 하므로 clipboard·share·wakeLock 등은 쓰지 않는다.
  */
 object SmokePage {
@@ -81,7 +81,7 @@ object SmokePage {
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) { try { ws.close(); } catch (e) {} }
     log('WS 연결 시도 (' + reason + ')');
     setStatus('연결 중…');
-    var s = new WebSocket('ws://' + location.host + '/ws');
+    var s = new WebSocket('ws://' + location.host + '/smoke/ws');
     ws = s;
     s.onopen = function () { if (ws !== s) return; setStatus('연결됨'); log('WS 열림'); while (queued.length) s.send(queued.shift()); };
     s.onmessage = function (e) {

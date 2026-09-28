@@ -62,7 +62,7 @@ const webRestrictions = {
 };
 
 export default defineConfig(
-  globalIgnores(['dist/', 'test-results/', 'playwright-report/']),
+  globalIgnores(['dist/', 'test-results/', 'playwright-report/', 'public/p2p/']),
   js.configs.recommended,
   ts.configs.recommended,
   svelte.configs.recommended,

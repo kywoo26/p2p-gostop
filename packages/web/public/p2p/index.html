@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>맞고 P2P (MVP)</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#0f1a14;color:#eee;font:15px/1.4 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;padding:env(safe-area-inset-top) 6px env(safe-area-inset-bottom)}
+h1{font-size:15px;margin:6px 0;display:flex;justify-content:space-between}#status{color:#9c9;font-size:12px}
+.bar{font-size:12px;color:#bbb;margin:2px 0}
+.card{display:inline-block;width:46px;height:74px;padding:0;margin:2px;border:0;background:none}.card img{width:46px;height:74px;border-radius:4px;background:#222;object-fit:cover}
+.card.dim img{opacity:.35}.card.pick img{outline:3px solid #ff0}.mini{display:inline-block;margin:1px}.mini img{width:22px;height:35px;border-radius:2px}
+.row{display:flex;flex-wrap:wrap;align-items:center;min-height:18px}.lab{font-size:11px;color:#8a8;width:26px}
+#floor{display:flex;flex-wrap:wrap;gap:4px;background:#173225;border-radius:8px;padding:6px;min-height:90px;margin:4px 0}.grp{display:flex;gap:1px;border-radius:6px;padding:1px}.grp.ppeok{outline:2px dashed #c66}
+#hand{display:flex;flex-wrap:wrap;background:#122;border-radius:8px;padding:4px;margin:4px 0}
+#prompt{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;min-height:44px}.act{font-size:16px;padding:10px 14px;border-radius:8px;border:0;background:#2b7;color:#000;font-weight:700}.act.go{background:#fc3}.act.stop{background:#fff}
+.msg{width:100%;font-size:14px;color:#fd8}
+#log{white-space:pre-wrap;font-size:11px;color:#9a9;max-height:110px;overflow:auto;background:#0a120e;border-radius:6px;padding:4px}
+</style></head><body>
+<h1><span id="role">…</span><span id="status">…</span></h1>
+<div class="bar" id="top"></div>
+<div class="bar" id="opp"></div><div id="oppPile"></div>
+<div id="floor"></div>
+<div id="prompt"></div>
+<div class="bar" id="me"></div><div id="hand"></div><div id="myPile"></div>
+<pre id="log"></pre>
+<script src="./app.js"></script>
+</body></html>
