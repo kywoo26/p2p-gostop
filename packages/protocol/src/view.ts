@@ -1,13 +1,17 @@
 // 엔진의 가려진 PlayerView를 화면 계약으로 바꾼다. 이름·원장은 세션 문맥에서만 온다.
 import {
   getCard,
+  type CardId,
   type EngineEvent,
   type Ledger,
   type PlayerView,
+  type Seat,
   type Settlement,
 } from '@p2p-gostop/engine';
 import type {
   BoardView,
+  CapturedView,
+  InFlight,
   JokboProgress,
   MoneyUnit,
   PromptView,
@@ -19,31 +23,112 @@ export interface ViewContext {
   readonly ledger: Ledger;
   readonly unit?: MoneyUnit;
 }
-function progress(view: PlayerView, seat: 0 | 1): JokboProgress {
-  const captured = view.seats[seat].captured;
-  const all = [...captured.gwang, ...captured.yeol, ...captured.tti, ...captured.pi];
-  const ribbons = all.map((id) => getCard(id).ribbon);
+// STUB(I1): fix/protocol-review가 대체한다 (M3 web 어댑터와 같은 계산)
+const otherSeat = (seat: Seat): Seat => (seat === 0 ? 1 : 0);
+
+/** 족보 진행도 (spec 6.1: 광 n/3, 고도리 n/3, 단 n/3, 피 n/10). 국진을 쌍피로 세면 피에 2를 더한다 */
+export function progressOf(captured: CapturedView, gukjinAsPi = false): JokboProgress {
+  const hasGukjin = captured.yeol.some((id) => getCard(id).isGukjin);
+  const ribbons = captured.tti.map((id) => getCard(id).ribbon);
+  const dan = Math.max(
+    0,
+    ...(['hong', 'cheong', 'cho'] as const).map((r) => ribbons.filter((x) => x === r).length),
+  );
+  const piValue = captured.pi.reduce((sum, id) => sum + getCard(id).piValue, 0);
   return {
     gwang: captured.gwang.length,
-    godori: all.filter((id) => getCard(id).isGodori).length,
-    dan: Math.max(
-      ...(['hong', 'cheong', 'cho'] as const).map(
-        (kind) => ribbons.filter((r) => r === kind).length,
-      ),
-    ),
-    pi:
-      captured.pi.reduce((n, id) => n + getCard(id).piValue, 0) +
-      (view.seats[seat].score.gukjinAsPi ? 2 : 0),
+    godori: captured.yeol.filter((id) => getCard(id).isGodori).length,
+    dan,
+    pi: piValue + (gukjinAsPi && hasGukjin ? 2 : 0),
   };
 }
+
+/**
+ * 지금 스톱하면 적용될 보는 좌석의 배수 (spec 6.1 "현재 배수").
+ * 고/스톱 중이면 엔진 미리보기, 아니면 흔들기·폭탄·고·이월·대박판의 곱.
+ */
+function currentMultiplier(view: PlayerView): number {
+  if (view.stopPreview !== null) return view.stopPreview.multiplier;
+  const seat = view.seats[view.viewer];
+  let m = 2 ** (seat.shakes + seat.bombs);
+  if (seat.goCount >= 3) m *= 2 ** (seat.goCount - 2);
+  m *= view.round.carry;
+  const jackpot = view.rules.jackpotRound;
+  if (jackpot !== null && jackpot.every > 0 && view.round.number % jackpot.every === 0) {
+    m *= jackpot.multiplier;
+  }
+  return m;
+}
+
 function prompt(view: PlayerView): PromptView | null {
   const p = view.pending;
   if (p === null || p.kind === 'pickFirst') return null;
-  if (p.kind === 'goStop')
-    return { ...p, stopAmount: view.stopPreview?.money ?? 0, goCount: view.seats[p.seat].goCount };
-  if (p.kind === 'chongtong') return { kind: p.kind, seat: p.seat, months: p.months };
-  return p;
+  switch (p.kind) {
+    case 'play':
+      return { kind: 'play', seat: p.seat };
+    case 'target':
+      return { kind: 'target', seat: p.seat, source: p.source, card: p.card, options: p.options };
+    case 'goStop':
+      return {
+        kind: 'goStop',
+        seat: p.seat,
+        score: p.score,
+        goCount: view.seats[p.seat].goCount,
+        stopAmount: view.stopPreview?.money ?? view.stopPreview?.requested ?? 0,
+      };
+    case 'shake':
+      return { kind: 'shake', seat: p.seat, card: p.card, month: p.month };
+    case 'gukjin':
+      return { kind: 'gukjin', seat: p.seat };
+    default:
+      return { kind: 'chongtong', seat: p.seat, months: p.months };
+  }
 }
+
+/** 보는 좌석의 합법 수에서 프롬프트 밖의 입력 정보를 뽑는다 */
+function extrasOf(view: PlayerView) {
+  const picks = view.legal.filter((a) => a.type === 'pickFirst');
+  const preview = view.stopPreview;
+  return {
+    pickFirst:
+      picks.length > 0 && view.firstPick !== null
+        ? {
+            poolSize: view.firstPick.poolSize,
+            taken: view.firstPick.picks[otherSeat(view.viewer)],
+          }
+        : null,
+    bombMonths: view.legal.flatMap((a) => (a.type === 'bomb' ? [a.month] : [])),
+    canFlipOnly: view.legal.some((a) => a.type === 'flipOnly'),
+    goStop:
+      preview === null
+        ? null
+        : {
+            points: preview.points,
+            steps: preview.steps,
+            multiplier: preview.multiplier,
+            money: preview.money,
+            capped: preview.capped,
+          },
+    dealer: view.dealer,
+  } as const;
+}
+
+/** 대상 고르기 동안 손을 떠났지만 아직 바닥·획득패에 없는 카드 (낸 패, 뒤집은 패, 들고 있는 보너스) */
+export function inFlightOf(view: PlayerView): InFlight {
+  const ctx = view.ctx;
+  if (ctx === null) return { played: null, staged: [] };
+  const visible = new Set<CardId>(view.floor.flatMap((g) => g.cards));
+  for (const s of view.seats) {
+    const c = s.captured;
+    for (const id of [...c.gwang, ...c.yeol, ...c.tti, ...c.pi, ...(s.hand ?? [])]) visible.add(id);
+  }
+  const played = ctx.played !== null && !visible.has(ctx.played) ? ctx.played : null;
+  const staged = [...ctx.heldBonuses, ...(ctx.flipped === null ? [] : [ctx.flipped])].filter(
+    (id) => !visible.has(id),
+  );
+  return { played, staged };
+}
+
 export function toBoardView(view: PlayerView, ctx: ViewContext): BoardView {
   const seatView = (seat: 0 | 1) => {
     const current = view.seats[seat];
@@ -57,25 +142,29 @@ export function toBoardView(view: PlayerView, ctx: ViewContext): BoardView {
       shakes: current.shakes,
       ppeokCount: current.ppeokCount,
       balance: ctx.ledger.balances[seat],
-      progress: progress(view, seat),
+      progress: progressOf(current.captured, current.score.gukjinAsPi),
     };
   };
   const seats: BoardView['seats'] = [seatView(0), seatView(1)];
-  const active = view.seats[view.turn];
-  const multiplier =
-    view.stopPreview?.multiplier ??
-    view.round.carry * 2 ** (active.shakes + active.bombs + Math.max(0, active.goCount - 2));
+  const extras = extrasOf(view);
   return {
     viewer: view.viewer,
     turn: view.turn,
     seats,
     floor: view.floor,
     deckCount: view.deckCount,
-    multiplier,
+    multiplier: currentMultiplier(view),
     pending: prompt(view),
-    playable: view.legal.flatMap((action) => (action.type === 'play' ? [action.card] : [])),
+    playable: [...new Set(view.legal.flatMap((a) => (a.type === 'play' ? [a.card] : [])))],
     round: view.round.number,
     eventSeq: view.eventSeq,
+    legal: view.legal,
+    firstPick: extras.pickFirst,
+    inFlight: inFlightOf(view),
+    goStop: extras.goStop,
+    bombMonths: extras.bombMonths,
+    canFlipOnly: extras.canFlipOnly,
+    dealer: extras.dealer,
   };
 }
 export function toSettlementView(

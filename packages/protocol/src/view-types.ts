@@ -4,6 +4,8 @@
 // 엔진에 없는 값(이름, 잔액, 족보 진행도, 현재 배수)은 UI가 계산하거나 호스트가 덧붙일 값이다.
 // fixtures/*.json(개발 갤러리·스크린샷 입력)이 이 타입을 따른다(src/lib/fixtures.test.ts가 검사).
 
+import type { Action } from '@p2p-gostop/engine';
+
 /** 카드 ID 0~50 (엔진 카탈로그). 0~47 기본, 48·49 보너스 2피, 50 보너스 3피 */
 export type CardId = number;
 /** 좌석 인덱스. 이름(human/computer)을 쓰지 않는다 (AGENTS.md 3장) */
@@ -76,6 +78,23 @@ export type PromptView =
   | { readonly kind: 'gukjin'; readonly seat: Seat }
   | { readonly kind: 'chongtong'; readonly seat: Seat; readonly months: readonly Month[] };
 
+// STUB(I1, fix/protocol-review가 대체): 아래 필드는 fix/protocol-review가 공지한 이름 그대로 임시로 넣는다.
+// feat/m4-integration PR 전에 이 커밋을 버리고 fix/protocol-review를 병합한다.
+/** 고/스톱 모달의 스톱 미리보기 분해 (FR-14) */
+export interface GoStopDetail {
+  readonly points: number;
+  readonly steps: readonly SettleStepView[];
+  readonly multiplier: number;
+  readonly money: number | null;
+  readonly capped: boolean;
+}
+
+/** 대상 고르기 동안 손을 떠났지만 아직 바닥에 놓이지 않은 카드 (모두 공개 카드) */
+export interface InFlight {
+  readonly played: CardId | null;
+  readonly staged: readonly CardId[];
+}
+
 /** 게임판 화면 입력 */
 export interface BoardView {
   readonly viewer: Seat;
@@ -91,6 +110,15 @@ export interface BoardView {
   readonly round: number;
   /** 마지막으로 반영한 이벤트 순번 (NP-03) */
   readonly eventSeq: number;
+  /** 보는 좌석의 합법 수 */
+  readonly legal: readonly Action[];
+  /** 선 고르기: 내가 고를 차례면 후보 장수와 상대가 이미 고른 자리 */
+  readonly firstPick: { readonly poolSize: number; readonly taken: number | null } | null;
+  readonly inFlight: InFlight;
+  readonly goStop: GoStopDetail | null;
+  readonly bombMonths: readonly Month[];
+  readonly canFlipOnly: boolean;
+  readonly dealer: Seat | null;
 }
 
 // ---- 이벤트 (spec 4.5 이름 그대로). 좌석·관련 카드 ID·순번을 가진다 ----
