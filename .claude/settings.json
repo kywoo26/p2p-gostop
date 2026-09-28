@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'f=$(jq -r .tool_input.file_path); \"${CLAUDE_PROJECT_DIR:-.}/dev.sh\" format:file \"$f\" >/dev/null 2>&1 || true'",
+            "command": "bash -c 'f=$(jq -r .tool_input.file_path); d=$(git -C \"$(dirname \"$f\")\" rev-parse --show-toplevel 2>/dev/null) && [ -f \"$d/compose.yaml\" ] && cd \"$d\" && docker compose run --rm -T dev npm run -s format:file -- \"${f#\"$d\"/}\" >/dev/null 2>&1 || true'",
             "timeout": 60
           }
         ]
