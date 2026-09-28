@@ -21,6 +21,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@p2p-gostop/ai": "0.0.0",
     "@p2p-gostop/engine": "0.0.0",
     "@p2p-gostop/protocol": "0.0.0"
   },

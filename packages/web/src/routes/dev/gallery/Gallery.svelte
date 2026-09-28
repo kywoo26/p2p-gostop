@@ -4,6 +4,7 @@
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
   import { DUR } from '../../../anim/durations.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
+  import { normalizeSettings } from '../../../settings/settings.svelte.ts';
   import { bannerFor } from '../../../ui/banner.ts';
   import Board from '../../../ui/Board.svelte';
   import Card from '../../../ui/Card.svelte';
@@ -111,7 +112,16 @@
 {:else if page === 'records'}
   <Records view={fixtures.records} />
 {:else if page === 'settings'}
-  <Settings view={fixtures.settings} />
+  <Settings
+    settings={normalizeSettings({
+      preset: fixtures.settings.preset,
+      perPoint: fixtures.settings.pointValue,
+      unit: fixtures.settings.unit,
+      speed: fixtures.settings.speed,
+      sound: fixtures.settings.sound,
+      vibration: fixtures.settings.vibration,
+    })}
+  />
 {:else if page === 'diagnostics'}
   <Diagnostics view={fixtures.diagnostics} />
 {:else}
