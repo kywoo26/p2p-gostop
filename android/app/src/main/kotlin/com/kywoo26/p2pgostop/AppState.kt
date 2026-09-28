@@ -22,6 +22,8 @@ object AppState {
     val guestLogs = LogBuffer(capacity = 2000, maxTotalBytes = 256 * 1024, linePrefix = "G| ")
 
     val wsClients = AtomicInteger(0)
+    val wsHostClients = AtomicInteger(0)
+    val wsGuestClients = AtomicInteger(0)
     private val _hotspot = MutableStateFlow(HotspotState())
     val hotspot: StateFlow<HotspotState> = _hotspot
 

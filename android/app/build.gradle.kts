@@ -5,6 +5,19 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+// 웹 빌드는 별도 컨테이너/CI가 만든다. dist가 있으면 stale 파일을 지우며 동기화한다.
+// dist가 없으면 CI가 이미 assets/web에 넣은 산출물을 보존한다.
+val copyWebDist = tasks.register("copyWebDist") {
+    val source = rootProject.file("../packages/web/dist")
+    val target = layout.projectDirectory.dir("src/main/assets/web").asFile
+    doLast {
+        if (source.isDirectory) {
+            project.sync { from(source); into(target) }
+        }
+    }
+}
+tasks.named("preBuild") { dependsOn(copyWebDist) }
+
 // git 정보(FR-31). git이 없거나 저장소가 아니면 개발용 기본값을 쓴다.
 fun git(vararg args: String): String? =
     try {
@@ -111,6 +124,7 @@ dependencies {
     implementation(libs.ktor.server.websockets)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.zxing.core)
+    implementation(libs.androidx.webkit)
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

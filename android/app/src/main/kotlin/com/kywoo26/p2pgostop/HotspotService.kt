@@ -21,6 +21,7 @@ import com.kywoo26.p2pgostop.server.ServerSlot
 import com.kywoo26.p2pgostop.server.startSmokeServer
 import io.ktor.server.engine.EmbeddedServer
 import java.util.concurrent.Executors
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +45,10 @@ import kotlinx.coroutines.launch
  * 콜백·onStartCommand·onDestroy는 모두 메인 스레드에서 돈다.
  */
 class HotspotService : Service() {
+    override fun onCreate() {
+        super.onCreate()
+        assetContext = applicationContext
+    }
     /** LOHS onStarted 시각. 이후 [IpSelector.AP_GRACE_MS] 동안은 핫스팟형 인터페이스만 IP 후보로 인정한다. */
     @Volatile private var hotspotStartedAt = 0L
 
@@ -298,6 +303,7 @@ class HotspotService : Service() {
     }
 
     companion object {
+        private lateinit var assetContext: Context
         const val ACTION_START = "com.kywoo26.p2pgostop.START"
         const val ACTION_ADDRESS_ONLY = "com.kywoo26.p2pgostop.ADDRESS_ONLY"
         const val ACTION_STOP = "com.kywoo26.p2pgostop.STOP"
@@ -321,6 +327,14 @@ class HotspotService : Service() {
                 guestLog = AppState.guestLogs::add,
                 clients = AppState.wsClients,
                 onClientsChanged = { n -> AppState.update { it.copy(wsClients = n) } },
+                roleChanged = { role, connected ->
+                    (if (role == "host") AppState.wsHostClients else AppState.wsGuestClients).set(if (connected) 1 else 0)
+                    AppState.update { it.copy(wsClients = AppState.wsClients.get()) }
+                },
+                asset = { path ->
+                    try { assetContext.assets.open("web/$path").use { it.readBytes() } }
+                    catch (_: IOException) { null }
+                },
             )
             ServerSlot(
                 executor = Executors.newSingleThreadExecutor { r -> Thread(r, "ktor-server").apply { isDaemon = true } },

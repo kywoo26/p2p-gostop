@@ -35,7 +35,7 @@ class SmokeServerTest {
     @Test
     fun `루트 페이지는 연결 성공과 기기 정보를 보여 준다`() = testApplication {
         application { smokeModule(env) }
-        val res = client.get("/")
+        val res = client.get("/smoke")
         assertEquals(HttpStatusCode.OK, res.status)
         assertTrue(res.contentType()!!.match(ContentType.Text.Html))
         val body = res.bodyAsText()
@@ -74,7 +74,7 @@ class SmokeServerTest {
     fun `ws는 텍스트를 그대로 되돌려 주고 접속 수를 센다`() = testApplication {
         application { smokeModule(env) }
         val wsClient = createClient { install(WebSockets) }
-        wsClient.webSocket("/ws") {
+        wsClient.webSocket("/smoke/ws") {
             send(Frame.Text("ping:1:1727500000000"))
             assertEquals("ping:1:1727500000000", (incoming.receive() as Frame.Text).readText())
             assertEquals(1, env.clients.get())
@@ -97,13 +97,13 @@ class SmokeServerTest {
     fun `게스트 로그 업로드는 5초에 한 번만 받는다(연결을 바꿔도)`() = testApplication {
         application { smokeModule(env) }
         val wsClient = createClient { install(WebSockets) }
-        wsClient.webSocket("/ws") {
+        wsClient.webSocket("/smoke/ws") {
             send(Frame.Text("log:첫째"))
             assertTrue((incoming.receive() as Frame.Text).readText().startsWith(GUEST_LOG_ACK))
             send(Frame.Text("log:둘째"))
             assertEquals(GUEST_LOG_RATE_LIMITED, (incoming.receive() as Frame.Text).readText())
         }
-        wsClient.webSocket("/ws") {
+        wsClient.webSocket("/smoke/ws") {
             send(Frame.Text("log:셋째(새 연결)"))
             assertEquals(GUEST_LOG_RATE_LIMITED, (incoming.receive() as Frame.Text).readText())
             now += GUEST_LOG_MIN_INTERVAL_MS
