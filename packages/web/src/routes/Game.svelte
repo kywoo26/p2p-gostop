@@ -12,6 +12,7 @@
   // 게임판은 정산 중에도 마운트된 채로 둔다(다음 판 분배 애니메이션의 기준점, src/anim/choreo.ts).
   // 오른쪽 위 메뉴(이슈 #10)에서 계속·설정·홈·세션 종료(확인). Android 뒤로 가기는 브리지 gameActive로 확인 창이 된다.
   // data-* 속성은 E2E 자동 플레이·원장 검사·턴 시간 계측(spec AC-04·AC-06)이 읽는다.
+  import { untrack } from 'svelte';
   import type { GameController } from '../game/controller.ts';
   import { settings } from '../settings/settings.svelte.ts';
   import Board from '../ui/Board.svelte';
@@ -48,8 +49,9 @@
     const c = controller;
     const el = root;
     if (el === null) return;
-    c.attach(el);
-    return () => c.attach(null);
+    // 붙이는 동안 재생 큐가 읽는 값(정산·토스트 등)에 이 효과가 묶이지 않게 한다
+    untrack(() => c.attach(el));
+    return () => untrack(() => c.attach(null));
   });
 
   const extras = $derived({

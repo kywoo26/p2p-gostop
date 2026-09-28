@@ -113,6 +113,7 @@ export class Playback {
   private pumping = false;
   private disposed = false;
   private bannerSeq = 0;
+  private toastSeq = 0;
   private bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(initial: BoardView, options: PlaybackOptions) {
@@ -271,7 +272,9 @@ export class Playback {
 
   /** 짧은 알림. 일정 시간 뒤 사라진다(이슈 #6). 새 판 분배 때도 지운다 */
   showToast(text: string): void {
-    this.toast = { id: (this.toast?.id ?? 0) + 1, text };
+    // 반응형 값(toast)을 읽지 않는다: 게임판 효과(onnotice) 안에서 불려도 그 효과가 toast에 묶이지 않게
+    this.toastSeq += 1;
+    this.toast = { id: this.toastSeq, text };
     if (this.toastTimer !== null) clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(
       () => this.clearToast(),
