@@ -27,11 +27,11 @@ describe('머니 기본값 (MN-03·MN-04)', () => {
   it('프리셋마다 점당 100 기준 잔액은 보기 좋은 단위이고 파산 확률 ≤ 5%', () => {
     for (const preset of PRESETS) {
       const stats = MONEY_STATS[preset];
+      expect(stats.basis).toBe('measured');
       expect(isNice(stats.startBalance)).toBe(true);
       expect(stats.bankruptcyRisk).toBeLessThanOrEqual(MONEY_MODEL_BASIS.bankruptcyTarget);
       expect(stats.perRoundPoints.p99).toBeGreaterThanOrEqual(stats.perRoundPoints.p95);
     }
-    expect(MONEY_STATS.standard.basis).toBe('measured');
   });
 
   it('표 = 선형 비례 제안값', () => {

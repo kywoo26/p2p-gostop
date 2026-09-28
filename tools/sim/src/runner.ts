@@ -6,9 +6,16 @@ import {
   parseWeights,
   playRound,
   RandomPolicy,
+  suggestedStartBalance,
   type Policy,
 } from '@p2p-gostop/ai';
-import type { Seat, SettleStepKind } from '@p2p-gostop/engine';
+import {
+  applyInstantPayout,
+  applySettlement,
+  createLedger,
+  type Seat,
+  type SettleStepKind,
+} from '@p2p-gostop/engine';
 import { rulesOf, type PolicySpec, type SideConfig, type SimConfig } from './config.ts';
 
 export interface RoundRecord {
@@ -25,6 +32,8 @@ export interface RoundRecord {
   readonly finalPoints: number;
   readonly multiplier: number;
   readonly carry: number;
+  readonly pushes: number;
+  readonly pushed: boolean;
   readonly mulKinds: readonly SettleStepKind[];
   /** A 관점 즉시 정산 순액(점) */
   readonly instantA: number;
@@ -77,6 +86,8 @@ interface RoundInput {
   readonly dealSeed: number;
   readonly dealer: Seat | undefined;
   readonly carry: number;
+  readonly pushes: number;
+  readonly balancePoints?: readonly [number, number];
 }
 
 function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
@@ -88,6 +99,7 @@ function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
     round: {
       ...(input.dealer === undefined ? {} : { dealer: input.dealer }),
       carry: input.carry,
+      pushes: input.pushes,
       roundNumber: input.roundInSession,
     },
     policySeeds: [
@@ -96,9 +108,10 @@ function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
     ],
     ...(config.timeMs === null ? {} : { timeBudgetMs: config.timeMs }),
     clock,
+    ...(input.balancePoints === undefined ? {} : { balancePoints: input.balancePoints }),
   });
   const state = played.state;
-  const settled = played.events.find((e) => e.type === 'Settled');
+  const settled = played.events.findLast((e) => e.type === 'Settled');
   if (settled?.type !== 'Settled') {
     throw new Error('정산 이벤트가 없습니다');
   }
@@ -121,6 +134,8 @@ function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
     finalPoints: s.finalPoints,
     multiplier: s.multiplier,
     carry: input.carry,
+    pushes: input.pushes,
+    pushed: s.pushed === true,
     mulKinds: s.steps.filter((st) => st.op === 'mul').map((st) => st.kind),
     instantA,
     netA: roundA + instantA,
@@ -148,16 +163,23 @@ export function runPair(config: SimConfig, policies: Policies, pair: number): Ro
         dealSeed,
         dealer,
         carry: 1,
+        pushes: 0,
       }).record,
   );
 }
 
-/** session 모드 작업 단위: 세션 k. 첫 판은 선 고르기, 이후 선 = 직전 승자, 나가리 배수 이월 (R5, G9) */
+/** session 모드 작업 단위: 세션 k. 첫 판은 선 고르기, 이후 선·나가리·밀기 배수 이월 (R5, G9, G10) */
 export function runSession(config: SimConfig, policies: Policies, session: number): RoundRecord[] {
   const aSeat: Seat = session % 2 === 0 ? 0 : 1;
   const records: RoundRecord[] = [];
   let dealer: Seat | undefined;
   let carry = 1;
+  let pushes = 0;
+  let ledger = createLedger(
+    config.perPoint,
+    config.startBalance ?? suggestedStartBalance(config.preset, config.perPoint),
+  );
+  const rules = rulesOf(config.preset);
   for (let r = 0; r < config.sessionLength; r++) {
     const index = session * config.sessionLength + r;
     const { record, settlement } = playOne(config, policies, {
@@ -168,10 +190,17 @@ export function runSession(config: SimConfig, policies: Policies, session: numbe
       dealSeed: mixSeed(config.seed, index, 0xdea1),
       dealer,
       carry,
+      pushes,
+      balancePoints: [ledger.balances[0] / config.perPoint, ledger.balances[1] / config.perPoint],
     });
     records.push(record);
+    for (const payout of settlement.instantPayouts) {
+      ledger = applyInstantPayout(ledger, payout, rules);
+    }
+    ledger = applySettlement(ledger, settlement, rules);
     dealer = settlement.nextDealer;
     carry = settlement.nextCarry;
+    pushes = settlement.nextPushes ?? 0;
   }
   return records;
 }

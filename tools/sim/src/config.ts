@@ -26,7 +26,7 @@ export interface SideConfig {
 }
 
 export interface SimConfig {
-  /** match: 독립된 판을 중복(duplicate) 쌍으로 / session: 나가리 배수·선이 이어지는 세션 */
+  /** match: 독립된 판을 중복(duplicate) 쌍으로 / session: 나가리·밀기 배수와 선이 이어지는 세션 */
   readonly mode: 'match' | 'session';
   readonly a: SideConfig;
   readonly b: SideConfig;
@@ -72,7 +72,7 @@ export const DEFAULT_CONFIG: SimConfig = {
 };
 
 export const USAGE = `사용법: npm run sim -- [옵션]
-  --mode match|session     match: 독립 판(중복 쌍, 좌석 교대) / session: 나가리·선이 이어지는 세션 (기본 match)
+  --mode match|session     match: 독립 판(중복 쌍, 좌석 교대) / session: 나가리·밀기 배수와 선이 이어지는 세션 (기본 match)
   --a <정책> --b <정책>    random | heuristic | easy | normal | commercial (기본 commercial vs normal)
   --a-iterations N          A가 commercial일 때 ISMCTS 반복 상한 (기본: 패키지 기본값)
   --b-iterations N
