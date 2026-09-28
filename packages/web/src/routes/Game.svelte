@@ -127,6 +127,7 @@
       turnMs={pb.lastTiming?.ms ?? null}
       onaction={(action, at) => controller.submit(action, at)}
       onskip={() => controller.skipAnimations()}
+      onnotice={(text) => pb.showToast(text)}
       bind:root
     />
   </div>

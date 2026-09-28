@@ -7,7 +7,7 @@
   import { current } from './game/current.svelte.ts';
   import { diagnosticsView } from './game/diagnostics.ts';
   import { log } from './game/log.svelte.ts';
-  import { toRecordRow } from './game/records.ts';
+  import { toRecordRow } from './game/adapter.ts';
   import { DIFFICULTY_LABEL } from './game/solo.svelte.ts';
   import { sounds } from './game/sound.ts';
   import type { RecordsView } from './lib/view-types.ts';

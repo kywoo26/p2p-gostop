@@ -7,10 +7,11 @@ import { getCard, type Action, type EngineEvent, type Seat } from '@p2p-gostop/e
 import { tick } from 'svelte';
 import { deal, replay, skip, unskip, type ReplayHost } from '../anim/choreo.ts';
 import { DUR, scaledMs } from '../anim/durations.ts';
-import type { BoardView, SettlementView } from '../lib/view-types.ts';
+import type { BoardView } from '../lib/view-types.ts';
 import { bannerForEngineEvent, type Banner } from '../ui/banner.ts';
 import { cardLabel } from '../ui/cards.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
+import type { SettlementDisplay } from './adapter.ts';
 import { isDealBatch, snap, type DisplayBoard } from './display.ts';
 import { log } from './log.svelte.ts';
 import { sounds, type SoundKind } from './sound.ts';
@@ -78,7 +79,8 @@ export interface PlaybackOptions {
 
 /** 정산 화면 입력: 정산 뷰 + 즉시 정산 줄 + 나가리 다음 판 배수 (FR-18, G9) */
 export interface RoundSummary {
-  readonly view: SettlementView;
+  /** 국진 위치(gukjin)는 판을 다 본 호스트·솔로만 넣는다 */
+  readonly view: SettlementDisplay;
   readonly instant: readonly {
     readonly label: string;
     readonly name: string;
@@ -201,7 +203,11 @@ export class Playback {
         if (batch === undefined) break;
         this.pending = this.queue.length;
         await this.play(batch);
+        // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
         if (batch.tapAt !== null && batch.action !== null) this.recordTiming(batch);
+        if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
+          await sleep(scaledMs(DUR.banner * 2));
+        }
         if (batch.settlement !== null) this.settlement = batch.settlement;
       }
     } catch (error) {
@@ -237,10 +243,6 @@ export class Playback {
     }
     this.board = batch.board;
     await tick();
-    if (events.some((e) => e.type === 'RoundEnded') && host !== null) {
-      // 마지막 획득·배너를 본 뒤 정산 화면으로
-      await sleep(scaledMs(DUR.banner * 2));
-    }
   }
 
   private recordTiming(batch: Batch): void {

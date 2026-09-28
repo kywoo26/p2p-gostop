@@ -11,6 +11,7 @@
 // 전송 층 관찰과 receive() 대행(파산 선택)을 그 API로 바꾼다. 바꿀 곳은 이 파일뿐이다.
 import {
   createLedger,
+  GUKJIN_ID,
   legalActions,
   reduce,
   redactEvent,
@@ -35,7 +36,7 @@ import { getBridge } from '../bridge/bridge.ts';
 import type { GameController, GameStats } from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
-import { toRecordRow } from '../game/records.ts';
+import { toRecordRow } from '../game/adapter.ts';
 import type { RecordRow } from '../lib/view-types.ts';
 import { readJson, removeKey, writeJson } from '../storage/local.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
@@ -474,10 +475,19 @@ export class HostGame implements GameController {
     const settlement = session?.settlement ?? null;
     if (session === null || board == null || settlement === null) return;
     const names = this.names;
+    const state = session.state;
+    // 정산에 쓴 국진 위치 (rules S5): 판을 다 본 호스트만 안다
+    const gukjin =
+      state === null
+        ? []
+        : ([0, 1] as const)
+            .filter((seat) => state.seats[seat].captured.yeol.includes(GUKJIN_ID))
+            .map((seat) => ({ seat, asPi: settlement.gukjinAsPi[seat] }));
     const summary: RoundSummary = {
       view: {
         ...view,
         names,
+        gukjin,
         // 나가리는 옮긴 금액이 없다 (이전 판 항목을 금액으로 읽지 않게, 이슈 #12)
         amount: settlement.winner === null ? 0 : view.amount,
         // 판 시작(즉시 정산 전) → 정산 후 잔액 (솔로 정산 화면과 같은 기준)
