@@ -24,7 +24,7 @@ class LogShareProvider : ContentProvider() {
 
     override fun onCreate(): Boolean = true
 
-    override fun getType(uri: Uri): String = "text/plain"
+    override fun getType(uri: Uri): String = if (uri.lastPathSegment?.endsWith(".json") == true) "application/json" else "text/plain"
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
         if (mode != "r") throw SecurityException("읽기 전용: $mode")
