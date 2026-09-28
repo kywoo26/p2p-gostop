@@ -1,0 +1,43 @@
+{
+  "combo": {
+    "score": 1.6,
+    "gwangPartial": [0, 0.6, 1.6],
+    "gwangNext": 0.6,
+    "godoriPartial": [0, 0.8, 2.2],
+    "danPartial": [0, 0.5, 1.4],
+    "countProgress": 0.8,
+    "piUnit": 0.18,
+    "meongttaStep": 0.5
+  },
+  "risk": {
+    "piBak": 1.5,
+    "gwangBak": 1,
+    "goBak": 0.3,
+    "goBonus": 1
+  },
+  "tactic": {
+    "handMatch": 0.35,
+    "exposure": 0.6,
+    "denial": 0.5,
+    "steal": 1
+  },
+  "rollout": {
+    "bonus": 3,
+    "bomb": 2,
+    "flipOnly": 0.2,
+    "discard": 0.7,
+    "noise": 0.3
+  },
+  "goStop": {
+    "maxGo": 1,
+    "oppScoreStop": 4,
+    "minTurns": 5,
+    "oppPotentialStop": 5,
+    "evMargin": 0.1
+  },
+  "search": {
+    "winWeight": 0.5,
+    "pointScale": 8,
+    "ucbC": 0.7
+  }
+}

@@ -8,7 +8,14 @@
   "options": {
     "typeAware": true
   },
-  "ignorePatterns": ["packages/web/**", "android/**", "docs/**", "**/dist/**", "**/coverage/**"],
+  "ignorePatterns": [
+    "packages/web/**",
+    "android/**",
+    "docs/**",
+    "**/dist/**",
+    "**/coverage/**",
+    ".claude/**"
+  ],
   "rules": {
     "typescript/consistent-type-imports": "error",
     "eslint/no-unused-vars": [
