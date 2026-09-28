@@ -196,6 +196,20 @@ p2p-gostop/
 
 ---
 
+## 3-1. 병렬 개발 라이프사이클 (2026-09-28부터)
+사용자 지시: 속도와 품질을 함께. Claude 서브에이전트와 Codex(Paseo) 에이전트를 작업 성격별로 배분하고, 워크트리·브랜치·PR로 격리한다.
+
+| 작업 성격 | 담당 | 근거 |
+|---|---|---|
+| 판단형(규칙·설계·리뷰), Svelte 5 UI·애니메이션 | Claude(Opus 5.5 서브에이전트, 리뷰는 별도 에이전트) | svelte-check·Svelte MCP·포맷 훅이 Claude Code에 연결. 구식 문법 혼입 위험 큰 영역 |
+| 계약형(명세 확정 + 자동 테스트 촘촘): 프로토콜 패키지, Android 릴레이·정적 서빙 | Codex GPT-6 Sol xhigh (Paseo 워크트리, full-access) | 독립 지표(Terminal-Bench 4.0: Sol 43.9 vs Astra 58.2 vs Fable 57.9)상 한 단계 아래라 계약형에 한정. 벤더 자기보고 벤치는 근거로 쓰지 않음 |
+| Sol이 막히는 어려운 문제 | Codex GPT-6 Astra(max) 예비 | 비용·한도 큼 |
+| 저위험 잡무(문서 동기화, 정리) | Codex GPT-6 Luna | 저렴 |
+
+규칙: 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
+
+진행 중(2026-09-28): `feat/m4-protocol`(Codex Sol), `feat/m4-android-shell`(Codex Sol), `feat/m3-solo`(Claude Opus), M2 마무리(Claude Opus, 메인 트리).
+
 ## 4. 테스트 전략
 
 | 층 | 대상 | 도구 | 실행 |
@@ -285,6 +299,7 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.5 (2026-09-28): 3-1 병렬 라이프사이클(모델 배분 원칙, 워크트리·PR 격리) 추가.
 - v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).
 - v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
 - v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.
