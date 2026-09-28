@@ -194,4 +194,24 @@ describe('#44 판 무효', () => {
     }
     expect(found).toBe(true);
   });
+
+  it('게스트가 무효 알림을 못 받은 채 다음 판이 시작돼도 재접속 때 aborted가 먼저 도착한다', () => {
+    const h = setup(16);
+    const picker = new Picker(16);
+    for (let i = 0; i < 30 && h.host.state?.phase !== 'turn'; i++) move(h.host, h.guest, picker);
+    h.gw.disconnect();
+    h.host.advanceTime(180_000);
+    expect(h.host.abortRound('다음 판 전 부재')).toBe(true);
+    expect(h.host.nextRound()).toBe(true);
+    expect(h.host.stage).toBe('handshake');
+    h.gw.reconnect();
+    h.guest.rejoin();
+    expect(h.guest.checks.at(-1)).toEqual({
+      round: 1,
+      result: 'aborted',
+      reason: '다음 판 전 부재',
+    });
+    expect(h.host.stage).toBe('playing');
+    expect(h.guest.errors).not.toContain('COMMIT_INVALID');
+  });
 });

@@ -114,9 +114,9 @@
 | 호스트 단계 | 재접속 hello에 다시 보내는 것 |
 |---|---|
 | lobby | welcome만(autoStart면 첫 판 시작) |
-| handshake | 직전 판 snapshot(없으면 status), 직전 판 revealHost, commitHost, (게스트 커밋을 받았으면) revealGuestRequest |
+| handshake | 직전 판 snapshot(없으면 status), 직전 판 revealHost 또는 roundAborted, commitHost, (게스트 커밋을 받았으면) revealGuestRequest |
 | playing | lastSeq 뒤 차분 events(현재 판 안, 40개·16KB 이하) 또는 snapshot |
-| settled·bankrupt·ended | snapshot, 그 판 revealHost, bankruptcyPrompt(bankrupt), sessionEnd(ended) |
+| settled·bankrupt·ended | snapshot, 그 판 revealHost 또는 roundAborted, bankruptcyPrompt(bankrupt), sessionEnd(ended) |
 
 - 게스트: 같은 판·같은 해시의 `commitHost`를 다시 받으면 **저장해 둔 같은 `commitGuest`**를 다시 보낸다(새 난수 금지). 같은 해시의 `revealGuestRequest`에는 같은 원문을 다시 보낸다. 지난 판 메시지는 무시한다.
 - 호스트: 분배 전이면 게스트가 다른 해시로 다시 커밋해도 받아 준다(새로고침으로 원문을 잃은 경우. 호스트 원문은 아직 비밀이라 안전). 분배 뒤 들어온 지난 핸드셰이크 메시지는 무시한다.
@@ -138,9 +138,9 @@
 7. 받은 정산의 승패·사유·최종 점수·배수 단계가 리플레이 `settle`과 같다.
 
 - 원문을 공개한 판에 다른 해시의 `commitHost`가 오면 응답하지 않고 `COMMIT_INVALID`(재추첨 방지).
-- **revealHost 누락(재검토 중요 1)**: 원문을 공개한 판의 결과(검사)가 없는데 더 큰 판의 `commitHost`가 오거나 `sessionEnd`가 오면 그 판을 `failed{missingReveal}`로 기록하고 그 `commitHost`에 응답하지 않는다. 정상 호스트는 판 종료 때와 재접속 resync에서 늘 `revealHost`를 다음 `commitHost`보다 먼저 보내므로 거짓 실패가 없다. 뒤늦은 `revealHost`로 판정을 되돌리지 않는다. 세션 도중 호스트가 판을 끝내지 않고 종료해도 같은 실패다.
+- **revealHost 누락(재검토 중요 1)**: 원문을 공개한 판의 결과(검사)가 없는데 더 큰 판의 `commitHost`가 오거나 `sessionEnd`가 오면 그 판을 `failed{missingReveal}`로 기록하고 그 `commitHost`에 응답하지 않는다. 정상 호스트는 판 종료 때와 재접속 resync에서 늘 `revealHost`를 다음 `commitHost`보다 먼저 보낸다. 판 무효는 `roundAborted`를 먼저 보내며 이 판은 `aborted{reason}`으로 판정한다. 뒤늦은 `revealHost`로 판정을 되돌리지 않는다. 세션 도중 호스트가 판을 끝내지 않고 종료해도 같은 실패다.
 - **판 번호**: 직전 커밋 판 + 1만 받는다. 더 크게 뛴 `commitHost`는 그 판 번호로 `failed{roundSkip}`을 기록하고 응답하지 않는다(위조 커밋의 기록이라, 그 번호의 판이 나중에 정상으로 진행되면 따로 검증한다).
-- 결과는 `guest.checks`(`verified`·`unverifiable{noCommitment}`·`failed{reason}`)와 `verifiedRounds`. 실패면 `errors`에 `COMMIT_INVALID`.
+- 결과는 `guest.checks`(`verified`·`aborted{reason}`·`unverifiable{noCommitment}`·`failed{reason}`)와 `verifiedRounds`. 실패면 `errors`에 `COMMIT_INVALID`.
 - 게스트 새로고침: `guest.toJSON()`(토큰·순번·세대·최근 두 판의 커밋·관찰)을 탭 수명 저장소(`sessionStorage`, 비보안 컨텍스트에서도 동작)에 두고 `new GuestSession(..., { restore })`로 이어 가면 그 판도 검증된다. 저장본이 없으면 그 판은 `unverifiable`이고 거짓 `COMMIT_INVALID`를 내지 않는다. `sendAction`은 보내기 전에 `onChange`를 부르므로 저장본의 `sent`가 실제보다 적지 않다.
 - UI 통합(I1) 체크리스트:
   - `checks`의 `failed`를 정산 화면에 "공정성 검증 실패"(이유 `missingReveal`·`roundSkip`·`events` 등)로, `unverifiable`을 "검증 불가(새로고침)"로 표시한다.
