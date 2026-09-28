@@ -23,6 +23,8 @@ export interface RoundOptions {
   readonly dealer?: Seat;
   /** 이번 판 나가리 배수 (settle().nextCarry, G9). 기본 1 */
   readonly carry?: number;
+  /** 이번 판에 적용되는 연속 밀기 횟수 (settle().nextPushes, 12.7 밀기). 기본 0 */
+  readonly pushes?: number;
   /** 세션 안의 판 번호(1부터). 대박판 판정 */
   readonly roundNumber?: number;
   /** 밤일낮장(firstDealer = 'timeOfDay')에서 밤이면 낮은 월이 선. 엔진은 시각을 읽지 않는다 */
@@ -68,6 +70,7 @@ export function blankDraft(rules: RuleOptions, seed: Seed, opts: RoundOptions): 
     round: {
       number: opts.roundNumber ?? 1,
       carry: opts.carry ?? 1,
+      pushes: opts.pushes ?? 0,
       fixedDeck: opts.deck === undefined ? null : [...opts.deck],
     },
     instantPayouts: [],

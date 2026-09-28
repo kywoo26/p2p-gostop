@@ -94,10 +94,11 @@ export interface PlayerView {
   readonly pending: Pending | null;
   readonly ctx: TurnCtx | null;
   readonly firstPick: FirstPickView | null;
-  readonly round: { readonly number: number; readonly carry: number };
+  /** 판 번호, 나가리 이월 배수, 연속 밀기 횟수(12.7 밀기) */
+  readonly round: { readonly number: number; readonly carry: number; readonly pushes: number };
   readonly instantPayouts: readonly InstantPayout[];
   readonly result: RoundResult | null;
-  /** 보는 좌석의 합법 수 (FR-12 하이라이트용) */
+  /** 보는 좌석의 합법 수 (FR-12 하이라이트용). 판이 끝난 뒤에는 밀기가 가능한 승자에게만 push */
   readonly legal: readonly Action[];
   readonly eventSeq: number;
   /** 보는 좌석이 고/스톱 프롬프트 중일 때만 값이 있다 (FR-14) */
@@ -209,7 +210,7 @@ export function playerView(
       fp === null
         ? null
         : { poolSize: fp.pool.length, picks: fp.picks, ties: fp.ties, isNight: fp.isNight },
-    round: { number: state.round.number, carry: state.round.carry },
+    round: { number: state.round.number, carry: state.round.carry, pushes: state.round.pushes },
     instantPayouts: state.instantPayouts,
     result: state.result,
     legal: legalActions(state, viewer),

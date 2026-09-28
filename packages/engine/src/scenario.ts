@@ -39,6 +39,8 @@ export interface ScenarioSetup {
   readonly turn?: Seat;
   readonly dealer?: Seat;
   readonly carry?: number;
+  /** 이번 판에 적용되는 연속 밀기 횟수 (RoundOptions.pushes) */
+  readonly pushes?: number;
   readonly roundNumber?: number;
   readonly seed?: Seed;
 }
@@ -57,6 +59,7 @@ export function createScenario(setup: ScenarioSetup): GameState {
   const rules = setup.rules ?? DEFAULT_RULES;
   const s = blankDraft(rules, setup.seed ?? 0, {
     carry: setup.carry ?? 1,
+    pushes: setup.pushes ?? 0,
     roundNumber: setup.roundNumber ?? 1,
   });
   const piles = setup.ppeokPiles ?? [];

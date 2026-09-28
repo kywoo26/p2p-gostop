@@ -569,3 +569,25 @@ export function actStop(tx: Tx, seat: Seat): void {
   emit(tx, { type: 'Stop', seat, cards: [], auto: false });
   endRound(tx, 'stop', seat);
 }
+
+/**
+ * 밀기 (rules-commercial §10.1 한게임 신맞고, 12.7 토글 push): 끝난 판의 승자가 이번 판 정산을 포기하고 다음 판을
+ * ×2^(연속 밀기 횟수)로 키운다. 즉시 정산은 이미 발생 시점에 원장에 들어갔으므로 그대로다.
+ * 포기한 정산(pushed)으로 Settled를 한 번 더 낸다: 호출자는 마지막 Settled(또는 settle(state))를 원장에 넣는다.
+ */
+export function actPush(tx: Tx, seat: Seat): void {
+  const result = tx.s.result;
+  invariant(result !== null && result.winner === seat, '밀기는 끝난 판의 승자만 할 수 있습니다');
+  tx.s.result = { ...result, pushed: true };
+  const settlement = settle(tx.s);
+  const pushes = settlement.nextPushes ?? 0;
+  emit(tx, {
+    type: 'Pushed',
+    seat,
+    cards: [],
+    pushes,
+    multiplier: 2 ** pushes,
+    forfeitedPoints: settlement.forfeitedPoints ?? 0,
+  });
+  emit(tx, { type: 'Settled', seat, cards: [], settlement });
+}

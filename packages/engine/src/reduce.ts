@@ -19,6 +19,7 @@ import {
   actGo,
   actGukjin,
   actPlay,
+  actPush,
   actShake,
   actStop,
   actTarget,
@@ -35,6 +36,7 @@ const ACTION_TYPES: ReadonlySet<string> = new Set<ActionType>([
   'gukjin',
   'go',
   'stop',
+  'push',
 ]);
 
 /**
@@ -102,6 +104,9 @@ function applyTo(tx: Tx, action: Action): void {
     case 'stop':
       actStop(tx, action.seat);
       break;
+    case 'push':
+      actPush(tx, action.seat);
+      break;
   }
 }
 
@@ -109,6 +114,7 @@ function applyTo(tx: Tx, action: Action): void {
  * 액션 하나를 적용한다. 입력 상태는 바뀌지 않는다.
  * 형태가 잘못된 입력(null, 알 수 없는 type, 좌석 '0' 등)도 예외 없이 illegalAction으로 거부한다(M1 리뷰 F-9).
  * 네트워크에서 받은 검증 전 JSON은 두 번째 시그니처(unknown)로 그대로 넘겨도 된다.
+ * 끝난 판(phase 'end')에는 밀기(`push`, 승자만)만 받고 그 밖에는 roundOver다.
  */
 export function reduce(state: GameState, action: Action): ReduceResult;
 export function reduce(state: GameState, action: unknown): ReduceResult;

@@ -1,6 +1,7 @@
 // 합법 수 (code-refs 6.2: 단일 진실원). UI·AI·네트워크 검증이 모두 이 함수를 쓴다.
 import { getCard, type Month } from './cards.ts';
 import { findGroup } from './floor.ts';
+import { MAX_PUSHES } from './rules.ts';
 import type { Action, GameState, Seat } from './state.ts';
 
 function bombMonths(state: GameState, seat: Seat): Month[] {
@@ -42,10 +43,31 @@ function playActions(state: GameState, seat: Seat): Action[] {
   return actions;
 }
 
-/** 이 좌석이 지금 할 수 있는 모든 액션. 차례가 아니거나 판이 끝났으면 빈 배열. */
+/**
+ * 밀기 (12.7, 해석 30): 판이 끝난 뒤 규칙 push가 켜져 있고, 이 좌석이 승자이며, 아직 밀지 않았고, 이번 판까지 연속
+ * 밀기가 MAX_PUSHES 미만이면 `push` 하나. 밀지 않기는 액션이 아니다(호출자가 그냥 정산을 원장에 넣는다).
+ */
+function pushActions(state: GameState, seat: Seat): Action[] {
+  const result = state.result;
+  const allowed =
+    state.rules.push &&
+    result !== null &&
+    result.winner === seat &&
+    result.pushed !== true &&
+    state.round.pushes < MAX_PUSHES;
+  return allowed ? [{ type: 'push', seat }] : [];
+}
+
+/**
+ * 이 좌석이 지금 할 수 있는 모든 액션. 차례가 아니면 빈 배열.
+ * 판이 끝났으면(phase 'end') 밀기가 가능한 승자에게만 `push`가 있고 그 밖에는 빈 배열.
+ */
 export function legalActions(state: GameState, seat: Seat): Action[] {
   const pending = state.pending;
-  if (state.phase === 'end' || pending === null) {
+  if (state.phase === 'end') {
+    return pushActions(state, seat);
+  }
+  if (pending === null) {
     return [];
   }
   if (pending.kind === 'pickFirst') {
@@ -110,6 +132,6 @@ export function sameAction(a: Action, b: Action): boolean {
     case 'gukjin':
       return b.type === 'gukjin' && a.asPi === b.asPi;
   }
-  // flipOnly·go·stop은 종류와 좌석만 비교한다
+  // flipOnly·go·stop·push는 종류와 좌석만 비교한다
   return true;
 }

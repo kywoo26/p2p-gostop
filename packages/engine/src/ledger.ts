@@ -70,9 +70,9 @@ export function applyInstantPayout(
   return transfer(ledger, 'instant', payout.kind, payout.from, payout.to, payout.points, rules);
 }
 
-/** 판 정산을 원장에 기록한다. 나가리(승자 없음)는 원장을 바꾸지 않는다. */
+/** 판 정산을 원장에 기록한다. 나가리(승자 없음)와 밀기로 포기한 판(pushed)은 원장을 바꾸지 않는다. */
 export function applySettlement(ledger: Ledger, result: Settlement, rules: RuleOptions): Ledger {
-  if (result.winner === null || result.loser === null) {
+  if (result.winner === null || result.loser === null || result.pushed === true) {
     return ledger;
   }
   return transfer(

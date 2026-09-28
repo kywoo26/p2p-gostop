@@ -206,7 +206,12 @@ export function determinize(view: PlayerView, sample: DeterminizeSample, rng: Se
     pending: resolvePending(view, sample, opponentHand),
     ctx: view.ctx,
     firstPick,
-    round: { number: view.round.number, carry: view.round.carry, fixedDeck: null },
+    round: {
+      number: view.round.number,
+      carry: view.round.carry,
+      pushes: view.round.pushes,
+      fixedDeck: null,
+    },
     instantPayouts: view.instantPayouts,
     result: view.result,
     eventSeq: view.eventSeq,
