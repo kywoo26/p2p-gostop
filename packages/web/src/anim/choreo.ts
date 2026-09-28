@@ -27,9 +27,9 @@ export interface AnimStep {
 
 /**
  * 한 턴의 계획 시간 상한(빠름 기준 ms). 단계 사이의 프레임 지연(단계당 최대 1~2프레임)을 더해도
- * spec 6.4의 700ms 안에 들도록 여유를 둔다.
+ * spec 6.4의 700ms 안에 들도록 여유를 둔다(AC-06, choreo.test.ts·e2e/solo.spec.ts가 검사).
  */
-const TURN_PLAN_MS = 500;
+export const TURN_PLAN_MS = 500;
 
 function kindOf(event: EngineEvent): StepKind {
   switch (event.type) {
@@ -101,10 +101,22 @@ function stepMs(step: AnimStep): number {
   }
 }
 
-/** 계획 시간이 턴 예산을 넘으면 줄이는 배율 (≤ 1) */
-function compressFactor(steps: readonly AnimStep[]): number {
-  const total = steps.reduce((sum, s) => sum + stepMs(s), 0);
-  return total > TURN_PLAN_MS ? TURN_PLAN_MS / total : 1;
+export interface TurnPlan {
+  readonly steps: readonly AnimStep[];
+  /** 단계 시간 합 (빠름 기준 ms, 줄이기 전) */
+  readonly rawMs: number;
+  /** 계획 시간이 턴 예산을 넘으면 줄이는 배율 (≤ 1) */
+  readonly factor: number;
+  /** 실제로 재생할 계획 시간 = rawMs × factor ≤ TURN_PLAN_MS */
+  readonly plannedMs: number;
+}
+
+/** 이벤트 묶음의 애니메이션 계획 (replay와 같은 계산) */
+export function planTurn(events: readonly EngineEvent[]): TurnPlan {
+  const steps = planSteps(events);
+  const rawMs = steps.reduce((sum, s) => sum + stepMs(s), 0);
+  const factor = rawMs > TURN_PLAN_MS ? TURN_PLAN_MS / rawMs : 1;
+  return { steps, rawMs, factor, plannedMs: rawMs * factor };
 }
 
 type Rects = Map<string, DOMRect>;
@@ -213,8 +225,7 @@ export async function replay(
   from: DisplayBoard,
   events: readonly EngineEvent[],
 ): Promise<DisplayBoard> {
-  const steps = planSteps(events);
-  const factor = compressFactor(steps);
+  const { steps, factor } = planTurn(events);
   let board = from;
   for (const step of steps) {
     board = await runStep(host, board, step, factor);
