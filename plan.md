@@ -69,7 +69,7 @@ p2p-gostop/
 │  ├─ app/src/main/{kotlin,res,assets/web}
 │  ├─ gradle/libs.versions.toml
 │  └─ settings.gradle.kts
-├─ docker/                      # Dockerfile·compose, 실행 스크립트
+├─ docker/                      # 개발 이미지 Dockerfile (compose.yaml은 루트, .devcontainer/)
 ├─ .github/workflows/           # ci.yml, release.yml
 ├─ docs/                        # research/, ai-tuning.md, money-model.md, device-test-log/
 ├─ intend.md · spec.md · plan.md
@@ -139,16 +139,22 @@ p2p-gostop/
 
 ## 2. 개발 환경 (Docker)
 
-| 서비스 | 이미지 | 용도 |
-|---|---|---|
-| `node` | `node:24-bookworm-slim` | 엔진·AI·프로토콜 단위 테스트, 웹 빌드, sim CLI |
-| `e2e` | `mcr.microsoft.com/playwright:v1.63.0-noble` | Playwright Chromium+WebKit E2E |
-| `android` | `cimg/android:2026.08.1-node` | Gradle 빌드(APK), Android 단위 테스트 |
+2026-09-29 개편: 체크아웃별 프로젝트명·볼륨 소유자 보정·포맷 라우팅·CI 미러를 쌓아 가던 자체 래퍼 `dev.sh`를 걷어내고 표준 도구만 쓴다. 프로젝트 고유의 실행 로직을 새로 배우거나 유지할 필요가 없게 하는 것이 목적이다.
 
-- `docker/compose.yml`에 세 서비스와 명명된 볼륨(`node_modules`, `gradle-cache`, `pw-browsers`)을 둔다. 소스는 바인드 마운트.
-- 실행 진입점 `./dev.sh <task>`: `install`, `test`, `test:watch`, `build:web`, `e2e`, `sim`, `apk:debug`, `apk:release`, `lint`. 내부적으로 `docker compose run --rm <svc> …`.
-- Docker Desktop이 꺼져 있으면 `dev.sh`가 즉시 안내하고 종료한다.
-- 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요 시 `--device /dev/kvm`으로 `cimg/android`에 `emulator` 패키지를 추가한 별도 이미지를 만든다. M4 이후 WebView 셸 스모크에만 사용.
+| 파일 | 역할 |
+|---|---|
+| `docker/Dockerfile` | 단일 개발 이미지 `p2p-gostop-dev`. 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`(Node 24.20.0, Chromium·WebKit) + Temurin JDK 21(`eclipse-temurin` 이미지에서 `COPY --from`) + Android SDK(cmdline-tools SHA-256 고정, `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`; 설치 후 sdkmanager 삭제). 사용자 `dev`(uid/gid 1000). 에뮬레이터 없음. 약 4.3GB(압축 1.2GB). `cimg/android`(11.9GB)와 `node:24-bookworm-slim`은 더 쓰지 않는다. |
+| `compose.yaml`(저장소 루트) | 서비스 `dev` 하나. 루트에 두는 이유: Compose 기본 탐색 파일이라 `-f` 없이 저장소 어느 하위 폴더에서도 `docker compose run --rm dev …`가 된다. 저장소를 `/work`에 바인드 마운트(`node_modules` 포함, 볼륨·소유자 보정 없음), `user: 1000:1000`, `ipc: host`(Playwright), `init: true`, 기본 `bridge` 망. 이름 고정 볼륨 `p2p-gostop-gradle`·`p2p-gostop-npm`·`p2p-gostop-android`(디버그 서명 키)는 모든 체크아웃이 일부러 공유한다(동시 Gradle 빌드 2개로 공유 캐시 확인). |
+| `.devcontainer/devcontainer.json` | 같은 `dev` 서비스를 VS Code·Codespaces·devcontainer CLI가 쓴다(`workspaceFolder: /work`, `remoteUser: dev`, `updateRemoteUserUID`, `postCreateCommand: npm ci`). 안에서는 `npm`·`android/gradlew`를 그대로 실행한다. |
+| 루트 `package.json` | `format:file`(web → Prettier, 그 밖 → oxfmt 경로 라우팅), `test:browser`. Gradle은 감싸지 않고 `android/gradlew -p android <task>`를 그대로 쓴다. |
+| `.claude/settings.json` | PostToolUse 훅: 편집한 파일의 체크아웃에서 `docker compose run --rm -T dev npm run format:file -- <경로>`. |
+
+- 사용: `docker compose run --rm dev <명령>`(전체 목록은 AGENTS.md 5장). 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 프로젝트명 로직은 없다.
+- 이미지 갱신: `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다. 없는 태그면 `run`이 자동 빌드한다. 매번 빌드(`pull_policy: build`)는 쓰지 않는다: 실행마다 1~2초가 붙고, 베이스 이미지 메타데이터를 원격 조회해 오프라인(기내)에서 실패한다.
+- `npm ci` 측정(WSL2 ext4 바인드 마운트, 이 머신): 257개 패키지 캐시 없음 4초, 캐시 있음 3초. 명명 볼륨 대비 불리하지 않다.
+- 알려진 제약: 워크트리 안에서는 `.git`이 호스트 절대 경로의 공용 git 디렉터리를 가리키는데 컨테이너에 마운트되지 않아, 워크트리에서 만든 APK는 `versionName 0.0.0-dev`·`GIT_SHA unknown`이다(기존 `dev.sh`와 같음, 메인 체크아웃과 CI는 정상). 웹 빌드 해시는 `.git`을 직접 읽어 워크트리에서도 나온다.
+- 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요해지면 이 이미지에 `emulator` 패키지를 더한 별도 태그를 만들고 `--device /dev/kvm`으로 쓴다. WebView 셸 스모크에만 사용.
+- `dev.sh`는 3줄짜리 폐기 안내(새 명령 출력 후 실패)로 한 마일스톤 남기고 M6에서 삭제한다.
 
 ---
 
@@ -217,7 +223,7 @@ p2p-gostop/
 | Sol이 막히는 어려운 문제 | Codex GPT-6 Astra(max) 예비 | 비용·한도 큼 |
 | 저위험 잡무(문서 동기화, 정리) | Codex GPT-6 Luna | 저렴 |
 
-규칙: 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
+규칙: 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). 체크아웃마다 `node_modules`가 소스와 함께 바인드 마운트되고 Compose 프로젝트명이 폴더 이름이라 워크트리 간 간섭이 없다(2장). PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
 
 2026-09-28 결과: PR #1(Android 셸)·#2(M3 솔로)·#3(프로토콜) 모두 main 병합. MVP 릴리스 `v0.1.0-alpha`→`v0.1.2-alpha`(P2P 최소 페이지 `tools/p2p-mini` + 솔로 모드 + Android 수정). 남은 통합(M4 마무리): 게스트/호스트 화면을 `tools/p2p-mini` 대신 정식 UI(M3 Board + protocol HostSession/GuestSession + `src/net` WsTransport + `bridge.ts`↔HostBridge)로 교체, 로비 화면, 2브라우저 E2E, 호스트 원장 저장·복원, 60초 연결 상태 시계. 그 뒤 M5 실기기 회차·M6.
 
@@ -237,7 +243,7 @@ p2p-gostop/
 | A2 | #17 앱 실행 시 LAN 서버 자동 기동(NF-06) 재설계, PR #14 리뷰 반영 | Codex Sol (high) | PR #14 후속 |
 | M5 | `v0.2.0` 실기기 회차(호스트/게스트 정식 UI) | 사용자 | 로그 → 이슈 |
 | D1 | 카드·UI 이미지를 오픈 자산 차용에서 **고유 모던 디자인**(CC0)으로 교체: 1단계 조사·스타일 가이드·시안 A/B → 사용자 선택, 2단계 52장 제작·svgo·갤러리·가독성 검증·저작자 표기 제거 | implementer(Opus, high) | PR(Draft) → 선택 → PR |
-| M6 | 토글 UI, 기록, 리플레이 내보내기, 효과음, 접근성, 아케이드, 머니 모델 재산정, AI 강도 재도전, 밀기 후속(#29~#32), Dev Container 도입 검토(`dev.sh`는 런처, 정본은 package.json·Gradle·ci.yml; `./dev.sh ci`로 드리프트 방지) | 분할 배분 | `v1.0.0` |
+| M6 | 토글 UI, 기록, 리플레이 내보내기, 효과음, 접근성, 아케이드, 머니 모델 재산정, AI 강도 재도전, 밀기 후속(#29~#32), `dev.sh` 폐기 안내 스크립트 삭제(2026-09-29 개발 이미지·compose·Dev Container 도입으로 대체됨) | 분할 배분 | `v1.0.0` |
 
 규칙: 모든 PR은 CI 녹색 + reviewer 검토(판정 '병합 가능')를 받은 뒤 병합한다. 리뷰 결함은 GitHub 이슈로 등록해 트랙 U1이 소화한다.
 
@@ -261,10 +267,10 @@ p2p-gostop/
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (push/PR): Node 24 설정 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → Playwright(공식 컨테이너 잡: E2E, 갤러리 스냅샷, axe) → JDK 21 + Gradle 캐시 → `assembleDebug` + Android 테스트·Lint → APK 아티팩트.
+- `ci.yml` (push/PR): 개발 이미지(`docker/Dockerfile`)를 러너에서 빌드해 한 잡에서 로컬과 같은 `docker compose run --rm dev …` 명령으로 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → 컴포넌트 테스트·Playwright(E2E, 갤러리 스냅샷, axe; PR·수동만) → `assembleDebug` + Android 테스트·Lint → APK 아티팩트. 잡을 하나로 묶어 이미지 빌드를 한 번만 치른다(분 예산 우선, 벽시계 시간은 늘어남).
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
-- `release.yml`: 웹 빌드는 서명 잡 안에서 키스토어 복원 **전에**, 읽기 전용 마운트 + 비밀 없는 `docker run` 컨테이너에서 `npm ci --ignore-scripts`로 수행한다(계정 아티팩트 용량 초과로 잡 분리 대신 컨테이너 격리 채택). 빌드 후 추적 파일 변경이 있으면 실패. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, 태그 커밋이 main에 있어야 함(M0 리뷰 R-1/R-4~R-7).
+- `release.yml`: 웹 빌드는 서명 잡 안에서 키스토어 복원 **전에**, 읽기 전용 마운트 + 비밀 없는 `docker run` 컨테이너(개발 이미지의 베이스 `playwright:v1.63.0-noble`, CI와 같은 Node)에서 `npm ci --ignore-scripts`로 수행한다(계정 아티팩트 용량 초과로 잡 분리 대신 컨테이너 격리 채택). 빌드 후 추적 파일 변경이 있으면 실패. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, 태그 커밋이 main에 있어야 함(M0 리뷰 R-1/R-4~R-7).
 - `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
 - 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
 - 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.
@@ -300,7 +306,7 @@ p2p-gostop/
 
 ### 8.1 저장소 골격 + Docker (M0 전 준비)
 1. `package.json`(workspaces), `.npmrc`(`min-release-age=3`), `.editorconfig`, `.nvmrc`(24), ESLint 10 flat config + Prettier, `tsconfig.base.json`(strict, TS 6.0.3), knip 설정, `AGENTS.md`(버전 표·금지 목록·관례) + `CLAUDE.md`(`@AGENTS.md`), `.github/dependabot.yml`. 프로젝트 `.claude/settings.json`의 포맷·린트 훅과 Svelte MCP 등록은 사용자 승인 후 추가.
-2. `docker/compose.yml`, `docker/Dockerfile.android`(cimg 기반, 필요 시 최소 추가), `dev.sh`.
+2. (당시) `docker/compose.yml` 3서비스 + `dev.sh`. 2026-09-29에 `docker/Dockerfile` 단일 이미지 + 루트 `compose.yaml` + `.devcontainer/`로 대체(2장).
 3. `android/` 표준 골격: AGP 9.4.1, Gradle 9.8.0 wrapper, Kotlin 2.4.20(내장 Kotlin 방식), version catalog, compileSdk/targetSdk 36, minSdk 33, `namespace com.kywoo26.p2pgostop`.
 4. `ci.yml` 최소 버전(빌드만). 첫 Docker 빌드로 이미지 캐시 확보.
 
@@ -330,6 +336,7 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.7 (2026-09-29): 2장 개편 — `dev.sh` 폐기, 단일 개발 이미지(`docker/Dockerfile`) + 루트 `compose.yaml` + Dev Container, CI를 같은 이미지·같은 명령으로. `cimg/android`·`node:24-bookworm-slim` 제거.
 - v0.6 (2026-09-28): 3-2 재개 계획(사후 리뷰·통합·후속 트랙, 리뷰 필수 규칙).
 - v0.5 (2026-09-28): 3-1 병렬 라이프사이클(모델 배분 원칙, 워크트리·PR 격리) 추가.
 - v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).

@@ -1,6 +1,6 @@
 # AI 조정 기록 (spec AI-04·AI-05·AI-07, plan.md M2)
 
-작성: 2026-09-28 · 대상: `packages/ai` · 도구: `tools/sim` (`./dev.sh sim -- …`)
+작성: 2026-09-28 · 대상: `packages/ai` · 도구: `tools/sim` (`docker compose run --rm dev npm run sim -- …`)
 
 ## 1. 요약
 
@@ -184,10 +184,10 @@ UCT는 반복마다 다른 결정화에서 한 후보만 평가하므로, 후보
 
 ```sh
 # 강도 벤치마크 (AC-03)
-./dev.sh sim --a commercial --b normal --rounds 2000 --preset standard --seed 1
-./dev.sh sim --a commercial --b easy   --rounds 2000 --preset standard --seed 1
-./dev.sh sim --a commercial --b heuristic --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b easy   --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b heuristic --rounds 2000 --preset standard --seed 1
 # 결정 시간 (단독 워커, 기본 예산 1000ms)
-./dev.sh sim --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
+docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
 # 실험 옵션: --a-iterations N, --a-search uct|halving, --a-gostop ev|rule|search, --a-weights 파일.json
 ```

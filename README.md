@@ -17,7 +17,7 @@ packages/
 tools/
   sim/        셀프플레이 시뮬레이션 CLI
 android/      Android 셸 (Kotlin + WebView + Ktor)
-docker/       개발 컨테이너 정의 (compose.yml)
+docker/       개발 이미지 정의 (Dockerfile; compose.yaml은 저장소 루트, .devcontainer/는 VS Code용)
 docs/         조사 문서, 실기기 테스트 절차·기록
 ```
 
@@ -25,28 +25,30 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 
 ## 개발 환경
 
-호스트(WSL)에는 **git, gh, docker CLI만** 있으면 된다. Node·Playwright·Android SDK는 모두 Docker 컨테이너 안에서 돈다. 진입점은 `./dev.sh`다.
+호스트(WSL)에는 **git, gh, docker CLI(+ Claude Code 훅용 jq)만** 있으면 된다. Node·Playwright 브라우저·JDK·Android SDK는 모두 개발 이미지 하나(`docker/Dockerfile`) 안에 있고, 저장소 루트의 `compose.yaml`이 그 이미지를 `dev` 서비스로 띄운다. 별도 래퍼 스크립트는 없다. 표준 `docker compose` 명령을 그대로 쓴다.
 
 ```sh
-./dev.sh pull          # 이미지 받기 (node, playwright, android)
-./dev.sh install       # npm ci (node_modules는 Docker 볼륨)
-./dev.sh lint          # oxlint + oxfmt(순수 TS) / ESLint + Prettier(web)
-./dev.sh check         # tsc 7(순수 TS) / svelte-check + tsc 6(web) / knip
-./dev.sh test          # 단위·속성·계약 테스트 (Vitest, Node)
-./dev.sh test:browser  # 웹 컴포넌트 테스트 (Vitest 브라우저 모드, Chromium + WebKit)
-./dev.sh build:web     # 웹 빌드 + 번들 예산(≤1.5MB)·외부 URL 0건 검사
-./dev.sh e2e           # Playwright E2E (Chromium + WebKit)
-./dev.sh dev:web       # Vite 개발 서버 http://localhost:5173 (#/dev/gallery 는 개발 갤러리)
-./dev.sh relay         # 개발 중계 서버 ws://localhost:17777/ws?role=host|guest
-./dev.sh sim -- 42     # 시드 42로 분배 미리보기 (M2에서 셀프플레이로 확장)
-./dev.sh npm <args>    # 컨테이너 안에서 npm (의존성 추가 등)
-./dev.sh apk:debug     # Android 디버그 APK
-./dev.sh               # 전체 작업 목록
+docker compose run --rm dev npm ci                  # 처음 한 번(이미지가 없으면 자동 빌드), lock이 바뀐 뒤
+docker compose run --rm dev npm run lint            # oxlint + oxfmt(순수 TS) / ESLint + Prettier(web)
+docker compose run --rm dev npm run check           # tsc 7(순수 TS) / svelte-check + tsc 6(web) / knip
+docker compose run --rm dev npm test                # 단위·속성·계약 테스트 (Vitest, Node)
+docker compose run --rm dev npm run test:browser    # 웹 컴포넌트 테스트 (Vitest 브라우저 모드, Chromium + WebKit)
+docker compose run --rm dev npm run build -w packages/web   # 웹 빌드 + 번들 예산(≤1.5MB)·외부 URL 0건 검사
+docker compose run --rm dev npm run e2e -w packages/web     # Playwright E2E (Chromium + WebKit)
+docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint   # APK·단위 테스트·Lint
+docker compose run --rm --service-ports dev npm run dev -w packages/web          # Vite http://localhost:5173 (#/dev/gallery)
+docker compose run --rm --service-ports dev npm run start -w packages/relay-dev  # 중계 ws://localhost:17777/ws?role=host|guest
+docker compose run --rm dev npm run sim -- 42       # 셀프플레이 시뮬레이션 CLI
+docker compose run --rm dev bash                    # 컨테이너 셸
 ```
 
-- Docker Desktop이 꺼져 있으면 `dev.sh`가 안내하고 끝난다.
-- 컨테이너는 uid 1000으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 명명된 볼륨이라 처음엔 root 소유인데, `./dev.sh install`이 매번 소유자를 맞춘다.
+- **Dev Container**: VS Code "Reopen in Container"(또는 Codespaces, devcontainer CLI)는 `.devcontainer/devcontainer.json`으로 같은 `dev` 서비스에 붙는다. 그 안에서는 앞의 `docker compose run --rm dev` 없이 `npm test`, `android/gradlew -p android assembleDebug`처럼 그대로 실행한다.
+- 컨테이너는 uid 1000(`dev`)으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 소스와 함께 바인드 마운트되어 체크아웃(워크트리)마다 따로 있다. Gradle·npm 캐시와 디버그 서명 키(`~/.android`)는 이름이 고정된 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)이라 모든 체크아웃이 공유한다.
+- 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 망은 기본 `bridge`를 써서 워크트리가 늘어도 Docker 망이 쌓이지 않는다.
+- `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. 없는 태그면 다음 `run`이 자동으로 빌드한다(오프라인에서도 기존 이미지로 계속 작업할 수 있게 매번 빌드하지 않는다).
+- CI(`ci.yml`)는 같은 이미지를 러너에서 빌드해 위와 같은 명령을 돌린다.
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
+- `./dev.sh`는 폐기되었다(새 명령을 안내하고 실패한다, M6에서 삭제).
 
 ## 툴체인 (plan.md 1.8)
 
@@ -61,9 +63,9 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 ## 테스트
 
 - **엔진**: 카드 카탈로그 불변식, xoshiro128** PRNG 결정성, fast-check 속성 테스트(셔플은 순열). M1부터 JSON 규칙 벡터(`packages/engine/test/vectors/`)가 더해진다.
-- **웹 컴포넌트**: Vitest 브라우저 모드 + `vitest-browser-svelte`. Playwright 이미지 안에서 Chromium·WebKit으로 돈다.
+- **웹 컴포넌트**: Vitest 브라우저 모드 + `vitest-browser-svelte`. 개발 이미지 안에서 Chromium·WebKit으로 돈다.
 - **E2E**: `vite preview`로 빌드 산출물을 띄우고 Playwright로 확인한다. 외부 네트워크 요청이 하나라도 나가면 실패한다.
-- CI(`.github/workflows/ci.yml`): push·PR마다 lint·check·test·build. E2E는 PR과 수동 실행에서만(분량 절약). Android 잡은 `android/settings.gradle.kts`가 있을 때만 빌드한다.
+- CI(`.github/workflows/ci.yml`): 개발 이미지 하나로 push·PR마다 lint·check·test·build·Android. 컴포넌트 테스트·E2E는 PR과 수동 실행에서만(분량 절약).
 
 ## 에이전트 도구
 
