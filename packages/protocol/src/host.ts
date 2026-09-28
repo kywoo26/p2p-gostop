@@ -59,6 +59,7 @@ export interface HostSessionOptions {
   readonly roundNumber?: number;
   readonly dealer?: Seat;
   readonly carry?: number;
+  readonly pushes?: number;
   /** 첫 hello에 첫 판을 자동으로 시작한다(기본 true). 로비 화면이 있으면 false로 두고 start()를 부른다 */
   readonly autoStart?: boolean;
   readonly unit?: MoneyUnit;
@@ -92,6 +93,7 @@ export interface HostSessionState {
   readonly roundNumber: number;
   readonly dealer: Seat | null;
   readonly carry: number;
+  readonly pushes?: number;
   readonly ledger: SessionLedger;
   readonly stage: SessionStage;
   readonly rev: number;
@@ -114,6 +116,7 @@ export interface HostSessionState {
   } | null;
   readonly settlementView: SettlementView | null;
   readonly lastReveal: RevealHostMessage | null;
+  readonly lastAbort?: { readonly round: number; readonly reason: string } | null;
 }
 
 const RESYNC_EVENT_LIMIT = 40;
@@ -135,6 +138,7 @@ export class HostSession {
   roundNumber: number;
   dealer: Seat | undefined;
   carry: number;
+  pushes: number;
   guestName: string | null = null;
   /**
    * 게스트가 토큰을 받았음이 확인됐는지: 토큰을 실은 hello나 welcome 뒤에만 보낼 수 있는 메시지를 받으면 true.
@@ -170,6 +174,7 @@ export class HostSession {
   private readonly logLine: (line: string) => void;
   private current: RoundRecord | null = null;
   private lastReveal: RevealHostMessage | null = null;
+  private lastAbort: { round: number; reason: string } | null = null;
   /** 현재 판의 가린 이벤트(세션 순번). 재동기화 차분용(L-8: 판이 바뀌면 비운다) */
   private events: EngineEvent[] = [];
   private readonly changeHandlers = new Set<(host: HostSession) => void>();
@@ -188,6 +193,7 @@ export class HostSession {
     this.roundNumber = options.roundNumber ?? 1;
     this.dealer = options.dealer;
     this.carry = options.carry ?? 1;
+    this.pushes = options.pushes ?? 0;
     this.autoStart = options.autoStart ?? true;
     this.unit = options.unit ?? '냥';
     transport.onMessage((raw) => this.receive(raw));
@@ -253,8 +259,35 @@ export class HostSession {
   applyHost(action: Action): boolean {
     return this.apply(action);
   }
+  /** 정산 전 settled 단계에서 호스트 승자가 밀기를 고른다 */
+  push(): boolean {
+    const ok = this.applyAction({ type: 'push', seat: 0 });
+    if (ok) this.changed();
+    return ok;
+  }
+  /** 3분 이상 게스트가 부재한 진행 중 판을 무효로 한다 */
+  abortRound(reason: string): boolean {
+    if (
+      this.stageValue !== 'playing' ||
+      this.state?.phase !== 'turn' ||
+      this.connected ||
+      this.logicalTime - this.lastGuestActivity < 180_000 ||
+      reason.length === 0 ||
+      reason.length > 80
+    )
+      return false;
+    this.lastAbort = { round: this.roundNumber, reason };
+    this.guestReady = false;
+    this.setStage('settled');
+    this.send({ t: 'roundAborted', ...this.lastAbort });
+    this.snapshot();
+    this.changed();
+    return true;
+  }
   /** settled에서 다음 판을 시작한다 (#26). 게스트 ready 없이도 호스트가 시작할 수 있다 */
   nextRound(): boolean {
+    if (this.stageValue !== 'settled') return false;
+    if (this.state?.phase === 'end' && this.settlement === null) this.finishRound();
     if (this.stageValue !== 'settled') return false;
     this.roundNumber++;
     this.beginRound();
@@ -402,6 +435,7 @@ export class HostSession {
     const options: RoundOptions = {
       roundNumber: this.roundNumber,
       carry: this.carry,
+      pushes: this.pushes,
       ...(this.dealer === undefined ? {} : { dealer: this.dealer }),
     };
     round.options = options;
@@ -414,16 +448,24 @@ export class HostSession {
     this.events = [];
     this.setStage('playing');
     this.publish(start.events);
-    if (this.state.phase === 'end') this.finishRound();
+    if (this.state.phase === 'end') this.endRound();
   }
   private seedOf(round: RoundRecord): readonly [number, number, number, number] {
     return combineSeed(fromHex(round.hostSecret)!, fromHex(round.guestSecret ?? '')!);
   }
   private finishRound(): void {
     const round = this.current;
-    if (this.state?.phase !== 'end' || this.stageValue !== 'playing' || round === null) return;
-    const result = settle(this.state);
+    if (
+      this.state?.phase !== 'end' ||
+      !['playing', 'settled'].includes(this.stageValue) ||
+      round === null ||
+      this.settlement !== null
+    )
+      return;
+    const lastSettled = this.events.findLast((event) => event.type === 'Settled');
+    const result = lastSettled?.type === 'Settled' ? lastSettled.settlement : settle(this.state);
     this.settlement = result;
+    this.lastAbort = null;
     const applied = withSettlement(this.ledger, result, this.rules);
     this.ledger = applied.ledger;
     this.settlementView = toSettlementView({
@@ -438,6 +480,7 @@ export class HostSession {
     });
     this.dealer = result.nextDealer;
     this.carry = result.nextCarry;
+    this.pushes = result.nextPushes ?? 0;
     this.bankrupt = ([0, 1] as const).filter((seat) => this.ledger.balances[seat] <= 0);
     const bankrupt = this.bankrupt.length > 0;
     this.setStage(bankrupt ? 'bankrupt' : 'settled');
@@ -487,7 +530,13 @@ export class HostSession {
     this.send({ t: 'sessionEnd', reason, seat });
   }
   private applyAction(action: Action): boolean {
-    if (this.state === null || this.stageValue !== 'playing' || this.current === null) return false;
+    if (
+      this.state === null ||
+      this.current === null ||
+      (this.stageValue !== 'playing' &&
+        !(this.stageValue === 'settled' && action.type === 'push' && this.settlement === null))
+    )
+      return false;
     if (!legalActions(this.state, action.seat).some((a) => sameAction(a, action))) return false;
     const result = reduce(this.state, action);
     if (!result.ok) return false;
@@ -497,8 +546,21 @@ export class HostSession {
     for (const payout of this.state.instantPayouts.slice(oldCount))
       this.ledger = withInstantPayout(this.ledger, payout, this.rules);
     this.publish(result.events);
-    if (this.state.phase === 'end') this.finishRound();
+    if (action.type === 'push') this.finishRound();
+    else if (this.state.phase === 'end') this.endRound();
     return true;
+  }
+  private endRound(): void {
+    if (this.state === null) return;
+    const winner = this.state.result?.winner;
+    if (
+      winner !== null &&
+      winner !== undefined &&
+      legalActions(this.state, winner).some((a) => a.type === 'push')
+    ) {
+      this.setStage('settled');
+      this.snapshot();
+    } else this.finishRound();
   }
 
   // ---- 수신 ----
@@ -509,7 +571,12 @@ export class HostSession {
       this.snapshot();
       return;
     }
-    if (this.stageValue !== 'playing' || this.state === null || this.state.phase === 'end') {
+    if (
+      (this.stageValue !== 'playing' &&
+        !(this.stageValue === 'settled' && message.payload.type === 'push')) ||
+      this.state === null ||
+      (this.state.phase === 'end' && message.payload.type !== 'push')
+    ) {
       this.reject('ROUND_NOT_READY', message.seq);
       return;
     }
@@ -525,6 +592,7 @@ export class HostSession {
         if (this.state !== null) this.snapshot();
         else this.sendStatus();
         if (this.lastReveal) this.send(this.lastReveal);
+        if (this.lastAbort) this.send({ t: 'roundAborted', ...this.lastAbort });
         this.sendCommit();
         if (this.current?.guestHash)
           this.send({
@@ -537,6 +605,10 @@ export class HostSession {
         this.resyncEvents(lastSeq);
         return;
       case 'settled':
+        this.snapshot();
+        if (this.lastAbort) this.send({ t: 'roundAborted', ...this.lastAbort });
+        else if (this.lastReveal) this.send(this.lastReveal);
+        return;
       case 'bankrupt':
       case 'ended':
         this.snapshot();
@@ -680,6 +752,9 @@ export class HostSession {
       case 'action':
         this.acceptAction(message);
         break;
+      case 'push':
+        this.acceptAction({ t: 'action', seq: message.seq, payload: { type: 'push', seat: 1 } });
+        break;
       case 'ping':
         this.send({ t: 'pong' });
         break;
@@ -693,6 +768,7 @@ export class HostSession {
         break;
       case 'ready':
         if (this.stageValue === 'settled' && message.round === this.roundNumber) {
+          if (this.state?.phase === 'end' && this.settlement === null) this.finishRound();
           if (!this.guestReady) {
             this.guestReady = true;
             this.bump();
@@ -736,6 +812,7 @@ export class HostSession {
       roundNumber: this.roundNumber,
       dealer: this.dealer ?? null,
       carry: this.carry,
+      pushes: this.pushes,
       ledger: this.ledger,
       stage: this.stageValue,
       rev: this.rev,
@@ -761,6 +838,7 @@ export class HostSession {
             },
       settlementView: this.settlementView,
       lastReveal: this.lastReveal,
+      lastAbort: this.lastAbort,
     };
   }
 
@@ -784,6 +862,7 @@ export class HostSession {
       roundNumber: data.roundNumber,
       ...(data.dealer === null ? {} : { dealer: data.dealer }),
       carry: data.carry,
+      ...(data.pushes === undefined ? {} : { pushes: data.pushes }),
       autoStart: data.autoStart,
       unit: data.unit,
       ...(options.log ? { log: options.log } : {}),
@@ -803,6 +882,7 @@ export class HostSession {
     this.ended = data.stage === 'ended';
     this.settlementView = data.settlementView;
     this.lastReveal = data.lastReveal;
+    this.lastAbort = data.lastAbort ?? null;
     const round = data.round;
     this.current =
       round === null

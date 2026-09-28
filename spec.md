@@ -158,7 +158,8 @@ RoundPhase:
 - 좌석 대칭: 좌석 0/1을 바꾸어도 동일 결과.
 
 ### 4.5 이벤트 목록 (UI·로그 계약)
-`Dealt, Redealt, FirstPicked, CardPlayed, CardDrawn, CardFlipped, Placed(source), Matched(target), Captured(cards, to), Ppeok, PpeokTaken, SelfPpeok, Jjok, Ttadak, Sseul, Bomb, Shake(accepted), Chongtong, Hudang, BonusGained, GukjinPlaced, PiStolen(from,to), InstantPayout(kind, points, from), ScoreChanged(seat, breakdown), GoStopPrompt, Go(count), Stop, RoundEnded(reason), Settled(ledgerEntry), Nagari(multiplier)`. (정의의 단일 근거는 `packages/engine`의 `EngineEvent` 타입이며, 이 목록은 그 요약이다. 2026-09-28 엔진 기준으로 갱신.)
+`Dealt, Redealt, FirstPicked, CardPlayed, CardDrawn, CardFlipped, Placed(source), Matched(target), Captured(cards, to), Ppeok, PpeokTaken, SelfPpeok, Jjok, Ttadak, Sseul, Bomb, Shake(accepted), Chongtong, Hudang, BonusGained, GukjinPlaced, PiStolen(from,to), InstantPayout(kind, points, from), ScoreChanged(seat, breakdown), GoStopPrompt, Go(count), Stop, RoundEnded(reason), Settled(settlement), Pushed(pushes, multiplier, forfeitedPoints), Nagari(multiplier)`. (정의의 단일 근거는 `packages/engine`의 `EngineEvent` 타입이며, 이 목록은 그 요약이다.)
+밀기를 하면 `Pushed` 뒤 포기한 정산의 `Settled`가 다시 발행되며 마지막 `Settled`가 유효하다. 공개 뷰는 `SeatView.revealed`와 판의 `pushes`를 전달하고, 정산은 승자·패자의 `gukjinAsPi`, `pushed`, `forfeitedPoints`, `nextPushes` 및 배수 단계의 `origin: 'push'`를 전달한다.
 각 이벤트는 좌석, 관련 카드 ID, 순번을 가진다. 상대에게 보내는 뷰에서는 손패 ID를 가린다.
 
 ---

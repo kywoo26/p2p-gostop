@@ -573,5 +573,67 @@
         }
       ]
     }
+  },
+  {
+    "id": "NP-02-push-action",
+    "description": "밀기 액션 형식",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "action",
+      "seq": 7,
+      "payload": {
+        "type": "push",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "NP-02-push-message",
+    "description": "게스트 밀기 전용 메시지",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "push",
+      "seq": 7
+    }
+  },
+  {
+    "id": "NP-02-push-bad-seat",
+    "description": "상대 좌석 밀기 형식 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "action",
+      "seq": 7,
+      "payload": {
+        "type": "push",
+        "seat": 2
+      }
+    }
+  },
+  {
+    "id": "NP-02-round-aborted",
+    "description": "호스트 판 무효 알림",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "roundAborted",
+      "round": 3,
+      "reason": "게스트 부재 시간 초과"
+    }
+  },
+  {
+    "id": "NP-02-round-aborted-bad-reason",
+    "description": "빈 무효 사유 거부",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "roundAborted",
+      "round": 3,
+      "reason": 42
+    }
   }
 ]

@@ -24,6 +24,7 @@ const actionSchema = z.union([
   z.object({ type: z.literal('gukjin'), seat, asPi: z.boolean() }),
   z.object({ type: z.literal('go'), seat }),
   z.object({ type: z.literal('stop'), seat }),
+  z.object({ type: z.literal('push'), seat }),
 ]);
 
 const balances = z.tuple([money, money]);
@@ -65,6 +66,9 @@ const seatView = z.object({
   score: z.number(),
   goCount: nat,
   shakes: nat,
+  bombs: nat,
+  gukjinAsPi: z.boolean(),
+  revealed: cards,
   ppeokCount: nat,
   balance: money,
   progress: z.object({ gwang: nat, godori: nat, dan: nat, pi: nat }),
@@ -118,6 +122,7 @@ const steps = z
       op: z.enum(['add', 'mul']),
       value: z.number(),
       total: z.number(),
+      origin: z.optional(z.literal('push')),
     }),
   )
   .check(z.maxLength(32));
@@ -131,6 +136,7 @@ const boardSchema = z.object({
   pending: z.nullable(prompt),
   playable: cards,
   round,
+  pushes: nat,
   eventSeq: nat,
   legal: z.array(actionSchema).check(z.maxLength(64)),
   firstPick: z.nullable(z.object({ poolSize: nat, taken: z.nullable(nat) })),
@@ -165,6 +171,10 @@ const settlement = z.object({
     .check(z.maxLength(8)),
   steps,
   finalPoints: z.number(),
+  gukjinAsPi: z.tuple([z.boolean(), z.boolean()]),
+  pushed: z.boolean(),
+  forfeitedPoints: z.number(),
+  nextPushes: nat,
   pointValue: money,
   amount: money,
   unit: z.enum(['냥', '원', '점']),
@@ -210,6 +220,7 @@ export const guestSchema = z.union([
     epoch: z.optional(z.string().check(z.maxLength(64))),
   }),
   z.object({ t: z.literal('action'), seq: nat, payload: actionSchema }),
+  z.object({ t: z.literal('push'), seq: nat }),
   z.object({ t: z.literal('ping') }),
   z.object({ t: z.literal('log'), entries: z.array(z.string()) }),
   z.object({ t: z.literal('commitGuest'), round, hash: hex64 }),
@@ -260,6 +271,7 @@ export const hostSchema = z.union([
   z.object({ t: z.literal('pong') }),
   z.object({ t: z.literal('commitHost'), round, hash: hex64 }),
   z.object({ t: z.literal('revealGuestRequest'), round, guestHash: hex64 }),
+  z.object({ t: z.literal('roundAborted'), round, reason: shortText }),
   z.object({
     t: z.literal('revealHost'),
     round,
@@ -273,6 +285,7 @@ export const hostSchema = z.union([
     options: z.object({
       roundNumber: z.optional(round),
       carry: z.optional(nat),
+      pushes: z.optional(nat),
       dealer: z.optional(seat),
       isNight: z.optional(z.boolean()),
     }),

@@ -68,7 +68,7 @@ export function currentMultiplier(view: PlayerView): number {
   const seat = view.seats[view.viewer];
   let m = 2 ** (seat.shakes + seat.bombs);
   if (seat.goCount >= 3) m *= 2 ** (seat.goCount - 2);
-  m *= view.round.carry;
+  m *= view.round.carry * 2 ** view.round.pushes;
   const jackpot = view.rules.jackpotRound;
   if (jackpot !== null && jackpot.every > 0 && view.round.number % jackpot.every === 0) {
     m *= jackpot.multiplier;
@@ -120,6 +120,9 @@ function seatOf(
     score: s.score.total,
     goCount: s.goCount,
     shakes: s.shakes,
+    bombs: s.bombs,
+    gukjinAsPi: s.score.gukjinAsPi,
+    revealed: s.revealed,
     ppeokCount: s.ppeokCount,
     balance: balances[seat],
     progress: progressOf(s.captured, s.score.gukjinAsPi),
@@ -173,6 +176,7 @@ export function toBoardView(view: PlayerView, ctx: ViewContext | BoardMeta): Boa
     pending: promptOf(view),
     playable,
     round: view.round.number,
+    pushes: view.round.pushes,
     eventSeq: view.eventSeq,
     legal: view.legal,
     firstPick:
@@ -295,6 +299,10 @@ export function toSettlementView(
     breakdown,
     steps: s.steps,
     finalPoints: s.finalPoints,
+    gukjinAsPi: s.gukjinAsPi,
+    pushed: s.pushed === true,
+    forfeitedPoints: s.forfeitedPoints ?? 0,
+    nextPushes: s.nextPushes ?? 0,
     pointValue: input.perPoint,
     amount: input.amount,
     unit: input.unit,

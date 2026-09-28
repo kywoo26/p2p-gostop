@@ -14,6 +14,7 @@ import {
 } from '@p2p-gostop/engine';
 import { inFlightOf, toBoardExtras, toBoardView, type BoardView } from '../src/index.ts';
 import { Picker } from './helpers.ts';
+import followupVectors from './vectors/view-followups.json';
 
 const ledger = createLedger(100, 50_000);
 const board = (state: GameState, viewer: Seat): BoardView =>
@@ -24,7 +25,7 @@ function expectedMultiplier(state: GameState, viewer: Seat): number {
   const seat = state.seats[viewer];
   let m = 2 ** (seat.shakes + seat.bombs);
   if (seat.goCount >= 3) m *= 2 ** (seat.goCount - 2);
-  m *= state.round.carry;
+  m *= state.round.carry * 2 ** state.round.pushes;
   const jackpot = state.rules.jackpotRound;
   if (jackpot !== null && jackpot.every > 0 && state.round.number % jackpot.every === 0)
     m *= jackpot.multiplier;
@@ -38,6 +39,7 @@ function visibleIds(view: BoardView): Set<CardId> {
   for (const g of view.floor) add(g.cards);
   for (const s of view.seats) {
     add(s.hand);
+    add(s.revealed ?? []);
     add([...s.captured.gwang, ...s.captured.yeol, ...s.captured.tti, ...s.captured.pi]);
   }
   add(view.playable);
@@ -64,6 +66,18 @@ function walk(seed: number, visit: (state: GameState) => void): void {
 }
 
 describe('#12 BoardView 상세 필드 (M3 어댑터의 상위 집합)', () => {
+  it.each(followupVectors)('$id: $description', ({ seed, viewer, pushes, multiplier }) => {
+    const state = newRound({ ...PRESETS.standard, push: true }, seed, { dealer: 0, pushes }).state;
+    const view = board(state, viewer === 0 ? 0 : 1);
+    expect(view.pushes).toBe(pushes);
+    expect(view.multiplier).toBe(multiplier);
+    expect(view.seats[1 - viewer]!.hand).toBeNull();
+    for (const seat of [0, 1] as const) {
+      expect(view.seats[seat].bombs).toBe(0);
+      expect(view.seats[seat].revealed).toEqual([]);
+      expect(view.seats[seat].gukjinAsPi).toBe(state.seats[seat].score.gukjinAsPi);
+    }
+  });
   it('fast-check: 모든 상태·양 좌석에서 legal·firstPick·폭탄·뒤집기·고스톱·배수·inFlight가 엔진과 일치하고 숨은 카드가 없다', () => {
     const counts = { pickFirst: 0, goStop: 0, target: 0, bomb: 0, flipOnly: 0 };
     assert(
@@ -79,6 +93,17 @@ describe('#12 BoardView 상세 필드 (M3 어댑터의 상위 집합)', () => {
             ]);
             expect(view.phase).toBe(state.phase);
             expect(view.dealer).toBe(state.dealer);
+            expect(view.pushes).toBe(state.round.pushes);
+            for (const seat of [0, 1] as const) {
+              expect(view.seats[seat].gukjinAsPi).toBe(pv.seats[seat].score.gukjinAsPi);
+              expect(view.seats[seat].bombs).toBe(pv.seats[seat].bombs);
+              expect(view.seats[seat].revealed).toEqual(pv.seats[seat].revealed);
+              expect(
+                (view.seats[seat].revealed ?? []).every((id) =>
+                  state.seats[seat].hand.includes(id),
+                ),
+              ).toBe(true);
+            }
             const other: Seat = viewer === 0 ? 1 : 0;
             const picking = legal.some((a) => a.type === 'pickFirst');
             if (picking) counts.pickFirst++;
@@ -112,7 +137,10 @@ describe('#12 BoardView 상세 필드 (M3 어댑터의 상위 집합)', () => {
             expect(view.inFlight).toEqual(inFlightOf(pv));
             if (view.pending?.kind === 'target') counts.target++;
             // 가림: 상대 손패·더미 카드는 어디에도 나오지 않는다
-            const hidden = new Set([...state.seats[other].hand, ...state.deck]);
+            const hidden = new Set([
+              ...state.seats[other].hand.filter((id) => !state.seats[other].revealed.includes(id)),
+              ...state.deck,
+            ]);
             for (const id of visibleIds(view)) expect(hidden.has(id)).toBe(false);
             expect(view.seats[other].hand).toBeNull();
             // M3 BoardExtras 호환 함수와 같은 값

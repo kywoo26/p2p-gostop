@@ -39,12 +39,14 @@
 | 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
 | 호스트→게스트 | `status` | `seq,status` | 화면은 그대로이고 단계·준비·파산 상태만 바뀜 |
 | 게스트→호스트 | `action` | `seq,payload` | 보낸 시점의 마지막 수신 순번과 엔진 액션(여분 필드는 지워진다) |
+| 게스트→호스트 | `push` | `seq` | settled에서 승자 게스트의 밀기 선택. 호스트는 `legalActions`로 재검사한다 |
 | 호스트→게스트 | `reject` | `seq,reason,message` | 거부. `reason`은 아래 코드만 |
 | 게스트→호스트 | `ping` / 호스트→게스트 `pong` | 없음 | 하트비트 |
 | 게스트→호스트 | `log` | `entries[]` | 진단 로그(64KB, 줄당 2KB) |
 | 호스트→게스트 | `commitHost` | `round,hash` | 호스트 32바이트 난수의 SHA-256 |
 | 게스트→호스트 | `commitGuest` | `round,hash` | 게스트 32바이트 난수의 SHA-256 |
 | 호스트→게스트 | `revealGuestRequest` | `round,guestHash` | 분배 직전 게스트 원문 요청 |
+| 호스트→게스트 | `roundAborted` | `round,reason` | 3분 이상 게스트 부재 뒤 호스트가 진행 중인 판을 무효로 한 알림 |
 | 게스트→호스트 | `revealGuest` | `round,secret` | 게스트 원문(64자리 소문자 hex) |
 | 호스트→게스트 | `revealHost` | `round,secret,guestSecret,seed,actions,hostHash,guestHash,options,firstSeq` | 판 종료 후 호스트 원문과 재현 입력. `options`의 덱 고정(`deck`·`pickPools`)은 지운다 |
 | 게스트→호스트 | `ready` | `round` | settled에서 다음 판 요청(시작은 호스트) |
@@ -69,8 +71,10 @@
 | `bombMonths`, `canFlipOnly` | 폭탄 가능한 월, 폭탄패 뒤집기 가능 여부(`legal`에서 파생) |
 | `dealer`, `phase` | 선, 엔진 판 단계(`chooseFirst`·`turn`·`end`) |
 | `multiplier` | 스톱 미리보기가 있으면 그 배수, 아니면 **보는 좌석**의 흔들기·폭탄·3고부터의 고·나가리 이월·대박판의 곱(M3 `currentMultiplier`와 같다) |
+| `pushes`, `seats[*].gukjinAsPi`, `bombs`, `revealed` | 연속 밀기 횟수, 국진 위치, 폭탄 횟수, 이미 공개되어 손에 남은 카드. 상대 손패는 계속 `null`; `revealed`만 양쪽에 보인다 |
 
 정산 화면 `SettlementView`의 `balances[].before`는 판 시작 전(즉시 정산 전) 잔액, `amount`는 그 판 round 항목의 실제 이동 금액(나가리면 0)이다.
+`SettlementView.gukjinAsPi`는 승자·패자 각각 정산에 사용한 국진 위치다. `pushed`, `forfeitedPoints`, `nextPushes`와 `steps[].origin: 'push'`도 전달한다. 밀기를 하면 `Pushed` 뒤 두 번째 `Settled`가 나오며 **마지막 `Settled`만 유효**하다.
 
 ## 4. 순서
 
@@ -99,6 +103,8 @@
 ```
 
 - 판이 끝나면 **settled에서 멈춘다**(#26). 정산 화면(`settlement`)은 다음 판이 실제로 분배될 때까지 모든 snapshot·events에 실린다. 게스트 `requestNextRound()`는 요청일 뿐이고 다음 판은 호스트 `nextRound()`로 시작한다.
+- `rules.push`가 켜지고 승자에게 합법 `push`가 있으면 settled에서 정산을 잠시 보류한다. 호스트 승자는 `host.push()`, 게스트 승자는 `guest.push()`로 민다. 정산을 받으면 게스트 `ready` 또는 호스트 `nextRound()`가 보류한 정산을 확정한다. 밀면 포기한 점수만 기록하고 판돈 이동은 없으며 `nextPushes`를 다음 판 `RoundOptions.pushes`에 넘긴다. `revealHost`의 액션 열에는 push도 들어가고 게스트는 마지막 정산과 리플레이를 대조한다.
+- 게스트가 3분 이상 없고 현재 엔진 단계가 `turn`이면 호스트가 `abortRound(reason)`으로 판을 무효로 할 수 있다. 이미 지급된 즉시 정산은 유지하고 판 정산·나가리 이월·선은 그대로 둔다. `roundAborted`를 보내 양쪽을 settled 대기로 옮기며, 게스트 검증은 `aborted`로 기록한다. 재접속 때도 무효 알림을 다시 보낸다.
 - 파산: 판 정산 뒤 잔액이 0인 좌석이 있으면 bankrupt 단계. 그 좌석이 고른다(호스트 좌석은 `host.chooseBankruptcy(choice)`, 게스트 좌석은 `bankruptcy` 메시지. 남의 좌석 선택은 `BANKRUPT` 거부). **재충전은 파산한 좌석만** 시작 잔액으로 되돌리고 `recharge` 원장 항목을 남긴다(상대 잔액 유지). 제로섬 대조는 "잔액 합 = 시작 잔액 × 2 + 재충전 합"(`ledgerDelta`로 항목 합 = 잔액 − 시작 잔액). 종료를 고르면 ended와 `sessionEnd`. 프롬프트는 재접속 때 다시 보낸다.
 
 ## 5. 핸드셰이크 복구 (#13)

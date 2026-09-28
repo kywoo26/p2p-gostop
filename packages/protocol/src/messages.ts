@@ -57,6 +57,7 @@ export type GuestMessage =
       readonly epoch?: string;
     }
   | { readonly t: 'action'; readonly seq: number; readonly payload: Action }
+  | { readonly t: 'push'; readonly seq: number }
   | { readonly t: 'ping' }
   | { readonly t: 'log'; readonly entries: readonly string[] }
   | { readonly t: 'commitGuest'; readonly round: number; readonly hash: string }
@@ -111,6 +112,7 @@ export type HostMessage =
   | { readonly t: 'pong' }
   | { readonly t: 'commitHost'; readonly round: number; readonly hash: string }
   | { readonly t: 'revealGuestRequest'; readonly round: number; readonly guestHash: string }
+  | { readonly t: 'roundAborted'; readonly round: number; readonly reason: string }
   | {
       readonly t: 'revealHost';
       readonly round: number;
