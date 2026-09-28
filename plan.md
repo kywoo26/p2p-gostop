@@ -1,8 +1,8 @@
 # p2p-gostop — 구현 계획 (plan.md)
 
-작성일: 2026-09-28 · 상태: v0.1 (사용자 검토 대기)
+작성일: 2026-09-28 · 상태: v0.2 (사용자 검토 대기)
 상위 문서: `intend.md`(왜) → `spec.md` v0.3(무엇을) → **이 문서**(어떻게)
-근거: `docs/research/tech-stack.md`(버전·제약), `docs/research/code-refs.md`(설계 차용), `docs/research/rules-commercial.md`(규칙)
+근거: `docs/research/tech-stack.md`(버전·제약), `docs/research/code-refs.md`(설계 차용), `docs/research/rules-commercial.md`(규칙), `docs/research/agent-era-stack.md`(에이전트 시대 스택 판단)
 
 ---
 
@@ -16,6 +16,7 @@
 6. **결정론.** 엔진·AI·셔플은 시드 주입 가능한 순수 함수. 버그 리포트는 시드+액션 열로 재현한다.
 7. **규칙의 단일 근거.** 규칙 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 기대값으로 쓰지 않는다.
 8. **작게 자주 커밋.** Conventional Commits(`feat:`, `fix:`, `test:`, `docs:`, `build:`, `ci:`). 마일스톤 완료 시 태그(`v0.<M>.x`).
+9. **에이전트 실수는 기계가 잡는다.** 규범은 `AGENTS.md` 한 곳(버전 표, 금지 목록, 관례)에 두고 `CLAUDE.md`는 `@AGENTS.md`로 참조한다. 지켜야 할 규칙은 문서가 아니라 린트·타입 검사·테스트·훅으로 강제한다. 프레임워크를 "LLM이 더 잘 아는 것"으로 바꾸는 대신 즉각적인 실패 신호와 단일 최신 근거(Context7, Svelte MCP, llms.txt)를 갖춘다. (agent-era-stack.md 8(c))
 
 ---
 
@@ -54,8 +55,13 @@ p2p-gostop/
 │  ├─ protocol/                 # 메시지 타입, 버전, 직렬화, playerView 계약. engine 타입 재사용
 │  ├─ web/                      # Vite + Svelte 5 앱. 호스트/게스트/솔로 모드, 애니메이션, 설정, 진단
 │  │  ├─ src/
-│  │  ├─ e2e/                   # Playwright (Chromium + WebKit)
-│  │  └─ public/cards/          # 화투 SVG (CC BY-SA 4.0) + 자체 제작 보너스·뒷면
+│  │  │  ├─ anim/               # WAAPI + FLIP 헬퍼(카드 이동·플립·획득 시퀀서)
+│  │  │  ├─ styles/tokens.css   # 디자인 토큰(CSS 변수, OKLCH, --dur-* = spec 6.4 예산)
+│  │  │  ├─ bridge/bridge.ts    # Android 브리지. Capacitor 플러그인 모양의 인터페이스(향후 전환 대비)
+│  │  │  └─ routes/dev/gallery  # 고정 픽스처로 모든 화면·상태를 나열(dev 전용, 스냅샷·axe 대상)
+│  │  ├─ fixtures/              # 갤러리·테스트용 상태 JSON
+│  │  ├─ e2e/                   # Playwright (Chromium + WebKit) + axe + 스냅샷(도커 안에서만)
+│  │  └─ public/cards/          # 화투 SVG (CC BY-SA 4.0, svgo 최적화) + 자체 제작 보너스·뒷면
 │  └─ relay-dev/                # Node용 개발 중계 서버(Android Ktor 중계와 같은 규칙). 로컬 개발·E2E 전용
 ├─ tools/
 │  └─ sim/                      # CLI: 셀프플레이 시뮬레이션, AI 강도 벤치마크, 머니 모델 산정
@@ -87,9 +93,32 @@ p2p-gostop/
 
 ### 1.6 웹 앱 설계
 - 모드: `host`(권위 엔진 보유, 게스트에게 뷰 전송), `guest`(뷰 수신, 액션 요청), `solo`(엔진+AI 로컬, 네트워크 없음).
-- 상태 관리: Svelte 5 runes. 엔진 이벤트 열을 애니메이션 큐가 소비하고, 큐가 비면 최신 뷰로 보정.
-- 애니메이션: Svelte `animate:flip`과 CSS transform. spec 6.4 예산을 상수로 두고 속도 설정이 배율 적용.
-- 비보안 컨텍스트 제약(spec NF-02) 준수를 ESLint 커스텀 규칙(금지 API 목록)으로 강제.
+- 상태 관리: Svelte 5 runes. 외부 상태 라이브러리 없음. 엔진 이벤트 열을 애니메이션 큐가 소비하고, 큐가 비면 최신 뷰로 보정.
+- 애니메이션: **Web Animations API + 자체 FLIP 헬퍼**(`src/anim/`, 수십 줄). 컨테이너를 넘나드는 카드 이동(손패→바닥→획득패)은 이 헬퍼가, 모달·배너·토스트는 Svelte transition이 담당한다. `transform`·`opacity`만 애니메이션하고 `will-change`는 움직이는 카드에만 건다(iOS 메모리). `anim.finished`로 턴 시퀀스를 async 체인으로 구성. 속도 설정과 E2E 즉시 모드는 배율 하나(`--dur-scale`)로 처리. 라이브러리(GSAP, Motion, Pixi 등)는 도입하지 않음. FLIP 헬퍼가 복잡해지면 `motion` 미니 `animate()`만 TRIAL.
+- 스타일: Svelte scoped CSS + `tokens.css`. Tailwind·컴포넌트 라이브러리 없음. 네이티브 `<dialog>`로 부족하면 Bits UI 단일 컴포넌트만 검토.
+- 카드 자산: SVG를 svgo로 최적화해 `<img>`로 렌더(인라인 SVG·filter 금지, Safari 래스터 성능).
+- 비보안 컨텍스트 제약(spec NF-02)은 ESLint 코어 규칙 `no-restricted-properties`/`no-restricted-syntax`로 강제(커스텀 규칙 없음, .svelte에도 적용).
+- 프로토콜 입력 검증: `zod/mini`(Zod 4) TRIAL. 신뢰할 수 없는 WS 입력을 스키마로 검증하고 타입을 스키마에서 도출.
+
+### 1.8 스택 확정 (v0.2, 웹·도구 계층. Android·CI 계층은 tech-stack.md 권장 스택 그대로)
+| 계층 | 선택 (2026-09-28 npm latest) | 비고 |
+|---|---|---|
+| Node / 패키지 | 24.21.0 LTS, npm workspaces, `.npmrc` `min-release-age=3` | 공급망 방어. pnpm·Turborepo 도입 안 함 |
+| 웹 UI | Vite 8.3.1 + Svelte 5.57.1 + `@sveltejs/vite-plugin-svelte` 7.3.1 | React·Solid·Vue 전환 안 함 |
+| **언어** | **TypeScript 6.0.3** (기본). `svelte-check` 4.7.6 | TS 7.0.2는 typescript-eslint(<6.1)·svelte-check(^5‖^6)와 비호환 확인 → 별칭으로 engine/ai/protocol 고속 타입 검사에만 선택적 사용 |
+| 린트·포맷 | ESLint 10.11.0 + `eslint-plugin-svelte` 3.23.0 + `typescript-eslint` 8.70.1, Prettier 3.9.9 + `prettier-plugin-svelte` 4.1.1 | Biome·oxlint는 .svelte 지원 실험적 → 보류 |
+| 단위 테스트 | Vitest 5.0.2 + **fast-check 4.10.2**(engine/ai 속성 테스트) | JSON 벡터와 이중망 |
+| 컴포넌트 테스트 | **`@vitest/browser-playwright` 5.0.2 + `vitest-browser-svelte` 3.1.0** (Chromium+WebKit) | FLIP 측정 등 실제 레이아웃 필요 |
+| E2E | `@playwright/test` 1.63.0 + **`@axe-core/playwright` 4.13.0** + `toHaveScreenshot`(도커 안에서만 결정적) | Chromatic 등 유료 서비스 없음 |
+| 애니메이션 | WAAPI + 자체 FLIP 헬퍼, Svelte transition | 0KB |
+| 스타일 | scoped CSS + `tokens.css`(OKLCH) | 0KB |
+| 자산 | svgo 4.1.0 | 번들 예산 |
+| 프로토콜 검증 | `zod` 4.6.5 (`zod/mini`) TRIAL | |
+| QR | `uqr` 0.1.3 | |
+| 위생 | **knip 6.38.0**, 번들 ≤1.5MB·외부 URL 0건 검사 스크립트(의존성 0) | CI 게이트 |
+| 의존성 갱신 | Dependabot(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | |
+| 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 Claude Code 플러그인/MCP(`@sveltejs/mcp` 0.1.26, autofixer)**, `chrome-devtools-mcp` 1.10.1, PostToolUse 포맷·린트 훅. `@playwright/mcp` TRIAL | 사용자 로컬 설정 변경은 승인 후 |
+| Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 
 ### 1.7 Android 앱 설계
 - 단일 `MainActivity` + `WebView`(androidx.webkit 1.17.1). 화면 전부 웹. 네이티브 UI는 권한 요청 다이얼로그와 오류 화면뿐.
@@ -167,8 +196,11 @@ p2p-gostop/
 | 규칙 벡터 | engine | Vitest + JSON 벡터 | 매 커밋 |
 | 속성·불변식 | engine, ai | Vitest(시드 고정, 10,000판) | 매 커밋(축약 1,000판), 야간/태그(전체) |
 | 강도 벤치마크 | ai | tools/sim | M2 완료 시, 가중치 변경 시 |
-| 컴포넌트 | web | Vitest + @testing-library/svelte | 매 커밋 |
-| E2E | web + relay-dev | Playwright Chromium + WebKit | 매 PR |
+| 속성(fast-check) | engine, ai | 카드 보존·결정론·합법 수만 적용·제로섬 | 매 커밋 |
+| 컴포넌트 | web | Vitest 브라우저 모드(Chromium+WebKit) + vitest-browser-svelte | 매 커밋 |
+| UI 회귀·접근성 | web `/dev/gallery` | Playwright 스냅샷(도커 안) + axe | 매 PR |
+| E2E | web + relay-dev | Playwright Chromium + WebKit, 턴 ≤700ms 계측 | 매 PR |
+| 위생·예산 | 전체 | knip, 번들 크기·외부 URL 검사, svelte-check, ESLint 금지 API | 매 커밋 |
 | 계약 | protocol | Vitest(양쪽 역할) | 매 커밋 |
 | Android | android | JUnit + Ktor testApplication, Android Lint | 매 PR |
 | 실기기 | 전체 | 사용자 + 절차서 + 로그 공유 | M0, M5, 릴리스 |
@@ -177,7 +209,8 @@ p2p-gostop/
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (push/PR): Node 24 설정 → `npm ci` → lint → 단위·계약 테스트 → 웹 빌드 → Playwright(공식 컨테이너 잡) → JDK 21 + Gradle 캐시 → `assembleDebug` + Android 테스트·Lint → APK 아티팩트.
+- `ci.yml` (push/PR): Node 24 설정 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → Playwright(공식 컨테이너 잡: E2E, 갤러리 스냅샷, axe) → JDK 21 + Gradle 캐시 → `assembleDebug` + Android 테스트·Lint → APK 아티팩트.
+- `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 기본 쿨다운 유지.
 - `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
 - 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
 - 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.
@@ -202,7 +235,8 @@ p2p-gostop/
 | iOS 캡티브 시트/HTTPS 우선 | 중 | 안내 문구, M0에서 확인 |
 | 비보안 컨텍스트 API 부재 | 중 | 금지 API ESLint, 로그 호스트 업로드, 자동 잠금 안내 |
 | Ktor on Android R8 이슈 | 낮 | minify 끔, CIO 엔진, 서버 기동 계측 테스트 |
-| TS 7 ↔ Svelte 도구 호환 | 낮 | 문제 시 TS 6.0.3 고정 |
+| ~~TS 7 ↔ Svelte 도구 호환~~ | 해소 | 비호환 확인됨 → TS 6.0.3 기본으로 확정(1.8) |
+| 에이전트의 구식 문법 혼입(Svelte 4, Tailwind v3, React 패턴) | 중 | AGENTS.md 금지 목록, Svelte MCP autofixer, svelte-check, ESLint가 기계적으로 차단 |
 | Playwright WebKit ≠ iOS Safari | 낮 | 1차 필터로만, 최종은 실기기 |
 | CI 분량(비공개 2,000분/월) | 낮 | E2E는 PR만, 대규모 시뮬레이션은 태그만 |
 
@@ -211,7 +245,7 @@ p2p-gostop/
 ## 8. 작업 순서 (착수 후 첫 2단계 상세)
 
 ### 8.1 저장소 골격 + Docker (M0 전 준비)
-1. `package.json`(workspaces), `.editorconfig`, `.nvmrc`(24), ESLint flat config + Prettier, `tsconfig.base.json`(strict).
+1. `package.json`(workspaces), `.npmrc`(`min-release-age=3`), `.editorconfig`, `.nvmrc`(24), ESLint 10 flat config + Prettier, `tsconfig.base.json`(strict, TS 6.0.3), knip 설정, `AGENTS.md`(버전 표·금지 목록·관례) + `CLAUDE.md`(`@AGENTS.md`), `.github/dependabot.yml`. 프로젝트 `.claude/settings.json`의 포맷·린트 훅과 Svelte MCP 등록은 사용자 승인 후 추가.
 2. `docker/compose.yml`, `docker/Dockerfile.android`(cimg 기반, 필요 시 최소 추가), `dev.sh`.
 3. `android/` 표준 골격: AGP 9.4.1, Gradle 9.8.0 wrapper, Kotlin 2.4.20(내장 Kotlin 방식), version catalog, compileSdk/targetSdk 36, minSdk 33, `namespace com.kywoo26.p2pgostop`.
 4. `ci.yml` 최소 버전(빌드만). 첫 Docker 빌드로 이미지 캐시 확보.
@@ -229,6 +263,7 @@ p2p-gostop/
 
 ### 확정
 - 엔진 단일 구현(TS), Android는 중계 전용(1.1).
+- 스택 v0.2(1.8): Svelte 5 유지, TS 6.0.3 기본, WAAPI+FLIP 자체 헬퍼, scoped CSS+토큰, fast-check·Vitest 브라우저 모드·axe·스냅샷·knip 추가, 직접 작성 Kotlin 셸 유지. React/Tailwind/Storybook/Capacitor/Biome/pnpm/Turborepo/Canvas 엔진은 도입하지 않음(근거: agent-era-stack.md 8).
 - 서버 포트 17777, 호스트 WebView origin `http://127.0.0.1:17777`.
 - 패키지명 `com.kywoo26.p2pgostop`, 앱 이름 "맞고 P2P"(가칭, M6에서 확정).
 - 버전 태그 `v0.<마일스톤>.<증분>`, `v1.0.0`은 M6.
@@ -241,4 +276,5 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.
 - v0.1 (2026-09-28): 초안.
