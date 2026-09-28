@@ -34,6 +34,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".GameActivity" android:exported="false" />
+
         <service
             android:name=".HotspotService"
             android:exported="false"

@@ -36,6 +36,7 @@ object Diagnostics {
         add("보안 유형: ${s.securityType ?: "-"}")
         add("서버: ${if (s.serverRunning) "실행 중 0.0.0.0:$SERVER_PORT" else "중지"}${s.serverError?.let { " / 오류 $it" } ?: ""}")
         add("WebSocket 접속 수: ${s.wsClients}")
+        add("역할별 접속: 호스트 ${AppState.wsHostClients.get()} / 게스트 ${AppState.wsGuestClients.get()}")
         add("배터리 최적화 예외: ${yn(batteryExempt(ctx))}")
         add("선택된 IP: ${s.ip ?: "없음"}")
         add("IPv4 후보: ${if (s.candidates.isEmpty()) "없음" else s.candidates.joinToString { "${it.iface}=${it.ip}" }}")

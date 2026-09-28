@@ -37,6 +37,9 @@ import java.util.concurrent.Executors
  * 핫스팟 시작/중지, 자격 증명·IP·QR 표시, 폴백 안내, 진단(FR-32), 로그 복사·공유(FR-30), 빌드 식별자(FR-31).
  */
 class MainActivity : Activity() {
+    private var diagnosticsOnly = false
+    private var fromGame = false
+    private var gameLaunched = false
 
     private val handler = Handler(Looper.getMainLooper())
     private val ticker = object : Runnable {
@@ -78,6 +81,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        diagnosticsOnly = intent.getBooleanExtra(EXTRA_DIAGNOSTICS, false)
+        fromGame = intent.getBooleanExtra(EXTRA_FROM_GAME, false)
         setContentView(R.layout.activity_main)
         // 권한 대화상자가 떠 있는 동안 회전해도 시작하려던 동작을 잃지 않는다(M0 리뷰 M-1).
         pendingAction = savedInstanceState?.getString(STATE_PENDING_ACTION)
@@ -95,6 +100,9 @@ class MainActivity : Activity() {
             getString(R.string.build_info, BuildConfig.VERSION_NAME, BuildConfig.GIT_SHA, BuildConfig.BUILD_TIME)
         status = findViewById(R.id.status)
         btnToggle = findViewById(R.id.btnToggle)
+        findViewById<Button>(R.id.btnGame).setOnClickListener {
+            if (fromGame) finish() else startActivity(Intent(this, GameActivity::class.java))
+        }
         btnAddressOnly = findViewById(R.id.btnAddressOnly)
         btnPermissions = findViewById(R.id.btnPermissions)
         ssid = findViewById(R.id.ssid)
@@ -210,6 +218,12 @@ class MainActivity : Activity() {
 
     private fun render() {
         val s = AppState.hotspot.value
+        findViewById<Button>(R.id.btnGame).visibility =
+            if (s.serverRunning && GameActivity.bundlePresent(this)) View.VISIBLE else View.GONE
+        if (!diagnosticsOnly && !gameLaunched && s.serverRunning && GameActivity.bundlePresent(this)) {
+            gameLaunched = true
+            startActivity(Intent(this, GameActivity::class.java))
+        }
         // 서비스(서버)가 도는 동안 화면을 켜 둔다. LOHS 실패 후에도 폴백용 서버는 살아 있다.
         val keepOn = s.keepScreenOn
         if (keepOn != lastKeepOn) {
@@ -389,7 +403,9 @@ class MainActivity : Activity() {
         }
     }
 
-    private companion object {
+    companion object {
+        const val EXTRA_DIAGNOSTICS = "diagnostics"
+        const val EXTRA_FROM_GAME = "fromGame"
         const val REQ_PERMISSIONS = 1
         const val LOG_TAIL = 200
         const val IDLE_SCAN_MS = 5_000L
