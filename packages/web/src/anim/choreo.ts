@@ -109,6 +109,8 @@ export interface TurnPlan {
   readonly factor: number;
   /** 실제로 재생할 계획 시간 = rawMs × factor ≤ TURN_PLAN_MS */
   readonly plannedMs: number;
+  /** 단계별 재생 시간 (빠름 기준 ms, 줄인 뒤). runStep이 움직일 카드가 없는 단계에서 기다리는 시간이기도 하다 */
+  readonly stepMs: readonly number[];
 }
 
 /** 이벤트 묶음의 애니메이션 계획 (replay와 같은 계산) */
@@ -116,7 +118,14 @@ export function planTurn(events: readonly EngineEvent[]): TurnPlan {
   const steps = planSteps(events);
   const rawMs = steps.reduce((sum, s) => sum + stepMs(s), 0);
   const factor = rawMs > TURN_PLAN_MS ? TURN_PLAN_MS / rawMs : 1;
-  return { steps, rawMs, factor, plannedMs: rawMs * factor };
+  const scaled = steps.map((s) => stepMs(s) * factor);
+  return {
+    steps,
+    rawMs,
+    factor,
+    plannedMs: scaled.reduce((sum, ms) => sum + ms, 0),
+    stepMs: scaled,
+  };
 }
 
 type Rects = Map<string, DOMRect>;
@@ -152,6 +161,8 @@ async function runStep(
   board: DisplayBoard,
   step: AnimStep,
   factor: number,
+  /** 이 단계의 계획 시간 (planTurn().stepMs, 줄인 뒤) */
+  plannedMs: number,
 ): Promise<DisplayBoard> {
   let next = board;
   for (const event of step.events) {
@@ -209,7 +220,7 @@ async function runStep(
   }
   if (animations.length === 0) {
     // 움직일 카드가 없어도 매칭 강조 등은 계획 시간만큼 보인다
-    await new Promise((resolve) => setTimeout(resolve, ms(stepMs(step)) * durScale(host.root)));
+    await new Promise((resolve) => setTimeout(resolve, plannedMs * durScale(host.root)));
     return next;
   }
   await sequence(() => animations);
@@ -225,10 +236,10 @@ export async function replay(
   from: DisplayBoard,
   events: readonly EngineEvent[],
 ): Promise<DisplayBoard> {
-  const { steps, factor } = planTurn(events);
+  const plan = planTurn(events);
   let board = from;
-  for (const step of steps) {
-    board = await runStep(host, board, step, factor);
+  for (const [i, step] of plan.steps.entries()) {
+    board = await runStep(host, board, step, plan.factor, plan.stepMs[i] ?? 0);
   }
   return board;
 }
