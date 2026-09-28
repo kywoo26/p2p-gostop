@@ -120,6 +120,7 @@ p2p-gostop/
 | 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, PostToolUse 포맷 훅(프로젝트 `.claude/settings.json`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 | Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
+| Android 런타임 의존성 | `kotlinx-coroutines-android` (Ktor 3.6.0이 요구하는 코루틴 버전과 일치하도록 명시 선언) | 전이 의존에 기대지 않는다 (M0 리뷰) |
 
 ### 1.7 Android 앱 설계
 - 단일 `MainActivity` + `WebView`(androidx.webkit 1.17.1). 화면 전부 웹. 네이티브 UI는 권한 요청 다이얼로그와 오류 화면뿐.
@@ -211,7 +212,9 @@ p2p-gostop/
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
 - `ci.yml` (push/PR): Node 24 설정 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → Playwright(공식 컨테이너 잡: E2E, 갤러리 스냅샷, axe) → JDK 21 + Gradle 캐시 → `assembleDebug` + Android 테스트·Lint → APK 아티팩트.
-- `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 기본 쿨다운 유지.
+- `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
+- 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
+- `release.yml`은 읽기 전용 웹 빌드 잡과 서명 잡을 분리한다. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables(M0 리뷰 R-1/R-4/R-5).
 - `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
 - 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
 - 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.
@@ -277,6 +280,7 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).
 - v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
 - v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.
 - v0.1 (2026-09-28): 초안.
