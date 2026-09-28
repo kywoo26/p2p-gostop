@@ -1,0 +1,244 @@
+# p2p-gostop — 구현 계획 (plan.md)
+
+작성일: 2026-09-28 · 상태: v0.1 (사용자 검토 대기)
+상위 문서: `intend.md`(왜) → `spec.md` v0.3(무엇을) → **이 문서**(어떻게)
+근거: `docs/research/tech-stack.md`(버전·제약), `docs/research/code-refs.md`(설계 차용), `docs/research/rules-commercial.md`(규칙)
+
+---
+
+## 0. 구현 원칙 (사용자 지시 반영)
+
+1. **최신 공식 문서 우선.** 라이브러리·API를 쓰기 전에 Context7 또는 공식 문서를 조회하고, 버전은 `tech-stack.md` 권장 스택 표의 정확한 값을 쓴다. 학습 데이터 기억으로 코드를 쓰지 않는다.
+2. **저명한 패키지만.** 다운로드·유지보수·라이선스가 검증된 패키지만 의존성에 넣는다. 작은 기능을 위해 정체된 패키지를 쓰지 않고 직접 구현한다(예: SHA-256, QR은 `uqr`).
+3. **표준 프로젝트 구조.** npm workspaces 모노레포, Vite/Svelte 공식 템플릿 구조, Android Studio 표준 프로젝트 레이아웃(Gradle Kotlin DSL, version catalog). 새로 익힐 관례를 만들지 않는다.
+4. **테스트 동반.** 엔진과 AI는 테스트 먼저(규칙 벡터 → 구현). 모든 마일스톤에 자동 검증 기준이 있고, CI가 PR마다 실행한다. 실기기 검증만 사람이 한다.
+5. **네이티브 설치 지양.** 모든 빌드·테스트는 Docker 컨테이너에서 실행. WSL에는 git, gh, docker CLI만 쓴다.
+6. **결정론.** 엔진·AI·셔플은 시드 주입 가능한 순수 함수. 버그 리포트는 시드+액션 열로 재현한다.
+7. **규칙의 단일 근거.** 규칙 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 기대값으로 쓰지 않는다.
+8. **작게 자주 커밋.** Conventional Commits(`feat:`, `fix:`, `test:`, `docs:`, `build:`, `ci:`). 마일스톤 완료 시 태그(`v0.<M>.x`).
+
+---
+
+## 1. 아키텍처
+
+### 1.1 핵심 결정: 엔진은 TypeScript 한 벌, Android는 중계만
+```
+┌─ Android 호스트 폰 ──────────────────────────────────────┐   ┌─ iPhone ─────────────┐
+│  Kotlin 앱                                                │   │  Safari              │
+│   ├ LocalOnlyHotspot + 포그라운드 서비스                    │   │   웹 앱 (게스트 모드)  │
+│   ├ Ktor 서버 (0.0.0.0:17777)                              │   │    ├ 뷰 렌더링          │
+│   │   ├ GET /            → assets/web (정적 파일)            │◄──┤    ├ 액션 요청 전송     │
+│   │   └ WS  /ws?role=    → 호스트↔게스트 메시지 중계          │   │    └ 이벤트 재생·애니   │
+│   └ WebView (http://127.0.0.1:17777/?role=host)            │   └──────────────────────┘
+│        웹 앱 (호스트 모드)                                   │
+│         ├ 권위 엔진(reduce) + AI(Worker) + 원장              │
+│         ├ 게스트 뷰(playerView) 생성·전송                     │
+│         └ 자기 화면 렌더링                                    │
+└──────────────────────────────────────────────────────────┘
+```
+- **왜**: 규칙·AI·정산을 Kotlin으로 다시 쓰지 않는다. Android 앱은 약 수백 줄의 껍데기로 유지되고, 엔진 테스트는 Node에서 한 번만 한다. 호스트 WebView origin은 `127.0.0.1:17777`로 고정되어 localStorage가 세션 간 유지된다(원장 저장, MN-05).
+- **대가**: 호스트 앱이 포그라운드를 벗어나면 게임이 멈춘다. 대면 게임이므로 허용. 포그라운드 서비스와 `FLAG_KEEP_SCREEN_ON`으로 완화.
+- **중계 규칙**: 서버는 `role=host` 소켓 1개, `role=guest` 소켓 1개만 받는다. 호스트 소켓의 메시지는 게스트로, 게스트의 메시지는 호스트로 그대로 전달한다. 서버는 메시지 내용을 해석하지 않는다(단, 크기 상한 64KB와 역할 중복 거절만).
+- **BLE 전환 대비**: 웹 앱의 `Transport` 인터페이스(`send`, `onMessage`, `onClose`, `reconnect`)만 갈아끼우면 된다.
+
+### 1.2 패키지 구조 (npm workspaces 모노레포)
+```
+p2p-gostop/
+├─ package.json                 # workspaces, 공용 스크립트
+├─ packages/
+│  ├─ engine/                   # 순수 TS. 카드 카탈로그, 상태, reduce, legalActions, 점수, 정산, 규칙 옵션
+│  │  ├─ src/
+│  │  ├─ test/                  # Vitest + JSON 규칙 벡터(test/vectors/*.json)
+│  │  └─ package.json
+│  ├─ ai/                       # 순수 TS. 평가 함수, 그리디, ISMCTS, 난이도. engine에만 의존
+│  ├─ protocol/                 # 메시지 타입, 버전, 직렬화, playerView 계약. engine 타입 재사용
+│  ├─ web/                      # Vite + Svelte 5 앱. 호스트/게스트/솔로 모드, 애니메이션, 설정, 진단
+│  │  ├─ src/
+│  │  ├─ e2e/                   # Playwright (Chromium + WebKit)
+│  │  └─ public/cards/          # 화투 SVG (CC BY-SA 4.0) + 자체 제작 보너스·뒷면
+│  └─ relay-dev/                # Node용 개발 중계 서버(Android Ktor 중계와 같은 규칙). 로컬 개발·E2E 전용
+├─ tools/
+│  └─ sim/                      # CLI: 셀프플레이 시뮬레이션, AI 강도 벤치마크, 머니 모델 산정
+├─ android/                     # Android Studio 표준 레이아웃 (Gradle KTS, version catalog)
+│  ├─ app/src/main/{kotlin,res,assets/web}
+│  ├─ gradle/libs.versions.toml
+│  └─ settings.gradle.kts
+├─ docker/                      # Dockerfile·compose, 실행 스크립트
+├─ .github/workflows/           # ci.yml, release.yml
+├─ docs/                        # research/, ai-tuning.md, money-model.md, device-test-log/
+├─ intend.md · spec.md · plan.md
+```
+
+### 1.3 모듈 경계와 의존 방향
+`engine` ← `ai` ← `web`, `engine` ← `protocol` ← `web`, `relay-dev`는 `protocol`만. `android`는 어느 TS 패키지에도 의존하지 않고 빌드 산출물(`packages/web/dist`)만 `assets/web`으로 복사한다.
+
+### 1.4 엔진 설계 (code-refs 6.2 채택)
+- 카드: 불변 ID(0~50 정수) + 정적 카탈로그 `{month, kind, piValue, ribbon, isGodori, isBiGwang, isGukjin, bonus?}`. 상태에는 ID 배열만.
+- 상태: `{phase, seats[2]{hand, captured{gwang,yeol,tti,pi}, goCount, shakes, score}, floor[], deck[], ppeokPiles[], pending?, rules, rng, history}`. 좌석 인덱스 0/1.
+- `reduce(state, action) → {state, events[]}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules) → {winner, steps[], amount}`. 모두 순수 함수. `pending`은 spec 4.3의 PROMPT_* 를 표현.
+- 규칙 옵션 `RuleOptions`: spec 4장 및 rules 12.7의 24개 토글. 프리셋 3종은 옵션 객체 상수.
+- 난수: 상태에 포함된 시드 기반 PRNG(xoshiro128** 직접 구현, 수십 줄). commit-reveal은 `protocol`에서 두 난수를 합쳐 시드로 만든다.
+
+### 1.5 AI 설계
+- `Evaluator(state, seat) → number`: 족보 진행도·기대 점수·상대 견제·박 위험·고 기대값의 가중합. 가중치는 JSON 파일.
+- `GreedyPolicy`: 각 합법 수를 1수 적용 후 평가. 뒤집기 결과는 남은 카드 분포로 기대값 계산.
+- `IsmctsPolicy`: 공개 정보와 일관되게 상대 손패·더미를 N회 샘플링(determinization), 각 샘플에서 UCT 탐색 + 그리디 롤아웃, 시간 제한(기본 1.0s) 후 방문수 최다 수 선택. Web Worker에서 실행.
+- 벤치마크는 `tools/sim`이 수행하고 결과를 `docs/ai-tuning.md`에 기록. spec AI-04 기준 미달이면 마일스톤 미완.
+
+### 1.6 웹 앱 설계
+- 모드: `host`(권위 엔진 보유, 게스트에게 뷰 전송), `guest`(뷰 수신, 액션 요청), `solo`(엔진+AI 로컬, 네트워크 없음).
+- 상태 관리: Svelte 5 runes. 엔진 이벤트 열을 애니메이션 큐가 소비하고, 큐가 비면 최신 뷰로 보정.
+- 애니메이션: Svelte `animate:flip`과 CSS transform. spec 6.4 예산을 상수로 두고 속도 설정이 배율 적용.
+- 비보안 컨텍스트 제약(spec NF-02) 준수를 ESLint 커스텀 규칙(금지 API 목록)으로 강제.
+
+### 1.7 Android 앱 설계
+- 단일 `MainActivity` + `WebView`(androidx.webkit 1.17.1). 화면 전부 웹. 네이티브 UI는 권한 요청 다이얼로그와 오류 화면뿐.
+- `HotspotService`(포그라운드, `connectedDevice`): LOHS 시작·유지, IP 탐색(`NetworkInterface` 순회), Ktor 서버 기동, 상태를 WebView에 브리지로 전달(`addWebMessageListener`, origin `http://127.0.0.1:17777` 한정).
+- 브리지 메시지: `hotspot{state, ssid, password, ip, port}`, `share{text}`(Android 공유 시트), `log{...}`, `keepScreenOn{bool}`.
+- 서버 포트 17777 고정. Network Security Config로 `127.0.0.1`만 cleartext.
+- 폴백: LOHS 실패 시 "시스템 핫스팟 켜기" 안내 + 이미 있는 Wi-Fi 인터페이스 IP 표시(FR-02).
+
+---
+
+## 2. 개발 환경 (Docker)
+
+| 서비스 | 이미지 | 용도 |
+|---|---|---|
+| `node` | `node:24-bookworm-slim` | 엔진·AI·프로토콜 단위 테스트, 웹 빌드, sim CLI |
+| `e2e` | `mcr.microsoft.com/playwright:v1.63.0-noble` | Playwright Chromium+WebKit E2E |
+| `android` | `cimg/android:2026.08.1-node` | Gradle 빌드(APK), Android 단위 테스트 |
+
+- `docker/compose.yml`에 세 서비스와 명명된 볼륨(`node_modules`, `gradle-cache`, `pw-browsers`)을 둔다. 소스는 바인드 마운트.
+- 실행 진입점 `./dev.sh <task>`: `install`, `test`, `test:watch`, `build:web`, `e2e`, `sim`, `apk:debug`, `apk:release`, `lint`. 내부적으로 `docker compose run --rm <svc> …`.
+- Docker Desktop이 꺼져 있으면 `dev.sh`가 즉시 안내하고 종료한다.
+- 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요 시 `--device /dev/kvm`으로 `cimg/android`에 `emulator` 패키지를 추가한 별도 이미지를 만든다. M4 이후 WebView 셸 스모크에만 사용.
+
+---
+
+## 3. 마일스톤
+
+각 마일스톤은 **산출물 · 자동 검증 · 사람 검증 · 완료 기준**을 가진다. 순서는 리스크 순이다. M0가 실패하면 M1~M3(엔진·AI·웹)은 그대로 유효하고 M4 이후만 재설계한다.
+
+### M0 — 핫스팟 스모크 APK (최우선, 리스크 R1 검증)
+- **산출물**: `android/` 최소 앱. 버튼 하나로 LOHS 시작 → SSID/비밀번호/IP 표시 → Wi-Fi QR(`T:WPA`) + URL QR 표시 → Ktor가 `/`에 "연결 성공" 페이지와 `/ws` 에코를 서빙. 진단 화면(권한, Wi-Fi, 핫스팟 상태, 오류)과 로그 공유 버튼. 빌드 해시 표시. QR은 이 단계에서만 ZXing core로 그린다(M4에서 웹으로 이전).
+- **CI**: `release.yml` — 태그 푸시 시 서명된 APK를 GitHub Releases에 업로드. 서명 키는 Docker에서 1회 생성해 `gh secret set`으로 저장하고 원본은 사용자에게 별도 백업 요청.
+- **자동 검증**: Kotlin 단위 테스트(IP 탐색 파서, QR 문자열 생성), Ktor `testApplication`으로 라우트·WS 에코, `assembleRelease` 성공.
+- **사람 검증 (사용자, 실기기)**: 절차서 `docs/device-test/M0.md` 따라 (1) 비행기 모드 ON (2) Wi-Fi ON (3) 앱에서 핫스팟 시작 (4) iPhone 카메라로 Wi-Fi QR (5) "인터넷 없이 사용" (6) URL QR → Safari에 "연결 성공" 표시 (7) 페이지의 WS 에코 버튼 동작 (8) 화면 끄고 켜기 후 재접속 (9) 로그 공유로 전달. 추가로 비행기 모드 OFF 상태에서도 같은 절차.
+- **완료 기준**: AC-00 통과. 실패 시 로그를 근거로 원인 분류(삼성 OEM 차단 / 권한 / 캡티브 / HTTPS 우선) 후 대응 결정. 삼성 차단이면 "이륙 전 연결 유지" 운용 또는 BLE 재검토를 사용자와 결정.
+
+### M1 — 규칙 엔진
+- **산출물**: `packages/engine`. 카탈로그, 상태, `reduce`, `legalActions`, `playerView`, 점수, `settle(steps[])`, `RuleOptions` + 프리셋 3종, PRNG, 리플레이(시드+액션 열 → 상태).
+- **자동 검증**: (a) JSON 규칙 벡터 — rules 12장 항목당 최소 1개, 13장 불일치 항목은 토글별 1개, 각 특수 이벤트는 정상·경계·반례 3종(따닥 반례 필수). (b) 불변식 속성 테스트 — 무작위 정책으로 10,000판: 카드 51장 보존, 더미 부족 없음, 정산 제로섬, 배수 곱 = steps 곱, 같은 시드 같은 결과, 좌석 대칭. (c) 커버리지 ≥ 90%(engine).
+- **완료 기준**: AC-01, AC-02 통과. `docs/rules-vectors.md`에 벡터 ↔ 규칙 ID 대응표.
+
+### M2 — CPU AI와 시뮬레이션
+- **산출물**: `packages/ai`(Evaluator, Greedy, ISMCTS, 난이도 3종, 시드 주입), `tools/sim`(셀프플레이 CLI: 판수, 좌석 교대, 프리셋, 결과 통계 JSON/마크다운), `docs/ai-tuning.md`, `docs/money-model.md`(MN-03 산정표와 기본값).
+- **자동 검증**: 정보 은닉 테스트(AI가 더미·상대 손패에 접근하면 실패), 결정론 테스트, 강도 벤치마크(상용급 vs 보통 ≥ 65%, vs 쉬움 ≥ 80%, 각 2,000판), 응답 시간 벤치마크(Node에서 ≤ 0.7s를 기준으로 삼아 모바일 여유 확보).
+- **완료 기준**: AC-03, AC-10 통과.
+
+### M3 — 웹 UI (솔로 모드 우선)
+- **산출물**: `packages/web`. 홈, 게임판, 정산, 설정, 기록, 진단·로그 화면. 솔로 모드로 전 규칙 플레이 가능. 카드 SVG 통합과 저작자 표기, 보너스 카드·뒷면 자체 제작. 애니메이션 큐와 속도 설정. Worker에서 AI 실행.
+- **자동 검증**: 컴포넌트 테스트(Vitest + Testing Library), Playwright Chromium·WebKit로 솔로 20판 자동 플레이(AC-04의 솔로 절반), 스크린샷 회귀 7화면(AC-05), 애니메이션 계측(AC-06), 번들 크기 게이트(AC-07), 금지 API ESLint.
+- **완료 기준**: 위 통과 + WebKit에서 사용자가 시각적으로 확인 가능한 프리뷰 링크(로컬 빌드 산출물을 GitHub Actions 아티팩트로 제공, 폰 브라우저에서 zip 열기는 번거로우므로 M4 APK로 확인하는 것을 기본으로 함).
+
+### M4 — 호스트/게스트 모드와 중계
+- **산출물**: `packages/protocol`(메시지, 버전, commit-reveal, playerView 계약), `packages/relay-dev`(Node 중계), Android 앱 확장(Ktor 정적 서빙 + 중계, WebView 브리지, 포그라운드 서비스 완성, 로그 수집·공유), 웹 앱 host/guest 모드, 재접속·재동기화, 로비, QR을 웹에서 렌더링(`uqr`).
+- **자동 검증**: 프로토콜 계약 테스트(호스트·게스트 양쪽에서 같은 벡터), 중계 규칙 테스트(Node·Kotlin 동일 시나리오), Playwright 2브라우저 E2E(Chromium=host, WebKit=guest) 20판 + 게스트 끊김/복귀 시나리오(AC-04 전체), Ktor `testApplication`.
+- **완료 기준**: E2E 통과, `assembleRelease` 성공, 태그 → Releases APK 자동 업로드.
+
+### M5 — 실기기 회차
+- **산출물**: `docs/device-test/M5.md` 절차서, 회차별 로그와 수정 기록.
+- **사람 검증**: AC-08(Android 전 과정), AC-09(iPhone 전 과정, 화면 끄고 켜기 복귀). 배터리 관찰(1시간 플레이 후 양쪽 잔량 기록).
+- **완료 기준**: 사용자가 실제 두 기기로 5판 이상 연속 플레이 성공. 발견된 결함은 이슈로 등록하고 수정 후 재배포.
+
+### M6 — 완성도
+- 24개 토글 UI(FR-21), 기록 화면(FR-19), 리플레이 내보내기(FR-33), 효과음(자체 제작/CC0), 접근성(NF-08), 오픈소스 고지 화면, 아케이드 프리셋(대박판, 밀기), 머니 모델 재산정(최종 AI 기준).
+- **완료 기준**: spec P1 항목 전부 구현, AC 전부 통과, `v1.0.0` 태그.
+
+### 후속 (범위 밖, 문서화만)
+- BLE 전송 계층 + iOS 네이티브 앱(intend 3.2). `Transport` 인터페이스와 `protocol` 패키지를 그대로 재사용.
+
+---
+
+## 4. 테스트 전략
+
+| 층 | 대상 | 도구 | 실행 |
+|---|---|---|---|
+| 규칙 벡터 | engine | Vitest + JSON 벡터 | 매 커밋 |
+| 속성·불변식 | engine, ai | Vitest(시드 고정, 10,000판) | 매 커밋(축약 1,000판), 야간/태그(전체) |
+| 강도 벤치마크 | ai | tools/sim | M2 완료 시, 가중치 변경 시 |
+| 컴포넌트 | web | Vitest + @testing-library/svelte | 매 커밋 |
+| E2E | web + relay-dev | Playwright Chromium + WebKit | 매 PR |
+| 계약 | protocol | Vitest(양쪽 역할) | 매 커밋 |
+| Android | android | JUnit + Ktor testApplication, Android Lint | 매 PR |
+| 실기기 | 전체 | 사용자 + 절차서 + 로그 공유 | M0, M5, 릴리스 |
+
+---
+
+## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
+
+- `ci.yml` (push/PR): Node 24 설정 → `npm ci` → lint → 단위·계약 테스트 → 웹 빌드 → Playwright(공식 컨테이너 잡) → JDK 21 + Gradle 캐시 → `assembleDebug` + Android 테스트·Lint → APK 아티팩트.
+- `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
+- 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
+- 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.
+
+---
+
+## 6. 원격 피드백 루프
+
+1. 마일스톤 APK가 Releases에 올라가면 사용자에게 절차서 링크와 확인 항목을 전달한다.
+2. 사용자는 절차대로 수행하고 앱의 "로그 공유"로 텍스트를 보낸다(카톡·메일 등 아무 경로). 로그에는 빌드 해시, 기기 모델, OS 버전, 상태 전이, 오류가 자동 포함된다.
+3. 재현이 필요한 게임 버그는 리플레이 JSON(시드+액션)으로 받아 테스트 벡터로 추가한다.
+4. 수정 → 태그 → 재배포. 회차 기록은 `docs/device-test/`에 남긴다.
+
+---
+
+## 7. 리스크와 대응 (요약, 상세는 tech-stack.md 리스크 표)
+
+| 리스크 | 심각도 | 대응 |
+|---|---|---|
+| 삼성 One UI에서 비행기 모드 LOHS 차단 | **블로커 후보** | M0로 가장 먼저 검증. 차단 시 (a) 이륙 전 연결 유지 운용 (b) 시스템 핫스팟 폴백 (c) BLE 경로 재검토를 사용자와 결정 |
+| LOHS 자격 증명·IP 무작위 | 중 | 매 세션 QR. 서버 0.0.0.0 바인딩, 인터페이스 순회 |
+| iOS 캡티브 시트/HTTPS 우선 | 중 | 안내 문구, M0에서 확인 |
+| 비보안 컨텍스트 API 부재 | 중 | 금지 API ESLint, 로그 호스트 업로드, 자동 잠금 안내 |
+| Ktor on Android R8 이슈 | 낮 | minify 끔, CIO 엔진, 서버 기동 계측 테스트 |
+| TS 7 ↔ Svelte 도구 호환 | 낮 | 문제 시 TS 6.0.3 고정 |
+| Playwright WebKit ≠ iOS Safari | 낮 | 1차 필터로만, 최종은 실기기 |
+| CI 분량(비공개 2,000분/월) | 낮 | E2E는 PR만, 대규모 시뮬레이션은 태그만 |
+
+---
+
+## 8. 작업 순서 (착수 후 첫 2단계 상세)
+
+### 8.1 저장소 골격 + Docker (M0 전 준비)
+1. `package.json`(workspaces), `.editorconfig`, `.nvmrc`(24), ESLint flat config + Prettier, `tsconfig.base.json`(strict).
+2. `docker/compose.yml`, `docker/Dockerfile.android`(cimg 기반, 필요 시 최소 추가), `dev.sh`.
+3. `android/` 표준 골격: AGP 9.4.1, Gradle 9.8.0 wrapper, Kotlin 2.4.20(내장 Kotlin 방식), version catalog, compileSdk/targetSdk 36, minSdk 33, `namespace com.kywoo26.p2pgostop`.
+4. `ci.yml` 최소 버전(빌드만). 첫 Docker 빌드로 이미지 캐시 확보.
+
+### 8.2 M0 구현
+1. 매니페스트 권한(tech-stack 1.1 목록), `HotspotService`(FGS `connectedDevice`), `LocalOnlyHotspotCallback` 처리, IP 탐색.
+2. Ktor 3.6.0 CIO 서버: `/` 정적 페이지, `/ws` 에코, `/health`.
+3. QR 렌더링(ZXing core 3.5.4, `T:WPA` 형식), 상태·진단 화면, 로그 버퍼와 공유 인텐트, 빌드 해시(`BuildConfig`).
+4. 단위 테스트, `release.yml`, 서명 키 생성·Secrets 등록, `v0.0.1` 태그 → APK.
+5. `docs/device-test/M0.md` 절차서 작성 후 사용자에게 전달.
+
+---
+
+## 9. 결정 사항과 미결
+
+### 확정
+- 엔진 단일 구현(TS), Android는 중계 전용(1.1).
+- 서버 포트 17777, 호스트 WebView origin `http://127.0.0.1:17777`.
+- 패키지명 `com.kywoo26.p2pgostop`, 앱 이름 "맞고 P2P"(가칭, M6에서 확정).
+- 버전 태그 `v0.<마일스톤>.<증분>`, `v1.0.0`은 M6.
+
+### 미결 (착수 후 결정, 사용자 확인 불필요)
+- ISMCTS 샘플 수와 시간 제한의 기본값 → M2 벤치마크로.
+- 보너스 카드·뒷면 디자인 → M3에서 시안 2종 만들어 사용자 선택.
+- 효과음 제작 방식(합성 vs CC0 샘플) → M6.
+
+---
+
+## 10. 변경 이력
+- v0.1 (2026-09-28): 초안.
