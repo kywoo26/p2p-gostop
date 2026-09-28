@@ -31,8 +31,27 @@ const HUDANG_TURNS = 5;
 
 const isBonus = (id: CardId): boolean => getCard(id).kind === 'bonus';
 
+/**
+ * 점수 분해가 같은지 (필드별 비교). 예전의 JSON.stringify 비교와 결과가 같고(두 값 모두 scoreCaptured가 같은 키로 만든다)
+ * 롤아웃에서 reduce 비용의 큰 몫이던 직렬화를 없앤다(ai-tuning.md §6-6).
+ */
 function sameScore(a: ScoreBreakdown, b: ScoreBreakdown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return (
+    a.total === b.total &&
+    a.gwang === b.gwang &&
+    a.yeol === b.yeol &&
+    a.godori === b.godori &&
+    a.tti === b.tti &&
+    a.hongdan === b.hongdan &&
+    a.cheongdan === b.cheongdan &&
+    a.chodan === b.chodan &&
+    a.pi === b.pi &&
+    a.gwangCount === b.gwangCount &&
+    a.yeolCount === b.yeolCount &&
+    a.ttiCount === b.ttiCount &&
+    a.piCount === b.piCount &&
+    a.gukjinAsPi === b.gukjinAsPi
+  );
 }
 
 /** SCORE: 두 좌석 점수를 다시 계산하고 바뀐 좌석마다 ScoreChanged를 낸다(차례인 좌석 먼저: 좌석 대칭). */
