@@ -101,6 +101,16 @@ class IpSelectorTest {
     }
 
     @Test
+    fun `S25 Ultra 회차 2 - 유예 중에는 기존 Wi-Fi wlan0을 고르지 않고 swlan0이 뜨면 고른다`() {
+        val before = listOf(nif("wlan0", "172.16.100.183"), nif("lo", "127.0.0.1", loopback = true))
+        assertNull(IpSelector.selectHotspotIp(before, apOnly = true))
+        assertEquals("172.16.100.183", IpSelector.selectHotspotIp(before, apOnly = false)) // 유예 뒤 폴백 허용
+        val after = before + nif("swlan0", "10.252.26.140")
+        assertEquals("10.252.26.140", IpSelector.selectHotspotIp(after, apOnly = true))
+        assertEquals("10.252.26.140", IpSelector.selectHotspotIp(after, apOnly = false))
+    }
+
+    @Test
     fun `삼성 Wi-Fi Direct p2p-wlan0-0 192_168_49_1은 합계 0점이어도 고르지 않는다`() {
         val p2p = nif("p2p-wlan0-0", "192.168.49.1")
         assertEquals(0, IpSelector.rank(listOf(p2p)).single().score) // 이름 −30 + 주소 +30: 예전 `score >= 0` 경계

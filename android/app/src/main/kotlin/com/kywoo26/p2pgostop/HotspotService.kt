@@ -44,6 +44,8 @@ import kotlinx.coroutines.launch
  * 콜백·onStartCommand·onDestroy는 모두 메인 스레드에서 돈다.
  */
 class HotspotService : Service() {
+    /** LOHS onStarted 시각. 이후 [IpSelector.AP_GRACE_MS] 동안은 핫스팟형 인터페이스만 IP 후보로 인정한다. */
+    @Volatile private var hotspotStartedAt = 0L
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val main = Handler(Looper.getMainLooper())
@@ -191,6 +193,7 @@ class HotspotService : Service() {
     private inner class Callback(private val gen: Long, private val configVariant: Boolean) :
         WifiManager.LocalOnlyHotspotCallback() {
         override fun onStarted(res: WifiManager.LocalOnlyHotspotReservation) {
+            hotspotStartedAt = System.currentTimeMillis()
             if (!session.onStarted(gen, res)) {
                 AppState.log("정지·전환 뒤 늦게 도착한 onStarted(세대 $gen) → 예약을 곧바로 닫음")
                 return
@@ -256,7 +259,9 @@ class HotspotService : Service() {
             while (isActive) {
                 val ifaces = IpSelector.snapshot()
                 val ranked = IpSelector.rank(ifaces)
-                val ip = IpSelector.selectHotspotIp(ifaces)
+                val apOnly = AppState.hotspot.value.status == HotspotStatus.RUNNING &&
+                    System.currentTimeMillis() - hotspotStartedAt < IpSelector.AP_GRACE_MS
+                val ip = IpSelector.selectHotspotIp(ifaces, apOnly)
                 AppState.update { it.copy(ip = ip, candidates = ranked) }
                 if (ip != lastIp) {
                     AppState.log("IP 탐색: 선택=${ip ?: "없음"} 후보=${ranked.joinToString { "${it.iface}=${it.ip}(${it.score})" }}")

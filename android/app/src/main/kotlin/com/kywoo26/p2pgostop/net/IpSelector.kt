@@ -92,8 +92,16 @@ object IpSelector {
      * 핫스팟 인터페이스(`swlan0`)가 뜨기 전 약 3초간 선택됐고, 삼성의 Wi-Fi Direct `p2p-wlan0-0 = 192.168.49.1`
      * (Quick Share·Smart View)이나 192.168 대역 VPN도 같은 식으로 잘못 뽑힐 수 있다.
      */
-    fun selectHotspotIp(ifaces: List<NetIf>): String? =
-        rank(ifaces).firstOrNull { nameScore(it.iface) >= 0 && isPrivateIpv4(it.ip) }?.ip
+    fun selectHotspotIp(ifaces: List<NetIf>, apOnly: Boolean = false): String? =
+        rank(ifaces).firstOrNull { nameScore(it.iface) >= (if (apOnly) AP_MIN_NAME_SCORE else 0) && isPrivateIpv4(it.ip) }?.ip
+
+    /**
+     * 핫스팟이 막 켜진 직후(유예 시간 동안)에는 핫스팟형 인터페이스(ap·swlan·wlan1)만 인정한다.
+     * 회차 2(S25 Ultra)에서 `swlan0`이 뜨기 전 약 3초간 기존 Wi-Fi `wlan0 = 172.16.100.183`이 선택되어
+     * 잘못된 URL QR이 잠깐 표시됐다. 유예가 지나면 일반 규칙으로 돌아가 폴백(기존 Wi-Fi)을 허용한다.
+     */
+    const val AP_MIN_NAME_SCORE = 40
+    const val AP_GRACE_MS = 8_000L
 
     /** 현재 기기의 인터페이스 스냅샷(Android/JVM 공통). */
     fun snapshot(): List<NetIf> =
