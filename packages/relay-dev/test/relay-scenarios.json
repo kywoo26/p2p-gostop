@@ -1,0 +1,130 @@
+[
+  {
+    "id": "RELAY-01",
+    "description": "상대 부재 알림은 한 번만, 입장 알림 present·joined, 양방향 그대로 전달",
+    "steps": [
+      { "open": "h", "role": "host" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "send": "h", "text": "first" },
+      { "silence": "h" },
+      { "open": "g", "role": "guest" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"present\"}" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "send": "h", "text": "{ \"type\":\"ping\", \"n\":1 }" },
+      { "expect": "g", "text": "{ \"type\":\"ping\", \"n\":1 }" },
+      { "send": "g", "text": "{\"t\":\"hello\",\"name\":\"게스트\"}" },
+      { "expect": "h", "text": "{\"t\":\"hello\",\"name\":\"게스트\"}" }
+    ]
+  },
+  {
+    "id": "RELAY-02",
+    "description": "게스트 최신 우선: 이전 소켓 4001 replaced, 새 소켓 present, 호스트 joined(left 없음), 새 소켓이 끊기면 left, 그 뒤 보낸 프레임에 absent",
+    "steps": [
+      { "open": "h", "role": "host" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "open": "g", "role": "guest" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"present\"}" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "open": "g2", "role": "guest" },
+      { "closed": "g", "code": 4001, "reason": "replaced" },
+      { "expect": "g2", "text": "{\"t\":\"relay\",\"peer\":\"present\"}" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "silence": "h" },
+      { "send": "g2", "text": "again" },
+      { "expect": "h", "text": "again" },
+      { "close": "g2" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"left\"}" },
+      { "send": "h", "text": "no peer" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" }
+    ]
+  },
+  {
+    "id": "RELAY-03",
+    "description": "호스트 최신 우선: 이전 호스트 4001, 게스트는 joined만 받고 left는 받지 않는다. 호스트가 떠나면 게스트에 left",
+    "steps": [
+      { "open": "h", "role": "host" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "open": "g", "role": "guest" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"present\"}" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "open": "h2", "role": "host" },
+      { "closed": "h", "code": 4001, "reason": "replaced" },
+      { "expect": "h2", "text": "{\"t\":\"relay\",\"peer\":\"present\"}" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "silence": "g" },
+      { "close": "h2" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"left\"}" }
+    ]
+  },
+  {
+    "id": "RELAY-04",
+    "description": "교체된 소켓에서 늦게 도착한 프레임은 버린다",
+    "steps": [
+      { "open": "h", "role": "host" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "open": "g", "role": "guest" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "open": "g2", "role": "guest" },
+      { "send": "g", "text": "late" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "silence": "h" },
+      { "send": "g2", "text": "fresh" },
+      { "expect": "h", "text": "fresh" }
+    ]
+  },
+  {
+    "id": "RELAY-05",
+    "description": "클라이언트가 보낸 relay 모양 프레임(두 형식)은 알림 위조이므로 전달하지 않는다",
+    "steps": [
+      { "open": "h", "role": "host" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "open": "g", "role": "guest" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "send": "g", "text": "{\"t\":\"relay\",\"peer\":\"left\"}" },
+      { "send": "g", "text": "{\"type\":\"relay\",\"peer\":\"left\"}" },
+      { "send": "g", "text": "ok" },
+      { "expect": "h", "text": "ok" }
+    ]
+  },
+  {
+    "id": "RELAY-06",
+    "description": "바이너리 프레임은 1003",
+    "steps": [
+      { "open": "g", "role": "guest" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "sendBinary": "g" },
+      { "closed": "g", "code": 1003 }
+    ]
+  },
+  {
+    "id": "RELAY-07",
+    "description": "64KB(65536바이트)는 전달, 1바이트 넘으면 1009",
+    "steps": [
+      { "open": "h", "role": "host" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" },
+      { "open": "g", "role": "guest" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"present\"}" },
+      { "expect": "h", "text": "{\"t\":\"relay\",\"peer\":\"joined\"}" },
+      { "sendBytes": "h", "bytes": 65536 },
+      { "expectBytes": "g", "bytes": 65536 },
+      { "sendBytes": "h", "bytes": 65537 },
+      { "closed": "h", "code": 1009 },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"left\"}" }
+    ]
+  },
+  {
+    "id": "RELAY-08",
+    "description": "LAN 주소에서 온 호스트 역할은 1008, 게스트는 연결된다",
+    "remote": "192.168.1.2",
+    "steps": [
+      { "open": "h", "role": "host", "rejected": 1008 },
+      { "open": "g", "role": "guest" },
+      { "expect": "g", "text": "{\"t\":\"relay\",\"peer\":\"absent\"}" }
+    ]
+  },
+  {
+    "id": "RELAY-09",
+    "description": "역할이 없거나 잘못되면 1008",
+    "steps": [{ "open": "x", "role": "spectator", "rejected": 1008 }]
+  }
+]
