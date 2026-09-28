@@ -1,8 +1,8 @@
-// 화면이 받는 뷰 데이터 타입 — **잠정(provisional)**.
-// packages/protocol(M4)이 생기면 그 패키지의 playerView 계약 타입으로 바꾸고 이 파일은 지운다.
+// 화면이 받는 뷰 데이터 타입의 단일 정의 (plan.md "M3 준비 결과가 M4에 넘기는 입력", spec 6.1·6.2).
+// 호스트는 좌석 1(게스트)에게 이 BoardView를 보내고, 좌석 0 화면도 같은 타입으로 그린다(HostSession.hostView()).
 // 필드 이름은 packages/engine의 PlayerView·SeatView·FloorGroup·Pending·SettleStep과 되도록 같게 맞췄다.
-// 엔진에 없는 값(이름, 잔액, 족보 진행도, 현재 배수)은 UI가 계산하거나 호스트가 덧붙일 값이다.
-// fixtures/*.json(개발 갤러리·스크린샷 입력)이 이 타입을 따른다(src/lib/fixtures.test.ts가 검사).
+// 엔진에 없는 값(이름, 잔액, 족보 진행도, 현재 배수)은 view.ts의 toBoardView가 계산한다.
+// packages/web/fixtures/*.json(개발 갤러리·스크린샷 입력)이 BoardViewCore를 따른다(web src/lib/fixtures.test.ts가 검사).
 
 import type { Action } from '@p2p-gostop/engine';
 
@@ -44,11 +44,6 @@ export interface SeatView {
   /** 가상 머니 잔액 (MN-01, 단위는 설정) */
   readonly balance: number;
   readonly progress: JokboProgress;
-  // STUB(I1): M3 리뷰 S-2 표시값. fix/protocol-review가 정식으로 더한다
-  /** 엔진 score.gukjinAsPi (국진을 쌍피로 센다) */
-  readonly gukjinAsPi?: boolean;
-  /** 배수가 붙는 폭탄 횟수 (모르면 null: M3 표시 코드와 같은 모양) */
-  readonly bombs?: number | null;
 }
 
 export interface FloorGroupView {
@@ -83,50 +78,77 @@ export type PromptView =
   | { readonly kind: 'gukjin'; readonly seat: Seat }
   | { readonly kind: 'chongtong'; readonly seat: Seat; readonly months: readonly Month[] };
 
-// STUB(I1, fix/protocol-review가 대체): 아래 필드는 fix/protocol-review가 공지한 이름 그대로 임시로 넣는다.
-// feat/m4-integration PR 전에 이 커밋을 버리고 fix/protocol-review를 병합한다.
-/** 고/스톱 모달의 스톱 미리보기 분해 (FR-14) */
-export interface GoStopDetail {
-  readonly points: number;
-  readonly steps: readonly SettleStepView[];
-  readonly multiplier: number;
-  readonly money: number | null;
-  readonly capped: boolean;
-}
-
-/** 대상 고르기 동안 손을 떠났지만 아직 바닥에 놓이지 않은 카드 (모두 공개 카드) */
-export interface InFlight {
-  readonly played: CardId | null;
-  readonly staged: readonly CardId[];
-}
-
-/** 게임판 화면 입력 */
-export interface BoardView {
+/** 게임판 화면 입력 중 M3 솔로 화면이 처음부터 쓰던 부분 (fixtures·갤러리 호환) */
+export interface BoardViewCore {
   readonly viewer: Seat;
   readonly turn: Seat;
   readonly seats: readonly [SeatView, SeatView];
   readonly floor: readonly FloorGroupView[];
   readonly deckCount: number;
-  /** 지금 스톱하면 적용될 배수 (흔들기·폭탄·나가리 이월 등의 곱, spec 6.1 "현재 배수") */
+  /** 지금 스톱하면 적용될 배수 (spec 6.1 "현재 배수"). 보는 좌석 기준: 스톱 미리보기가 있으면 그 배수, 아니면 흔들기·폭탄·고·이월·대박판의 곱 */
   readonly multiplier: number;
   readonly pending: PromptView | null;
-  /** 보는 좌석이 지금 낼 수 있는 손패 (FR-12 하이라이트) */
+  /** 보는 좌석이 지금 낼 수 있는 손패 (FR-12 하이라이트, legal의 play에서 뽑은 중복 없는 목록) */
   readonly playable: readonly CardId[];
   readonly round: number;
   /** 마지막으로 반영한 이벤트 순번 (NP-03) */
   readonly eventSeq: number;
-  /** 보는 좌석의 합법 수 */
-  readonly legal: readonly Action[];
-  /** 선 고르기: 내가 고를 차례면 후보 장수와 상대가 이미 고른 자리 */
-  readonly firstPick: { readonly poolSize: number; readonly taken: number | null } | null;
-  readonly inFlight: InFlight;
-  readonly goStop: GoStopDetail | null;
-  readonly bombMonths: readonly Month[];
-  readonly canFlipOnly: boolean;
-  readonly dealer: Seat | null;
 }
 
-// ---- 이벤트 (spec 4.5 이름 그대로). 좌석·관련 카드 ID·순번을 가진다 ----
+/** 선 고르기(R4): 보는 좌석이 고를 차례일 때 후보 장수와 상대가 이미 고른 자리 */
+export interface FirstPickPrompt {
+  readonly poolSize: number;
+  readonly taken: number | null;
+}
+
+/**
+ * 진행 중인 턴에서 아직 바닥에 놓이지 않은 카드 (spec 4.3 MATCH_PLAY·MATCH_FLIP의 대상 고르기 동안).
+ * 엔진은 낸 패·뒤집은 패·들고 있는 보너스를 턴 작업 공간(ctx)에 두므로 floor에 없다. 화면은 낸 패를 그 월 무더기 위에,
+ * 뒤집은 패·들고 있는 보너스를 더미 옆 뒤집기 자리에 둔다.
+ */
+export interface InFlight {
+  readonly played: CardId | null;
+  readonly staged: readonly CardId[];
+}
+
+/** 고/스톱 모달의 스톱 미리보기 분해 (FR-14, 엔진 stopPreview) */
+export interface GoStopDetail {
+  /** 스톱하면 받을 최종 점수 */
+  readonly points: number;
+  readonly steps: readonly SettleStepView[];
+  readonly multiplier: number;
+  /** 원장 상한까지 적용한 실제 금액 */
+  readonly money: number | null;
+  /** 상대 잔액 부족으로 줄었는지 (올인, MN-02) */
+  readonly capped: boolean;
+}
+
+/** 엔진 판 단계 (선 고르기 → 턴 → 종료) */
+export type RoundPhase = 'chooseFirst' | 'turn' | 'end';
+
+/** M3 BoardExtras·inFlightOf를 흡수한 상세 입력 정보 (#12). 게스트는 이것만으로 한 판을 끝낼 수 있어야 한다 */
+export interface BoardViewDetail {
+  /** 보는 좌석의 합법 수 (엔진 playerView.legal 그대로). 게스트 UI는 이 목록 안에서만 액션을 만든다 */
+  readonly legal: readonly Action[];
+  readonly firstPick: FirstPickPrompt | null;
+  readonly inFlight: InFlight;
+  /** 보는 좌석의 고/스톱 프롬프트일 때만 값이 있다 */
+  readonly goStop: GoStopDetail | null;
+  /** 폭탄(E9·E10)을 할 수 있는 월 */
+  readonly bombMonths: readonly Month[];
+  /** 폭탄패로 뒤집기만 할 수 있는지 (E9) */
+  readonly canFlipOnly: boolean;
+  readonly dealer: Seat | null;
+  readonly phase: RoundPhase;
+}
+
+/** 게임판 화면 입력 = M3 솔로 어댑터(BoardView + BoardExtras + InFlight)의 상위 집합 */
+export interface BoardView extends BoardViewCore, BoardViewDetail {}
+
+// ---- 이벤트 ----
+// 애니메이션·로그의 단일 근거는 엔진 이벤트(ProtocolEvent = EngineEvent, view.ts)다.
+// 아래 UiEvent는 M3 배너·픽스처(web src/ui/banner.ts, fixtures/board.json)가 아직 쓰므로 남겨 둔 옛 이름표다(리뷰 L-5).
+// @deprecated 새 코드는 ProtocolEvent를 쓴다.
 
 interface EventBase {
   readonly seq: number;
