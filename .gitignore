@@ -31,3 +31,6 @@ packages/web/playwright-report/
 coverage/
 # Claude Code 에이전트 워크트리(저장소 내부 생성)
 .claude/worktrees/
+# Claude Code 개인 설정(공유하지 않음)
+.claude/settings.local.json
+CLAUDE.local.md

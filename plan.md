@@ -118,7 +118,7 @@ p2p-gostop/
 | 위생 | **knip 6.38.0**, 번들 ≤1.5MB·외부 URL 0건 검사 스크립트(의존성 0) | CI 게이트 |
 | 의존성 갱신 | Dependabot(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | |
 | 개발 환경 (2026-09-29) | 단일 개발 이미지 `docker/Dockerfile` + 루트 `compose.yaml` + `.devcontainer/`(2장). CI는 같은 이미지를 러너에서 빌드하고 Gradle 홈만 `actions/cache@v6`로 보존 | 자체 래퍼(`dev.sh`) 대신 표준 도구. `actions/cache`는 컨테이너 안 Gradle에 setup-gradle을 쓸 수 없어 추가(첫 실행 Gradle 4분 8초) |
-| 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, PostToolUse 포맷 훅(프로젝트 `.claude/settings.json`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
+| 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, 프로젝트 `.claude/`(서브에이전트 3종·스킬 3종·권한 규칙, 편집 훅 없음: 포맷은 `lint:fix`·CI `lint`로 강제, 근거 `docs/reviews/harness-audit.md`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 | Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
 | Android 런타임 의존성 | `kotlinx-coroutines-android` (Ktor 3.6.0이 요구하는 코루틴 버전과 일치하도록 명시 선언) | 전이 의존에 기대지 않는다 (M0 리뷰) |
@@ -147,8 +147,8 @@ p2p-gostop/
 | `docker/Dockerfile` | 단일 개발 이미지 `p2p-gostop-dev`. 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`(Node 24.20.0, Chromium·WebKit) + Temurin JDK 21(`eclipse-temurin` 이미지에서 `COPY --from`) + Android SDK(cmdline-tools SHA-256 고정, `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`; 설치 후 sdkmanager 삭제). 사용자 `dev`(uid/gid 1000). 에뮬레이터 없음. 약 4.3GB(압축 1.2GB). `cimg/android`(11.9GB)와 `node:24-bookworm-slim`은 더 쓰지 않는다. |
 | `compose.yaml`(저장소 루트) | 서비스 `dev` 하나. 루트에 두는 이유: Compose 기본 탐색 파일이라 `-f` 없이 저장소 어느 하위 폴더에서도 `docker compose run --rm dev …`가 된다. 저장소를 `/work`에 바인드 마운트(`node_modules` 포함, 볼륨·소유자 보정 없음), `user: 1000:1000`, `ipc: host`(Playwright), `init: true`, 기본 `bridge` 망. 이름 고정 볼륨 `p2p-gostop-gradle`·`p2p-gostop-npm`·`p2p-gostop-android`(디버그 서명 키)는 모든 체크아웃이 일부러 공유한다(동시 Gradle 빌드 2개로 공유 캐시 확인). |
 | `.devcontainer/devcontainer.json` | 같은 `dev` 서비스를 VS Code·Codespaces·devcontainer CLI가 쓴다(`workspaceFolder: /work`, `remoteUser: dev`, `updateRemoteUserUID`, `postCreateCommand: npm ci`). 안에서는 `npm`·`android/gradlew`를 그대로 실행한다. |
-| 루트 `package.json` | `format:file`(web → Prettier, 그 밖 → oxfmt 경로 라우팅), `test:browser`. Gradle은 감싸지 않고 `android/gradlew -p android <task>`를 그대로 쓴다. |
-| `.claude/settings.json` | PostToolUse 훅: 편집한 파일의 체크아웃에서 `docker compose run --rm -T dev npm run format:file -- <경로>`. |
+| 루트 `package.json` | `dev.sh`에만 있던 태스크 중 남은 것은 `test:browser`(web 위임) 하나. Gradle은 감싸지 않고 `android/gradlew -p android <task>`를 그대로 쓴다. 포맷은 편집 훅 없이 `lint:fix`(PR #39 결정). |
+| `.claude/settings.json` | 권한 허용 규칙이 `./dev.sh <task>` 대신 위 `docker compose run --rm dev …` 명령을 가리킨다. |
 
 - 사용: `docker compose run --rm dev <명령>`(전체 목록은 AGENTS.md 5장). 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 프로젝트명 로직은 없다.
 - 이미지 갱신: `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다. 없는 태그면 `run`이 자동 빌드한다. 매번 빌드(`pull_policy: build`)는 쓰지 않는다: 실행마다 1~2초가 붙고, 베이스 이미지 메타데이터를 원격 조회해 오프라인(기내)에서 실패한다.
@@ -219,7 +219,7 @@ p2p-gostop/
 
 | 작업 성격 | 담당 | 근거 |
 |---|---|---|
-| 판단형(규칙·설계·리뷰), Svelte 5 UI·애니메이션 | Claude(Opus 5.5 서브에이전트, 리뷰는 별도 에이전트) | svelte-check·Svelte MCP·포맷 훅이 Claude Code에 연결. 구식 문법 혼입 위험 큰 영역 |
+| 판단형(규칙·설계·리뷰), Svelte 5 UI·애니메이션 | Claude(Opus 5.5 서브에이전트, 리뷰는 별도 에이전트) | svelte-check·Svelte MCP가 Claude Code에 연결. 구식 문법 혼입 위험 큰 영역 |
 | 계약형(명세 확정 + 자동 테스트 촘촘): 프로토콜 패키지, Android 릴레이·정적 서빙 | Codex GPT-6 Sol xhigh (Paseo 워크트리, full-access) | 독립 지표(Terminal-Bench 4.0: Sol 43.9 vs Astra 58.2 vs Fable 57.9)상 한 단계 아래라 계약형에 한정. 벤더 자기보고 벤치는 근거로 쓰지 않음 |
 | Sol이 막히는 어려운 문제 | Codex GPT-6 Astra(max) 예비 | 비용·한도 큼 |
 | 저위험 잡무(문서 동기화, 정리) | Codex GPT-6 Luna | 저렴 |
@@ -243,7 +243,8 @@ p2p-gostop/
 | H1 | 릴리스 게이트(#22 CI 성공 조건·prerelease), MVP.md 정정(#21), spec 부분 충족 표시 | hygiene(Sonnet, low) | PR |
 | A2 | #17 앱 실행 시 LAN 서버 자동 기동(NF-06) 재설계, PR #14 리뷰 반영 | Codex Sol (high) | PR #14 후속 |
 | M5 | `v0.2.0` 실기기 회차(호스트/게스트 정식 UI) | 사용자 | 로그 → 이슈 |
-| D1 | 카드·UI 이미지를 오픈 자산 차용에서 **고유 모던 디자인**(CC0)으로 교체: 1단계 조사·스타일 가이드·시안 A/B → 사용자 선택, 2단계 52장 제작·svgo·갤러리·가독성 검증·저작자 표기 제거 | implementer(Opus, high) | PR(Draft) → 선택 → PR |
+| D1 | 카드 이미지: 시안 A/B(모던 리디자인)는 **기각**(2026-09-29 사용자: "우리가 알던 카드를 이상하게 보이게 하지 않는다"). 방향 = **정석 화투 도안을 충실히 유지한 고해상도 리마스터**(자체 벡터, CC0), 보너스·뺏기패와 뒷면만 구별되게. 1단계 샘플 8~10장 → 확인 → 2단계 52장 | implementer(Opus, high) | PR #37 갱신 → PR |
+| D2 | **UI/UX 설계 명세** `docs/design/ui-spec.md`(UX-xx ID): 기기별 뷰포트·안전 영역, 게임 화면 존 그리드와 극단 상태, z-order·겹침 규칙(프롬프트·토스트·배너 vs 손패·버튼), 테이블 배경·토큰 의미·타이포, 모션·이펙트 명세, 상태 설계(대기·재접속·교체·파산), 컴포넌트 상태 표, 접근성, 현재 UI 격차 분석 + 이슈 | implementer(Opus, high) | PR → spec §6 개정 → 구현 이슈 |
 | M6 | 토글 UI, 기록, 리플레이 내보내기, 효과음, 접근성, 아케이드, 머니 모델 재산정, AI 강도 재도전, 밀기 후속(#29~#32), `dev.sh` 폐기 안내 스크립트 삭제(2026-09-29 개발 이미지·compose·Dev Container 도입으로 대체됨) | 분할 배분 | `v1.0.0` |
 
 규칙: 모든 PR은 CI 녹색 + reviewer 검토(판정 '병합 가능')를 받은 뒤 병합한다. 리뷰 결함은 GitHub 이슈로 등록해 트랙 U1이 소화한다.

@@ -22,9 +22,27 @@ export default defineConfig({
       maxDiffPixelRatio: 0.001,
     },
   },
+  // 턴 시간 계측(@timing, spec AC-06)은 CPU 부하에 민감하다: 병렬 워커와 겹치면 최댓값이 0.8~1.5s로 튄다(PR #34 리뷰 I-1).
+  // 그래서 일반 프로젝트에서 빼고, 다른 테스트가 모두 끝난 뒤(dependencies) 브라우저 하나씩 차례로(timing-webkit은
+  // timing-chromium 뒤), 프로젝트당 워커 1개로(--repeat-each 반복도 겹치지 않게) 혼자 돌린다.
+  // 다른 테스트가 실패하면 의존 관계 때문에 계측은 건너뛴다. --repeat-each는 의존 대상 프로젝트에는 적용되지 않는다.
   projects: [
-    { name: 'chromium', use: { ...devices['Pixel 7'] } },
-    { name: 'webkit', use: { ...devices['iPhone 15'] } },
+    { name: 'chromium', use: { ...devices['Pixel 7'] }, grepInvert: /@timing/ },
+    { name: 'webkit', use: { ...devices['iPhone 15'] }, grepInvert: /@timing/ },
+    {
+      name: 'timing-chromium',
+      use: { ...devices['Pixel 7'] },
+      grep: /@timing/,
+      workers: 1,
+      dependencies: ['chromium', 'webkit'],
+    },
+    {
+      name: 'timing-webkit',
+      use: { ...devices['iPhone 15'] },
+      grep: /@timing/,
+      workers: 1,
+      dependencies: ['timing-chromium'],
+    },
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort --host 127.0.0.1`,

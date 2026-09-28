@@ -1,15 +1,50 @@
-// 혼자 연습 E2E (spec AC-04 솔로 절반, AC-06 턴 시간 계측, MN-01 원장 제로섬, 6.2 정산·기록·설정 흐름).
-// 사람 좌석은 테스트가 화면의 버튼을 눌러 둔다: 프롬프트가 있으면 그 버튼, 없으면 낼 수 있는 첫 손패.
+// 혼자 연습 E2E (spec AC-04 솔로 절반, AC-06 턴 시간, MN-01 원장 제로섬, 6.2 정산·기록·설정 흐름).
+// 사람 좌석은 테스트가 화면의 버튼을 눌러 둔다. 선택 정책은 시드 고정 무작위에 드문 경로 쪽으로 기울였다(M3 리뷰 I-6):
+// 고는 세션에서 처음 3번까지 고른다, 총통은 계속하기, 흔들기는 거절부터 번갈아, 폭탄은 폭탄·한 장만 번갈아,
+// 국진은 쌍피·열끗 번갈아, 대상·선 고르기·낼 카드는 무작위. 제시·선택 횟수는 window.__auto에 남는다.
+// 턴 시간 계측(@timing)은 playwright.config.ts의 전용 프로젝트에서 다른 테스트가 끝난 뒤 브라우저별로 차례로 돈다.
 import { expect, type Page, test } from '@playwright/test';
+
+interface AutoStats {
+  seed: number;
+  /** 제시된 선택 창 종류별 횟수 */
+  offered: Record<string, number>;
+  /** 누른 선택별 횟수 */
+  taken: Record<string, number>;
+  /** 마지막으로 낸 수(손패·폭탄·한 장만·폭탄패 뒤집기)가 기록될 턴 시간 순번. 손패를 다시 내면 바뀐다 */
+  lastPlay: number | null;
+  /** 낸 뒤 내 선택 창(대상·고/스톱·국진 등)으로 이어진 턴 시간 순번 (spec 6.4 "선택 없을 때"가 아님) */
+  promptAfter: number[];
+}
 
 /** 브라우저 안에서 한 번 판단하고 누른다. 누를 것이 없으면 false(계속 기다림), 목표 판 수에 닿으면 'done' */
 function autoStep(target: number): string | false {
+  const w = window as unknown as { __auto?: AutoStats };
+  const auto = (w.__auto ??= {
+    seed: 20260928,
+    offered: {},
+    taken: {},
+    lastPlay: null,
+    promptAfter: [],
+  });
+  const rand = (n: number) => {
+    auto.seed = (Math.imul(auto.seed, 1664525) + 1013904223) >>> 0;
+    return auto.seed % n;
+  };
+  const note = (map: Record<string, number>, key: string) => (map[key] = (map[key] ?? 0) + 1);
   const solo = document.querySelector<HTMLElement>('[data-testid="solo"]');
   if (solo === null) return false;
-  const click = (el: Element | null, name: string): string | false => {
+  const click = (el: Element | null | undefined, name: string): string | false => {
     if (!(el instanceof HTMLElement)) return false;
     el.click();
     return name;
+  };
+  // 턴 시간이 기록되는 수(Game.svelte: play·bomb·flipOnly)를 누를 때 그 수가 받을 순번을 적어 둔다
+  const recorded = (solo.dataset['playTimings'] ?? '').split(',').filter(Boolean).length;
+  const played = (el: Element | null | undefined, name: string): string | false => {
+    const result = click(el, name);
+    if (result !== false) auto.lastPlay = recorded;
+    return result;
   };
   const refill = document.querySelector('[data-choice="refill"]');
   if (refill !== null) return click(refill, 'refill');
@@ -24,14 +59,38 @@ function autoStep(target: number): string | false {
     (b) => !b.disabled,
   );
   if (choices.length > 0) {
-    // 판을 빨리 끝내도록 스톱, 그 밖에는 폭탄·흔들기를 골라 드문 경로도 지나가게 한다
-    const prefer = ['stop', 'bomb', 'shake'];
-    const pick = choices.find((b) => prefer.includes(b.dataset['choice'] ?? '')) ?? choices[0];
-    return click(pick ?? null, pick?.dataset['choice'] ?? 'choice');
+    // 직전에 낸 수가 이미 기록됐는데 선택 창이 떴다 = 그 수는 선택 창에서 멈췄다 (폭탄 확인 창은 아직 기록 전)
+    if (auto.lastPlay !== null && recorded > auto.lastPlay) {
+      auto.promptAfter.push(auto.lastPlay);
+      auto.lastPlay = null;
+    }
+    const ids = choices.map((b) => b.dataset['choice'] ?? '');
+    const has = (id: string) => ids.includes(id);
+    let want: string;
+    if (has('go') && has('stop')) {
+      note(auto.offered, 'goStop');
+      want = (auto.taken['go'] ?? 0) < 3 ? 'go' : 'stop';
+    } else if (has('continue')) {
+      note(auto.offered, 'chongtong');
+      want = 'continue';
+    } else if (has('noShake')) {
+      want = note(auto.offered, 'shake') % 2 === 1 ? 'noShake' : 'shake';
+    } else if (has('bomb')) {
+      want = note(auto.offered, 'bomb') % 2 === 1 ? 'bomb' : 'single';
+    } else if (has('pi') && has('yeol')) {
+      want = note(auto.offered, 'gukjin') % 2 === 1 ? 'pi' : 'yeol';
+    } else {
+      want = ids[rand(ids.length)] ?? '';
+    }
+    const pick = choices.find((b) => b.dataset['choice'] === want) ?? choices[0];
+    const name = pick?.dataset['choice'] ?? 'choice';
+    note(auto.taken, name);
+    return name === 'bomb' || name === 'single' ? played(pick, name) : click(pick, name);
   }
   const flipOnly = board.querySelector('[data-choice="flipOnly"]');
-  if (flipOnly !== null) return click(flipOnly, 'flipOnly');
-  return click(board.querySelector('[aria-label="내 손패"] button:not([disabled])'), 'play');
+  if (flipOnly !== null) return played(flipOnly, 'flipOnly');
+  const hand = [...board.querySelectorAll('[aria-label="내 손패"] button:not([disabled])')];
+  return played(hand[rand(hand.length)], 'play');
 }
 
 async function playRounds(page: Page, target: number) {
@@ -74,11 +133,15 @@ async function startSolo(page: Page, query: string, difficulty: string) {
   await expect(page.getByTestId('board')).toBeVisible();
 }
 
-test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 원장 제로섬 · 콘솔 오류 없음 (AC-04, MN-01)', async ({
+test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 국진 묻기 · 원장 제로섬 · 콘솔 오류 없음 (AC-04, MN-01)', async ({
   page,
 }) => {
   test.setTimeout(8 * 60_000);
   const errors = watchErrors(page);
+  // 국진 '매번 묻기'(FR-15): 설정 화면 스위치가 아직 없어 저장된 설정으로 켠다
+  await page.addInitScript(() =>
+    localStorage.setItem('gostop.settings.v1', JSON.stringify({ gukjinAsk: true })),
+  );
   await startSolo(page, '?speed=instant', '쉬움');
 
   const counts = await playRounds(page, 20);
@@ -100,33 +163,88 @@ test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 원장 제로섬 ·
   await expect(page.getByRole('heading', { name: '기록' })).toBeVisible();
   await expect(page.getByRole('row')).toHaveCount(21);
 
+  // 선택 정책이 드문 경로를 실제로 지났다 (M3 리뷰 I-6: 고·총통 계속·흔들기 거절)
+  const auto = await page.evaluate(() => (window as unknown as { __auto: AutoStats }).__auto);
   test.info().annotations.push({
     type: 'solo-actions',
-    description: JSON.stringify(Object.fromEntries(counts)),
+    description: JSON.stringify({ ...Object.fromEntries(counts), auto }),
   });
+  console.log(
+    `[AC-04] 20판 선택: 제시 ${JSON.stringify(auto.offered)} 누름 ${JSON.stringify(auto.taken)}`,
+  );
+  expect(auto.offered['goStop'] ?? 0).toBeGreaterThan(0);
+  expect(auto.taken['go'] ?? 0).toBeGreaterThanOrEqual(1);
+  expect(auto.taken['continue'] ?? 0).toBe(auto.offered['chongtong'] ?? 0);
+  if ((auto.offered['shake'] ?? 0) > 0)
+    expect(auto.taken['noShake'] ?? 0).toBeGreaterThanOrEqual(1);
   expect(errors).toEqual([]);
 });
 
-test('혼자 연습: 빠름 속도 한 판 · 탭→턴 종료 시간 기록 (AC-06, spec 6.4)', async ({ page }) => {
-  test.setTimeout(3 * 60_000);
-  const errors = watchErrors(page);
-  await startSolo(page, '', '쉬움');
-  await playRounds(page, 1);
+/**
+ * CI 러너(2코어, 소프트웨어 렌더링)의 WebKit은 같은 코드에서도 로컬보다 약 20% 느리다(이슈 #20 CI 실측: p50 693, 최대 836).
+ * spec 6.4의 700ms는 실기기 기준이므로 CI의 WebKit에만 이 배율을 곱한다. 로컬 도커와 Chromium은 1(그대로).
+ */
+const CI_WEBKIT_BUDGET_FACTOR = 1.25;
 
-  const raw = (await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '';
-  const timings = raw.split(',').filter(Boolean).map(Number);
-  expect(timings.length).toBeGreaterThan(0);
-  const sorted = [...timings].sort((a, b) => a - b);
-  const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
-  const max = sorted.at(-1) ?? 0;
-  // 턴 예산 700ms(빠름)는 지금은 기록만 한다: 도커 로컬 p50 570~635ms지만 2코어 CI 러너의 WebKit은
-  // p50 660~700ms대로 흔들린다. 결과는 테스트 주석과 로그에 남긴다(docs/ui.md 3장).
-  test.info().annotations.push({
-    type: 'turn-ms',
-    description: `n=${timings.length} p50=${p50} max=${max} all=${timings.join(',')}`,
-  });
-  console.log(`[AC-06] 탭→턴 종료 ms: n=${timings.length} p50=${p50} max=${max}`);
-  expect(errors).toEqual([]);
+test.describe('턴 시간 계측 (@timing)', () => {
+  // 전용 프로젝트(timing-*)에서 다른 테스트가 모두 끝난 뒤 혼자 돈다(playwright.config.ts). 파일 안에서도 직렬로.
+  test.describe.configure({ mode: 'serial' });
+
+  test(
+    '혼자 연습: 빠름 속도 · 탭→턴 종료 p50 ≤ 700ms (AC-06, spec 6.4)',
+    { tag: '@timing' },
+    async ({ page, browserName }) => {
+      test.setTimeout(4 * 60_000);
+      const errors = watchErrors(page);
+      await startSolo(page, '', '쉬움');
+      const read = async () =>
+        ((await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '')
+          .split(',')
+          .filter(Boolean)
+          .map(Number);
+      // 표본에서 빼는 수 (PR #34 리뷰 I-1):
+      // - 판을 끝낸 수: 재생 뒤 정산 화면 전에 결과를 보는 고정 대기(700ms, game/solo.svelte.ts)가 같이 기록된다.
+      //   판이 끝난 순간의 마지막 기록이 그 수다(CPU가 끝냈으면 평범한 수 하나를 더 빼는 셈이라 보수적).
+      // - 내 선택 창에서 멈춘 수(promptAfter, autoStep이 기록): spec 6.4 예산은 "선택 없을 때"다.
+      // - 50ms 미만: 애니메이션이 하나도 없는 기록은 턴 재생 시간이 아니다.
+      let all: number[] = [];
+      const roundEnd = new Set<number>();
+      let prompt = new Set<number>();
+      let timings: number[] = [];
+      for (let rounds = 1; rounds <= 5; rounds++) {
+        await playRounds(page, rounds);
+        all = await read();
+        if (all.length > 0) roundEnd.add(all.length - 1);
+        prompt = new Set(
+          await page.evaluate(
+            () => (window as unknown as { __auto: AutoStats }).__auto.promptAfter,
+          ),
+        );
+        timings = all.filter((ms, i) => !roundEnd.has(i) && !prompt.has(i) && ms >= 50);
+        if (timings.length >= 8) break;
+      }
+      expect(timings.length).toBeGreaterThanOrEqual(5);
+      const sorted = [...timings].sort((a, b) => a - b);
+      const at = (q: number) =>
+        sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))] ?? 0;
+      const p50 = at(0.5);
+      const p90 = at(0.9);
+      const secondMax = sorted.at(-2) ?? 0;
+      const max = sorted.at(-1) ?? 0;
+      const factor = process.env['CI'] && browserName === 'webkit' ? CI_WEBKIT_BUDGET_FACTOR : 1;
+      const pick = (set: Set<number>) => [...set].map((i) => all[i]).join(',');
+      const line =
+        `n=${timings.length} p50=${p50} p90=${p90} 두번째최대=${secondMax} max=${max} ` +
+        `all=${sorted.join(',')} | 제외: 판 끝=${pick(roundEnd)} 선택 창=${pick(prompt)} ` +
+        `50ms 미만=${all.filter((ms) => ms < 50).join(',')} | 예산 배율 ${factor}`;
+      test.info().annotations.push({ type: 'turn-ms', description: line });
+      console.log(`[AC-06] 탭→턴 종료 ms (${test.info().project.name}): ${line}`);
+      // spec 6.4: 700ms(빠름). 꼬리는 스케줄링 이상치 하나를 흡수하도록 두 번째로 큰 값을 900ms로 본다(이슈 #20)
+      expect(p50).toBeLessThanOrEqual(700 * factor);
+      expect(secondMax).toBeLessThanOrEqual(900 * factor);
+      expect(errors).toEqual([]);
+    },
+  );
 });
 
 test('정산 → 다음 판, 설정 저장, 홈 이어하기 (spec 6.2, MN-05)', async ({ page }) => {

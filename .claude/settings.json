@@ -1,16 +1,52 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=$(jq -r .tool_input.file_path); d=$(git -C \"$(dirname \"$f\")\" rev-parse --show-toplevel 2>/dev/null) && [ -f \"$d/compose.yaml\" ] && cd \"$d\" && docker compose run --rm -T dev npm run -s format:file -- \"${f#\"$d\"/}\" >/dev/null 2>&1 || true'",
-            "timeout": 60
-          }
-        ]
-      }
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(docker compose build dev)",
+      "Bash(docker compose run --rm dev npm ci)",
+      "Bash(docker compose run --rm dev npm run lint *)",
+      "Bash(docker compose run --rm dev npm run lint:fix *)",
+      "Bash(docker compose run --rm dev npm run check *)",
+      "Bash(docker compose run --rm dev npm test *)",
+      "Bash(docker compose run --rm dev npm run test:browser *)",
+      "Bash(docker compose run --rm dev npm run build -w packages/web *)",
+      "Bash(docker compose run --rm dev npm run e2e -w packages/web *)",
+      "Bash(docker compose run --rm dev android/gradlew -p android assembleDebug *)",
+      "Bash(docker compose run --rm dev android/gradlew -p android testDebugUnitTest *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr list *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh release view *)",
+      "Bash(gh release list *)",
+      "Bash(gh pr merge *)",
+      "Bash(git push * main)",
+      "Bash(git push *:main)"
+    ],
+    "ask": [
+      "Bash(gh release create *)",
+      "Bash(gh release delete *)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push *--tags*)",
+      "Bash(git push * v*)",
+      "Bash(docker volume rm *)",
+      "Bash(docker volume prune*)",
+      "Bash(docker system prune*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(secrets/**)",
+      "Read(*.jks)",
+      "Read(*.keystore)",
+      "Read(*.p12)",
+      "Read(*.pem)"
     ]
   }
 }

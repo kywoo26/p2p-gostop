@@ -25,7 +25,7 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 
 ## 개발 환경
 
-호스트(WSL)에는 **git, gh, docker CLI(+ Claude Code 훅용 jq)만** 있으면 된다. Node·Playwright 브라우저·JDK·Android SDK는 모두 개발 이미지 하나(`docker/Dockerfile`) 안에 있고, 저장소 루트의 `compose.yaml`이 그 이미지를 `dev` 서비스로 띄운다. 별도 래퍼 스크립트는 없다. 표준 `docker compose` 명령을 그대로 쓴다.
+호스트(WSL)에는 **git, gh, docker CLI만** 있으면 된다. Node·Playwright 브라우저·JDK·Android SDK는 모두 개발 이미지 하나(`docker/Dockerfile`) 안에 있고, 저장소 루트의 `compose.yaml`이 그 이미지를 `dev` 서비스로 띄운다. 별도 래퍼 스크립트는 없다. 표준 `docker compose` 명령을 그대로 쓴다.
 
 ```sh
 docker compose run --rm dev npm ci                  # 처음 한 번(이미지가 없으면 자동 빌드), lock이 바뀐 뒤

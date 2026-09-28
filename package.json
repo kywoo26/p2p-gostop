@@ -17,7 +17,6 @@
     "lint:oxc": "oxlint --type-aware --deny-warnings && oxfmt --check",
     "lint:fix": "oxlint --type-aware --fix && oxfmt && npm run lint:fix -w packages/web",
     "format": "oxfmt && npm run format -w packages/web",
-    "format:file": "sh -c 'case \"$0\" in packages/web/*) exec prettier --write --ignore-unknown --no-error-on-unmatched-pattern --log-level warn --ignore-path packages/web/.prettierignore \"$0\" ;; *) exec oxfmt --no-error-on-unmatched-pattern \"$0\" ;; esac'",
     "check": "npm run check --workspaces --if-present && knip",
     "build": "npm run build -w packages/web",
     "e2e": "npm run e2e -w packages/web",

@@ -3,12 +3,13 @@
 이 파일은 사람과 AI 에이전트 모두가 따르는 단일 규범이다. 문서 체계: `intend.md`(왜) → `spec.md`(무엇을) → `plan.md`(어떻게) → 코드. 규칙의 근거는 `docs/research/rules-commercial.md` 12장뿐이다.
 
 ## 1. 절대 규칙
-- 모든 빌드·테스트는 개발 이미지 안에서 실행한다: 저장소 루트에서 `docker compose run --rm dev <명령>`, 또는 Dev Container(`.devcontainer/`) 안에서 `<명령>` 그대로. WSL/호스트에 도구를 설치하지 않는다(호스트에는 git·gh·docker·jq만).
+- 모든 빌드·테스트는 개발 이미지 안에서 실행한다: 저장소 루트에서 `docker compose run --rm dev <명령>`, 또는 Dev Container(`.devcontainer/`) 안에서 `<명령>` 그대로(5장). WSL/호스트에 도구를 설치하지 않는다(호스트에는 git·gh·docker만). 예외는 에이전트 도구인 Svelte MCP(`.mcp.json`, 호스트 `npx`) 하나다.
 - 라이브러리 API를 쓰기 전에 공식 문서(Context7)를 조회한다. 기억으로 쓰지 않는다.
 - 버전은 아래 표를 따른다. 표에 없는 의존성을 추가하려면 `plan.md` 1.8에 근거를 적고 나서 추가한다.
 - 게임 규칙의 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 정답으로 쓰지 않는다. PolyForm NC·무라이선스 저장소의 코드는 복사하지 않는다.
-- 커밋은 Conventional Commits. 에이전트는 지시받지 않으면 커밋·푸시하지 않는다.
+- 커밋은 Conventional Commits이고, 커밋 메시지·PR 본문에 `spec.md`·`plan.md`의 요구사항 ID를 적는다. 에이전트는 지시받지 않으면 커밋·푸시하지 않고, PR을 병합하지 않는다. 병합은 CI 녹색과 reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터가 한다.
 - 외부 네트워크 요청(CDN, 웹폰트, 원격 API)을 코드에 넣지 않는다. 모든 자산은 번들한다.
+- 실기기 검증(핫스팟, iPhone Safari)은 사람이 한다. 에이전트는 `docs/device-test/`의 절차서를 갱신하고, 사람이 준 결과만 그곳에 기록한다.
 
 ## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`agent-era-stack.md`)
 | 항목 | 버전 |
@@ -53,7 +54,9 @@
 - 의존성 추가: `docker compose run --rm dev npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-저장소 루트에서 실행한다. Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다.
+- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다. `./dev.sh`는 폐기되어 안내만 출력하고 실패한다(M6에서 삭제).
+- 새 체크아웃·워크트리에는 `node_modules`가 없다(소스와 함께 바인드 마운트). 처음 한 번 `npm ci`를 돌린다.
+- PR 필수 명령:
 ```sh
 docker compose run --rm dev npm ci                          # 처음, 그리고 package-lock.json이 바뀐 뒤
 docker compose run --rm dev npm run lint
@@ -64,4 +67,6 @@ docker compose run --rm dev npm run build -w packages/web
 docker compose run --rm dev npm run e2e -w packages/web
 docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint
 ```
-PR은 이 전부가 통과해야 한다. 그 밖: `docker compose run --rm --service-ports dev npm run dev -w packages/web`(Vite, 5173), `… --service-ports dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸). `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다(없는 태그면 `run`이 자동으로 빌드한다). `./dev.sh`는 폐기되어 안내만 출력한다(M6에서 삭제).
+- 그 밖: `docker compose run --rm --service-ports dev npm run dev -w packages/web`(Vite, 5173), `docker compose run --rm --service-ports dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸).
+- `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다(없는 태그면 `run`이 자동으로 빌드한다).
+- 포맷은 편집할 때마다 돌리는 훅이 아니라 커밋 전 `docker compose run --rm dev npm run lint:fix`로 맞추고, `lint`(CI 포함)가 `oxfmt --check`·`prettier --check`로 검사한다.
