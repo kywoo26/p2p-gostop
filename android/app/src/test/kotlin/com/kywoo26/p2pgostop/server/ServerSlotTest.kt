@@ -59,6 +59,7 @@ class ServerSlotTest {
     fun `정지 직후 다시 켜면 이전 서버를 멈춘 다음 새로 띄운다`() {
         val s = slot({ "srv${++counter}".also { events += "start:$it" } })
         s.ensure()
+        drain() // 첫 기동이 실제로 끝난 뒤 정지해야 순서를 검증할 수 있다(그 전에 stop()이 오면 기동이 건너뛰어지는 것도 정상 동작)
         s.stop()
         s.ensure()
         drain()
