@@ -1,0 +1,739 @@
+[
+  {
+    "id": "R1-deck-51",
+    "ruleId": "R1",
+    "case": "normal",
+    "toggle": "bonusCards=3",
+    "description": "표준 덱은 48장 + 보너스 3장(2피·2피·3피) = 51장: 손패 10·10, 바닥 8, 더미 23",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "phase": "turn",
+      "deckCount": 23,
+      "floorCards": ["1피a", "2피a", "3피a", "4피a", "6피a", "7피a", "11광", "12비광"],
+      "pending": { "kind": "play", "seat": 0 }
+    }
+  },
+  {
+    "id": "R1-deck-50",
+    "ruleId": "R1",
+    "case": "boundary",
+    "toggle": "bonusCards=2",
+    "description": "보너스 2장(2피·3피) 구성이면 50장: 더미 22",
+    "rulesPatch": { "bonusCards": 2 },
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": { "deckCount": 22 }
+  },
+  {
+    "id": "R1-deck-48",
+    "ruleId": "R1",
+    "case": "boundary",
+    "toggle": "bonusCards=0",
+    "description": "보너스 0장 구성이면 48장: 더미 20",
+    "rulesPatch": { "bonusCards": 0 },
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": { "deckCount": 20 }
+  },
+  {
+    "id": "R2-deal-dealer-first",
+    "ruleId": "R2",
+    "case": "normal",
+    "description": "분배는 손패 각 10, 바닥 8, 더미 23. 선(좌석 1)이 먼저 10장을 받고 먼저 친다",
+    "deal": {
+      "seed": 1,
+      "dealer": 1,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "dealer": 1,
+      "turn": 1,
+      "pending": { "kind": "play", "seat": 1 },
+      "seats": [
+        { "hand": ["6열", "6청", "7열", "7초", "8광", "8고", "9국진", "9청", "10열", "10청"] },
+        { "hand": ["1광", "1홍", "2고", "2홍", "3광", "3홍", "4고", "4초", "5열", "5초"] }
+      ],
+      "deckCount": 23,
+      "events": [{ "type": "Dealt", "seat": 1, "dealer": 1, "deckCount": 23 }]
+    }
+  },
+  {
+    "id": "R3-floor-bonus",
+    "ruleId": "R3",
+    "case": "normal",
+    "description": "분배 때 바닥에 깔린 보너스는 선이 즉시 가져가고 더미에서 1장을 보충한다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "B2a",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "seats": [{ "captured": ["B2a"] }, { "captured": [] }],
+      "floorCards": ["1피a", "2피a", "3피a", "4피a", "6피a", "7피a", "11광", "12비광"],
+      "deckCount": 22,
+      "events": [
+        { "type": "Dealt" },
+        { "type": "BonusGained", "seat": 0, "cards": ["B2a"], "source": "deal" },
+        { "type": "CardFlipped", "seat": 0, "cards": ["12비광"] }
+      ],
+      "noEvents": ["PiStolen"]
+    }
+  },
+  {
+    "id": "R3-floor-bonus-chain",
+    "ruleId": "R3",
+    "case": "boundary",
+    "description": "보충한 패가 또 보너스면 그것도 선이 가져가고 다시 보충한다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "B2a",
+        "B3",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "seats": [{ "captured": ["B2a", "B3"] }, null],
+      "floorCards": ["1피a", "2피a", "3피a", "4피a", "6피a", "7피a", "11광", "12비광"],
+      "deckCount": 21,
+      "eventCounts": { "BonusGained": 2 }
+    }
+  },
+  {
+    "id": "R3-deal-steal-off",
+    "ruleId": "B3",
+    "case": "normal",
+    "toggle": "dealFloorBonusSteal=false",
+    "description": "B3(d) 기본(끔): 분배 시 바닥 보너스를 가져가도 뺏기가 발동하지 않는다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "B3",
+        "12비광"
+      ]
+    },
+    "expect": { "noEvents": ["PiStolen"], "seats": [{ "captured": ["B3"] }, { "captured": [] }] }
+  },
+  {
+    "id": "R3-deal-steal-on",
+    "ruleId": "B3",
+    "case": "boundary",
+    "toggle": "dealFloorBonusSteal=true",
+    "description": "B3(d) 켬: 분배 시점에는 상대 피가 0장이므로 뺏기는 무효(0장 무효 규칙)",
+    "rulesPatch": { "dealFloorBonusSteal": true },
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a",
+        "6피a",
+        "7피a",
+        "11광",
+        "B3",
+        "12비광"
+      ]
+    },
+    "expect": { "noEvents": ["PiStolen"], "seats": [{ "captured": ["B3"] }, { "captured": [] }] }
+  },
+  {
+    "id": "R4-first-pick-month",
+    "ruleId": "R4",
+    "case": "normal",
+    "toggle": "firstDealer=pickCard",
+    "description": "첫 판 선 고르기: 각자 1장을 골라 높은 월이 선 (5월 vs 9월 → 9월을 고른 좌석 1이 선)",
+    "deal": { "seed": 7, "pickPools": [["5열", "9청", "1광", "2고", "3광", "4고", "6열", "7열"]] },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 }
+    ],
+    "expect": {
+      "dealer": 1,
+      "events": [
+        { "type": "FirstPicked", "picks": ["5열", "9청"] },
+        { "type": "FirstPickerChosen", "seat": 1, "reason": "month" },
+        { "type": "Dealt", "dealer": 1 }
+      ]
+    }
+  },
+  {
+    "id": "R4-first-pick-bonus",
+    "ruleId": "R4",
+    "case": "boundary",
+    "description": "보너스를 고르면 12월보다도 우선해 무조건 선",
+    "deal": {
+      "seed": 7,
+      "pickPools": [["B2a", "12비광", "1광", "2고", "3광", "4고", "6열", "7열"]]
+    },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 1 },
+      { "type": "pickFirst", "seat": 1, "index": 0 }
+    ],
+    "expect": {
+      "dealer": 1,
+      "events": [{ "type": "FirstPickerChosen", "seat": 1, "reason": "bonus" }]
+    }
+  },
+  {
+    "id": "R4-first-pick-tie",
+    "ruleId": "R4",
+    "case": "boundary",
+    "description": "같은 월을 고르면 다시 고른다 (동월 처리는 문서 없음 → 자체 결정: 새 후보로 재선택)",
+    "deal": {
+      "seed": 7,
+      "pickPools": [
+        ["3광", "3홍", "1광", "2고", "5열", "4고", "6열", "7열"],
+        ["5열", "9청", "1광", "2고", "3광", "4고", "6열", "7열"]
+      ]
+    },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 },
+      { "type": "pickFirst", "seat": 1, "index": 0 },
+      { "type": "pickFirst", "seat": 0, "index": 1 }
+    ],
+    "expect": {
+      "dealer": 0,
+      "events": [
+        { "type": "FirstPickTie", "ties": 1 },
+        { "type": "FirstPicked", "picks": ["9청", "5열"] },
+        { "type": "FirstPickerChosen", "seat": 0, "reason": "month" }
+      ]
+    }
+  },
+  {
+    "id": "R4-first-pick-tie-cap",
+    "ruleId": "R4",
+    "case": "boundary",
+    "description": "동월이 3번 연속이면 더 고르지 않고 시드 난수로 선을 정한다 (자체 결정)",
+    "deal": {
+      "seed": 7,
+      "pickPools": [
+        ["3광", "3홍", "1광", "2고", "5열", "4고", "6열", "7열"],
+        ["4고", "4초", "1광", "2고", "5열", "3광", "6열", "7열"],
+        ["B2a", "B3", "1광", "2고", "5열", "3광", "6열", "7열"]
+      ]
+    },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 },
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 },
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 }
+    ],
+    "expect": {
+      "phase": "turn",
+      "eventCounts": { "FirstPickTie": 3 },
+      "events": [{ "type": "FirstPickerChosen", "reason": "random" }]
+    }
+  },
+  {
+    "id": "R4-first-pick-night",
+    "ruleId": "R4",
+    "case": "normal",
+    "toggle": "firstDealer=timeOfDay",
+    "description": "밤일낮장(밤): 낮은 월이 선 (5월 vs 9월 → 5월을 고른 좌석 0이 선)",
+    "rulesPatch": { "firstDealer": "timeOfDay" },
+    "deal": {
+      "seed": 7,
+      "isNight": true,
+      "pickPools": [["5열", "9청", "1광", "2고", "3광", "4고", "6열", "7열"]]
+    },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 }
+    ],
+    "expect": {
+      "dealer": 0,
+      "events": [{ "type": "FirstPickerChosen", "seat": 0, "reason": "month" }]
+    }
+  },
+  {
+    "id": "R4-first-pick-day",
+    "ruleId": "R4",
+    "case": "counter",
+    "toggle": "firstDealer=timeOfDay",
+    "description": "밤일낮장(낮): 패 고르기와 같이 높은 월이 선",
+    "rulesPatch": { "firstDealer": "timeOfDay" },
+    "deal": {
+      "seed": 7,
+      "isNight": false,
+      "pickPools": [["5열", "9청", "1광", "2고", "3광", "4고", "6열", "7열"]]
+    },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 }
+    ],
+    "expect": { "dealer": 1 }
+  },
+  {
+    "id": "R4-first-pick-rps-stub",
+    "ruleId": "R4",
+    "case": "counter",
+    "toggle": "firstDealer=rockPaperScissors",
+    "description": "가위바위보는 P2 미구현: 패 고르기(높은 월)로 대체된다",
+    "rulesPatch": { "firstDealer": "rockPaperScissors" },
+    "deal": {
+      "seed": 7,
+      "isNight": true,
+      "pickPools": [["5열", "9청", "1광", "2고", "3광", "4고", "6열", "7열"]]
+    },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 0 },
+      { "type": "pickFirst", "seat": 1, "index": 1 }
+    ],
+    "expect": { "dealer": 1 }
+  },
+  {
+    "id": "R4-first-pick-same-index",
+    "ruleId": "R4",
+    "case": "counter",
+    "description": "상대가 이미 고른 카드는 고를 수 없다",
+    "deal": { "seed": 7, "pickPools": [["5열", "9청", "1광", "2고", "3광", "4고", "6열", "7열"]] },
+    "actions": [
+      { "type": "pickFirst", "seat": 0, "index": 3 },
+      { "type": "pickFirst", "seat": 1, "index": 3 }
+    ],
+    "expect": {
+      "reject": { "index": 1, "reason": "illegalAction" },
+      "phase": "chooseFirst",
+      "pending": { "kind": "pickFirst", "seats": [1] }
+    }
+  },
+  {
+    "id": "R6-floor-chongtong-nagari",
+    "ruleId": "R6",
+    "case": "normal",
+    "toggle": "floorChongtong=nagari",
+    "description": "바닥 8장에 같은 월 4장(바닥 총통)이면 나가리, 다음 판 ×2",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "11광",
+        "11피a",
+        "11피b",
+        "11쌍피",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a"
+      ]
+    },
+    "expect": {
+      "phase": "end",
+      "result": { "reason": "floorChongtong", "winner": null },
+      "settlement": { "winner": null, "finalPoints": 0, "nextCarry": 2, "nextDealer": 0 },
+      "events": [
+        { "type": "RoundEnded", "reason": "floorChongtong" },
+        { "type": "Nagari", "multiplier": 2 }
+      ]
+    }
+  },
+  {
+    "id": "R6-floor-chongtong-dealer-wins",
+    "ruleId": "R6",
+    "case": "boundary",
+    "toggle": "floorChongtong=dealerWins",
+    "description": "바닥 총통 '선 승리' 토글: 선이 총통 점수(10점)로 이긴다",
+    "rulesPatch": { "floorChongtong": "dealerWins" },
+    "deal": {
+      "seed": 1,
+      "dealer": 1,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "11광",
+        "11피a",
+        "11피b",
+        "11쌍피",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a"
+      ]
+    },
+    "expect": {
+      "result": { "reason": "floorChongtong", "winner": 1 },
+      "settlement": {
+        "winner": 1,
+        "finalPoints": 10,
+        "nextCarry": 1,
+        "steps": [{ "kind": "base", "value": 10 }]
+      }
+    }
+  },
+  {
+    "id": "R6-floor-chongtong-redeal",
+    "ruleId": "R6",
+    "case": "boundary",
+    "toggle": "floorChongtong=redeal",
+    "description": "바닥 총통 '재분배(배수 없음)' 토글: 시드 난수로 다시 섞어 나눈다",
+    "rulesPatch": { "floorChongtong": "redeal" },
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "carry": 1,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "11광",
+        "11피a",
+        "11피b",
+        "11쌍피",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a"
+      ]
+    },
+    "expect": {
+      "phase": "turn",
+      "result": null,
+      "events": [{ "type": "Dealt" }, { "type": "Redealt" }, { "type": "Dealt" }],
+      "noEvents": ["Nagari"]
+    }
+  },
+  {
+    "id": "R6-no-floor-chongtong",
+    "ruleId": "R6",
+    "case": "counter",
+    "description": "바닥에 같은 월 3장은 총통이 아니다(자연뻑 무더기로 둔다, R7)",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "5열",
+        "5초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "11광",
+        "11피a",
+        "11피b",
+        "12비광",
+        "1피a",
+        "2피a",
+        "3피a",
+        "4피a"
+      ]
+    },
+    "expect": {
+      "phase": "turn",
+      "floor": [
+        { "month": 1, "kind": "loose" },
+        { "month": 2, "kind": "loose" },
+        { "month": 3, "kind": "loose" },
+        { "month": 4, "kind": "loose" },
+        { "month": 11, "kind": "natural", "owner": null, "cards": ["11광", "11피a", "11피b"] },
+        { "month": 12, "kind": "loose" }
+      ]
+    }
+  }
+]

@@ -1,0 +1,2423 @@
+[
+  {
+    "id": "G1-seven-prompt",
+    "ruleId": "G1",
+    "case": "normal",
+    "description": "7점이 되면 고/스톱을 묻는다(FR-14 미리보기 포함)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "goStop",
+        "seat": 0,
+        "score": 7
+      },
+      "events": [
+        {
+          "type": "GoStopPrompt",
+          "seat": 0,
+          "score": 7
+        }
+      ],
+      "seats": [
+        {
+          "score": {
+            "pi": 7,
+            "total": 7
+          }
+        },
+        null
+      ],
+      "legal": {
+        "seat": 0,
+        "includes": [
+          {
+            "type": "go",
+            "seat": 0
+          },
+          {
+            "type": "stop",
+            "seat": 0
+          }
+        ]
+      },
+      "preview": {
+        "seat": 0,
+        "winner": 0,
+        "finalPoints": 7
+      }
+    }
+  },
+  {
+    "id": "G1-six-no-prompt",
+    "ruleId": "G1",
+    "case": "counter",
+    "description": "6점이면 고/스톱을 묻지 않고 상대 턴으로 넘어간다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        ["11쌍피", "12쌍피", "1피a", "1피b", "2피a", "2피b", "3피a", "3피b", "4피a", "4피b", "B2b"],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "noEvents": ["GoStopPrompt"],
+      "seats": [
+        {
+          "score": {
+            "total": 6
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "G1-go",
+    "ruleId": "G1",
+    "case": "normal",
+    "description": "고를 부르면 고 횟수와 그 시점 점수를 기록하고 상대 턴으로 넘어간다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "go",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "seats": [
+        {
+          "goCount": 1,
+          "lastGoScore": 7
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "Go",
+          "seat": 0,
+          "count": 1,
+          "score": 7
+        }
+      ]
+    }
+  },
+  {
+    "id": "G1-stop",
+    "ruleId": "G1",
+    "case": "normal",
+    "description": "스톱하면 판이 끝나고 그 점수로 정산한다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "stop",
+        "winner": 0
+      },
+      "settlement": {
+        "winner": 0,
+        "loser": 1,
+        "finalPoints": 7,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ],
+        "nextCarry": 1
+      }
+    }
+  },
+  {
+    "id": "G1-auto-stop-last-card",
+    "ruleId": "G1",
+    "case": "boundary",
+    "description": "마지막 손패로 7점이 되면 더 칠 패가 없으므로 고 없이 자동 스톱(자체 결정)",
+    "setup": {
+      "hands": [["5열"], ["10청", "10피a"]],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "autoStop",
+        "winner": 0
+      },
+      "events": [
+        {
+          "type": "Stop",
+          "auto": true
+        }
+      ],
+      "settlement": {
+        "finalPoints": 7
+      }
+    }
+  },
+  {
+    "id": "G2-rego-needs-increase",
+    "ruleId": "G2",
+    "case": "counter",
+    "description": "고 이후에는 직전 고 점수(7)보다 1점 이상 올라야 다시 묻는다: 7 그대로면 묻지 않음",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b",
+          "6피b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 1,
+          "lastGoScore": 7
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "noEvents": ["GoStopPrompt"],
+      "seats": [
+        {
+          "score": {
+            "total": 7
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "G2-rego-increase",
+    "ruleId": "G2",
+    "case": "normal",
+    "description": "고 이후 8점이 되면 다시 고/스톱을 묻는다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b",
+          "6피b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 1,
+          "lastGoScore": 7
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "goStop",
+        "seat": 0,
+        "score": 8
+      }
+    }
+  },
+  {
+    "id": "G2-score-drop-after-steal",
+    "ruleId": "G2",
+    "case": "boundary",
+    "description": "고(8점) 후 상대 쪽으로 피를 뺏겨 7점이 된 뒤 1점을 되찾아 8점이면 아직 9점이 아니므로 묻지 않는다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "8광"],
+      "deck": ["10피b", "7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b",
+          "6피b",
+          "7피b"
+        ],
+        []
+      ],
+      "turn": 1,
+      "dealer": 0,
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 1,
+          "lastGoScore": 8
+        },
+        {
+          "turnsTaken": 3
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "events": [
+        {
+          "type": "Jjok",
+          "seat": 1
+        },
+        {
+          "type": "PiStolen",
+          "seat": 1,
+          "from": 0,
+          "cards": ["1피a"]
+        },
+        {
+          "type": "ScoreChanged",
+          "seat": 0,
+          "breakdown": {
+            "total": 7
+          }
+        }
+      ],
+      "noEvents": ["GoStopPrompt"],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "seats": [
+        {
+          "score": {
+            "total": 8
+          },
+          "goCount": 1
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "G3-go-1",
+    "ruleId": "G3",
+    "case": "normal",
+    "toggle": "goScoring=plusNAndDouble",
+    "description": "1고 스톱: +1점 (배수 없음)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 1,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 8,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G3-go-2",
+    "ruleId": "G3",
+    "case": "boundary",
+    "toggle": "goScoring=plusNAndDouble",
+    "description": "2고 스톱: +2점 (배수 없음)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 2,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 9,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G3-go-3",
+    "ruleId": "G3",
+    "case": "normal",
+    "toggle": "goScoring=plusNAndDouble",
+    "description": "3고 스톱: +3점, 3고부터 ×2^(n-2) = ×2",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 3,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 20,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 3
+          },
+          {
+            "kind": "goMultiplier",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G3-go-5",
+    "ruleId": "G3",
+    "case": "boundary",
+    "toggle": "goScoring=plusNAndDouble",
+    "description": "5고 스톱: +5점, 3고부터 ×2^(n-2) = ×8",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 5,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 96,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 5
+          },
+          {
+            "kind": "goMultiplier",
+            "value": 8
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G3-double-only-3",
+    "ruleId": "G3",
+    "case": "normal",
+    "toggle": "goScoring=doubleOnly",
+    "description": "'3고부터 배수만' 토글: 3고는 가산 없이 ×2",
+    "rulesPatch": {
+      "goScoring": "doubleOnly"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 3,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goMultiplier",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G3-double-only-2",
+    "ruleId": "G3",
+    "case": "boundary",
+    "toggle": "goScoring=doubleOnly",
+    "description": "'3고부터 배수만' 토글: 2고까지는 +n 가산 유지(자체 해석)",
+    "rulesPatch": {
+      "goScoring": "doubleOnly"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 2,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 9,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G4-go-bak",
+    "ruleId": "G4",
+    "case": "normal",
+    "description": "고를 한 상대가 내 스톱으로 지면 고박 ×2",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {
+          "goCount": 1,
+          "lastGoScore": 7
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G4-go-bak-auto-stop",
+    "ruleId": "G4",
+    "case": "boundary",
+    "description": "마지막 패 자동 스톱으로 이겨도 상대가 고를 했으면 고박",
+    "setup": {
+      "hands": [["5열"], ["10청", "10피a"]],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {
+          "goCount": 2,
+          "lastGoScore": 8
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G4-no-go-bak",
+    "ruleId": "G4",
+    "case": "counter",
+    "description": "패자가 고를 하지 않았으면 고박이 아니다(승자 자신의 고는 무관)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 1,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G5-reverse-go",
+    "ruleId": "G5",
+    "case": "normal",
+    "description": "역고(상대가 고한 뒤 나도 나서 고)는 일반 고로 처리한다: 별도 배수 없음",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {
+          "goCount": 1,
+          "lastGoScore": 7
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "go",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "goCount": 1
+        },
+        {
+          "goCount": 1
+        }
+      ],
+      "preview": {
+        "seat": 0,
+        "finalPoints": 16,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7,
+            "op": "add",
+            "total": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 1,
+            "op": "add",
+            "total": 8
+          },
+          {
+            "kind": "goBak",
+            "value": 2,
+            "op": "mul",
+            "total": 16
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G6-pibak",
+    "ruleId": "G6",
+    "case": "normal",
+    "toggle": "piBakThreshold=7",
+    "description": "승자가 피로 점수를 냈고 패자 피가 7장 이하면 피박 ×2",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        ["7피a", "7피b", "8피a", "8피b", "9피a", "9피b", "10피b"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "piBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G6-pibak-eight",
+    "ruleId": "G6",
+    "case": "counter",
+    "description": "패자 피 8장(보너스 2피 포함)이면 피박이 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        ["7피a", "7피b", "8피a", "8피b", "9피a", "9피b", "B2a"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7
+      }
+    }
+  },
+  {
+    "id": "G6-pibak-zero-exempt",
+    "ruleId": "G6",
+    "case": "counter",
+    "toggle": "piBakZeroExempt=true",
+    "description": "패자 피가 0장이면 피박이 아니다(피망식 예외, 기본 켬)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G6-pibak-zero-no-exempt",
+    "ruleId": "G6",
+    "case": "boundary",
+    "toggle": "piBakZeroExempt=false",
+    "description": "0장 예외 끔: 패자 피 0장도 피박",
+    "rulesPatch": {
+      "piBakZeroExempt": false
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14
+      }
+    }
+  },
+  {
+    "id": "G6-pibak-threshold-6",
+    "ruleId": "G6",
+    "case": "boundary",
+    "toggle": "piBakThreshold=6",
+    "description": "피박 기준 6장 토글: 패자 피 7장이면 피박이 아니다",
+    "rulesPatch": {
+      "piBakThreshold": 6
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        ["7피a", "7피b", "8피a", "8피b", "9피a", "9피b", "10피b"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7
+      }
+    }
+  },
+  {
+    "id": "G6-no-pibak-without-pi-score",
+    "ruleId": "G6",
+    "case": "counter",
+    "description": "승자가 피 점수 없이 이겼으면 패자 피가 적어도 피박이 아니다(광박은 적용)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        ["1광", "3광", "8광", "11광", "1홍", "2홍", "3홍"],
+        ["7피a", "7피b", "8피a"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "gwangBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G7-gwangbak-bi",
+    "ruleId": "G7",
+    "case": "boundary",
+    "description": "비삼광(2점)으로 이겨도 광 점수이므로 패자 광 0장이면 광박",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "1광",
+          "3광",
+          "12비광",
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 16,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 8
+          },
+          {
+            "kind": "gwangBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G7-no-gwangbak",
+    "ruleId": "G7",
+    "case": "counter",
+    "description": "패자에게 광이 1장이라도 있으면 광박이 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "1광",
+          "3광",
+          "12비광",
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "B2b"
+        ],
+        ["11광"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 8,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 8
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G8-meongtta",
+    "ruleId": "G8",
+    "case": "normal",
+    "description": "승자 열끗 7장 이상이면 멍따 ×2",
+    "setup": {
+      "hands": [
+        ["5피b", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7피a"],
+      "captured": [["2고", "4고", "8고", "6열", "7열", "10열", "12열"], []],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 16,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 8
+          },
+          {
+            "kind": "meongtta",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G8-no-meongtta",
+    "ruleId": "G8",
+    "case": "counter",
+    "description": "열끗 6장이면 멍따가 아니다",
+    "setup": {
+      "hands": [
+        ["5피b", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7피a"],
+      "captured": [["2고", "4고", "8고", "6열", "7열", "10열"], []],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G9-nagari",
+    "ruleId": "G9",
+    "case": "normal",
+    "description": "모든 패를 쓸 때까지 아무도 나지 못하면 나가리: 다음 판 ×2",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 1,
+      "dealer": 0
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "exhausted",
+        "winner": null
+      },
+      "settlement": {
+        "winner": null,
+        "finalPoints": 0,
+        "nextCarry": 2,
+        "nextDealer": 0
+      },
+      "events": [
+        {
+          "type": "RoundEnded",
+          "reason": "exhausted"
+        },
+        {
+          "type": "Nagari",
+          "multiplier": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "G9-nagari-go-no-increase",
+    "ruleId": "G9",
+    "case": "boundary",
+    "description": "고를 한 사람이 추가 점수를 못 내고 상대도 못 나면 나가리",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 1,
+      "dealer": 0,
+      "seats": [
+        {
+          "goCount": 1,
+          "lastGoScore": 7
+        },
+        {}
+      ],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b",
+          "6피b"
+        ],
+        []
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "result": {
+        "reason": "exhausted",
+        "winner": null
+      },
+      "noEvents": ["GoStopPrompt"]
+    }
+  },
+  {
+    "id": "G9-nagari-cap-8-carry-8",
+    "ruleId": "G9",
+    "case": "boundary",
+    "toggle": "nagariCap=8",
+    "description": "나가리 배수 상한 ×8: 이번 판 ×8 나가리 → 다음 판 ×8",
+    "rulesPatch": {
+      "nagariCap": 8
+    },
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 8,
+      "dealer": 0
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "nextCarry": 8
+      }
+    }
+  },
+  {
+    "id": "G9-nagari-cap-None-carry-8",
+    "ruleId": "G9",
+    "case": "normal",
+    "toggle": "nagariCap=null",
+    "description": "나가리 배수 상한 없음: 이번 판 ×8 나가리 → 다음 판 ×16",
+    "rulesPatch": {
+      "nagariCap": null
+    },
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 8,
+      "dealer": 0
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "nextCarry": 16
+      }
+    }
+  },
+  {
+    "id": "G9-nagari-cap-4-carry-4",
+    "ruleId": "G9",
+    "case": "boundary",
+    "toggle": "nagariCap=4",
+    "description": "나가리 배수 상한 ×4: 이번 판 ×4 나가리 → 다음 판 ×4",
+    "rulesPatch": {
+      "nagariCap": 4
+    },
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 4,
+      "dealer": 0
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "nextCarry": 4
+      }
+    }
+  },
+  {
+    "id": "G9-nagari-cap-16-carry-8",
+    "ruleId": "G9",
+    "case": "normal",
+    "toggle": "nagariCap=16",
+    "description": "나가리 배수 상한 ×16: 이번 판 ×8 나가리 → 다음 판 ×16",
+    "rulesPatch": {
+      "nagariCap": 16
+    },
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 8,
+      "dealer": 0
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "nextCarry": 16
+      }
+    }
+  },
+  {
+    "id": "G9-carry-applied",
+    "ruleId": "G9",
+    "case": "normal",
+    "description": "나가리 다음 판에 점수가 나면 무조건 ×2",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "carry": 2
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "nagariCarry",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-all-multipliers",
+    "ruleId": "G10",
+    "case": "normal",
+    "description": "배수는 모두 곱한다: 흔들기·폭탄·피박·광박·고박·나가리 = ×64",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "1광",
+          "3광",
+          "8광",
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "B2b"
+        ],
+        ["7피a"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "shakes": 1,
+          "bombs": 1
+        },
+        {
+          "goCount": 1,
+          "lastGoScore": 7
+        }
+      ],
+      "carry": 2
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "basePoints": 9,
+        "multiplier": 64,
+        "finalPoints": 576,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 9
+          },
+          {
+            "kind": "shake",
+            "value": 2
+          },
+          {
+            "kind": "bomb",
+            "value": 2
+          },
+          {
+            "kind": "piBak",
+            "value": 2
+          },
+          {
+            "kind": "gwangBak",
+            "value": 2
+          },
+          {
+            "kind": "goBak",
+            "value": 2
+          },
+          {
+            "kind": "nagariCarry",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-go-and-bak",
+    "ruleId": "G10",
+    "case": "boundary",
+    "description": "고 가산 후 고 배수와 박을 곱한다: (7+3)×2×2 = 40",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        ["7피a", "7피b", "8피a", "8피b", "9피a", "9피b", "10피b"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 3,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 40,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "goBonus",
+            "value": 3
+          },
+          {
+            "kind": "goMultiplier",
+            "value": 2
+          },
+          {
+            "kind": "piBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-jackpot",
+    "ruleId": "G10",
+    "case": "normal",
+    "toggle": "jackpotRound=5x2",
+    "preset": "arcade",
+    "description": "아케이드 대박판(5판마다 ×2): 5번째 판 승리는 ×2",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "roundNumber": 5
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "jackpot",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-jackpot-off-round",
+    "ruleId": "G10",
+    "case": "counter",
+    "toggle": "jackpotRound=5x2",
+    "preset": "arcade",
+    "description": "대박판 주기가 아닌 판(4번째)은 배수 없음",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "roundNumber": 4
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7
+      }
+    }
+  },
+  {
+    "id": "G10-jackpot-disabled",
+    "ruleId": "G10",
+    "case": "counter",
+    "toggle": "jackpotRound=null",
+    "description": "표준(대박판 끔)은 5번째 판도 배수 없음",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "roundNumber": 5
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7
+      }
+    }
+  }
+]

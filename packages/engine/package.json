@@ -9,9 +9,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json"
+    "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json",
+    "coverage": "vitest run --config vitest.coverage.config.ts --coverage.enabled",
+    "test:full": "ENGINE_FULL=1 vitest run --config vitest.coverage.config.ts --coverage.enabled"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "5.0.2",
     "fast-check": "4.10.2",
     "vitest": "5.0.2"
   }

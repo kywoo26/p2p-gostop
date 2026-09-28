@@ -1,0 +1,551 @@
+[
+  {
+    "id": "M1-settle-money",
+    "ruleId": "M1",
+    "case": "normal",
+    "description": "정산액 = 최종점수 × 점당 (7점 × 100)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 100,
+        "start": [100000, 100000],
+        "balances": [100700, 99300],
+        "amounts": [700]
+      }
+    }
+  },
+  {
+    "id": "M1-instant-separate",
+    "ruleId": "M1",
+    "case": "boundary",
+    "description": "즉시 정산(첫뻑 7점)은 판 정산과 별도 원장 항목: 7 × 50",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 50,
+        "start": [10000, 10000],
+        "balances": [10350, 9650],
+        "amounts": [350]
+      }
+    }
+  },
+  {
+    "id": "M1-nagari-no-money",
+    "ruleId": "M1",
+    "case": "counter",
+    "description": "나가리는 돈이 오가지 않는다",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 1,
+      "dealer": 0
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 100,
+        "start": [5000, 5000],
+        "balances": [5000, 5000],
+        "amounts": []
+      }
+    }
+  },
+  {
+    "id": "M2-cap-loser-balance",
+    "ruleId": "M2",
+    "case": "boundary",
+    "description": "획득 상한은 패자 잔액(올인): 57,600 요구 → 패자 잔액 20,000만 이동",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "1광",
+          "3광",
+          "8광",
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "B2b"
+        ],
+        ["7피a"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "shakes": 1,
+          "bombs": 1
+        },
+        {
+          "goCount": 1,
+          "lastGoScore": 7
+        }
+      ],
+      "carry": 2
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 100,
+        "start": [100000, 20000],
+        "balances": [120000, 0],
+        "amounts": [20000]
+      }
+    }
+  },
+  {
+    "id": "M2-limited-liability",
+    "ruleId": "M2",
+    "case": "normal",
+    "toggle": "limitedLiability=true",
+    "description": "유한책임제 선택: 승자 보유액(5,000)까지만 획득",
+    "rulesPatch": {
+      "limitedLiability": true
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 1000,
+        "start": [5000, 100000],
+        "balances": [10000, 95000],
+        "amounts": [5000]
+      }
+    }
+  },
+  {
+    "id": "M2-no-cap-needed",
+    "ruleId": "M2",
+    "case": "counter",
+    "toggle": "limitedLiability=false",
+    "description": "잔액이 충분하면 상한이 걸리지 않는다(유한책임제 끔이면 승자 잔액 무관)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 1000,
+        "start": [100, 100000],
+        "balances": [7100, 93000],
+        "amounts": [7000]
+      }
+    }
+  },
+  {
+    "id": "M3-no-fee",
+    "ruleId": "M3",
+    "case": "normal",
+    "description": "수수료 없음: 승자는 패자가 낸 금액을 그대로 받는다(8점 × 1000)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "goCount": 1,
+          "lastGoScore": 6
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "ledger": {
+        "perPoint": 1000,
+        "start": [100000, 100000],
+        "balances": [108000, 92000]
+      }
+    }
+  },
+  {
+    "id": "M4-stop-preview",
+    "ruleId": "M4",
+    "case": "normal",
+    "description": "고/스톱 선택 시 스톱하면 받을 점수를 미리 계산해 보여준다(흔들기 1회면 14점)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "shakes": 1
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "goStop",
+        "seat": 0
+      },
+      "preview": {
+        "seat": 0,
+        "winner": 0,
+        "finalPoints": 14
+      }
+    }
+  },
+  {
+    "id": "M4-preview-with-pibak",
+    "ruleId": "M4",
+    "case": "boundary",
+    "description": "미리보기에도 박 배수가 반영된다(피박 → 14점)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        ["7피a", "7피b", "8피a", "8피b", "9피a", "9피b", "10피b"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "preview": {
+        "seat": 0,
+        "finalPoints": 14
+      }
+    }
+  },
+  {
+    "id": "R5-next-dealer-winner",
+    "ruleId": "R5",
+    "case": "normal",
+    "description": "다음 판 선은 직전 판 승자",
+    "setup": {
+      "hands": [
+        ["10청", "10피a"],
+        ["5열", "12열"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [],
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ]
+      ],
+      "turn": 1,
+      "dealer": 0,
+      "seats": [
+        {},
+        {
+          "turnsTaken": 3
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 1
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "winner": 1,
+        "nextDealer": 1
+      }
+    }
+  },
+  {
+    "id": "R5-next-dealer-nagari",
+    "ruleId": "R5",
+    "case": "boundary",
+    "description": "나가리면 선을 유지한다",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "carry": 1,
+      "dealer": 1
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "winner": null,
+        "nextDealer": 1
+      }
+    }
+  }
+]

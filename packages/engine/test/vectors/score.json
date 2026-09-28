@@ -1,0 +1,810 @@
+[
+  {
+    "id": "S1-three-gwang",
+    "ruleId": "S1",
+    "case": "normal",
+    "description": "비광 없는 광 3장은 3점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1광", "3광", "8광"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "gwang": 3,
+            "total": 3
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S1-bi-three-gwang",
+    "ruleId": "S1",
+    "case": "boundary",
+    "description": "비광이 섞인 광 3장(비삼광)은 2점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1광", "3광", "12비광"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "gwang": 2,
+            "total": 2
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S1-four-gwang",
+    "ruleId": "S1",
+    "case": "normal",
+    "description": "광 4장은 비광 포함 여부와 무관하게 4점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1광", "3광", "8광", "12비광"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "gwang": 4
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S1-five-gwang",
+    "ruleId": "S1",
+    "case": "normal",
+    "description": "오광은 15점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1광", "3광", "8광", "11광", "12비광"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "gwang": 15
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S1-two-gwang",
+    "ruleId": "S1",
+    "case": "counter",
+    "description": "광 2장은 0점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1광", "12비광"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "gwang": 0,
+            "total": 0
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S2-five-yeol",
+    "ruleId": "S2",
+    "case": "normal",
+    "description": "열끗 5장 1점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["5열", "6열", "7열", "10열", "12열"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "yeol": 1,
+            "yeolCount": 5
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S2-six-yeol",
+    "ruleId": "S2",
+    "case": "boundary",
+    "description": "열끗 6장 2점(이후 1장당 +1)",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["5열", "6열", "7열", "10열", "12열", "2고"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "yeol": 2
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S2-four-yeol",
+    "ruleId": "S2",
+    "case": "counter",
+    "description": "열끗 4장은 0점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["5열", "6열", "7열", "10열"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "yeol": 0,
+            "total": 0
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S2-godori",
+    "ruleId": "S2",
+    "case": "normal",
+    "description": "고도리(2·4·8월 새) 5점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["2고", "4고", "8고"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "godori": 5,
+            "yeol": 0,
+            "total": 5
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S2-godori-missing",
+    "ruleId": "S2",
+    "case": "counter",
+    "description": "새 2장은 고도리가 아니다",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["2고", "4고", "5열"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "godori": 0
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S3-five-tti",
+    "ruleId": "S3",
+    "case": "normal",
+    "description": "띠 5장 1점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1홍", "4초", "6청", "7초", "12비띠"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "tti": 1,
+            "chodan": 0
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S3-hongdan",
+    "ruleId": "S3",
+    "case": "normal",
+    "description": "홍단(1·2·3월 띠) 3점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1홍", "2홍", "3홍"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "hongdan": 3,
+            "total": 3
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S3-cheongdan",
+    "ruleId": "S3",
+    "case": "normal",
+    "description": "청단(6·9·10월 띠) 3점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["6청", "9청", "10청"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "cheongdan": 3
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S3-chodan",
+    "ruleId": "S3",
+    "case": "normal",
+    "description": "초단(4·5·7월 띠) 3점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["4초", "5초", "7초"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "chodan": 3
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S3-bi-tti-no-dan",
+    "ruleId": "S3",
+    "case": "counter",
+    "description": "12월 띠(비띠)로는 초단을 만들 수 없다",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["4초", "5초", "12비띠"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "chodan": 0,
+            "total": 0
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S3-six-tti-with-dan",
+    "ruleId": "S3",
+    "case": "boundary",
+    "description": "띠 점수와 단 점수는 따로 더한다: 홍단 + 띠 6장 = 3 + 2",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1홍", "2홍", "3홍", "4초", "6청", "12비띠"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "hongdan": 3,
+            "tti": 2,
+            "total": 5
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S4-ten-pi",
+    "ruleId": "S4",
+    "case": "normal",
+    "description": "피 10장 1점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [
+        ["1피a", "1피b", "2피a", "2피b", "3피a", "3피b", "4피a", "4피b", "5피a", "5피b"],
+        []
+      ]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 1,
+            "piCount": 10
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S4-nine-pi",
+    "ruleId": "S4",
+    "case": "counter",
+    "description": "피 9장은 0점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["1피a", "1피b", "2피a", "2피b", "3피a", "3피b", "4피a", "4피b", "5피a"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 0,
+            "piCount": 9
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S4-ssangpi-bonus",
+    "ruleId": "S4",
+    "case": "boundary",
+    "description": "쌍피 2, 보너스 2피 2, 3피 3으로 센다: 11쌍피+12쌍피+B2a+B3+일반피 2장 = 11 → 2점",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["11쌍피", "12쌍피", "B2a", "B3", "1피a", "1피b"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 2,
+            "piCount": 11
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-auto-pi",
+    "ruleId": "S5",
+    "case": "normal",
+    "description": "국진 자동 최적: 쌍피로 옮겨 피 10이 되면 옮긴다",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [
+        [
+          "9국진",
+          "5열",
+          "6열",
+          "7열",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b"
+        ],
+        []
+      ]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 1,
+            "yeol": 0,
+            "gukjinAsPi": true,
+            "total": 1
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-auto-yeol",
+    "ruleId": "S5",
+    "case": "boundary",
+    "description": "국진 자동 최적: 열끗 5장이 되면 열끗으로 둔다(피로 옮겨도 점수가 없을 때)",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [["9국진", "5열", "6열", "7열", "10열", "1피a", "1피b"], []]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "yeol": 1,
+            "gukjinAsPi": false,
+            "total": 1
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-ask-yeol",
+    "ruleId": "S5",
+    "case": "counter",
+    "description": "국진 '매번 묻기'에서 열끗으로 두었으면 피로 세지 않는다",
+    "setup": {
+      "hands": [["11피a"], ["11피b"]],
+      "captured": [
+        [
+          "9국진",
+          "5열",
+          "6열",
+          "7열",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b"
+        ],
+        []
+      ]
+    },
+    "actions": [],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 0,
+            "gukjinAsPi": false
+          }
+        },
+        null
+      ]
+    },
+    "rulesPatch": {
+      "gukjin": "ask"
+    }
+  },
+  {
+    "id": "S5-gukjin-fixed-when-alone",
+    "ruleId": "S5",
+    "case": "boundary",
+    "toggle": "gukjin=auto",
+    "description": "상대가 피를 뺏을 때 다른 피가 없고 국진만 있으면 국진은 열끗 자리에 고정(뺏기지 않음)",
+    "setup": {
+      "hands": [
+        ["B2a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["9국진"]]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "B2a"
+      }
+    ],
+    "expect": {
+      "noEvents": ["PiStolen"],
+      "seats": [
+        null,
+        {
+          "captured": ["9국진"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-ask-steal",
+    "ruleId": "S5",
+    "case": "boundary",
+    "toggle": "gukjin=ask",
+    "description": "'매번 묻기'로 국진을 쌍피로 두었고 다른 피(3피)가 있으면 국진쌍피가 3피보다 먼저 뺏긴다(B4 순위)",
+    "rulesPatch": {
+      "gukjin": "ask"
+    },
+    "setup": {
+      "hands": [
+        ["B2a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["9국진", "B3"]],
+      "seats": [
+        {},
+        {
+          "gukjinAsPi": true
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "B2a"
+      }
+    ],
+    "expect": {
+      "events": [
+        {
+          "type": "PiStolen",
+          "cards": ["9국진"]
+        }
+      ],
+      "seats": [
+        {
+          "gukjinAsPi": true,
+          "score": {
+            "piCount": 4
+          }
+        },
+        {
+          "captured": ["B3"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-ask-alone-fixed",
+    "ruleId": "S5",
+    "case": "counter",
+    "toggle": "gukjin=ask",
+    "description": "'매번 묻기'에서 쌍피로 두었어도 국진이 유일한 피면 열끗으로 고정되어 뺏기지 않는다",
+    "rulesPatch": {
+      "gukjin": "ask"
+    },
+    "setup": {
+      "hands": [
+        ["B2a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["9국진"]],
+      "seats": [
+        {},
+        {
+          "gukjinAsPi": true
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "B2a"
+      }
+    ],
+    "expect": {
+      "noEvents": ["PiStolen"]
+    }
+  },
+  {
+    "id": "S5-gukjin-ask-prompt",
+    "ruleId": "S5",
+    "case": "normal",
+    "toggle": "gukjin=ask",
+    "description": "'매번 묻기'에서 국진을 먹으면 열끗/쌍피를 묻는다",
+    "rulesPatch": {
+      "gukjin": "ask"
+    },
+    "setup": {
+      "hands": [
+        ["9피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["9국진", "8광"],
+      "deck": ["11피a"],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "9피a"
+      },
+      {
+        "type": "gukjin",
+        "seat": 0,
+        "asPi": true
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "gukjinAsPi": true,
+          "score": {
+            "piCount": 3,
+            "yeolCount": 0
+          }
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "GukjinPlaced",
+          "seat": 0,
+          "asPi": true
+        }
+      ],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "S5-gukjin-avoid-pibak",
+    "ruleId": "S5",
+    "case": "normal",
+    "toggle": "gukjin=auto",
+    "description": "상대 스톱 시 패자 피가 7장 이하면 국진을 쌍피로 자동 이동해 피박을 피한다(6 + 2 = 8)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "8광"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        ["9국진", "7피a", "7피b", "8피a", "8피b", "9피a", "9피b"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ],
+        "gukjinAsPi": [false, true]
+      }
+    }
+  },
+  {
+    "id": "S5-gukjin-winner-meongtta",
+    "ruleId": "S5",
+    "case": "boundary",
+    "toggle": "gukjin=auto",
+    "description": "승자는 최종 점수가 커지도록 국진을 둔다: 열끗 7장(멍따 ×2)이 되면 열끗",
+    "setup": {
+      "hands": [
+        ["5피b", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "8광"],
+      "deck": ["7피a"],
+      "captured": [["2고", "4고", "8고", "6열", "7열", "10열", "9국진"], ["1피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 16,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 8
+          },
+          {
+            "kind": "meongtta",
+            "value": 2
+          }
+        ],
+        "gukjinAsPi": [false, false]
+      }
+    }
+  }
+]

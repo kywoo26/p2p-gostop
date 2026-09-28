@@ -1,6 +1,10 @@
 // 규칙 옵션과 프리셋 (spec 4.2, FR-20·FR-21, rules-commercial.md 12.7).
 // 기본값의 근거는 rules-commercial.md 12장뿐이다. 12.7의 24개 토글 중 22개는 판의 결과를 바꾸는 규칙(RuleOptions),
 // 진행 속도·자동치기 2개는 기기별 로컬 설정(LocalPlayOptions, FR-24)으로 나눈다.
+// 여기에 12.1 R7("뺏기 없음" 토글), 12.4 E14(허당, 기본 끔), 12.6 M2(승자 보유액 상한 선택)의 3개를 더해 25개다.
+//
+// 구현 상태 (M1): push(밀기)·missions(미션)·firstDealer='rockPaperScissors'는 타입만 있고 엔진이 무시한다(P2, M6).
+// 가위바위보는 패 고르기로 대체된다. 목록은 UNIMPLEMENTED_RULES.
 
 export interface JackpotRoundOption {
   /** N판마다 */
@@ -54,7 +58,20 @@ export interface RuleOptions {
   readonly missions: 'off' | 'ppangppang' | 'jokbo';
   /** 선 결정: 패 고르기(높은 월) / 밤일낮장 / 가위바위보 — R4 */
   readonly firstDealer: 'pickCard' | 'timeOfDay' | 'rockPaperScissors';
+  /** 바닥 같은 월 3장(자연뻑)을 먹을 때 피 1장 뺏기 — R7 ("뺏기 없음" 토글) */
+  readonly naturalPpeokSteal: boolean;
+  /** 허당: 연속 5턴 아무것도 못 먹으면 7점으로 끝 — E14 (기본 끔, 한게임 구 맞고 레거시) */
+  readonly hudang: boolean;
+  /** 획득 상한을 승자 보유액까지로도 제한(유한책임제) — M2 선택지. 기본은 패자 잔액까지만 */
+  readonly limitedLiability: boolean;
 }
+
+/** 타입만 있고 M1 엔진이 무시하는 옵션 (P2, plan.md M6). */
+export const UNIMPLEMENTED_RULES: readonly string[] = Object.freeze([
+  'push',
+  'missions',
+  'firstDealer:rockPaperScissors',
+]);
 
 /** 기기별 로컬 설정 (FR-23, FR-24). 엔진 결과에 영향 없음. */
 export interface LocalPlayOptions {
@@ -70,6 +87,9 @@ export const DEFAULT_LOCAL_PLAY_OPTIONS: LocalPlayOptions = Object.freeze({
 
 /** 나는 점수 (G1). 토글 아님. */
 export const WINNING_SCORE = 7;
+
+/** 즉시 정산·허당의 단위 점수 (E4·E6·E14: 7점 단위) */
+export const INSTANT_UNIT_POINTS = 7;
 
 export type PresetId = 'standard' | 'traditional' | 'arcade';
 
@@ -97,6 +117,9 @@ const STANDARD: RuleOptions = Object.freeze({
   jackpotRound: null,
   missions: 'off',
   firstDealer: 'pickCard',
+  naturalPpeokSteal: true,
+  hudang: false,
+  limitedLiability: false,
 });
 
 /** 정통: 보너스 뺏기 끔, 2장 폭탄 끔, 밀기·대박판 끔 (FR-20). */

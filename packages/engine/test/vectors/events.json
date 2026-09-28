@@ -1,0 +1,3256 @@
+[
+  {
+    "id": "E1-ppeok",
+    "ruleId": "E1",
+    "case": "normal",
+    "description": "낸 패로 바닥 1장을 먹으려는데 뒤집은 패도 같은 월이면 뻑: 세 장을 바닥에 남긴다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 4
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "seats": [
+        {
+          "captured": [],
+          "ppeokCount": 1
+        },
+        null
+      ],
+      "floor": [
+        {
+          "month": 5,
+          "kind": "ppeok",
+          "owner": 0,
+          "cards": ["5초", "5열", "5피a"]
+        },
+        {
+          "month": 8,
+          "kind": "loose"
+        }
+      ],
+      "events": [
+        {
+          "type": "Ppeok",
+          "seat": 0,
+          "cards": ["5초", "5열", "5피a"],
+          "count": 1,
+          "turnIndex": 5
+        }
+      ],
+      "noEvents": ["InstantPayout", "Captured"]
+    }
+  },
+  {
+    "id": "E1-ppeok-last-turn",
+    "ruleId": "E1",
+    "case": "boundary",
+    "description": "마지막 손패 턴에서는 뻑이 성립하지 않고 세 장을 모두 가져간다",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5초", "5열", "5피a"],
+          "ppeokCount": 0
+        },
+        null
+      ],
+      "noEvents": ["Ppeok"],
+      "floorCards": ["8광"]
+    }
+  },
+  {
+    "id": "E1-no-ppeok-other-month",
+    "ruleId": "E1",
+    "case": "counter",
+    "description": "뒤집은 패가 다른 월이면 뻑이 아니다(낸 패로 먹고 뒤집은 패는 바닥에)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["11피a"],
+      "seats": [
+        {
+          "turnsTaken": 4
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5초"]
+        },
+        null
+      ],
+      "floorCards": ["8광", "11피a"],
+      "noEvents": ["Ppeok"]
+    }
+  },
+  {
+    "id": "E2-ppeok-taken",
+    "ruleId": "E2",
+    "case": "normal",
+    "description": "남이 싼 뻑을 4번째 패로 먹으면 상대 피 1장",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 1
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a", "8피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5초", "5열", "5피a", "5피b", "7피a"]
+        },
+        {
+          "captured": ["8피a"]
+        }
+      ],
+      "events": [
+        {
+          "type": "PpeokTaken",
+          "seat": 0,
+          "pileOwner": 1,
+          "natural": false
+        },
+        {
+          "type": "PiStolen",
+          "cards": ["7피a"],
+          "from": 1,
+          "to": 0,
+          "reason": "ppeokTaken"
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 1
+      }
+    }
+  },
+  {
+    "id": "E2-self-ppeok",
+    "ruleId": "E2",
+    "case": "normal",
+    "description": "자뻑(자기가 싼 뻑을 자기가 먹음)은 상대 피 2장",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 0
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a", "8피a", "9피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "ppeokTurns": [2]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "capturedIncludes": ["7피a", "8피a"]
+        },
+        {
+          "captured": ["9피a"]
+        }
+      ],
+      "events": [
+        {
+          "type": "SelfPpeok",
+          "seat": 0
+        },
+        {
+          "type": "PiStolen",
+          "reason": "selfPpeok",
+          "cards": ["7피a"]
+        },
+        {
+          "type": "PiStolen",
+          "reason": "selfPpeok",
+          "cards": ["8피a"]
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 2
+      }
+    }
+  },
+  {
+    "id": "E2-self-ppeok-ssangpi",
+    "ruleId": "E2",
+    "case": "boundary",
+    "description": "자뻑에서 첫 장이 쌍피 이상이면 그 1장으로 끝(쌍피·삼피는 한 장만)",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 0
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["11쌍피", "B3"]],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "ppeokTurns": [2]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        null,
+        {
+          "captured": ["B3"]
+        }
+      ],
+      "events": [
+        {
+          "type": "PiStolen",
+          "reason": "selfPpeok",
+          "cards": ["11쌍피"]
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 1
+      }
+    }
+  },
+  {
+    "id": "E2-self-ppeok-plain-then-ssangpi",
+    "ruleId": "E2",
+    "case": "boundary",
+    "description": "자뻑에서 첫 장이 일반피면 두 번째 장은 다음으로 낮은 쌍피",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 0
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["12쌍피", "7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "ppeokTurns": [2]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        null,
+        {
+          "captured": []
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 2
+      }
+    }
+  },
+  {
+    "id": "E2-ppeok-taken-zero-pi",
+    "ruleId": "E2",
+    "case": "counter",
+    "description": "상대 피가 없으면 뻑을 먹어도 뺏을 피가 없다",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 1
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["1광"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "events": [
+        {
+          "type": "PpeokTaken"
+        }
+      ],
+      "noEvents": ["PiStolen"]
+    }
+  },
+  {
+    "id": "E3-last-turn-ppeok-take-no-steal",
+    "ruleId": "E3",
+    "case": "boundary",
+    "toggle": "lastTurnPpeokSteal=false",
+    "description": "마지막 턴에 뻑을 먹으면 4장은 가져가지만 피는 뺏지 않는다(기본)",
+    "setup": {
+      "hands": [["5피b"], ["10청"]],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 1
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5초", "5열", "5피a", "5피b"]
+        },
+        {
+          "captured": ["7피a"]
+        }
+      ],
+      "events": [
+        {
+          "type": "PpeokTaken"
+        }
+      ],
+      "noEvents": ["PiStolen"]
+    }
+  },
+  {
+    "id": "E3-last-turn-ppeok-take-steal",
+    "ruleId": "E3",
+    "case": "normal",
+    "toggle": "lastTurnPpeokSteal=true",
+    "description": "피망식 토글: 마지막 턴 뻑 먹기도 피 1장을 뺏는다",
+    "rulesPatch": {
+      "lastTurnPpeokSteal": true
+    },
+    "setup": {
+      "hands": [["5피b"], ["10청"]],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 1
+        }
+      ],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5초", "5열", "5피a", "5피b", "7피a"]
+        },
+        {
+          "captured": []
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 1
+      }
+    }
+  },
+  {
+    "id": "E3-last-turn-natural-no-steal",
+    "ruleId": "E3",
+    "case": "counter",
+    "description": "마지막 턴 예외는 자연뻑 무더기에도 같이 적용한다(자체 해석)",
+    "setup": {
+      "hands": [["1피b"], ["10청"]],
+      "floor": ["1광", "1홍", "1피a", "8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "1피b"
+      }
+    ],
+    "expect": {
+      "noEvents": ["PiStolen"],
+      "seats": [
+        {
+          "captured": ["1광", "1홍", "1피a", "1피b"]
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "E4-first-ppeok",
+    "ruleId": "E4",
+    "case": "normal",
+    "toggle": "ppeokPayout=points",
+    "description": "첫뻑(자기 첫 턴에 뻑)은 7점 × 점당을 즉시 받는다(점수와 별도)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 0
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "firstPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 7
+        }
+      ],
+      "events": [
+        {
+          "type": "Ppeok"
+        },
+        {
+          "type": "InstantPayout",
+          "seat": 0,
+          "kind": "firstPpeok",
+          "points": 7,
+          "from": 1
+        }
+      ],
+      "seats": [
+        {
+          "score": {
+            "total": 0
+          }
+        },
+        null
+      ],
+      "ledger": {
+        "perPoint": 100,
+        "start": [10000, 10000],
+        "balances": [10700, 9300],
+        "amounts": [700]
+      }
+    }
+  },
+  {
+    "id": "E4-second-ppeok",
+    "ruleId": "E4",
+    "case": "normal",
+    "description": "연뻑(첫 턴·두 번째 턴 연속 뻑)은 14점",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 1,
+          "ppeokTurns": [1]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "secondPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 14
+        }
+      ]
+    }
+  },
+  {
+    "id": "E4-first-ppeok-second-seat",
+    "ruleId": "E4",
+    "case": "boundary",
+    "description": "후공(좌석 1)도 자기 첫 턴에 뻑이면 첫뻑",
+    "setup": {
+      "hands": [
+        ["10청", "10피a"],
+        ["5열", "12열"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "turn": 1,
+      "dealer": 0,
+      "seats": [
+        {
+          "turnsTaken": 1
+        },
+        {
+          "turnsTaken": 0
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "firstPpeok",
+          "to": 1,
+          "from": 0,
+          "points": 7
+        }
+      ]
+    }
+  },
+  {
+    "id": "E4-ppeok-not-from-first",
+    "ruleId": "E4",
+    "case": "counter",
+    "description": "첫 턴에 뻑이 없었으면 두 번째 턴 뻑은 연뻑이 아니고 즉시 정산도 없다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 1
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [],
+      "events": [
+        {
+          "type": "Ppeok",
+          "turnIndex": 2
+        }
+      ],
+      "noEvents": ["InstantPayout"]
+    }
+  },
+  {
+    "id": "E4-streak-broken",
+    "ruleId": "E4",
+    "case": "counter",
+    "description": "첫 턴에 뻑이 없고 2·3번째 턴 뻑이면 3연뻑이 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 2,
+          "ppeokTurns": [2]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [],
+      "phase": "turn"
+    }
+  },
+  {
+    "id": "E4-base-multiple",
+    "ruleId": "E4",
+    "case": "normal",
+    "toggle": "ppeokPayout=baseMultiple",
+    "description": "넷마블식 토글: 첫뻑은 기본점수×1(1점)",
+    "rulesPatch": {
+      "ppeokPayout": "baseMultiple"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 0
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "firstPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "E4-base-multiple-second",
+    "ruleId": "E4",
+    "case": "boundary",
+    "toggle": "ppeokPayout=baseMultiple",
+    "description": "넷마블식 토글: 연뻑은 기본점수×2(2점)",
+    "rulesPatch": {
+      "ppeokPayout": "baseMultiple"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 1,
+          "ppeokTurns": [1]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "secondPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "E4-payout-off",
+    "ruleId": "E4",
+    "case": "counter",
+    "toggle": "ppeokPayout=off",
+    "description": "즉시 정산 끔: 첫뻑이어도 금액이 없다",
+    "rulesPatch": {
+      "ppeokPayout": "off"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 0
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [],
+      "noEvents": ["InstantPayout"],
+      "events": [
+        {
+          "type": "Ppeok"
+        }
+      ]
+    }
+  },
+  {
+    "id": "E4-three-consecutive-49",
+    "ruleId": "E4",
+    "case": "boundary",
+    "description": "3연뻑: 7 + 14 + 21점 즉시 정산 후 3뻑 승리 7점 = 총 49점",
+    "setup": {
+      "hands": [
+        ["5열", "6열", "7열", "12열"],
+        ["1광", "2고", "3광"]
+      ],
+      "floor": ["5초", "6청", "7초", "8광"],
+      "deck": ["5피a", "9피a", "6피a", "10피a", "7피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "1광"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "6열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "2고"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "7열"
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "threePpeok",
+        "winner": 0
+      },
+      "instantPayouts": [
+        {
+          "kind": "firstPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 7
+        },
+        {
+          "kind": "secondPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 14
+        },
+        {
+          "kind": "thirdPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 21
+        }
+      ],
+      "settlement": {
+        "winner": 0,
+        "finalPoints": 7,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ]
+      },
+      "ledger": {
+        "perPoint": 100,
+        "start": [100000, 100000],
+        "balances": [104900, 95100],
+        "amounts": [700, 1400, 2100, 700]
+      }
+    }
+  },
+  {
+    "id": "E5-three-ppeok",
+    "ruleId": "E5",
+    "case": "normal",
+    "toggle": "threePpeokPoints=7",
+    "description": "한 판에 뻑 3회(불연속 포함)면 7점으로 즉시 승리",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 6,
+          "ppeokTurns": [2, 5]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "threePpeok",
+        "winner": 0
+      },
+      "settlement": {
+        "finalPoints": 7,
+        "nextDealer": 0,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ]
+      },
+      "instantPayouts": []
+    }
+  },
+  {
+    "id": "E5-three-ppeok-no-multiplier",
+    "ruleId": "E5",
+    "case": "boundary",
+    "description": "3뻑 승리에는 배수를 적용하지 않는다(나가리 이월 ×4·흔들기가 있어도 7점)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 6,
+          "ppeokTurns": [2, 5],
+          "shakes": 1
+        },
+        {
+          "goCount": 1
+        }
+      ],
+      "carry": 4
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7,
+        "multiplier": 1,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E5-three-ppeok-10",
+    "ruleId": "E5",
+    "case": "normal",
+    "toggle": "threePpeokPoints=10",
+    "description": "넷마블·윈조이식 토글: 3뻑은 10점",
+    "rulesPatch": {
+      "threePpeokPoints": 10
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 6,
+          "ppeokTurns": [2, 5]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 10
+      }
+    }
+  },
+  {
+    "id": "E5-two-ppeok",
+    "ruleId": "E5",
+    "case": "counter",
+    "description": "뻑 2회는 승리가 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 6,
+          "ppeokTurns": [5]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "phase": "turn",
+      "seats": [
+        {
+          "ppeokCount": 2
+        },
+        null
+      ],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "E6-ttadak",
+    "ruleId": "E6",
+    "case": "normal",
+    "description": "바닥 2장 + 낸 패 + 뒤집은 패가 모두 같은 월이면 따닥: 4장 획득 + 피 1장",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["5피b", "11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5초"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5초", "5피a", "5열", "5피b", "7피a"]
+        },
+        {
+          "captured": []
+        }
+      ],
+      "events": [
+        {
+          "type": "Ttadak",
+          "seat": 0,
+          "cards": ["5초", "5피a", "5열", "5피b"]
+        },
+        {
+          "type": "PiStolen",
+          "reason": "ttadak"
+        }
+      ],
+      "noEvents": ["InstantPayout"],
+      "floorCards": ["8광"]
+    }
+  },
+  {
+    "id": "E6-first-ttadak",
+    "ruleId": "E6",
+    "case": "normal",
+    "toggle": "firstTtadakPayout=true",
+    "description": "첫따닥(자기 첫 턴 따닥)은 7점 즉시 정산",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["5피b", "11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 0
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5피a"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "firstTtadak",
+          "to": 0,
+          "from": 1,
+          "points": 7
+        }
+      ]
+    }
+  },
+  {
+    "id": "E6-first-ttadak-off",
+    "ruleId": "E6",
+    "case": "counter",
+    "toggle": "firstTtadakPayout=false",
+    "description": "피망식 토글(첫따닥 금액 없음): 따닥 피 1장만",
+    "rulesPatch": {
+      "firstTtadakPayout": false
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["5피b", "11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 0
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5피a"
+      }
+    ],
+    "expect": {
+      "instantPayouts": [],
+      "events": [
+        {
+          "type": "Ttadak"
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 1
+      }
+    }
+  },
+  {
+    "id": "E6-two-pairs-not-ttadak",
+    "ruleId": "E6",
+    "case": "counter",
+    "description": "필수 반례: 서로 다른 월 두 쌍을 먹는 것(낸 패 5월 쌍 + 뒤집은 패 6월 쌍)은 따닥이 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "6청", "8광"],
+      "deck": ["6열", "11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5초", "6열", "6청"]
+        },
+        {
+          "captured": ["7피a"]
+        }
+      ],
+      "noEvents": ["Ttadak", "PiStolen"]
+    }
+  },
+  {
+    "id": "E6-ttadak-last-turn",
+    "ruleId": "E6",
+    "case": "boundary",
+    "description": "마지막 턴 따닥은 4장만 가져오고 따닥으로 치지 않는다(피 뺏기 없음)",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["5피b", "11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5초"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5초", "5피a", "5열", "5피b"]
+        },
+        {
+          "captured": ["7피a"]
+        }
+      ],
+      "noEvents": ["Ttadak", "PiStolen"]
+    }
+  },
+  {
+    "id": "E6-target-prompt",
+    "ruleId": "E6",
+    "case": "boundary",
+    "description": "바닥에 같은 월 2장이 있을 때만 대상 선택을 묻는다(FR-13)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["5피b", "11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "target",
+        "seat": 0,
+        "source": "play",
+        "card": "5열",
+        "options": ["5초", "5피a"]
+      },
+      "legal": {
+        "seat": 0,
+        "includes": [
+          {
+            "type": "chooseTarget",
+            "seat": 0,
+            "card": "5초"
+          },
+          {
+            "type": "chooseTarget",
+            "seat": 0,
+            "card": "5피a"
+          }
+        ],
+        "excludes": [
+          {
+            "type": "play",
+            "seat": 0,
+            "card": "12열"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E6-target-choice-matters",
+    "ruleId": "E6",
+    "case": "normal",
+    "description": "대상 선택 후 뒤집은 패가 다른 월이면 고른 1장만 먹고 나머지는 바닥에 남는다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["11피a"],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5초"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5초"]
+        },
+        null
+      ],
+      "floorCards": ["5피a", "8광", "11피a"],
+      "events": [
+        {
+          "type": "Matched",
+          "source": "play",
+          "target": "5초"
+        }
+      ]
+    }
+  },
+  {
+    "id": "E6-flip-target",
+    "ruleId": "E6",
+    "case": "boundary",
+    "description": "뒤집은 패의 월에 바닥 2장이 있으면 뒤집은 뒤에도 대상 선택을 묻는다",
+    "setup": {
+      "hands": [
+        ["12열", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["5열", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "12열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5피a"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5피a"]
+        },
+        null
+      ],
+      "floorCards": ["5초", "8광", "12열"],
+      "events": [
+        {
+          "type": "Matched",
+          "source": "flip",
+          "target": "5피a"
+        }
+      ]
+    }
+  },
+  {
+    "id": "E7-jjok",
+    "ruleId": "E7",
+    "case": "normal",
+    "description": "먹을 게 없어 낸 패를 뒤집은 패로 바로 먹으면 쪽: 피 1장",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광", "9청"],
+      "deck": ["5초"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5초", "7피a"]
+        },
+        {
+          "captured": []
+        }
+      ],
+      "events": [
+        {
+          "type": "Jjok",
+          "seat": 0,
+          "cards": ["5열", "5초"]
+        },
+        {
+          "type": "PiStolen",
+          "reason": "jjok"
+        }
+      ],
+      "noEvents": ["Sseul"]
+    }
+  },
+  {
+    "id": "E7-jjok-last-turn",
+    "ruleId": "E7",
+    "case": "boundary",
+    "description": "마지막 턴 쪽은 2장만 먹고 피를 뺏지 않는다",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광", "9청"],
+      "deck": ["5초"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5초"]
+        },
+        {
+          "captured": ["7피a"]
+        }
+      ],
+      "noEvents": ["Jjok", "PiStolen"]
+    }
+  },
+  {
+    "id": "E7-no-jjok",
+    "ruleId": "E7",
+    "case": "counter",
+    "description": "뒤집은 패가 다른 월이면 쪽이 아니다(낸 패는 바닥에 남는다)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광", "9청"],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": []
+        },
+        null
+      ],
+      "floorCards": ["5열", "8광", "9청", "11피a"],
+      "noEvents": ["Jjok"]
+    }
+  },
+  {
+    "id": "E8-sseul",
+    "ruleId": "E8",
+    "case": "normal",
+    "description": "바닥을 모두 쓸어가면 쓸: 피 1장",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "6청"],
+      "deck": ["6열"],
+      "captured": [[], ["7피a", "8피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "floor": [],
+      "events": [
+        {
+          "type": "Sseul",
+          "seat": 0
+        },
+        {
+          "type": "PiStolen",
+          "reason": "sseul",
+          "cards": ["7피a"]
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 1
+      }
+    }
+  },
+  {
+    "id": "E8-sseul-with-jjok",
+    "ruleId": "E8",
+    "case": "boundary",
+    "description": "쪽과 쓸이 겹치면 각각 따로 뺏는다(피 2장)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": [],
+      "deck": ["5초"],
+      "captured": [[], ["7피a", "8피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "floor": [],
+      "events": [
+        {
+          "type": "Jjok"
+        },
+        {
+          "type": "Sseul"
+        },
+        {
+          "type": "PiStolen",
+          "reason": "jjok"
+        },
+        {
+          "type": "PiStolen",
+          "reason": "sseul"
+        }
+      ],
+      "seats": [
+        null,
+        {
+          "captured": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "E8-sseul-with-ttadak",
+    "ruleId": "E8",
+    "case": "boundary",
+    "description": "따닥과 쓸이 겹치면 각각 따로 뺏는다(피 2장)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a"],
+      "deck": ["5피b"],
+      "captured": [[], ["7피a", "8피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": "5초"
+      }
+    ],
+    "expect": {
+      "events": [
+        {
+          "type": "Ttadak"
+        },
+        {
+          "type": "Sseul"
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 2
+      }
+    }
+  },
+  {
+    "id": "E8-sseul-with-ppeok-take",
+    "ruleId": "E8",
+    "case": "boundary",
+    "description": "뻑 먹기와 쓸이 겹치면 각각 따로 뺏는다(피 2장)",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["6청"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 1
+        }
+      ],
+      "deck": ["6열"],
+      "captured": [[], ["7피a", "8피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "floor": [],
+      "events": [
+        {
+          "type": "PpeokTaken",
+          "pileOwner": 1
+        },
+        {
+          "type": "Sseul"
+        },
+        {
+          "type": "PiStolen",
+          "reason": "ppeokTaken"
+        },
+        {
+          "type": "PiStolen",
+          "reason": "sseul"
+        }
+      ],
+      "eventCounts": {
+        "PiStolen": 2
+      }
+    }
+  },
+  {
+    "id": "E8-sseul-last-turn",
+    "ruleId": "E8",
+    "case": "boundary",
+    "description": "마지막 턴 쓸은 피를 뺏지 않는다",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["5초", "6청"],
+      "deck": ["6열"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 9
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "floor": [],
+      "noEvents": ["Sseul", "PiStolen"]
+    }
+  },
+  {
+    "id": "E8-no-sseul",
+    "ruleId": "E8",
+    "case": "counter",
+    "description": "바닥에 한 장이라도 남으면 쓸이 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "6청", "8광"],
+      "deck": ["6열"],
+      "captured": [[], ["7피a"]],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "floorCards": ["8광"],
+      "noEvents": ["Sseul", "PiStolen"]
+    }
+  },
+  {
+    "id": "E9-bomb",
+    "ruleId": "E9",
+    "case": "normal",
+    "description": "폭탄: 손패 같은 월 3장 + 바닥 1장을 한 번에 먹고 피 1장, 흔들기 1회(×2), 폭탄패 2장",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피b", "8광"],
+      "deck": ["11피a", "9피a", "12비띠"],
+      "captured": [[], ["7피a"]]
+    },
+    "actions": [
+      {
+        "type": "bomb",
+        "seat": 0,
+        "month": 5
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "hand": ["12열"],
+          "captured": ["5열", "5초", "5피a", "5피b", "7피a"],
+          "bombs": 1,
+          "bombTokens": 2
+        },
+        {
+          "captured": []
+        }
+      ],
+      "events": [
+        {
+          "type": "Bomb",
+          "seat": 0,
+          "month": 5,
+          "handCards": 3,
+          "cards": ["5열", "5초", "5피a", "5피b"]
+        },
+        {
+          "type": "PiStolen",
+          "reason": "bomb"
+        },
+        {
+          "type": "CardFlipped",
+          "cards": ["11피a"]
+        }
+      ],
+      "floorCards": ["8광", "11피a"],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "E9-bomb-token-turn",
+    "ruleId": "E9",
+    "case": "boundary",
+    "description": "폭탄 후에는 폭탄패로 손패를 내지 않고 뒤집기만 하는 턴을 쓸 수 있다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피b", "8광"],
+      "deck": ["11피a", "9피a", "12비띠"],
+      "captured": [[], ["7피a"]]
+    },
+    "actions": [
+      {
+        "type": "bomb",
+        "seat": 0,
+        "month": 5
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      },
+      {
+        "type": "flipOnly",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "hand": ["12열"],
+          "bombTokens": 1
+        },
+        null
+      ],
+      "floorCards": ["8광", "11피a", "10청", "9피a", "12비띠"],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "legal": {
+        "seat": 1,
+        "includes": [
+          {
+            "type": "play",
+            "seat": 1,
+            "card": "10피a"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E9-bomb-legal",
+    "ruleId": "E9",
+    "case": "boundary",
+    "description": "폭탄이 가능해도 한 장만 내는 것도 합법이다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피b", "8광"],
+      "deck": ["11피a", "9피a", "12비띠"],
+      "captured": [[], ["7피a"]]
+    },
+    "actions": [],
+    "expect": {
+      "legal": {
+        "seat": 0,
+        "includes": [
+          {
+            "type": "bomb",
+            "seat": 0,
+            "month": 5
+          },
+          {
+            "type": "play",
+            "seat": 0,
+            "card": "5열"
+          },
+          {
+            "type": "play",
+            "seat": 0,
+            "card": "12열"
+          }
+        ],
+        "excludes": [
+          {
+            "type": "flipOnly",
+            "seat": 0
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E9-no-bomb-empty-floor",
+    "ruleId": "E9",
+    "case": "counter",
+    "description": "바닥에 그 월이 없으면 폭탄이 아니다(흔들기 대상)",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"]
+    },
+    "actions": [],
+    "expect": {
+      "legal": {
+        "seat": 0,
+        "excludes": [
+          {
+            "type": "bomb",
+            "seat": 0,
+            "month": 5
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E9-bomb-settle",
+    "ruleId": "E9",
+    "case": "normal",
+    "description": "폭탄 1회는 승자 정산에 ×2",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "8광"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "bombs": 1
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "winner": 0,
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "bomb",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E10-two-card-bomb-off",
+    "ruleId": "E10",
+    "case": "counter",
+    "toggle": "twoCardBomb=off",
+    "description": "2장 폭탄은 기본 끔: 손패 2장 + 바닥 2장이어도 폭탄 불가",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "5피b", "8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]]
+    },
+    "actions": [],
+    "expect": {
+      "legal": {
+        "seat": 0,
+        "excludes": [
+          {
+            "type": "bomb",
+            "seat": 0,
+            "month": 5
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E10-two-card-bomb-no-multiplier",
+    "ruleId": "E10",
+    "case": "normal",
+    "toggle": "twoCardBomb=noMultiplier",
+    "description": "2장 폭탄 켬(한게임 수류탄식): 피 1장 + 폭탄패 1장, 배수 없음",
+    "rulesPatch": {
+      "twoCardBomb": "noMultiplier"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "5초", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "5피b", "8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]]
+    },
+    "actions": [
+      {
+        "type": "bomb",
+        "seat": 0,
+        "month": 5
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "captured": ["5열", "5초", "5피a", "5피b", "7피a"],
+          "bombs": 0,
+          "bombTokens": 1,
+          "hand": ["12열"]
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "Bomb",
+          "handCards": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "E10-two-card-bomb-double",
+    "ruleId": "E10",
+    "case": "normal",
+    "toggle": "twoCardBomb=double",
+    "description": "2장 폭탄 켬(피망식 ×2): 흔들기로 처리해 배수 1회",
+    "rulesPatch": {
+      "twoCardBomb": "double"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "5초", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "5피b", "8광"],
+      "deck": ["11피a"],
+      "captured": [[], ["7피a"]]
+    },
+    "actions": [
+      {
+        "type": "bomb",
+        "seat": 0,
+        "month": 5
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "bombs": 1,
+          "bombTokens": 1
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "E11-shake",
+    "ruleId": "E11",
+    "case": "normal",
+    "description": "같은 월 3장을 쥐고 바닥에 그 월이 없을 때 그 패를 내면 흔들기 여부를 묻는다. 흔들면 3장을 보여주고 1회 기록",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": true
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "shakes": 1,
+          "hand": ["5초", "5피a", "12열"]
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "Shake",
+          "seat": 0,
+          "month": 5,
+          "accepted": true,
+          "cards": ["5열", "5초", "5피a"]
+        },
+        {
+          "type": "CardPlayed",
+          "cards": ["5열"]
+        }
+      ],
+      "floorCards": ["5열", "8광", "11피a"]
+    }
+  },
+  {
+    "id": "E11-shake-prompt",
+    "ruleId": "E11",
+    "case": "boundary",
+    "description": "흔들기 질문 중에는 흔들기 응답만 합법이다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "12열"
+      }
+    ],
+    "expect": {
+      "reject": {
+        "index": 1,
+        "reason": "illegalAction"
+      },
+      "pending": {
+        "kind": "shake",
+        "seat": 0,
+        "card": "5열",
+        "month": 5
+      }
+    }
+  },
+  {
+    "id": "E11-shake-decline",
+    "ruleId": "E11",
+    "case": "boundary",
+    "description": "흔들지 않기로 하면 배수 없이 그냥 낸다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": false
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "shakes": 0
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "Shake",
+          "accepted": false,
+          "cards": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "E11-no-shake-other-card",
+    "ruleId": "E11",
+    "case": "counter",
+    "description": "같은 월 3장이 있어도 다른 월 카드를 내면 흔들기를 묻지 않는다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "12열"
+      }
+    ],
+    "expect": {
+      "noEvents": ["Shake"],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "E11-no-shake-floor-has-month",
+    "ruleId": "E11",
+    "case": "counter",
+    "description": "바닥에 그 월이 있으면(폭탄 대상) 흔들기를 묻지 않는다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피b", "8광"],
+      "deck": ["11피a"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "noEvents": ["Shake"],
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "E11-shake-settle",
+    "ruleId": "E11",
+    "case": "normal",
+    "description": "흔들기는 1회당 ×2, 두 번이면 ×4 (승자만)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "8광"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3,
+          "shakes": 2
+        },
+        {
+          "shakes": 1
+        }
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 28,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "shake",
+            "value": 4
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-prompt",
+    "ruleId": "E12",
+    "case": "normal",
+    "toggle": "chongtongContinue=true",
+    "description": "손패 같은 월 4장(총통)이면 끝내기/계속하기를 묻는다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "pending": {
+        "kind": "chongtong",
+        "seat": 0,
+        "months": [1],
+        "resume": "deal"
+      },
+      "legal": {
+        "seat": 0,
+        "includes": [
+          {
+            "type": "chongtong",
+            "seat": 0,
+            "choice": "end"
+          },
+          {
+            "type": "chongtong",
+            "seat": 0,
+            "choice": "continue"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-end",
+    "ruleId": "E12",
+    "case": "normal",
+    "toggle": "chongtongPoints=10",
+    "description": "총통 끝내기는 10점 승리",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "end"
+      }
+    ],
+    "expect": {
+      "result": {
+        "reason": "chongtong",
+        "winner": 0
+      },
+      "settlement": {
+        "finalPoints": 10,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 10
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "Chongtong",
+          "choice": "end",
+          "months": [1],
+          "cards": ["1광", "1홍", "1피a", "1피b"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "E12-chongtong-7",
+    "ruleId": "E12",
+    "case": "normal",
+    "toggle": "chongtongPoints=7",
+    "description": "피망식 토글: 총통 7점",
+    "rulesPatch": {
+      "chongtongPoints": 7
+    },
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "end"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 7
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-carry",
+    "ruleId": "E12",
+    "case": "boundary",
+    "description": "나가리 다음 판(×2)에 총통 끝내기면 20점",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "carry": 2,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "end"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 20,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 10
+          },
+          {
+            "kind": "nagariCarry",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-no-continue",
+    "ruleId": "E12",
+    "case": "boundary",
+    "toggle": "chongtongContinue=false",
+    "description": "계속하기 불허 토글: 묻지 않고 즉시 총통 승리",
+    "rulesPatch": {
+      "chongtongContinue": false
+    },
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "chongtong",
+        "winner": 0
+      },
+      "events": [
+        {
+          "type": "Chongtong",
+          "choice": "auto"
+        }
+      ]
+    }
+  },
+  {
+    "id": "E12-chongtong-continue",
+    "ruleId": "E12",
+    "case": "normal",
+    "description": "계속하기를 고르면 판을 진행하고, 4장 중 1장을 내면 4장 흔들기를 물을 수 있다(흔들기+폭탄 ×4 경로)",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "continue"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "1광"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": true
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "shakes": 1
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "Chongtong",
+          "choice": "continue"
+        },
+        {
+          "type": "Shake",
+          "cards": ["1광", "1홍", "1피a", "1피b"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "E12-chongtong-non-dealer",
+    "ruleId": "E12",
+    "case": "boundary",
+    "description": "후(좌석 1)의 총통도 첫 턴 전에 묻고, 계속하면 선부터 친다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 1,
+        "choice": "continue"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 0
+      },
+      "turn": 0
+    }
+  },
+  {
+    "id": "E12-no-chongtong-three",
+    "ruleId": "E12",
+    "case": "counter",
+    "description": "손패 같은 월 3장은 총통이 아니다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "5초",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 0
+      },
+      "noEvents": ["Chongtong"]
+    }
+  },
+  {
+    "id": "E13-both-chongtong-nagari",
+    "ruleId": "E13",
+    "case": "normal",
+    "toggle": "bothChongtong=nagari",
+    "description": "양측 총통은 나가리(다음 판 ×2)",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "6피a",
+        "6피b",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "5초",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "bothChongtong",
+        "winner": null
+      },
+      "settlement": {
+        "nextCarry": 2,
+        "winner": null
+      },
+      "events": [
+        {
+          "type": "Nagari",
+          "multiplier": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "E13-both-chongtong-dealer",
+    "ruleId": "E13",
+    "case": "normal",
+    "toggle": "bothChongtong=dealerWins",
+    "description": "한게임식 토글: 양측 총통은 선 승리(총통 점수)",
+    "rulesPatch": {
+      "bothChongtong": "dealerWins"
+    },
+    "deal": {
+      "seed": 1,
+      "dealer": 1,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "6피a",
+        "6피b",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "5초",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "result": {
+        "reason": "bothChongtong",
+        "winner": 1
+      },
+      "settlement": {
+        "finalPoints": 10
+      }
+    }
+  },
+  {
+    "id": "E13-one-chongtong",
+    "ruleId": "E13",
+    "case": "counter",
+    "description": "한쪽만 총통이면 양측 총통이 아니다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "expect": {
+      "phase": "turn",
+      "pending": {
+        "kind": "chongtong",
+        "seat": 0
+      }
+    }
+  },
+  {
+    "id": "E14-hudang-off",
+    "ruleId": "E14",
+    "case": "counter",
+    "toggle": "hudang=false",
+    "description": "허당은 기본 끔: 5턴 연속 못 먹어도 판이 계속된다",
+    "setup": {
+      "hands": [
+        ["12열", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"],
+      "seats": [
+        {
+          "turnsTaken": 5,
+          "noCaptureStreak": 4
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "12열"
+      }
+    ],
+    "expect": {
+      "phase": "turn",
+      "noEvents": ["Hudang"]
+    }
+  },
+  {
+    "id": "E14-hudang-on",
+    "ruleId": "E14",
+    "case": "normal",
+    "toggle": "hudang=true",
+    "description": "허당 켬(한게임 구 맞고): 연속 5번 아무 패도 못 먹으면 7점이 되며 게임이 끝난다",
+    "rulesPatch": {
+      "hudang": true
+    },
+    "setup": {
+      "hands": [
+        ["12열", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"],
+      "seats": [
+        {
+          "turnsTaken": 5,
+          "noCaptureStreak": 4
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "12열"
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "hudang",
+        "winner": 0
+      },
+      "settlement": {
+        "finalPoints": 7
+      },
+      "events": [
+        {
+          "type": "Hudang",
+          "seat": 0
+        }
+      ]
+    }
+  },
+  {
+    "id": "E14-hudang-four",
+    "ruleId": "E14",
+    "case": "boundary",
+    "toggle": "hudang=true",
+    "description": "허당 켬: 연속 4번까지는 끝나지 않는다",
+    "rulesPatch": {
+      "hudang": true
+    },
+    "setup": {
+      "hands": [
+        ["12열", "12비띠"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"],
+      "seats": [
+        {
+          "turnsTaken": 5,
+          "noCaptureStreak": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "12열"
+      }
+    ],
+    "expect": {
+      "phase": "turn"
+    }
+  }
+]

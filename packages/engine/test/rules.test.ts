@@ -34,9 +34,9 @@ describe('규칙 프리셋 (FR-20, rules 12장)', () => {
     });
   });
 
-  it('규칙 옵션은 22개 (12.7 토글 24개 중 로컬 설정 2개 제외)', () => {
+  it('규칙 옵션은 25개 (12.7 토글 24개 중 로컬 설정 2개 제외 + R7·E14·M2)', () => {
     for (const preset of Object.values(PRESETS)) {
-      expect(Object.keys(preset)).toHaveLength(22);
+      expect(Object.keys(preset)).toHaveLength(25);
     }
   });
 });
