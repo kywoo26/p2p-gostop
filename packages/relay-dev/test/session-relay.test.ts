@@ -1,5 +1,4 @@
-import { randomPolicy, createPolicyRng } from '@p2p-gostop/ai';
-import { PRESETS, legalActions } from '@p2p-gostop/engine';
+import { PRESETS, createRng, legalActions, nextInt } from '@p2p-gostop/engine';
 import {
   HostSession,
   GuestSession,
@@ -97,7 +96,7 @@ it('실제 ws 중계로 양측 20판, 끊김·토큰 복귀·원장 제로섬', 
     const guest = new GuestSession(guestWire, { name: '게스트', random32: secret() });
     guest.join();
     await until(() => host.state !== null);
-    let rng = createPolicyRng(723);
+    let rng = createRng(723);
     let dropped = false;
     let observedGap = false;
     let moves = 0;
@@ -106,17 +105,19 @@ it('실제 ws 중계로 양측 20판, 끊김·토큰 복귀·원장 제로섬', 
       await until(() => guest.seq === host.seq && guest.view?.round === host.roundNumber);
       const state = host.state!;
       const actions = [...legalActions(state, 0), ...legalActions(state, 1)];
-      const chosen = randomPolicy.choose(actions, rng);
-      rng = chosen.rng;
+      const [index, next] = nextInt(rng, actions.length);
+      rng = next;
+      const action = actions[index];
+      if (action === undefined) throw new Error('합법 수 선택 실패');
       const previous = host.state;
-      if (!dropped && moves > 50 && chosen.action.seat === 0) {
+      if (!dropped && moves > 50 && action.seat === 0) {
         await guestWire.drop();
-        host.apply(chosen.action);
+        host.apply(action);
         observedGap = guest.seq < host.seq;
         guest.rejoin();
         dropped = true;
-      } else if (chosen.action.seat === 0) host.apply(chosen.action);
-      else guest.sendAction(chosen.action);
+      } else if (action.seat === 0) host.apply(action);
+      else guest.sendAction(action);
       await until(() => host.state !== previous);
       await until(() => guest.seq === host.seq);
       expect(host.ledger.balances[0] + host.ledger.balances[1]).toBe(2_000_000_000);

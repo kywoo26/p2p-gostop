@@ -17,7 +17,6 @@
     "ws": "8.21.3"
   },
   "devDependencies": {
-    "@p2p-gostop/ai": "0.0.0",
     "@p2p-gostop/engine": "0.0.0",
     "@types/node": "24.13.6",
     "@types/ws": "8.18.1",
