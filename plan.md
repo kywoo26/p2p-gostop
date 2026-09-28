@@ -172,6 +172,11 @@ p2p-gostop/
 - **자동 검증**: 컴포넌트 테스트(Vitest + Testing Library), Playwright Chromium·WebKit로 솔로 20판 자동 플레이(AC-04의 솔로 절반), 스크린샷 회귀 7화면(AC-05), 애니메이션 계측(AC-06), 번들 크기 게이트(AC-07), 금지 API ESLint.
 - **완료 기준**: 위 통과 + WebKit에서 사용자가 시각적으로 확인 가능한 프리뷰 링크(로컬 빌드 산출물을 GitHub Actions 아티팩트로 제공, 폰 브라우저에서 zip 열기는 번거로우므로 M4 APK로 확인하는 것을 기본으로 함).
 
+### M3 준비 결과가 M4에 넘기는 입력 (2026-09-28)
+- `packages/protocol`이 제공해야 할 것: `PlayerView → BoardView` 어댑터(좌석 이름, 잔액, 족보 진행도 {광, 고도리, 단, 피}, 현재 배수), `playable`(legal에서 추출한 손패 id), 고/스톱 프롬프트의 스톱 금액(엔진 `stopPreview` × 점당), 대상 선택 중 "낸 카드" 위치(`pending.card`), `SettlementView`(이름, 점수 분해 행, 정산 전후 잔액).
+- 이벤트 이름 정합: 엔진 `Go.count`↔spec `Go(n)`, `PiStolen`에 `card` 없음, `InstantPayout`이 `from` 사용, 엔진 추가 이벤트 `Redealt`/`FirstPicked`/`CardDrawn`/`Hudang`/`GukjinPlaced`는 spec 4.5에 추가. → M4에서 spec 4.5를 엔진 기준으로 갱신하고 protocol이 단일 정의를 export.
+- 보너스 카드 디자인은 시안 1종만 제작됨(plan §9 "시안 2종" 미충족). M6 전에 두 번째 시안을 만들어 사용자 선택.
+
 ### M4 — 호스트/게스트 모드와 중계
 - **산출물**: `packages/protocol`(메시지, 버전, commit-reveal, playerView 계약), `packages/relay-dev`(Node 중계), Android 앱 확장(Ktor 정적 서빙 + 중계, WebView 브리지, 포그라운드 서비스 완성, 로그 수집·공유), 웹 앱 host/guest 모드, 재접속·재동기화, 로비, QR을 웹에서 렌더링(`uqr`).
 - **자동 검증**: 프로토콜 계약 테스트(호스트·게스트 양쪽에서 같은 벡터), 중계 규칙 테스트(Node·Kotlin 동일 시나리오), Playwright 2브라우저 E2E(Chromium=host, WebKit=guest) 20판 + 게스트 끊김/복귀 시나리오(AC-04 전체), Ktor `testApplication`.
