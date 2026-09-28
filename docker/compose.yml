@@ -1,6 +1,6 @@
 # p2p-gostop 개발 환경. 모든 빌드·테스트는 컨테이너 안에서 실행한다 (plan.md 2장).
 # 사용: ./dev.sh <task>  (직접 호출: docker compose -f docker/compose.yml run --rm <service> <cmd>)
-name: p2p-gostop
+# 프로젝트 이름은 dev.sh가 체크아웃(워크트리)별로 COMPOSE_PROJECT_NAME으로 준다(node_modules 볼륨 분리).
 
 x-common: &common
   working_dir: /work

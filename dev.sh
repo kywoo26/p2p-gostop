@@ -2,6 +2,10 @@
 # p2p-gostop 작업 진입점. 네이티브에 아무것도 설치하지 않고 Docker 컨테이너에서 실행한다.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 워크트리를 여러 개 동시에 쓰기 위해 체크아웃별로 compose 프로젝트(=볼륨 네임스페이스)를 분리한다.
+# 메인 체크아웃(p2p-gostop)은 기존 이름을 유지해 볼륨을 재사용한다.
+base="$(basename "$ROOT")"
+if [ "$base" = "p2p-gostop" ]; then export COMPOSE_PROJECT_NAME="p2p-gostop"; else export COMPOSE_PROJECT_NAME="p2p-gostop-$(echo "$base" | tr -c 'a-z0-9\n' '-')"; fi
 COMPOSE=(docker compose -f "$ROOT/docker/compose.yml")
 
 if ! docker info >/dev/null 2>&1; then
