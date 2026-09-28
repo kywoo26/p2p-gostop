@@ -8,7 +8,8 @@ import kotlin.test.assertTrue
 
 class HotspotModelTest {
     private fun state(status: HotspotStatus, running: Boolean = true, ip: String? = null, clients: Int = 0) =
-        HotspotState(status = status, serviceRunning = running, ip = ip, wsClients = clients)
+        HotspotState(status = status, serviceRunning = running, ip = ip, wsClients = clients,
+            lanEnabled = status == HotspotStatus.RUNNING || status == HotspotStatus.ADDRESS_ONLY)
 
     @Test
     fun `S-2 토글은 서비스 생존 기준 - FAILED·STOPPED·주소만 표시에서도 멈출 수 있다`() {
@@ -42,6 +43,7 @@ class HotspotModelTest {
         assertTrue(running != oneClient)
         val failed = notifContent(state(HotspotStatus.FAILED, ip = "192.168.0.23"))
         assertEquals(HotspotStatus.FAILED, failed.status)
+        assertNull(failed.url)
         assertEquals(ToggleAction.STOP_FALLBACK, failed.action)
         assertEquals(HotspotStatus.STOPPED, notifContent(state(HotspotStatus.STOPPED)).status)
     }

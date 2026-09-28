@@ -76,10 +76,20 @@ class HotspotService : Service() {
                 AppState.update {
                     it.copy(
                         status = HotspotStatus.ADDRESS_ONLY, ssid = null, password = null, securityType = null,
-                        lastError = null, apiVariant = null,
+                        lastError = null, apiVariant = null, lanEnabled = true,
                     )
                 }
                 AppState.log("주소만 표시 모드 시작(LOHS 없이 서버만)")
+                serverSlot.ensure()
+                startIpWatch()
+            }
+            ACTION_SERVER_ONLY -> {
+                goForeground()
+                session.cancel()
+                AppState.update {
+                    it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null,
+                        securityType = null, lastError = null, apiVariant = null, lanEnabled = false)
+                }
                 serverSlot.ensure()
                 startIpWatch()
             }
@@ -159,9 +169,12 @@ class HotspotService : Service() {
             AppState.log(if (session.hasReservation) "핫스팟이 이미 켜져 있음" else "핫스팟 요청이 이미 진행 중")
             return
         }
+        ipJob?.cancel()
+        ipJob = null
         val wifi = getSystemService(WifiManager::class.java)
         AppState.update {
-            it.copy(status = HotspotStatus.STARTING, lastError = null, ssid = null, password = null, securityType = null, ip = null)
+            it.copy(status = HotspotStatus.STARTING, lastError = null, ssid = null, password = null,
+                securityType = null, ip = null, lanEnabled = true)
         }
         AppState.log("핫스팟 시작 요청(세대 $gen): Wi-Fi 켜짐=${wifi.isWifiEnabled}, 비행기 모드=${Diagnostics.airplaneMode(this)}")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
@@ -223,7 +236,8 @@ class HotspotService : Service() {
                 AppState.log("지난 세대의 onStopped(세대 $gen) 무시")
                 return
             }
-            AppState.update { it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null, securityType = null) }
+            AppState.update { it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null,
+                securityType = null, lanEnabled = false) }
             AppState.log("핫스팟 중지됨(onStopped): 시스템·사용자에 의해 내려감. 서버는 폴백용으로 유지(중지 버튼으로 끔)")
         }
 
@@ -247,7 +261,7 @@ class HotspotService : Service() {
 
     private fun fail(gen: Long, message: String) {
         if (!session.onFailed(gen)) return
-        AppState.update { it.copy(status = HotspotStatus.FAILED, lastError = message) }
+        AppState.update { it.copy(status = HotspotStatus.FAILED, lastError = message, lanEnabled = false) }
         AppState.log("핫스팟 실패: $message")
         // 서버는 유지한다: 시스템 핫스팟·기존 Wi-Fi로 "주소만 표시" 폴백이 가능하도록(FR-02). 중지 버튼으로 끈다.
         startIpWatch()
@@ -296,7 +310,7 @@ class HotspotService : Service() {
         AppState.update {
             it.copy(
                 status = HotspotStatus.IDLE, serviceRunning = false, ssid = null, password = null, securityType = null,
-                ip = null, candidates = emptyList(),
+                ip = null, candidates = emptyList(), lanEnabled = false,
             )
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -308,6 +322,7 @@ class HotspotService : Service() {
         private lateinit var assetManager: AssetManager
         const val ACTION_START = "com.kywoo26.p2pgostop.START"
         const val ACTION_ADDRESS_ONLY = "com.kywoo26.p2pgostop.ADDRESS_ONLY"
+        const val ACTION_SERVER_ONLY = "com.kywoo26.p2pgostop.SERVER_ONLY"
         const val ACTION_STOP = "com.kywoo26.p2pgostop.STOP"
         private const val CHANNEL_ID = "hotspot"
         private const val NOTIF_ID = 1
@@ -333,6 +348,7 @@ class HotspotService : Service() {
                     (if (role == "host") AppState.wsHostClients else AppState.wsGuestClients).set(if (connected) 1 else 0)
                     AppState.update { it.copy(wsClients = AppState.wsClients.get()) }
                 },
+                lanEnabled = { AppState.hotspot.value.lanEnabled },
                 asset = { path ->
                     try { assetManager.open("web/$path").use { it.readBytes() } }
                     catch (_: IOException) { null }

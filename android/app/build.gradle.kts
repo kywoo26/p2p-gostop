@@ -8,14 +8,14 @@ plugins {
 
 // 웹 빌드는 별도 컨테이너/CI가 만든다. dist가 있으면 stale 파일을 지우며 동기화한다.
 // dist가 없으면 CI가 이미 assets/web에 넣은 산출물을 보존한다.
-val webDist = rootProject.layout.projectDirectory.dir("../packages/web/dist")
-val webIndex = webDist.file("index.html")
 val copyWebDist = tasks.register<Sync>("copyWebDist") {
+    val webDist = rootProject.layout.projectDirectory.dir("../packages/web/dist")
+    val webIndex = webDist.file("index.html")
     from(webDist)
     into(layout.projectDirectory.dir("src/main/assets/web"))
-    onlyIf("웹 dist가 있을 때만 APK 자산을 동기화") {
+    onlyIf("웹 dist가 있을 때만 APK 자산을 동기화") { task ->
         val present = webIndex.asFile.isFile
-        if (!present) logger.warn("p2p-gostop: 웹 dist 없음; 기존 assets/web을 보존합니다.")
+        if (!present) task.logger.warn("p2p-gostop: 웹 dist 없음; 기존 assets/web을 보존합니다.")
         present
     }
 }

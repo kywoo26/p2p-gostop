@@ -14,6 +14,9 @@ object AppState {
     /** 호스트 진단 로그: 2,000줄, 줄당 2KB, 총 512KB(UTF-8). */
     val logs = LogBuffer(capacity = 2000, maxTotalBytes = 512 * 1024)
 
+    /** 웹 호스트 로그는 네이티브 진단 이력을 밀어내지 않도록 별도로 보관한다. */
+    val webLogs = LogBuffer(capacity = 2000, maxTotalBytes = 256 * 1024, linePrefix = "W| ")
+
     /**
      * 게스트가 올린 로그: 2,000줄, 줄당 2KB, 총 256KB(UTF-8, spec NP-09).
      * 호스트 로그와 버퍼를 나눠 게스트 업로드가 호스트 진단 이력을 밀어내지 못하게 한다(M0 리뷰 L-1).

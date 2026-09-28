@@ -12,15 +12,18 @@ import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class M4ServerTest {
-    private fun env(files: Map<String, String> = emptyMap(), remote: String = "127.0.0.1") = ServerEnv(
+    private fun env(files: Map<String, String> = emptyMap(), remote: String = "127.0.0.1",
+                    lan: () -> Boolean = { false }) = ServerEnv(
         appVersion = "0.4.0", gitSha = "abc1234", buildTime = "2026-09-28T00:00:00Z",
         deviceInfo = { emptyMap() }, log = {}, asset = { files[it]?.toByteArray() }, remoteAddress = { remote },
+        lanEnabled = lan,
     )
 
     @Test fun `번들이 없으면 안내 페이지와 no-store`() = testApplication {
@@ -140,13 +143,36 @@ class M4ServerTest {
     }
 
     @Test fun `원격 호스트 역할은 1008로 거절하고 게스트는 연결된다`() = testApplication {
-        application { smokeModule(env(remote = "192.168.1.2")) }
+        application { smokeModule(env(remote = "192.168.1.2", lan = { true })) }
         val c = createClient { install(WebSockets) }
         val host = c.webSocketSession("/ws?role=host")
         assertEquals(1008, withTimeout(2000) { host.closeReason.await() }?.code?.toInt())
         val guest = c.webSocketSession("/ws?role=guest")
         assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
         guest.close()
+    }
+
+    @Test fun `LAN 게이트는 같은 서버에서 원격 HTTP와 WS를 막았다가 명시적으로 허용한다`() = testApplication {
+        val enabled = AtomicBoolean(false)
+        application { smokeModule(env(remote = "192.168.1.2", lan = enabled::get)) }
+        assertEquals(HttpStatusCode.Forbidden, client.get("/").status)
+        assertEquals(HttpStatusCode.Forbidden, client.get("/health").status)
+        assertEquals(HttpStatusCode.Forbidden, client.get("/smoke").status)
+        assertEquals(HttpStatusCode.Forbidden, client.get("/cards/LICENSE").status)
+        val c = createClient { install(WebSockets) }
+        val denied = c.webSocketSession("/ws?role=guest")
+        assertEquals(1008, withTimeout(2000) { denied.closeReason.await() }?.code?.toInt())
+        assertEquals("lan-disabled", denied.closeReason.await()?.message)
+        val deniedSmoke = c.webSocketSession("/smoke/ws")
+        assertEquals(1008, withTimeout(2000) { deniedSmoke.closeReason.await() }?.code?.toInt())
+        enabled.set(true)
+        assertEquals(HttpStatusCode.OK, client.get("/").status)
+        assertTrue(client.get("/health").bodyAsText().contains("\"lanEnabled\":true"))
+        val guest = c.webSocketSession("/ws?role=guest")
+        assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
+        guest.close()
+        enabled.set(false)
+        assertEquals(HttpStatusCode.Forbidden, client.get("/").status)
     }
 
     @Test fun `릴레이는 바이너리를 1003으로 닫는다`() = testApplication {
