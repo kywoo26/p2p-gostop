@@ -225,7 +225,10 @@ p2p-gostop/
 | I1 | M4 통합: `tools/p2p-mini` 제거, 정식 UI로 호스트/게스트 모드(HostSession/GuestSession + WsTransport + bridge↔HostBridge), 로비, 재접속·재동기화, 2브라우저 E2E | implementer(Opus, high), 워크트리 PR | PR → 리뷰 → 병합 → `v0.2.0` |
 | A1 | Android 후속: PR #1 리뷰 이연 항목(I-11 문서, N-1~N-10, Gradle 10 deprecation, copyWebDist), 진동 브리지 | Codex Sol high, 워크트리 PR | PR → 리뷰 → 병합 |
 | E1 | 엔진 M6 선행: `SeatView.revealed`, 검증 생략 apply 경로(+속성 테스트), 밀기 구현(+벡터), M1 리뷰 잔여 | implementer(Opus, high) | PR → 리뷰 → 병합 |
-| U1 | R1/R2 이슈 수정 라운드(규칙·UX 버그) | implementer 또는 Codex(이슈 성격별) | PR → 리뷰 → 병합 |
+| U1 | M3 표시 수정: #4 국진 배치·피 가치, #5 WebKit 카드 앞면, #7 손패 정렬, #8 건너뛰기 탭, #9 상시 정보, #11 테스트, #20 AC-06 강제 | implementer(Opus, high) `fix/m3-display` | PR → 리뷰 → 병합 |
+| P1 | 프로토콜 수정: #12 게스트 BoardView 상위집합, #13 핸드셰이크 복구, #16 verifyRound, #23 크기 상한·decode, #24 전송 정책·relay-dev 정합(#15), #25 호스트 복원, #26 판 사이 대기·파산 프롬프트 | implementer(Opus, high) `fix/protocol-review` | I1 선행 조건 |
+| H1 | 릴리스 게이트(#22 CI 성공 조건·prerelease), MVP.md 정정(#21), spec 부분 충족 표시 | hygiene(Sonnet, low) | PR |
+| A2 | #17 앱 실행 시 LAN 서버 자동 기동(NF-06) 재설계, PR #14 리뷰 반영 | Codex Sol (high) | PR #14 후속 |
 | M5 | `v0.2.0` 실기기 회차(호스트/게스트 정식 UI) | 사용자 | 로그 → 이슈 |
 | M6 | 토글 UI, 기록, 리플레이 내보내기, 효과음, 접근성, 아케이드, 머니 모델 재산정, AI 강도 재도전 | 분할 배분 | `v1.0.0` |
 
