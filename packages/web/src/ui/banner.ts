@@ -1,5 +1,5 @@
 // 이벤트 배너 (spec 6.5): 문구와 색. 색만으로 구분하지 않도록 항상 문구를 함께 쓴다(NF-08).
-import type { EngineEvent } from '@p2p-gostop/engine';
+import type { EngineEvent, Seat } from '@p2p-gostop/engine';
 import type { UiEvent } from '../lib/view-types.ts';
 
 export type BannerKind =
@@ -18,6 +18,8 @@ export type BannerKind =
 export interface Banner {
   readonly kind: BannerKind;
   readonly text: string;
+  /** 이벤트를 일으킨 좌석 (게임판이 "상대"·"나"로 주체를 붙인다, M3 리뷰 I-4). 나가리 등은 null */
+  readonly seat?: Seat | null;
 }
 
 const BANNER_TEXT: Readonly<Record<BannerKind, string>> = {
@@ -40,6 +42,11 @@ function simple(kind: BannerKind): Banner {
 
 /** 배너를 띄우는 이벤트만 골라 종류·문구를 돌려준다(픽스처 이벤트). 나머지 이벤트는 null */
 export function bannerFor(event: UiEvent): Banner | null {
+  const banner = bannerForUiEvent(event);
+  return banner === null ? null : { ...banner, seat: event.seat };
+}
+
+function bannerForUiEvent(event: UiEvent): Banner | null {
   switch (event.type) {
     case 'Ppeok':
       return simple('ppeok');
@@ -62,8 +69,19 @@ export function bannerFor(event: UiEvent): Banner | null {
   }
 }
 
-/** 엔진 이벤트 → 배너 (spec 4.5 엔진 기준 이름: Go.count) */
+/** 엔진 이벤트 → 배너 (spec 4.5 엔진 기준 이름: Go.count). 주체 좌석을 함께 싣는다 */
 export function bannerForEngineEvent(event: EngineEvent): Banner | null {
+  const banner = bannerForEngine(event);
+  return banner === null ? null : { ...banner, seat: event.type === 'Nagari' ? null : event.seat };
+}
+
+/** 배너 주체 이름: 보는 좌석이면 "나", 아니면 "상대". 좌석이 없으면 null */
+export function bannerActor(banner: Banner, viewer: Seat): '나' | '상대' | null {
+  if (banner.seat === undefined || banner.seat === null) return null;
+  return banner.seat === viewer ? '나' : '상대';
+}
+
+function bannerForEngine(event: EngineEvent): Banner | null {
   switch (event.type) {
     case 'Ppeok':
       return simple('ppeok');

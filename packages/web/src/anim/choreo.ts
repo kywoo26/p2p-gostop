@@ -27,9 +27,9 @@ export interface AnimStep {
 
 /**
  * 한 턴의 계획 시간 상한(빠름 기준 ms). 단계 사이의 프레임 지연(단계당 최대 1~2프레임)을 더해도
- * spec 6.4의 700ms 안에 들도록 여유를 둔다.
+ * spec 6.4의 700ms 안에 들도록 여유를 둔다(AC-06, choreo.test.ts·e2e/solo.spec.ts가 검사).
  */
-const TURN_PLAN_MS = 500;
+export const TURN_PLAN_MS = 500;
 
 function kindOf(event: EngineEvent): StepKind {
   switch (event.type) {
@@ -101,10 +101,31 @@ function stepMs(step: AnimStep): number {
   }
 }
 
-/** 계획 시간이 턴 예산을 넘으면 줄이는 배율 (≤ 1) */
-function compressFactor(steps: readonly AnimStep[]): number {
-  const total = steps.reduce((sum, s) => sum + stepMs(s), 0);
-  return total > TURN_PLAN_MS ? TURN_PLAN_MS / total : 1;
+export interface TurnPlan {
+  readonly steps: readonly AnimStep[];
+  /** 단계 시간 합 (빠름 기준 ms, 줄이기 전) */
+  readonly rawMs: number;
+  /** 계획 시간이 턴 예산을 넘으면 줄이는 배율 (≤ 1) */
+  readonly factor: number;
+  /** 실제로 재생할 계획 시간 = rawMs × factor ≤ TURN_PLAN_MS */
+  readonly plannedMs: number;
+  /** 단계별 재생 시간 (빠름 기준 ms, 줄인 뒤). runStep이 움직일 카드가 없는 단계에서 기다리는 시간이기도 하다 */
+  readonly stepMs: readonly number[];
+}
+
+/** 이벤트 묶음의 애니메이션 계획 (replay와 같은 계산) */
+export function planTurn(events: readonly EngineEvent[]): TurnPlan {
+  const steps = planSteps(events);
+  const rawMs = steps.reduce((sum, s) => sum + stepMs(s), 0);
+  const factor = rawMs > TURN_PLAN_MS ? TURN_PLAN_MS / rawMs : 1;
+  const scaled = steps.map((s) => stepMs(s) * factor);
+  return {
+    steps,
+    rawMs,
+    factor,
+    plannedMs: scaled.reduce((sum, ms) => sum + ms, 0),
+    stepMs: scaled,
+  };
 }
 
 type Rects = Map<string, DOMRect>;
@@ -140,6 +161,8 @@ async function runStep(
   board: DisplayBoard,
   step: AnimStep,
   factor: number,
+  /** 이 단계의 계획 시간 (planTurn().stepMs, 줄인 뒤) */
+  plannedMs: number,
 ): Promise<DisplayBoard> {
   let next = board;
   for (const event of step.events) {
@@ -197,7 +220,7 @@ async function runStep(
   }
   if (animations.length === 0) {
     // 움직일 카드가 없어도 매칭 강조 등은 계획 시간만큼 보인다
-    await new Promise((resolve) => setTimeout(resolve, ms(stepMs(step)) * durScale(host.root)));
+    await new Promise((resolve) => setTimeout(resolve, plannedMs * durScale(host.root)));
     return next;
   }
   await sequence(() => animations);
@@ -213,11 +236,10 @@ export async function replay(
   from: DisplayBoard,
   events: readonly EngineEvent[],
 ): Promise<DisplayBoard> {
-  const steps = planSteps(events);
-  const factor = compressFactor(steps);
+  const plan = planTurn(events);
   let board = from;
-  for (const step of steps) {
-    board = await runStep(host, board, step, factor);
+  for (const [i, step] of plan.steps.entries()) {
+    board = await runStep(host, board, step, plan.factor, plan.stepMs[i] ?? 0);
   }
   return board;
 }

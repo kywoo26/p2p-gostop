@@ -5,9 +5,26 @@
 // 순수 함수. 엔진이 한 번의 reduce로 낸 이벤트를 모두 적용하면 새 뷰의 카드 배치와 같아진다(display.test.ts가 검사).
 import { getCard, type CardId, type EngineEvent, type Month, type Seat } from '@p2p-gostop/engine';
 import type { BoardView, CapturedView, FloorGroupView, SeatView } from '../lib/view-types.ts';
-import { progressOf, type InFlight } from './adapter.ts';
+import { cardLabel } from '../ui/cards.ts';
+import {
+  capturedStats,
+  gukjinAsPiOf,
+  hasGukjin,
+  seatStats,
+  type SeatExtras,
+} from '../ui/seat-stats.ts';
+import type { InFlight } from './adapter.ts';
+
+/** 화면 좌석: 프로토콜 SeatView + 표시용 값 (M3 리뷰 S-2·I-4) */
+export interface DisplaySeat extends SeatView {
+  /** 국진을 쌍피로 세는지 (엔진 score.gukjinAsPi). 획득패 칸 배치·숫자가 이 값을 따른다 */
+  readonly gukjinAsPi: boolean;
+  /** 배수가 붙는 폭탄 횟수. 프로토콜 뷰에 아직 없으면 null */
+  readonly bombs: number | null;
+}
 
 export interface DisplayBoard extends BoardView {
+  readonly seats: readonly [DisplaySeat, DisplaySeat];
   /** 바닥에 놓이기 전 잠시 머무는 카드: 뒤집은 카드, 손패에서 낸 보너스 (더미 옆 자리) */
   readonly staging: readonly CardId[];
   /** 매칭 강조 중인 바닥 카드 (spec 6.4 "매칭 강조 80ms") */
@@ -22,16 +39,22 @@ const monthOf = (id: CardId): Month | null => getCard(id).month;
  */
 export function snap(board: BoardView, inFlight: InFlight | null = null): DisplayBoard {
   const floor = inFlight?.played == null ? board.floor : addToFloor(board.floor, inFlight.played);
-  return { ...board, floor, staging: inFlight?.staged ?? [], highlight: [] };
+  const seats: DisplayBoard['seats'] = [displaySeat(board.seats[0]), displaySeat(board.seats[1])];
+  return { ...board, seats, floor, staging: inFlight?.staged ?? [], highlight: [] };
 }
 
-function updateSeat(board: DisplayBoard, seat: Seat, patch: (s: SeatView) => SeatView) {
-  const seats: [SeatView, SeatView] = [board.seats[0], board.seats[1]];
+/** 좌석 뷰 → 화면 좌석. 어댑터가 넣은 값이 없으면(프로토콜 뷰) 진행도에서 국진 위치를 읽는다 */
+function displaySeat(seat: SeatView & SeatExtras): DisplaySeat {
+  return { ...seat, gukjinAsPi: gukjinAsPiOf(seat), bombs: seat.bombs ?? null };
+}
+
+function updateSeat(board: DisplayBoard, seat: Seat, patch: (s: DisplaySeat) => DisplaySeat) {
+  const seats: [DisplaySeat, DisplaySeat] = [board.seats[0], board.seats[1]];
   seats[seat] = patch(seats[seat]);
   return seats;
 }
 
-function removeFromHand(s: SeatView, ids: readonly CardId[], count: number): SeatView {
+function removeFromHand(s: DisplaySeat, ids: readonly CardId[], count: number): DisplaySeat {
   if (s.hand === null) {
     return { ...s, handCount: Math.max(0, s.handCount - count) };
   }
@@ -86,10 +109,15 @@ function removeCaptured(c: CapturedView, ids: readonly CardId[]): CapturedView {
   return { gwang: keep(c.gwang), yeol: keep(c.yeol), tti: keep(c.tti), pi: keep(c.pi) };
 }
 
-/** 이벤트 하나를 화면 판에 적용한다. 화면 모습이 바뀌지 않는 이벤트는 강조만 지운다 */
+/**
+ * 이벤트 하나를 화면 판에 적용한다. 카드 배치를 바꾸는 이벤트는 이전 강조를 지운다.
+ * 배치가 바뀌지 않는 이벤트(점수·흔들기·고 등)는 강조를 남긴다: 애니메이션 단계는 이런 이벤트를 앞 단계에 붙여
+ * 한꺼번에 커밋하므로(choreo.ts planSteps), 여기서 지우면 매칭·피 뺏기 강조가 한 번도 그려지지 않는다.
+ */
 export function applyEvent(input: DisplayBoard, event: EngineEvent): DisplayBoard {
   // 재생 중에는 입력을 받지 않는다: 프롬프트와 낼 수 있는 카드는 스냅 때 돌아온다
-  const board: DisplayBoard = { ...input, pending: null, playable: [], highlight: [] };
+  const kept: DisplayBoard = { ...input, pending: null, playable: [] };
+  const board: DisplayBoard = { ...kept, highlight: [] };
   switch (event.type) {
     case 'CardPlayed': {
       const [id] = event.cards;
@@ -160,8 +188,9 @@ export function applyEvent(input: DisplayBoard, event: EngineEvent): DisplayBoar
       };
     }
     case 'PiStolen': {
+      // 뺏긴 카드를 잠깐 강조한다(M3 리뷰 I-4): 같은 단계의 뺏기가 여럿이면 모두
       const ids = event.cards;
-      const seats: [SeatView, SeatView] = [board.seats[0], board.seats[1]];
+      const seats: [DisplaySeat, DisplaySeat] = [board.seats[0], board.seats[1]];
       seats[event.from] = {
         ...seats[event.from],
         captured: removeCaptured(seats[event.from].captured, ids),
@@ -170,34 +199,43 @@ export function applyEvent(input: DisplayBoard, event: EngineEvent): DisplayBoar
         ...seats[event.to],
         captured: addCaptured(seats[event.to].captured, ids),
       };
-      return { ...board, seats };
+      const stolen = input.highlight.filter(
+        (id) => !ids.includes(id) && placeOf(input, id) !== 'floor',
+      );
+      return { ...board, seats, highlight: [...stolen, ...ids] };
     }
     case 'ScoreChanged': {
-      if (event.seat === null) return board;
+      if (event.seat === null) return kept;
       const b = event.breakdown;
-      const seats = updateSeat(board, event.seat, (s) => ({
+      const seats = updateSeat(kept, event.seat, (s) => ({
         ...s,
         score: b.total,
-        progress: progressOf(s.captured, b.gukjinAsPi),
+        gukjinAsPi: b.gukjinAsPi,
+        progress: capturedStats(s.captured, b.gukjinAsPi).progress,
       }));
-      return { ...board, seats };
+      return { ...kept, seats };
+    }
+    case 'GukjinPlaced': {
+      if (event.seat === null) return kept;
+      const asPi = event.asPi;
+      return { ...kept, seats: updateSeat(kept, event.seat, (s) => ({ ...s, gukjinAsPi: asPi })) };
     }
     case 'Shake': {
-      if (event.seat === null) return board;
+      if (event.seat === null) return kept;
       return {
-        ...board,
-        seats: updateSeat(board, event.seat, (s) => ({ ...s, shakes: s.shakes + 1 })),
+        ...kept,
+        seats: updateSeat(kept, event.seat, (s) => ({ ...s, shakes: s.shakes + 1 })),
       };
     }
     case 'Go': {
-      if (event.seat === null) return board;
+      if (event.seat === null) return kept;
       const count = event.count;
-      return { ...board, seats: updateSeat(board, event.seat, (s) => ({ ...s, goCount: count })) };
+      return { ...kept, seats: updateSeat(kept, event.seat, (s) => ({ ...s, goCount: count })) };
     }
     default:
       // Dealt·Redealt·선 고르기(분배 연출은 스냅 + 분배 애니메이션), BonusGained·PpeokTaken·SelfPpeok·Sseul·
-      // InstantPayout·Chongtong·Hudang·GukjinPlaced·GoStopPrompt·Stop·RoundEnded·Settled·Nagari: 배치 변화 없음
-      return board;
+      // InstantPayout·Chongtong·Hudang·GoStopPrompt·Stop·RoundEnded·Settled·Nagari: 배치 변화 없음
+      return kept;
   }
 }
 
@@ -221,4 +259,41 @@ export function placeOf(board: DisplayBoard, id: CardId): CardPlace {
     }
   }
   return null;
+}
+
+function capturedIds(c: CapturedView): CardId[] {
+  return [...c.gwang, ...c.yeol, ...c.tti, ...c.pi];
+}
+
+/**
+ * 판이 바뀔 때 짧게 알릴 문구 (M3 리뷰 S-2·I-4). 토스트 표시·지우기는 부르는 쪽이 한다.
+ * - 국진 위치가 바뀜(같은 좌석이 국진을 가진 채 열끗 ↔ 쌍피): "상대 국진 → 쌍피"
+ * - 피 뺏기(상대 획득패에 있던 카드가 이쪽 획득패로): "피 뺏음: 3월 피" / "피 뺏김: 3월 피"
+ * 판 번호가 바뀌면(새 판) 알리지 않는다.
+ */
+export function boardNotices(
+  prev: BoardView & { readonly seats: readonly [SeatView & SeatExtras, SeatView & SeatExtras] },
+  next: BoardView & { readonly seats: readonly [SeatView & SeatExtras, SeatView & SeatExtras] },
+): string[] {
+  if (prev.round !== next.round) return [];
+  const notices: string[] = [];
+  for (const seat of [0, 1] as const) {
+    const before = prev.seats[seat];
+    const after = next.seats[seat];
+    const whose = seat === next.viewer ? '내' : '상대';
+    if (hasGukjin(before.captured) && hasGukjin(after.captured)) {
+      const was = seatStats(before).gukjinAsPi;
+      const now = seatStats(after).gukjinAsPi;
+      if (was !== now) notices.push(`${whose} 국진 → ${now ? '쌍피' : '열끗'}`);
+    }
+    const other = prev.seats[seat === 0 ? 1 : 0];
+    const had = new Set(capturedIds(before.captured));
+    const fromOther = new Set(capturedIds(other.captured));
+    const stolen = capturedIds(after.captured).filter((id) => !had.has(id) && fromOther.has(id));
+    if (stolen.length > 0) {
+      const label = stolen.map((id) => cardLabel(id)).join(', ');
+      notices.push(`${seat === next.viewer ? '피 뺏음' : '피 뺏김'}: ${label}`);
+    }
+  }
+  return notices;
 }

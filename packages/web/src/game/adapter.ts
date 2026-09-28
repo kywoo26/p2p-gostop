@@ -4,7 +4,7 @@
 // BoardView에 아직 자리가 없는 값(선 고르기·폭탄·폭탄패 뒤집기·스톱 미리보기 분해)은 BoardExtras로 따로 낸다.
 // protocol이 이 값들을 BoardView에 넣으면 BoardExtras도 함께 없앤다(docs/ui.md 4장).
 import {
-  getCard,
+  GUKJIN_ID,
   scoreCaptured,
   type CapturedPile,
   type CardId,
@@ -26,6 +26,7 @@ import type {
   SettleStepView,
   SettlementView,
 } from '../lib/view-types.ts';
+import { capturedStats, type SeatExtras } from '../ui/seat-stats.ts';
 
 /** 뷰에 엔진 밖의 값(좌석 이름, 원장 잔액)을 붙인다 */
 export interface BoardMeta {
@@ -60,22 +61,12 @@ export interface BoardExtras {
 
 const otherSeat = (seat: Seat): Seat => (seat === 0 ? 1 : 0);
 
-/** 족보 진행도 (spec 6.1: 광 n/3, 고도리 n/3, 단 n/3, 피 n/10). 국진을 쌍피로 세면 열끗에서 빼고 피에 2를 더한다 */
-export function progressOf(captured: CapturedView, gukjinAsPi = false): JokboProgress {
-  const hasGukjin = captured.yeol.some((id) => getCard(id).isGukjin);
-  const movesGukjin = gukjinAsPi && hasGukjin;
-  const ribbons = captured.tti.map((id) => getCard(id).ribbon);
-  const dan = Math.max(
-    0,
-    ...(['hong', 'cheong', 'cho'] as const).map((r) => ribbons.filter((x) => x === r).length),
-  );
-  const piValue = captured.pi.reduce((sum, id) => sum + getCard(id).piValue, 0);
-  return {
-    gwang: captured.gwang.length,
-    godori: captured.yeol.filter((id) => getCard(id).isGodori).length,
-    dan,
-    pi: piValue + (movesGukjin ? 2 : 0),
-  };
+/**
+ * 족보 진행도 (spec 6.1: 광 n/3, 고도리 n/3, 단 n/3, 피 n/10). 장수·피 가치는 엔진 scoreCaptured 그대로
+ * (국진을 쌍피로 세면 열끗에서 빼고 피에 2를 더한다, ui/seat-stats.ts).
+ */
+function progressOf(captured: CapturedView, gukjinAsPi = false): JokboProgress {
+  return capturedStats(captured, gukjinAsPi).progress;
 }
 
 /** 지금 스톱하면 적용될 배수 (spec 6.1 "현재 배수"). 고/스톱 중이면 엔진 미리보기, 아니면 흔들기·폭탄·고·이월·대박판의 곱 */
@@ -117,7 +108,10 @@ function promptOf(view: PlayerView): PromptView | null {
   }
 }
 
-function seatOf(view: PlayerView, seat: Seat, meta: BoardMeta): SeatView {
+/** 솔로 어댑터의 좌석: 프로토콜 SeatView + 표시용 값(국진 위치·폭탄 횟수, ui/seat-stats.ts) */
+export type AdapterSeatView = SeatView & Required<SeatExtras>;
+
+function seatOf(view: PlayerView, seat: Seat, meta: BoardMeta): AdapterSeatView {
   const s = view.seats[seat];
   return {
     name: meta.names[seat],
@@ -130,11 +124,16 @@ function seatOf(view: PlayerView, seat: Seat, meta: BoardMeta): SeatView {
     ppeokCount: s.ppeokCount,
     balance: meta.balances[seat],
     progress: progressOf(s.captured, s.score.gukjinAsPi),
+    gukjinAsPi: s.score.gukjinAsPi,
+    bombs: s.bombs,
   };
 }
 
 /** PlayerView → BoardView (spec 6.1·6.2, FR-12) */
-export function toBoardView(view: PlayerView, meta: BoardMeta): BoardView {
+export function toBoardView(
+  view: PlayerView,
+  meta: BoardMeta,
+): BoardView & { readonly seats: readonly [AdapterSeatView, AdapterSeatView] } {
   const playable = [...new Set(view.legal.flatMap((a) => (a.type === 'play' ? [a.card] : [])))];
   return {
     viewer: view.viewer,
@@ -234,8 +233,20 @@ export interface SettlementInput {
   readonly after: readonly [number, number];
 }
 
-export function toSettlementView(input: SettlementInput): SettlementView {
+/** 정산에 쓴 국진 위치 (rules S5·해석 29: 승자는 점수 최대, 패자는 피박 회피 쪽). 국진을 가진 좌석만 */
+export interface GukjinPlacement {
+  readonly seat: Seat;
+  readonly asPi: boolean;
+}
+
+/** 정산 화면 뷰 + 국진 위치 (프로토콜 SettlementView에는 아직 없다: M3 리뷰 S-2) */
+export type SettlementDisplay = SettlementView & { readonly gukjin?: readonly GukjinPlacement[] };
+
+export function toSettlementView(input: SettlementInput): SettlementDisplay {
   const { settlement: s } = input;
+  const gukjin = ([0, 1] as const)
+    .filter((seat) => input.captured[seat].yeol.includes(GUKJIN_ID))
+    .map((seat) => ({ seat, asPi: s.gukjinAsPi[seat] }));
   const isStop = s.reason === 'stop' || s.reason === 'autoStop';
   const breakdown =
     s.winner !== null && isStop
@@ -262,6 +273,7 @@ export function toSettlementView(input: SettlementInput): SettlementView {
       { before: input.before[0], after: input.after[0] },
       { before: input.before[1], after: input.after[1] },
     ],
+    gukjin,
   };
 }
 

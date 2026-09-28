@@ -7,7 +7,6 @@
 import { DUR, scaledMs } from './durations.ts';
 
 const DEFAULT_EASING = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
-const DEFAULT_PERSPECTIVE_PX = 600;
 
 interface TimingOptions {
   /** "빠름" 기준 ms. --dur-scale이 곱해진다 */
@@ -25,8 +24,8 @@ export interface MoveOptions extends TimingOptions {
 }
 
 export interface FlipCardOptions extends TimingOptions {
-  /** 원근 거리 px (기본 600) */
-  readonly perspective?: number;
+  /** 앞 절반 동안 보일 뒷면 요소 (기본: `el` 안의 `.back`). 없으면 폭만 접었다 편다 */
+  readonly back?: HTMLElement | null;
 }
 
 /** 애니메이션 하나, 여러 개(동시), Promise, 또는 아무것도 돌려주지 않는 단계 */
@@ -112,19 +111,32 @@ export function flipMove(
 }
 
 /**
- * 3D 뒤집기. `el`은 이미 뒤집힌 뒤의 상태(커밋된 면)를 보여 주고 있어야 하고, 반 바퀴 전 모습에서 돌아온다.
- * DOM 약속: `el`에 `transform-style: preserve-3d`, 자식 앞·뒷면에 `backface-visibility: hidden`,
- * 뒷면은 `rotateY(180deg)` (src/ui/Card.svelte). 이동과 같이 쓸 때는 바깥 요소에 flipMove, 안쪽 요소에 flipCard를 건다.
- * 기본 시간은 더미 뒤집기 140ms(spec 6.4).
+ * 뒤집기. `el`은 이미 뒤집힌 뒤의 상태(커밋된 앞면)를 보여 주고 있어야 한다. 폭을 반까지 접으며 뒷면을 보이고,
+ * 접힌 순간 앞면으로 바꿔 편다(2D scaleX). 3D 회전·backface-visibility에 기대지 않는다: WebKit은 합성 레이어가
+ * 없는 preserve-3d 안의 뒷면을 감추지 않아 앞면 카드가 뒷면으로 그려졌다(M3 리뷰 S-1).
+ * DOM 약속: 뒷면 요소(기본 `el` 안의 `.back`)는 평소 opacity 0이고, 이 애니메이션 앞 절반 동안만 1이다
+ * (src/ui/Card.svelte). 이동과 같이 쓸 때는 바깥 요소에 flipMove, 안쪽 요소에 flipCard를 건다.
+ * 기본 시간은 더미 뒤집기 140ms(spec 6.4). 돌려주는 애니메이션은 폭(transform) 쪽이고 뒷면 불투명도 애니메이션은
+ * 같은 시간·이징이라 함께 끝난다(finishAll·건너뛰기도 둘 다 끝낸다).
  */
 export function flipCard(el: HTMLElement, opts: FlipCardOptions = {}): Animation {
-  const perspective = `perspective(${opts.perspective ?? DEFAULT_PERSPECTIVE_PX}px)`;
   const base = baseTransform(el);
+  const back = opts.back === undefined ? el.querySelector<HTMLElement>('.back') : opts.back;
+  // 이미 뒷면이 보이는(가려진) 카드는 면을 바꾸지 않는다
+  if (back !== null && getComputedStyle(back).opacity === '0') {
+    run(
+      back,
+      [{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0, offset: 0.5 }, { opacity: 0 }],
+      opts,
+      DUR.flip,
+    );
+  }
   return run(
     el,
     [
-      { transform: `${perspective}${base} rotateY(180deg)` },
-      { transform: `${perspective}${base} rotateY(0deg)` },
+      { transform: `${base} scaleX(1)`.trim() },
+      { transform: `${base} scaleX(0)`.trim(), offset: 0.5 },
+      { transform: `${base} scaleX(1)`.trim() },
     ],
     opts,
     DUR.flip,
