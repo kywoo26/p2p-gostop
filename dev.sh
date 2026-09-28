@@ -58,6 +58,9 @@ case "$task" in
   android:test) run android bash -c "cd android && ./gradlew --no-daemon testDebugUnitTest lint $*" ;;
   sh:node)      run node bash ;;
   sh:android)   run android bash ;;
+  ci)           # ci.yml과 같은 순서·같은 npm/gradle 스크립트를 로컬에서 그대로 재현한다(드리프트 방지).
+                run node npm run lint && run node npm run check && run node npm test && run node npm run build -w packages/web \
+                && run e2e npm run e2e -w packages/web && run android bash -c "cd android && ./gradlew --no-daemon assembleDebug testDebugUnitTest lint" ;;
   pull)         "${COMPOSE[@]}" pull ;;
   help|*)
     cat <<'USAGE'
@@ -82,6 +85,7 @@ case "$task" in
   android:test   Android 단위 테스트 + Lint
   sh:node        node 컨테이너 셸
   sh:android     android 컨테이너 셸
+  ci             ci.yml과 동일한 검증 전체를 로컬에서 순서대로 실행
   pull           이미지 미리 받기
 USAGE
     ;;

@@ -142,16 +142,24 @@ test('키보드로 고른 카드는 누르기 없이도 낸다', async () => {
 });
 
 test('배너에 주체가 붙고 상대 배너는 위쪽에 뜬다 (M3 리뷰 I-4)', async () => {
+  // 배너가 바뀌면 앞 배너는 out:fade 동안 DOM에 남는다(CI WebKit에서는 전이 프레임이 늦게 돌아 더 오래 남는다).
+  // "첫 번째 배너 요소"를 읽지 않고, 기대 문구를 가진 배너를 기다린 뒤 그 요소의 층 위치를 본다.
   const screen = await render(Board, {
     view: play,
     banner: { kind: 'jjok', text: '쪽', seat: 1, id: 1 },
   });
-  const banner = () => screen.container.querySelector('.banner-layer [role="status"]');
-  expect(banner()?.textContent?.trim()).toBe('상대 쪽!');
-  expect(banner()?.closest('.banner-layer')?.classList.contains('at-top')).toBe(true);
+  const layer = screen.container.querySelector('.banner-layer');
+  const bannerWith = (text: string) =>
+    [...(layer?.querySelectorAll<HTMLElement>('[role="status"]') ?? [])].find(
+      (el) => el.textContent?.trim() === text,
+    );
+  await vi.waitFor(() => expect(bannerWith('상대 쪽!')).toBeDefined());
+  expect(layer?.classList.contains('at-top')).toBe(true);
   await screen.rerender({ banner: { kind: 'ppeok', text: '뻑', seat: 0, id: 2 } });
-  await vi.waitFor(() => expect(banner()?.textContent?.trim()).toBe('나 뻑!'));
-  expect(banner()?.closest('.banner-layer')?.classList.contains('at-bottom')).toBe(true);
+  await vi.waitFor(() => expect(bannerWith('나 뻑!')).toBeDefined(), { timeout: 5000 });
+  // 층 위치는 지금 배너(나)를 따른다: 앞 배너가 아직 사라지는 중이어도 같다
+  expect(layer?.classList.contains('at-bottom')).toBe(true);
+  expect(layer?.classList.contains('at-top')).toBe(false);
 });
 
 test('상시 정보: 양쪽 족보 진행도·뻑·흔들기·폭탄, 내 배수 (spec 6.1, M3 리뷰 I-4)', async () => {
