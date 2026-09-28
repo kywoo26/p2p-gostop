@@ -1,38 +1,49 @@
 <script lang="ts">
-  // 획득패: 광 / 열끗 / 띠 / 피 그룹 (spec 6.2 게임판 상단·하단)
-  import { getCard } from '@p2p-gostop/engine';
-  import type { CapturedView } from '../lib/view-types.ts';
+  // 획득패: 광 / 열끗 / 띠 / 피 그룹 (spec 6.2 게임판 상단·하단).
+  // 칸과 숫자는 엔진 점수 규칙(ui/seat-stats.ts)을 따른다: 국진을 쌍피로 세면 피 칸 끝에 "쌍피" 표지와 함께 그리고,
+  // 피 칸 숫자는 가치 합(쌍피 2, 보너스 2·3)이며 장수를 괄호로 덧붙인다(M3 리뷰 S-2).
+  import { GUKJIN_ID, type CardId } from '@p2p-gostop/engine';
   import Card from './Card.svelte';
+  import type { CapturedStats } from './seat-stats.ts';
 
   interface Props {
-    captured: CapturedView;
+    stats: CapturedStats;
     /** 영역 이름 (화면 읽기용). 예: "상대 획득패" */
     label: string;
+    /** 잠깐 강조할 카드 (피 뺏기, M3 리뷰 I-4) */
+    highlight?: readonly CardId[];
   }
 
-  let { captured, label }: Props = $props();
+  let { stats, label, highlight = [] }: Props = $props();
 
-  const groups = $derived([
-    { key: 'gwang', name: '광', cards: captured.gwang, count: captured.gwang.length },
-    { key: 'yeol', name: '열끗', cards: captured.yeol, count: captured.yeol.length },
-    { key: 'tti', name: '띠', cards: captured.tti, count: captured.tti.length },
-    {
-      key: 'pi',
-      name: '피',
-      cards: captured.pi,
-      // 피는 장수가 아니라 가치 합(쌍피 2, 보너스 2·3)
-      count: captured.pi.reduce((sum, id) => sum + getCard(id).piValue, 0),
-    },
-  ]);
+  function describe(name: string, value: number, cards: number, isPi: boolean): string {
+    return isPi ? `${name} ${value} (${cards}장)` : `${name} ${value}`;
+  }
 </script>
 
 <ul class="captured" aria-label={label}>
-  {#each groups as group (group.key)}
-    <li class={['group', `group-${group.key}`]} aria-label={`${group.name} ${group.count}`}>
-      <span class="name" aria-hidden="true">{group.name}<b>{group.count}</b></span>
+  {#each stats.piles as pile (pile.key)}
+    {@const isPi = pile.key === 'pi'}
+    <li
+      class={['group', `group-${pile.key}`]}
+      aria-label={describe(pile.name, pile.value, pile.cards.length, isPi)}
+      data-pile={pile.key}
+      data-value={pile.value}
+      data-cards={pile.cards.length}
+    >
+      <span class="name" aria-hidden="true"
+        >{pile.name}<b>{pile.value}</b>{#if isPi && pile.value !== pile.cards.length}<small
+            >({pile.cards.length}장)</small
+          >{/if}</span
+      >
       <span class="stack">
-        {#each group.cards as id (id)}
-          <Card {id} size="s" />
+        {#each pile.cards as id (id)}
+          <Card
+            {id}
+            size="s"
+            badge={isPi && id === GUKJIN_ID ? '쌍피' : null}
+            highlight={highlight.includes(id)}
+          />
         {/each}
       </span>
     </li>
@@ -65,6 +76,12 @@
   .name b {
     margin-left: 0.25em;
     color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .name small {
+    margin-left: 0.2em;
+    font-size: 0.85em;
     font-variant-numeric: tabular-nums;
   }
 

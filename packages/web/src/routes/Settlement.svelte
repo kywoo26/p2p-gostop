@@ -1,13 +1,14 @@
 <script lang="ts">
   // 정산 (spec 6.2, FR-18): 점수 분해 표, 배수 체인, 금액, 잔액 변화, 다음 판/종료.
   // 잔액 0이면 재충전(시작 잔액으로)·세션 종료를 묻는다(MN-02).
+  import type { SettlementDisplay } from '../game/adapter.ts';
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
-  import type { SettlementView } from '../lib/view-types.ts';
   import Screen from '../ui/Screen.svelte';
   import { REASON_LABEL, SCORE_LABEL, stepLabel } from '../ui/settle-labels.ts';
 
   interface Props {
-    view: SettlementView;
+    /** 국진 위치(gukjin)는 솔로 어댑터만 넣는다(프로토콜 뷰에는 아직 없다) */
+    view: SettlementDisplay;
     /** 이 판의 즉시 정산 (첫뻑·첫따닥 등, FR-18 "별도 원장 항목") */
     instant?: readonly { readonly label: string; readonly name: string; readonly points: number }[];
     /** 나가리면 다음 판 배수 (G9) */
@@ -35,6 +36,16 @@
       : `${view.names[view.winner]} 승리 · ${REASON_LABEL[view.reason]}`,
   );
   const baseTotal = $derived(view.breakdown.reduce((sum, row) => sum + row.points, 0));
+  /** 정산에 쓴 국진 위치 (rules S5: 승자는 점수 최대, 패자는 피박 회피 쪽) */
+  const gukjin = $derived(
+    (view.winner === null ? [] : (view.gukjin ?? []))
+      .map(({ seat, asPi }) => `${view.names[seat]} ${asPi ? '쌍피' : '열끗'}`)
+      .join(' · '),
+  );
+  /** 잔액이 0이 된 좌석 (MN-02, M3 리뷰 L-12) */
+  const broke = $derived(
+    view.balances.flatMap((b, seat) => (b.after <= 0 ? [view.names[seat as 0 | 1]] : [])),
+  );
 </script>
 
 <Screen title="정산" back={null}>
@@ -52,6 +63,9 @@
         </tbody>
       </table>
     </section>
+  {/if}
+  {#if gukjin}
+    <p class="gukjin" data-testid="settlement-gukjin">국진: {gukjin}</p>
   {/if}
 
   {#if view.steps.length > 0}
@@ -121,7 +135,8 @@
 
   {#if bankrupt}
     <p class="bankrupt" role="alert">
-      잔액이 0이 되었습니다. 시작 잔액으로 재충전하거나 끝낼 수 있습니다.
+      {broke.length > 0 ? `${broke.join(', ')}: ` : ''}잔액이 0이 되었습니다. 시작 잔액으로
+      재충전하거나 끝낼 수 있습니다.
     </p>
   {/if}
 
@@ -178,6 +193,11 @@
 
   .amount strong {
     color: var(--color-event-go);
+  }
+
+  .gukjin {
+    margin: 0;
+    color: var(--color-text-muted);
   }
 
   .muted {

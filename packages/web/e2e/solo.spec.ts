@@ -1,12 +1,29 @@
-// 혼자 연습 E2E (spec AC-04 솔로 절반, AC-06 턴 시간 계측, MN-01 원장 제로섬, 6.2 정산·기록·설정 흐름).
-// 사람 좌석은 테스트가 화면의 버튼을 눌러 둔다: 프롬프트가 있으면 그 버튼, 없으면 낼 수 있는 첫 손패.
+// 혼자 연습 E2E (spec AC-04 솔로 절반, AC-06 턴 시간, MN-01 원장 제로섬, 6.2 정산·기록·설정 흐름).
+// 사람 좌석은 테스트가 화면의 버튼을 눌러 둔다. 선택 정책은 시드 고정 무작위에 드문 경로 쪽으로 기울였다(M3 리뷰 I-6):
+// 고는 세션에서 처음 3번까지 고른다, 총통은 계속하기, 흔들기는 거절부터 번갈아, 폭탄은 폭탄·한 장만 번갈아,
+// 국진은 쌍피·열끗 번갈아, 대상·선 고르기·낼 카드는 무작위. 제시·선택 횟수는 window.__auto에 남는다.
 import { expect, type Page, test } from '@playwright/test';
+
+interface AutoStats {
+  seed: number;
+  /** 제시된 선택 창 종류별 횟수 */
+  offered: Record<string, number>;
+  /** 누른 선택별 횟수 */
+  taken: Record<string, number>;
+}
 
 /** 브라우저 안에서 한 번 판단하고 누른다. 누를 것이 없으면 false(계속 기다림), 목표 판 수에 닿으면 'done' */
 function autoStep(target: number): string | false {
+  const w = window as unknown as { __auto?: AutoStats };
+  const auto = (w.__auto ??= { seed: 20260928, offered: {}, taken: {} });
+  const rand = (n: number) => {
+    auto.seed = (Math.imul(auto.seed, 1664525) + 1013904223) >>> 0;
+    return auto.seed % n;
+  };
+  const note = (map: Record<string, number>, key: string) => (map[key] = (map[key] ?? 0) + 1);
   const solo = document.querySelector<HTMLElement>('[data-testid="solo"]');
   if (solo === null) return false;
-  const click = (el: Element | null, name: string): string | false => {
+  const click = (el: Element | null | undefined, name: string): string | false => {
     if (!(el instanceof HTMLElement)) return false;
     el.click();
     return name;
@@ -24,14 +41,33 @@ function autoStep(target: number): string | false {
     (b) => !b.disabled,
   );
   if (choices.length > 0) {
-    // 판을 빨리 끝내도록 스톱, 그 밖에는 폭탄·흔들기를 골라 드문 경로도 지나가게 한다
-    const prefer = ['stop', 'bomb', 'shake'];
-    const pick = choices.find((b) => prefer.includes(b.dataset['choice'] ?? '')) ?? choices[0];
-    return click(pick ?? null, pick?.dataset['choice'] ?? 'choice');
+    const ids = choices.map((b) => b.dataset['choice'] ?? '');
+    const has = (id: string) => ids.includes(id);
+    let want: string;
+    if (has('go') && has('stop')) {
+      note(auto.offered, 'goStop');
+      want = (auto.taken['go'] ?? 0) < 3 ? 'go' : 'stop';
+    } else if (has('continue')) {
+      note(auto.offered, 'chongtong');
+      want = 'continue';
+    } else if (has('noShake')) {
+      want = note(auto.offered, 'shake') % 2 === 1 ? 'noShake' : 'shake';
+    } else if (has('bomb')) {
+      want = note(auto.offered, 'bomb') % 2 === 1 ? 'bomb' : 'single';
+    } else if (has('pi') && has('yeol')) {
+      want = note(auto.offered, 'gukjin') % 2 === 1 ? 'pi' : 'yeol';
+    } else {
+      want = ids[rand(ids.length)] ?? '';
+    }
+    const pick = choices.find((b) => b.dataset['choice'] === want) ?? choices[0];
+    const name = pick?.dataset['choice'] ?? 'choice';
+    note(auto.taken, name);
+    return click(pick, name);
   }
   const flipOnly = board.querySelector('[data-choice="flipOnly"]');
   if (flipOnly !== null) return click(flipOnly, 'flipOnly');
-  return click(board.querySelector('[aria-label="내 손패"] button:not([disabled])'), 'play');
+  const hand = [...board.querySelectorAll('[aria-label="내 손패"] button:not([disabled])')];
+  return click(hand[rand(hand.length)], 'play');
 }
 
 async function playRounds(page: Page, target: number) {
@@ -74,11 +110,15 @@ async function startSolo(page: Page, query: string, difficulty: string) {
   await expect(page.getByTestId('board')).toBeVisible();
 }
 
-test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 원장 제로섬 · 콘솔 오류 없음 (AC-04, MN-01)', async ({
+test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 국진 묻기 · 원장 제로섬 · 콘솔 오류 없음 (AC-04, MN-01)', async ({
   page,
 }) => {
   test.setTimeout(8 * 60_000);
   const errors = watchErrors(page);
+  // 국진 '매번 묻기'(FR-15): 설정 화면 스위치가 아직 없어 저장된 설정으로 켠다
+  await page.addInitScript(() =>
+    localStorage.setItem('gostop.settings.v1', JSON.stringify({ gukjinAsk: true })),
+  );
   await startSolo(page, '?speed=instant', '쉬움');
 
   const counts = await playRounds(page, 20);
@@ -100,32 +140,57 @@ test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 원장 제로섬 ·
   await expect(page.getByRole('heading', { name: '기록' })).toBeVisible();
   await expect(page.getByRole('row')).toHaveCount(21);
 
+  // 선택 정책이 드문 경로를 실제로 지났다 (M3 리뷰 I-6: 고·총통 계속·흔들기 거절)
+  const auto = await page.evaluate(() => (window as unknown as { __auto: AutoStats }).__auto);
   test.info().annotations.push({
     type: 'solo-actions',
-    description: JSON.stringify(Object.fromEntries(counts)),
+    description: JSON.stringify({ ...Object.fromEntries(counts), auto }),
   });
+  console.log(
+    `[AC-04] 20판 선택: 제시 ${JSON.stringify(auto.offered)} 누름 ${JSON.stringify(auto.taken)}`,
+  );
+  expect(auto.offered['goStop'] ?? 0).toBeGreaterThan(0);
+  expect(auto.taken['go'] ?? 0).toBeGreaterThanOrEqual(1);
+  expect(auto.taken['continue'] ?? 0).toBe(auto.offered['chongtong'] ?? 0);
+  if ((auto.offered['shake'] ?? 0) > 0)
+    expect(auto.taken['noShake'] ?? 0).toBeGreaterThanOrEqual(1);
   expect(errors).toEqual([]);
 });
 
-test('혼자 연습: 빠름 속도 한 판 · 탭→턴 종료 시간 기록 (AC-06, spec 6.4)', async ({ page }) => {
-  test.setTimeout(3 * 60_000);
+test('혼자 연습: 빠름 속도 · 탭→턴 종료 ≤ 700ms (AC-06, spec 6.4)', async ({ page }) => {
+  test.setTimeout(4 * 60_000);
   const errors = watchErrors(page);
   await startSolo(page, '', '쉬움');
-  await playRounds(page, 1);
-
-  const raw = (await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '';
-  const timings = raw.split(',').filter(Boolean).map(Number);
-  expect(timings.length).toBeGreaterThan(0);
+  const read = async () =>
+    ((await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '')
+      .split(',')
+      .filter(Boolean)
+      .map(Number);
+  // 표본 5개 이상 (한 판에 보통 7~10번 낸다). 판을 끝낸 수는 뺀다: 재생 뒤 정산 화면 전에 결과를 보는 고정 대기
+  // (배너 2개 몫 700ms, game/solo.svelte.ts)가 턴 시간에 같이 기록되기 때문이다. 판이 끝난 순간 마지막 기록이 그 수다
+  // (CPU가 판을 끝냈으면 평범한 수 하나를 더 빼는 셈이라 보수적이다).
+  let all: number[] = [];
+  const roundEnd = new Set<number>();
+  let timings: number[] = [];
+  for (let rounds = 1; rounds <= 4; rounds++) {
+    await playRounds(page, rounds);
+    all = await read();
+    if (all.length > 0) roundEnd.add(all.length - 1);
+    timings = all.filter((_, i) => !roundEnd.has(i));
+    if (timings.length >= 5) break;
+  }
   const sorted = [...timings].sort((a, b) => a - b);
-  const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  const at = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))] ?? 0;
+  const p50 = at(0.5);
+  const p90 = at(0.9);
   const max = sorted.at(-1) ?? 0;
-  // 턴 예산 700ms(빠름)는 지금은 기록만 한다: 도커 로컬 p50 570~635ms지만 2코어 CI 러너의 WebKit은
-  // p50 660~700ms대로 흔들린다. 결과는 테스트 주석과 로그에 남긴다(docs/ui.md 3장).
-  test.info().annotations.push({
-    type: 'turn-ms',
-    description: `n=${timings.length} p50=${p50} max=${max} all=${timings.join(',')}`,
-  });
-  console.log(`[AC-06] 탭→턴 종료 ms: n=${timings.length} p50=${p50} max=${max}`);
+  const ended = [...roundEnd].map((i) => all[i]).join(',');
+  const line = `n=${timings.length} p50=${p50} p90=${p90} max=${max} all=${sorted.join(',')} (판 끝낸 수 제외: ${ended})`;
+  test.info().annotations.push({ type: 'turn-ms', description: line });
+  console.log(`[AC-06] 탭→턴 종료 ms (${test.info().project.name}): ${line}`);
+  // spec 6.4: 700ms(빠름). 최댓값은 CI 러너의 흔들림을 흡수하도록 900ms까지 허용한다(이슈 #20)
+  expect(p50).toBeLessThanOrEqual(700);
+  expect(max).toBeLessThanOrEqual(900);
   expect(errors).toEqual([]);
 });
 
