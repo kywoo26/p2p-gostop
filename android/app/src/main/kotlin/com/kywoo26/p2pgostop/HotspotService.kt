@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -118,7 +119,7 @@ class HotspotService : Service() {
 
     private fun buildNotification(c: NotifContent): Notification {
         val open = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            this, 0, Intent(this, GameActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE,
         )
         val stop = PendingIntent.getService(
@@ -303,6 +304,8 @@ class HotspotService : Service() {
     }
 
     companion object {
+        // 프로세스 전체 서버가 서비스 인스턴스보다 오래 살 수 있어 applicationContext만 보관한다.
+        @SuppressLint("StaticFieldLeak")
         private lateinit var assetContext: Context
         const val ACTION_START = "com.kywoo26.p2pgostop.START"
         const val ACTION_ADDRESS_ONLY = "com.kywoo26.p2pgostop.ADDRESS_ONLY"

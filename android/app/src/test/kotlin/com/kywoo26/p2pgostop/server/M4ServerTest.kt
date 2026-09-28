@@ -18,9 +18,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class M4ServerTest {
-    private fun env(files: Map<String, String> = emptyMap()) = ServerEnv(
+    private fun env(files: Map<String, String> = emptyMap(), remote: String = "127.0.0.1") = ServerEnv(
         appVersion = "0.4.0", gitSha = "abc1234", buildTime = "2026-09-28T00:00:00Z",
-        deviceInfo = { emptyMap() }, log = {}, asset = { files[it]?.toByteArray() },
+        deviceInfo = { emptyMap() }, log = {}, asset = { files[it]?.toByteArray() }, remoteAddress = { remote },
     )
 
     @Test fun `번들이 없으면 안내 페이지와 no-store`() = testApplication {
@@ -57,33 +57,56 @@ class M4ServerTest {
         assertFalse(page.bodyAsText().contains("https://"), "인덱스에 외부 URL 없음(NP-08)")
     }
 
-    @Test fun `한 역할만 연결되고 양방향 메시지는 원문 그대로 전달된다`() = testApplication {
+    @Test fun `최신 소켓이 역할을 교체하고 알림과 양방향 전달 순서가 유지된다`() = testApplication {
         val e = env()
         application { smokeModule(e) }
         val c = createClient { install(WebSockets) }
         val host = c.webSocketSession("/ws?role=host")
-        assertEquals("{\"type\":\"relay\",\"peer\":\"absent\"}", run {
-            host.send(Frame.Text("first"))
-            (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText()
-        })
-        host.send(Frame.Text("second"))
+        assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        host.send(Frame.Text("first"))
         assertEquals(null, withTimeoutOrNull(100) { host.incoming.receive() }, "상대 부재는 한 번만 알린다")
         val guest = c.webSocketSession("/ws?role=guest")
-        assertEquals("{\"type\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"present\"}", (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
         val original = "{ \"type\":\"ping\", \"n\":1 }"
         host.send(Frame.Text(original))
         assertEquals(original, (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
         guest.send(Frame.Text("pong"))
         assertEquals("pong", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
-        val duplicate = c.webSocketSession("/ws?role=guest")
-        val rejected = withTimeout(2000) { duplicate.closeReason.await() }
-        assertEquals(4409, rejected?.code?.toInt())
-        assertEquals("{\"error\":\"role occupied\"}", rejected?.message)
+        val replacement = c.webSocketSession("/ws?role=guest")
+        val replaced = withTimeout(2000) { guest.closeReason.await() }
+        assertEquals(4001, replaced?.code?.toInt())
+        assertEquals("replaced", replaced?.message)
+        assertEquals("{\"t\":\"relay\",\"peer\":\"present\"}", (withTimeout(2000) { replacement.incoming.receive() } as Frame.Text).readText())
+        assertEquals("{\"t\":\"relay\",\"peer\":\"joined\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        assertEquals(null, withTimeoutOrNull(100) { host.incoming.receive() }, "교체된 소켓은 left를 보내지 않는다")
+        replacement.send(Frame.Text("again"))
+        assertEquals("again", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
         assertEquals(2, e.clients.get())
         assertTrue(client.get("/health").bodyAsText().contains("\"hostConnected\":true,\"guestConnected\":true"))
-        guest.close()
-        assertEquals("{\"type\":\"relay\",\"peer\":\"left\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        replacement.close()
+        assertEquals("{\"t\":\"relay\",\"peer\":\"left\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
+        host.send(Frame.Text("no peer"))
+        assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { host.incoming.receive() } as Frame.Text).readText())
         host.close()
+    }
+
+    @Test fun `원격 호스트 역할은 1008로 거절하고 게스트는 연결된다`() = testApplication {
+        application { smokeModule(env(remote = "192.168.1.2")) }
+        val c = createClient { install(WebSockets) }
+        val host = c.webSocketSession("/ws?role=host")
+        assertEquals(1008, withTimeout(2000) { host.closeReason.await() }?.code?.toInt())
+        val guest = c.webSocketSession("/ws?role=guest")
+        assertEquals("{\"t\":\"relay\",\"peer\":\"absent\"}", (withTimeout(2000) { guest.incoming.receive() } as Frame.Text).readText())
+        guest.close()
+    }
+
+    @Test fun `릴레이는 바이너리를 1003으로 닫는다`() = testApplication {
+        application { smokeModule(env()) }
+        val c = createClient { install(WebSockets) }
+        val guest = c.webSocketSession("/ws?role=guest")
+        guest.send(Frame.Binary(true, byteArrayOf(1, 2, 3)))
+        assertEquals(1003, withTimeout(2000) { guest.closeReason.await() }?.code?.toInt())
     }
 
     @Test fun `스모크 에코는 별도 경로에서 유지된다`() = testApplication {

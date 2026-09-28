@@ -219,8 +219,8 @@ class MainActivity : Activity() {
     private fun render() {
         val s = AppState.hotspot.value
         findViewById<Button>(R.id.btnGame).visibility =
-            if (s.serverRunning && GameActivity.bundlePresent(this)) View.VISIBLE else View.GONE
-        if (!diagnosticsOnly && !gameLaunched && s.serverRunning && GameActivity.bundlePresent(this)) {
+            if (GameActivity.bundlePresent(this)) View.VISIBLE else View.GONE
+        if (!diagnosticsOnly && !gameLaunched && GameActivity.bundlePresent(this)) {
             gameLaunched = true
             startActivity(Intent(this, GameActivity::class.java))
         }
