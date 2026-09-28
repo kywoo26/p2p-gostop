@@ -25,6 +25,10 @@
     onmenu?: ((id: string) => void) | undefined;
     /** 정산 화면의 "종료" */
     onend?: (() => void) | undefined;
+    /** 종료 알림 뒤 마지막 정산을 유지하고 새 참가로 이동한다 */
+    ended?: boolean;
+    onfresh?: (() => void) | undefined;
+    onreconnect?: (() => void) | undefined;
     /** 호스트: 게스트가 3분 넘게 돌아오지 않음 (spec 2.4) */
     waiting?: boolean;
     onwait?: (() => void) | undefined;
@@ -37,6 +41,9 @@
     menu = [],
     onmenu,
     onend,
+    ended = false,
+    onfresh,
+    onreconnect,
     waiting = false,
     onwait,
     warning = null,
@@ -149,6 +156,14 @@
     <p class="notice" role="status" data-testid="game-notice">{controller.notice}</p>
   {/if}
 
+  {#if controller.mode !== 'solo' && 'link' in controller && controller.link === 'replaced'}
+    <button type="button" class="reconnect" onclick={() => onreconnect?.()}>다시 연결</button>
+  {/if}
+
+  {#if ended && pb.settlement === null}
+    <button type="button" class="fresh" onclick={() => onfresh?.()}>새로 참가</button>
+  {/if}
+
   {#if pb.settlement}
     <div class="overlay">
       <Settlement
@@ -158,9 +173,11 @@
         bankrupt={controller.bankrupt}
         note={controller.settlementNote ?? null}
         waiting={controller.settlementWaiting ?? false}
+        {ended}
         onnext={() => controller.nextRound()}
         onrefill={() => controller.refill()}
         onend={() => onend?.()}
+        onfresh={() => onfresh?.()}
       />
     </div>
   {/if}
@@ -249,6 +266,21 @@
     text-align: center;
     pointer-events: none;
     z-index: 16;
+  }
+
+  .reconnect,
+  .fresh {
+    position: fixed;
+    right: var(--space-3);
+    top: calc(max(var(--space-1), env(safe-area-inset-top)) + var(--touch-min) + var(--space-2));
+    min-height: var(--touch-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+    font: inherit;
+    z-index: 21;
   }
 
   .overlay {

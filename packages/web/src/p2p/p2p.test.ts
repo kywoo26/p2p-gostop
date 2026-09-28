@@ -5,13 +5,13 @@ import { qrPath, wifiQrText } from './qr.ts';
 import { detectMode, guestUrl, relayAddress, relayUrl } from './role.ts';
 import { readTicket } from './ticket.ts';
 
-test('역할: ?role=가 우선, 없으면 루프백 origin은 호스트 앱·그 밖(핫스팟 IP)은 게스트 (spec 2.1·2.2)', () => {
+test('역할: 비루프백은 게스트, 루프백에서만 ?role=host 허용 (spec 2.1·2.2)', () => {
   expect(detectMode({ search: '?role=host&build=abc1234', hostname: '127.0.0.1' })).toBe('host');
   expect(detectMode({ search: '', hostname: '127.0.0.1' })).toBe('host');
   expect(detectMode({ search: '', hostname: 'localhost' })).toBe('host');
   expect(detectMode({ search: '', hostname: '192.168.49.1' })).toBe('guest');
   expect(detectMode({ search: '?role=guest', hostname: '127.0.0.1' })).toBe('guest');
-  expect(detectMode({ search: '?role=host', hostname: '192.168.49.1' })).toBe('host');
+  expect(detectMode({ search: '?role=host', hostname: '192.168.49.1' })).toBe('guest');
 });
 
 test('중계 주소: 페이지 주소 그대로(Android 17777), ?relay=로 개발 중계를 덮어쓴다', () => {

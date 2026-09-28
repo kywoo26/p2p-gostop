@@ -172,13 +172,15 @@ export class HostGame implements GameController {
   private session: HostSession | null = null;
   private port: SessionPort | null = null;
   private readonly transport: Transport;
-  private readonly ws: { dispose(): void } | null;
+  private readonly ws: { dispose(): void; reconnect(force?: boolean): void } | null;
   private readonly resume: HostSave | null;
   private readonly now: () => number;
   private readonly persist: boolean;
   private lastHello: string | null = null;
   private pending: PendingAction | null = null;
   private settledRound = 0;
+  private savedRev = -1;
+  private savedSeq = -1;
   private clock: ReturnType<typeof setInterval> | null = null;
   private disposed = false;
 
@@ -416,9 +418,10 @@ export class HostGame implements GameController {
         session.stage === 'settled' || session.stage === 'bankrupt' ? session.roundNumber : 0;
       this.attachSession(session);
       const board = this.board();
-      if (board !== null) this.playback.reset(board);
+      if (board !== null) this.playback.reset(board, this.settlementSummary());
       log.info(`호스트 세션 이어하기: ${session.roundNumber}판 · ${session.stage}`);
       this.afterChange();
+      if (this.lastHello !== null) this.dispatch(this.lastHello);
       return true;
     } catch (error) {
       log.error(`이어하기 실패: ${String(error)}`);
@@ -445,9 +448,10 @@ export class HostGame implements GameController {
     if (m?.t === 'action' && this.session?.state) {
       this.pending = { before: this.session.state, action: m.payload, tapAt: null, mine: false };
     }
-    if (m?.t === 'log') this.forwardGuestLog(m.entries);
+    const acceptedLog = m?.t === 'log' && this.session?.authenticated === true;
     try {
       this.dispatch(raw);
+      if (acceptedLog && m?.t === 'log') this.forwardGuestLog(m.entries);
     } finally {
       this.pending = null;
     }
@@ -499,7 +503,7 @@ export class HostGame implements GameController {
   }
 
   /** 판이 끝났다(settled·bankrupt): 정산 화면을 한 번 띄우고 기록한다 */
-  private onSettled(): void {
+  private settlementSummary(): RoundSummary | null {
     const session = this.session;
     const view = session?.settlementView ?? null;
     const settlement = session?.settlement ?? null;
@@ -512,10 +516,9 @@ export class HostGame implements GameController {
       state === null ||
       board === null
     )
-      return;
-    this.settledRound = session.roundNumber;
+      return null;
     const names = this.names;
-    const summary: RoundSummary = {
+    return {
       view: {
         ...view,
         gukjin: gukjinPlacements(settlement, [state.seats[0].captured, state.seats[1].captured]),
@@ -527,6 +530,18 @@ export class HostGame implements GameController {
       })),
       nextCarry: settlement.winner === null ? settlement.nextCarry : null,
     };
+  }
+
+  private onSettled(): void {
+    const session = this.session;
+    const summary = this.settlementSummary();
+    const board = this.board();
+    if (session === null || summary === null || board === null) return;
+    this.settledRound = session.roundNumber;
+    const view = summary.view;
+    const settlement = session.settlement;
+    if (settlement === null) return;
+    const names = this.names;
     const before: readonly [number, number] = [view.balances[0].before, view.balances[1].before];
     const after: readonly [number, number] = [view.balances[0].after, view.balances[1].after];
     this.records = [
@@ -623,6 +638,10 @@ export class HostGame implements GameController {
     this.playback.skip();
   }
 
+  reconnect(): void {
+    this.ws?.reconnect(true);
+  }
+
   attach(root: HTMLElement | null): void {
     this.playback.attach(root);
   }
@@ -651,7 +670,8 @@ export class HostGame implements GameController {
   /** 세션 종료: 게스트에 알리고(sessionEnd) 저장을 끝남으로 둔 뒤 연결을 닫는다 */
   end(): void {
     if (this.stage === 'ended') return;
-    this.session?.end();
+    if (this.bankrupt) this.session?.chooseBankruptcy('end');
+    else this.session?.end();
     this.stage = 'ended';
     this.waitPrompt = false;
     this.save();
@@ -667,6 +687,8 @@ export class HostGame implements GameController {
   private save(): void {
     const session = this.session;
     if (!this.persist || session === null) return;
+    const rev = session.status.rev;
+    if (this.savedRev === rev && this.savedSeq === session.seq) return;
     const save: HostSave = {
       version: 2,
       config: this.config,
@@ -674,6 +696,10 @@ export class HostGame implements GameController {
       records: this.records,
     };
     if (!writeJson(HOST_SAVE_KEY, save)) log.warn('호스트 세션 저장 실패');
+    else {
+      this.savedRev = rev;
+      this.savedSeq = session.seq;
+    }
   }
 
   dispose(): void {

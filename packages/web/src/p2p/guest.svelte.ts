@@ -216,6 +216,7 @@ export class GuestGame implements GameController {
     if (check !== undefined) lines.push(`${round}판 ${CHECK_LABEL[check.result]}`);
     if (this.stage === 'bankrupt' && !this.bankrupt)
       lines.push(`${this.names[0]}의 재충전·종료 선택을 기다리는 중`);
+    if (this.endReason !== null) lines.push(this.notice ?? '세션이 끝났습니다');
     return lines.length > 0 ? lines.join(' · ') : null;
   }
 
@@ -315,6 +316,10 @@ export class GuestGame implements GameController {
       }
       case 'sessionEnd':
         log.info(`세션 종료 알림: ${m.reason}`);
+        if (s.view !== null) {
+          const summary = this.settlementSummary();
+          if (summary !== null) this.playback.reset(s.view, summary);
+        }
         break;
       default:
         break;
@@ -338,22 +343,29 @@ export class GuestGame implements GameController {
   private maybeSettled(view: BoardView): void {
     const s = this.session;
     const stage = s.status?.stage;
-    const settlement = s.settlement;
-    if (settlement === null || (stage !== 'settled' && stage !== 'bankrupt')) return;
+    if (stage !== 'settled' && stage !== 'bankrupt') return;
     if (this.settledRound === view.round) return;
+    const summary = this.settlementSummary();
+    if (summary === null) return;
     this.settledRound = view.round;
+    this.roundsPlayed += 1;
+    this.playback.enqueue([], view, { settlement: summary });
+  }
+
+  private settlementSummary(): RoundSummary | null {
+    const s = this.session;
+    const settlement = s.settlement;
+    if (settlement === null) return null;
     const names = this.names;
-    const summary: RoundSummary = {
+    return {
       view: { ...settlement, names },
       instant: this.roundInstant.flatMap((e) =>
         e.type === 'InstantPayout' && e.seat !== null
           ? [{ label: INSTANT_LABEL[e.kind] ?? e.kind, name: names[e.seat], points: e.points }]
           : [],
       ),
-      nextCarry: null,
+      nextCarry: settlement.winner === null ? (s.status?.carry ?? null) : null,
     };
-    this.roundsPlayed += 1;
-    this.playback.enqueue([], view, { settlement: summary });
   }
 
   private onLinkState(state: LinkState): void {
@@ -390,6 +402,11 @@ export class GuestGame implements GameController {
 
   refill(): void {
     if (this.bankrupt) this.session.chooseBankruptcy('recharge');
+  }
+
+  /** MN-02: 파산한 게스트 좌석의 종료 선택을 호스트에 보낸다. */
+  endBankruptcy(): void {
+    if (this.bankrupt && this.stage === 'bankrupt') this.session.chooseBankruptcy('end');
   }
 
   /** 끊긴 연결을 사용자가 되살린다: 교체(4001) 뒤 다시 연결, 토큰 거절이면 새 게스트로 */

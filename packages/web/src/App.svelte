@@ -1,5 +1,5 @@
 <script lang="ts">
-  // 앱 진입점. 역할은 주소로 정한다(src/p2p/role.ts): 루프백 origin(Android WebView `/?role=host`, 개발 브라우저)은
+  // 앱 진입점. 역할은 주소로 정한다(src/p2p/role.ts): 루프백 origin(Android WebView `/?build=…`, 개발 브라우저)은
   // 호스트 앱, 루프백이 아닌 origin(iPhone이 QR로 연 `http://<핫스팟 IP>:17777/`)이나 `?role=guest`는 게스트 화면.
   // 호스트 앱은 해시 라우팅(SvelteKit 아님, AGENTS.md 3장): 홈 / 혼자 연습 / 게임 / 친구와 대전(방 열기·대전) / 기록 /
   // 설정 / 진단 / 라이선스 / 개발 갤러리. 게스트는 GuestApp 안의 상태로 움직인다(프래그먼트는 세션 토큰 자리).
@@ -184,6 +184,7 @@
       menu={HOST_MENU}
       onmenu={hostMenu}
       onend={endMatch}
+      onreconnect={() => host?.reconnect()}
       waiting={host.waitPrompt}
       onwait={() => host.keepWaiting()}
       warning={hotspot.info.warning}

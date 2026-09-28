@@ -26,6 +26,18 @@ test('비루프백 origin의 `/`는 조작 없이 게스트 참가 화면 (iPhon
   await expect(page.getByRole('button', { name: '혼자 연습' })).toHaveCount(0);
 });
 
+test('비루프백의 ?role=host는 게스트로 열리고, 이전 /p2p/index.html 북마크는 루트로 이동한다', async ({
+  page,
+  baseURL,
+}) => {
+  await asHotspotOrigin(page, baseURL ?? 'http://127.0.0.1:4173');
+  await page.goto(`${HOTSPOT_ORIGIN}/?role=host`);
+  await expect(page.getByRole('heading', { name: '게임 참가' })).toBeVisible();
+  await page.goto('./p2p/index.html');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: '맞고 P2P' })).toBeVisible();
+});
+
 test('루프백 `/`와 `/?role=host`는 호스트 앱 홈 (Android WebView), `?role=guest`는 게스트', async ({
   page,
 }) => {

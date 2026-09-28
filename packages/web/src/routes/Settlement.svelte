@@ -19,9 +19,11 @@
     note?: string | null;
     /** 상대의 선택을 기다리는 중이면 "다음 판"을 잠근다 */
     waiting?: boolean;
+    ended?: boolean;
     onnext?: (() => void) | undefined;
     onend?: (() => void) | undefined;
     onrefill?: (() => void) | undefined;
+    onfresh?: (() => void) | undefined;
   }
 
   let {
@@ -31,9 +33,11 @@
     bankrupt = false,
     note = null,
     waiting = false,
+    ended = false,
     onnext,
     onend,
     onrefill,
+    onfresh,
   }: Props = $props();
 
   const headline = $derived(
@@ -151,12 +155,18 @@
   {/if}
 
   {#snippet actions()}
-    <button type="button" class="button" data-choice="end" onclick={() => onend?.()}>종료</button>
-    {#if bankrupt}
+    {#if ended}
+      <button type="button" class="button primary" data-choice="fresh" onclick={() => onfresh?.()}
+        >새로 참가</button
+      >
+    {:else}
+      <button type="button" class="button" data-choice="end" onclick={() => onend?.()}>종료</button>
+    {/if}
+    {#if !ended && bankrupt}
       <button type="button" class="button primary" data-choice="refill" onclick={() => onrefill?.()}
         >재충전</button
       >
-    {:else}
+    {:else if !ended}
       <button
         type="button"
         class="button primary"

@@ -755,6 +755,7 @@ describe('#26 판 사이 대기와 파산', () => {
     const befores: [unknown, unknown][] = [];
     const amounts: [number, number][] = [];
     let nagari: { host: number; guest: number | undefined } | null = null;
+    let carryMatches = false;
     for (let seed = 0; seed < 200 && nagari === null; seed++) {
       const h = setup({ seed });
       const picker = new Picker(seed);
@@ -762,14 +763,19 @@ describe('#26 판 사이 대기와 파산', () => {
       playRound(h, picker);
       const view = h.host.settlementView!;
       befores.push([view.balances.map((b) => b.before), h.host.toJSON().round!.startBalances]);
-      if (view.winner === null) nagari = { host: view.amount, guest: h.guest.settlement?.amount };
-      else
+      if (view.winner === null) {
+        nagari = { host: view.amount, guest: h.guest.settlement?.amount };
+        carryMatches =
+          h.host.status.carry === h.host.settlement?.nextCarry &&
+          h.guest.status?.carry === h.host.status.carry;
+      } else
         amounts.push([
           view.amount,
           h.host.ledger.entries.filter((e) => e.kind === 'round').at(-1)!.amount,
         ]);
     }
     expect(nagari).toEqual({ host: 0, guest: 0 });
+    expect(carryMatches).toBe(true);
     for (const [shown, start] of befores) expect(shown).toEqual(start);
     for (const [shown, entry] of amounts) expect(shown).toBe(entry);
   });

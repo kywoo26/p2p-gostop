@@ -297,6 +297,13 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
     // 양쪽 화면이 같은 원장과 같은 순번
     expect(guest.balances).toEqual(host.balances);
     await expect.poll(async () => (await attrs(guestPage)).seq).toBe(host.seq);
+    await hostPage.locator('[data-choice="end"]').click();
+    await expect(guestPage.getByRole('heading', { name: '정산' })).toBeVisible();
+    await expect(guestPage.getByTestId('settlement-note')).toContainText('검증 통과');
+    await expect(guestPage.getByTestId('settlement-note')).toContainText(
+      '호스트가 대전을 끝냈습니다',
+    );
+    await expect(guestPage.locator('[data-choice="fresh"]')).toBeVisible();
     console.log(
       `[AC-04] 호스트 ${host.rounds}판 · seq ${host.seq} · 잔액 ${host.balances.join('/')} · 재동기화 ${testInfo.annotations.find((a) => a.type === 'resync-ms')?.description ?? '?'}ms · ${JSON.stringify(Object.fromEntries(counts))}`,
     );
@@ -308,6 +315,36 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
   } finally {
     await hostBrowser.close();
     await guestBrowser.close();
+    relay.proc.kill('SIGTERM');
+  }
+});
+
+test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 보인다 (spec 2.4)', async ({
+  baseURL,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', '한 번만 실행');
+  const relay = await startRelay();
+  const browser = await chromium.launch();
+  try {
+    const base = baseURL ?? 'http://127.0.0.1:4173';
+    const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
+    const host = await browser.newPage();
+    const guest = await browser.newPage();
+    await host.goto(`${base}/${query}&role=host#/`);
+    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await guest.goto(`${base}/${query}&role=guest`);
+    await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
+    await guest.getByRole('button', { name: '입장' }).click();
+    await expect(host.getByTestId('host-start')).toBeEnabled();
+    await host.getByTestId('host-start').click();
+    await expect(guest.getByTestId('match')).toBeVisible();
+    await guest.getByTestId('game-menu').click();
+    await guest.locator('[data-menu="leave"]').click();
+    await guest.locator('[data-menu="leave"]').click();
+    await expect(guest.getByRole('heading', { name: '게임 참가' })).toBeVisible();
+    await expect(host.getByTestId('game-notice')).toContainText('연결 끊김');
+  } finally {
+    await browser.close();
     relay.proc.kill('SIGTERM');
   }
 });

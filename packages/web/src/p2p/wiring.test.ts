@@ -3,10 +3,10 @@
 // 애니메이션 없이(보드 루트를 붙이지 않음) 재생 큐만 돈다. 두 좌석 모두 화면에 보이는 합법 수에서만 무작위로 고른다.
 import { PRESETS, type Action, type CardId } from '@p2p-gostop/engine';
 import { createMemoryTransportPair, type BoardView, type Message } from '@p2p-gostop/protocol';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import type { GameController } from '../game/controller.ts';
 import { GuestGame } from './guest.svelte.ts';
-import { HostGame, type HostConfig } from './host.svelte.ts';
+import { clearHostSave, HostGame, loadHostSave, type HostConfig } from './host.svelte.ts';
 import type { GuestTicket } from './ticket.ts';
 
 const CONFIG: HostConfig = {
@@ -33,6 +33,254 @@ async function settle(): Promise<void> {
 function legalOf(c: GameController): readonly Action[] {
   return c.playback.board.legal;
 }
+
+async function playOneRound(host: HostGame, guest: GuestGame): Promise<void> {
+  expect(host.start()).toBe(true);
+  await settle();
+  for (let step = 0; step < 300; step++) {
+    if (host.stage === 'settled' || host.stage === 'bankrupt') {
+      await settle();
+      return;
+    }
+    for (const game of [host, guest]) {
+      if (!game.canAct) continue;
+      const legal = legalOf(game);
+      const action = legal.find((a) => a.type === 'stop') ?? legal[0];
+      if (action !== undefined) game.submit(action);
+      break;
+    }
+    await settle();
+  }
+  throw new Error('한 판이 끝나지 않았습니다');
+}
+
+test('settled 저장본은 정산을 즉시 복원하고, 이어하기 전 hello도 다시 처리한다 (MN-05)', async () => {
+  clearHostSave();
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+  });
+  await settle();
+  await playOneRound(host, guest);
+  expect(guest.settlementNote).toContain('검증 통과');
+  const saved = loadHostSave();
+  expect(saved?.state.stage).toBe('settled');
+  expect(host.playback.settlement).not.toBeNull();
+  const records = host.records.length;
+  host.dispose();
+  guest.dispose();
+
+  const [restoredWire, rejoinedWire] = createMemoryTransportPair();
+  const resumed = new HostGame({
+    config: CONFIG,
+    resume: saved,
+    transport: restoredWire,
+    clock: false,
+    persist: false,
+  });
+  const rejoined = new GuestGame({
+    name: '민지',
+    token: saved?.state.token ?? null,
+    transport: rejoinedWire,
+    onTicket: () => {},
+    persist: false,
+  });
+  expect(rejoined.lobby).toBeNull();
+  expect(resumed.resumeSaved()).toBe(true);
+  await settle();
+  expect(resumed.playback.settlement?.view).toEqual(host.playback.settlement?.view);
+  expect(resumed.records).toHaveLength(records);
+  expect(rejoined.lobby?.names).toEqual(['호스트', '민지']);
+  expect(resumed.guestOnline).toBe(true);
+  resumed.nextRound();
+  expect(resumed.stats.round).toBe(2);
+  expect(resumed.stage).toBe('playing');
+  resumed.dispose();
+  rejoined.dispose();
+  clearHostSave();
+}, 30_000);
+
+test('bankrupt 저장본은 재충전 선택이 가능한 정산을 복원한다 (MN-02·MN-05)', async () => {
+  clearHostSave();
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({
+    config: { ...CONFIG, startBalance: 0 },
+    transport: hostWire,
+    clock: false,
+  });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+  });
+  await settle();
+  await playOneRound(host, guest);
+  const saved = loadHostSave();
+  expect(saved?.state.stage).toBe('bankrupt');
+  host.dispose();
+  guest.dispose();
+  const [restoredWire] = createMemoryTransportPair();
+  const resumed = new HostGame({
+    config: CONFIG,
+    resume: saved,
+    transport: restoredWire,
+    clock: false,
+    persist: false,
+  });
+  expect(resumed.resumeSaved()).toBe(true);
+  expect(resumed.playback.settlement).not.toBeNull();
+  expect(resumed.bankrupt).toBe(true);
+  resumed.refill();
+  expect(resumed.bankrupt).toBe(false);
+  resumed.dispose();
+  clearHostSave();
+}, 30_000);
+
+test('양쪽 파산 선택: 게스트 종료와 호스트 종료가 각각 세션을 끝낸다 (MN-02)', async () => {
+  for (const endingSeat of [0, 1] as const) {
+    const [hostWire, guestWire] = createMemoryTransportPair();
+    const host = new HostGame({
+      config: { ...CONFIG, startBalance: 0 },
+      transport: hostWire,
+      clock: false,
+      persist: false,
+    });
+    const guest = new GuestGame({
+      name: '민지',
+      transport: guestWire,
+      onTicket: () => {},
+      persist: false,
+    });
+    await settle();
+    await playOneRound(host, guest);
+    expect(host.stage).toBe('bankrupt');
+    expect(host.bankrupt).toBe(true);
+    expect(guest.bankrupt).toBe(true);
+    if (endingSeat === 1) {
+      guest.endBankruptcy();
+      expect(guestWire.sent.at(-1)).toEqual({ t: 'bankruptcy', choice: 'end' });
+    } else host.end();
+    expect(host.stage).toBe('ended');
+    expect(
+      hostWire.sent.some(
+        (m) => m.t === 'sessionEnd' && m.reason === 'bankruptcy' && m.seat === endingSeat,
+      ),
+    ).toBe(true);
+    expect(guest.phase).toBe('ended');
+    expect(guest.playback.settlement).not.toBeNull();
+    host.dispose();
+    guest.dispose();
+  }
+}, 30_000);
+
+test('sessionEnd 뒤 게스트는 최종 정산과 종료 안내를 유지한다', async () => {
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false, persist: false });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+  });
+  await settle();
+  await playOneRound(host, guest);
+  guest.nextRound();
+  await settle();
+  expect(guest.playback.settlement).toBeNull();
+  host.end();
+  expect(guest.phase).toBe('ended');
+  expect(guest.playback.settlement).not.toBeNull();
+  expect(guest.notice).toBe('호스트가 대전을 끝냈습니다');
+  expect(guest.settlementNote).toContain('호스트가 대전을 끝냈습니다');
+  guest.dispose();
+}, 30_000);
+
+test('토큰 거절 뒤 다시 연결은 joinFresh로 토큰 없는 hello를 보낸다', () => {
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const guest = new GuestGame({
+    name: '민지',
+    token: 'a'.repeat(32),
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+  });
+  hostWire.send({ t: 'reject', seq: 0, reason: 'TOKEN_INVALID', message: 'TOKEN_INVALID' });
+  expect(guest.phase).toBe('rejected');
+  guest.reconnect();
+  expect(guestWire.sent.at(-1)).toMatchObject({ t: 'hello', name: '민지' });
+  expect(guestWire.sent.at(-1)).not.toHaveProperty('sessionToken');
+  guest.dispose();
+});
+
+test('게스트 3분 부재 때 계속 기다리기 또는 종료를 고를 수 있다 (spec 2.4)', async () => {
+  let now = 0;
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({
+    config: CONFIG,
+    transport: hostWire,
+    clock: false,
+    persist: false,
+    now: () => now,
+  });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+  });
+  await settle();
+  expect(host.start()).toBe(true);
+  (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'left' });
+  now = 180_001;
+  host.tick();
+  expect(host.waitPrompt).toBe(true);
+  host.keepWaiting();
+  expect(host.waitPrompt).toBe(false);
+  host.end();
+  expect(hostWire.sent.some((m) => m.t === 'sessionEnd' && m.reason === 'host')).toBe(true);
+  guest.dispose();
+});
+
+test('호스트 시계만 움직일 때 rev·seq가 같으면 저장을 다시 쓰지 않는다 (MN-05)', async () => {
+  clearHostSave();
+  let now = 0;
+  const setItem = vi.spyOn(Storage.prototype, 'setItem');
+  try {
+    const [hostWire, guestWire] = createMemoryTransportPair();
+    const host = new HostGame({
+      config: CONFIG,
+      transport: hostWire,
+      clock: false,
+      now: () => now,
+    });
+    const guest = new GuestGame({
+      name: '민지',
+      transport: guestWire,
+      onTicket: () => {},
+      persist: false,
+    });
+    await settle();
+    expect(host.start()).toBe(true);
+    await settle();
+    const writes = () => setItem.mock.calls.filter(([key]) => key === 'gostop.host.v2').length;
+    const before = writes();
+    now = 15_000;
+    host.tick();
+    now = 30_000;
+    host.tick();
+    expect(writes()).toBe(before);
+    host.dispose();
+    guest.dispose();
+  } finally {
+    setItem.mockRestore();
+    clearHostSave();
+  }
+});
 
 /** 게스트가 받은 메시지에서 좌석 0 손패로 보일 수 있는 카드 ID를 모은다 */
 function cardsSeenByGuest(message: Message): { ids: CardId[]; handVisible: boolean } {

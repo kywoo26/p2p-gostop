@@ -33,7 +33,9 @@
           unit: settings.value.unit,
         };
   });
-  const playing = $derived(game !== null && game.phase === 'playing');
+  const playing = $derived(
+    game !== null && (game.phase === 'playing' || (game.phase === 'ended' && game.lobby !== null)),
+  );
   const initialName =
     readTicket().name ?? (settings.value.playerName === '호스트' ? '' : settings.value.playerName);
   const address = relayAddress();
@@ -51,6 +53,11 @@
   function leave() {
     p2p.leave();
     showDiagnostics = false;
+  }
+
+  function endSettlement() {
+    if (game?.bankrupt) game.endBankruptcy();
+    else leave();
   }
 
   function upload() {
@@ -88,7 +95,15 @@
     {status}
   />
 {:else if game !== null && playing}
-  <Game controller={game} {menu} {onmenu} onend={leave} />
+  <Game
+    controller={game}
+    {menu}
+    {onmenu}
+    onend={endSettlement}
+    ended={game.phase === 'ended'}
+    onfresh={leave}
+    onreconnect={reconnect}
+  />
 {:else}
   <GuestJoin
     name={game?.name ?? initialName}

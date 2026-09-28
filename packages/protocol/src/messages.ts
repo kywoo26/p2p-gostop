@@ -38,6 +38,8 @@ export interface RoundStatus {
   readonly stage: SessionStage;
   /** 진행 중(또는 방금 끝난) 판 번호. lobby에서는 첫 판 번호 */
   readonly round: number;
+  /** 나가리 뒤 다음 판에 적용할 이월 배수 */
+  readonly carry?: number;
   /** settled에서 다음 판을 요청한 좌석 (게스트 ready, 호스트는 nextRound가 곧 확정) */
   readonly ready: readonly [boolean, boolean];
   /** bankrupt에서 선택을 기다리는 좌석 */

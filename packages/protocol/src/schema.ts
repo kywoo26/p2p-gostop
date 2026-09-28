@@ -174,6 +174,7 @@ const status = z.object({
   rev: nat,
   stage: z.enum(['lobby', 'handshake', 'playing', 'settled', 'bankrupt', 'ended']),
   round: nat,
+  carry: z.optional(nat),
   ready: z.tuple([z.boolean(), z.boolean()]),
   bankrupt: z.array(seat).check(z.maxLength(2)),
   endReason: z.nullable(z.enum(['bankruptcy', 'host'])),
