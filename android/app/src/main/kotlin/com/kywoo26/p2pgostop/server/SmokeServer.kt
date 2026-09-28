@@ -6,6 +6,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
@@ -70,6 +71,7 @@ class ServerEnv(
     val asset: (String) -> ByteArray? = { null },
     val roles: RoleCounts = RoleCounts(),
     val roleChanged: (String, Boolean) -> Unit = { _, _ -> },
+    val remoteAddress: (ApplicationCall) -> String = { it.request.local.remoteAddress },
 ) {
     private val lastGuestLogAt = AtomicLong(-1)
 
@@ -118,12 +120,12 @@ fun Application.smokeModule(env: ServerEnv) {
                 close(CloseReason(1008.toShort(), "{\"error\":\"invalid role\"}"))
                 return@webSocket
             }
-            if (!relay.join(role, this)) {
-                close(CloseReason(4409.toShort(), "{\"error\":\"role occupied\"}"))
+            if (role == "host" && env.remoteAddress(call) != "127.0.0.1") {
+                close(CloseReason(1008.toShort(), "{\"error\":\"host requires loopback\"}"))
                 return@webSocket
             }
+            relay.join(role, this)
             try {
-                relay.notifyPeer(role, "joined")
                 for (frame in incoming) {
                     if (frame !is Frame.Text) {
                         close(CloseReason(1003.toShort(), "text frames only"))
@@ -141,7 +143,6 @@ fun Application.smokeModule(env: ServerEnv) {
                 env.log("relay $role 오류: ${e.javaClass.simpleName} ${e.message.orEmpty()}")
             } finally {
                 relay.leave(role, this)
-                relay.notifyPeer(role, "left")
             }
         }
         webSocket("/smoke/ws") {
@@ -238,24 +239,33 @@ private class RelayRoles(private val env: ServerEnv) {
     private var guest: DefaultWebSocketServerSession? = null
     private val absenceNotified = mutableSetOf<DefaultWebSocketServerSession>()
 
-    @Synchronized fun join(role: String, session: DefaultWebSocketServerSession): Boolean {
+    // M4 릴레이 정책(오케스트레이터 결정): 호스트는 127.0.0.1만, 두 역할 모두 최신 연결이 이전 연결을 교체한다.
+    // 접속·해제·알림 enqueue·전달을 이 잠금 하나로 직렬화해 joined/left 순서가 뒤집히지 않게 한다.
+    @Synchronized fun join(role: String, session: DefaultWebSocketServerSession) {
+        val old = current(role)
+        old?.outgoing?.trySend(Frame.Close(CloseReason(4001.toShort(), "replaced")))
         if (role == "host") {
-            if (host != null) return false
             host = session
             env.roles.host.set(true)
         } else {
-            if (guest != null) return false
             guest = session
             env.roles.guest.set(true)
         }
-        env.clients.incrementAndGet()
-        env.onClientsChanged(env.clients.get())
-        env.roleChanged(role, true)
-        env.log("relay $role 연결 (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
-        return true
+        if (old == null) {
+            env.clients.incrementAndGet()
+            env.onClientsChanged(env.clients.get())
+            env.roleChanged(role, true)
+        }
+        val peer = peer(role)
+        if (peer == null) absenceNotified.add(session)
+        if (peer != null) absenceNotified.remove(peer)
+        session.outgoing.trySend(notice(if (peer == null) "absent" else "present"))
+        peer?.outgoing?.trySend(notice("joined"))
+        env.log("relay $role ${if (old == null) "연결" else "교체"} (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
     }
 
     @Synchronized fun leave(role: String, session: DefaultWebSocketServerSession) {
+        absenceNotified.remove(session)
         if (role == "host" && host === session) {
             host = null
             env.roles.host.set(false)
@@ -263,43 +273,35 @@ private class RelayRoles(private val env: ServerEnv) {
             guest = null
             env.roles.guest.set(false)
         } else return
-        absenceNotified.remove(session)
         env.clients.decrementAndGet()
         env.onClientsChanged(env.clients.get())
         env.roleChanged(role, false)
+        peer(role)?.let { target ->
+            absenceNotified.remove(target)
+            target.outgoing.trySend(notice("left"))
+        }
         env.log("relay $role 종료 (호스트=${env.roles.host.get()} 게스트=${env.roles.guest.get()})")
     }
 
-    @Synchronized private fun peer(role: String): DefaultWebSocketServerSession? =
+    private fun current(role: String): DefaultWebSocketServerSession? =
+        if (role == "host") host else guest
+
+    private fun peer(role: String): DefaultWebSocketServerSession? =
         if (role == "host") guest else host
 
-    suspend fun notifyPeer(role: String, event: String) {
-        val target = peer(role) ?: return
-        synchronized(this) { absenceNotified.remove(target) }
-        try {
-            target.outgoing.send(Frame.Text("{\"type\":\"relay\",\"peer\":\"$event\"}"))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // 상대 소켓이 이미 닫혔다. 각 세션의 finally가 접속 상태를 정리한다.
-        }
-    }
+    private fun notice(peer: String) = Frame.Text("{\"t\":\"relay\",\"peer\":\"$peer\"}")
 
-    suspend fun forward(role: String, sender: DefaultWebSocketServerSession, frame: Frame.Text) {
+    @Synchronized fun forward(role: String, sender: DefaultWebSocketServerSession, frame: Frame.Text) {
+        if (current(role) !== sender) return // 교체된 소켓에서 늦게 도착한 프레임
         val target = peer(role)
         if (target == null) {
-            val first = synchronized(this) { absenceNotified.add(sender) }
-            if (first) sender.outgoing.send(Frame.Text("{\"type\":\"relay\",\"peer\":\"absent\"}"))
+            if (absenceNotified.add(sender)) sender.outgoing.trySend(notice("absent"))
         } else {
-            synchronized(this) { absenceNotified.remove(sender) }
-            try {
-                target.outgoing.send(Frame.Text(frame.readText()))
+            absenceNotified.remove(sender)
+            if (target.outgoing.trySend(Frame.Text(frame.readText())).isSuccess) {
                 env.log("relay $role 전달 ${frame.data.size}바이트")
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                val first = synchronized(this) { absenceNotified.add(sender) }
-                if (first) sender.outgoing.send(Frame.Text("{\"type\":\"relay\",\"peer\":\"absent\"}"))
+            } else if (absenceNotified.add(sender)) {
+                sender.outgoing.trySend(notice("absent"))
             }
         }
     }

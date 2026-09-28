@@ -1,11 +1,13 @@
 package com.kywoo26.p2pgostop
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.view.ViewGroup
@@ -17,14 +19,18 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.RenderProcessGoneDetail
+import android.widget.FrameLayout
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import com.kywoo26.p2pgostop.log.LogReport
 import com.kywoo26.p2pgostop.log.Utf8
 import com.kywoo26.p2pgostop.server.SERVER_PORT
 import com.kywoo26.p2pgostop.share.LogShareFiles
 import com.kywoo26.p2pgostop.share.LogShareProvider
 import java.io.IOException
+import java.time.LocalDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,8 +40,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Ktor와 같은 루프백 origin의 호스트 화면. 게임 로직은 웹 번들에만 있다. */
+// WEB_MESSAGE_LISTENER는 onCreate에서 검사한다. JS는 번들된 루프백 페이지만 실행한다.
+// onRenderProcessGone은 createWebView의 WebViewClient에서 구현한다.
+@SuppressLint("RequiresFeature", "SetJavaScriptEnabled", "MissingOnRenderProcessGone")
 class GameActivity : Activity() {
     private lateinit var web: WebView
+    private lateinit var container: FrameLayout
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var replyProxy: JavaScriptReplyProxy? = null
     private var gameActive = false
@@ -50,11 +60,28 @@ class GameActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!AppState.hotspot.value.serverRunning || !bundlePresent(this) ||
-            !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+        // 웹 브리지가 준비되기 전에도 호스트 화면이 잠기지 않게 한다(I-7).
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (!bundlePresent(this) || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             fallback("웹 번들 또는 WebView 브리지 없음")
             return
         }
+        container = FrameLayout(this)
+        setContentView(container)
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback)
+        if (!AppState.hotspot.value.serviceRunning) {
+            // 솔로 모드: LOHS 권한 없이 서버만 시작하고 준비되면 루프백 WebView를 연다(I-10).
+            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_ADDRESS_ONLY))
+        }
+        scope.launch {
+            AppState.hotspot.collect { state ->
+                if (state.serverRunning && !::web.isInitialized) createWebView()
+                send(hotspotMessage(state))
+            }
+        }
+    }
+
+    private fun createWebView() {
         web = WebView(this).apply {
             setBackgroundColor(Color.rgb(15, 25, 20))
             settings.javaScriptEnabled = true
@@ -69,10 +96,16 @@ class GameActivity : Activity() {
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                     if (request.isForMainFrame) fallback("웹 페이지 오류: ${error.description}")
                 }
+
+                override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                    AppState.log("WebView 렌더러 종료: crash=${detail.didCrash()}; 페이지 다시 로드")
+                    destroyWebView(view)
+                    createWebView()
+                    return true
+                }
             }
         }
-        setContentView(web, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback)
+        container.addView(web, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         WebViewCompat.addWebMessageListener(web, "HostBridge", setOf(ORIGIN)) { _, message, sourceOrigin, isMainFrame, proxy ->
             if (!isMainFrame || sourceOrigin.toString() != ORIGIN) return@addWebMessageListener
             if (replyProxy == null) proxy.postMessage(hotspotMessage(AppState.hotspot.value).toString())
@@ -86,8 +119,19 @@ class GameActivity : Activity() {
                 proxy.postMessage(JSONObject().put("type", "error").put("message", "invalid bridge message").toString())
             }
         }
-        scope.launch { AppState.hotspot.collect { send(hotspotMessage(it)) } }
         web.loadUrl("$ORIGIN/?role=host&build=${BuildConfig.GIT_SHA}")
+    }
+
+    private fun destroyWebView(view: WebView) {
+        replyProxy = null
+        WebViewCompat.removeWebMessageListener(view, "HostBridge")
+        container.removeView(view)
+        view.destroy()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 호스트의 권위 게임 상태는 이 WebView의 JS 메모리에 있다. 구성을 바꿔도 인스턴스를 유지한다(S-1).
     }
 
     private fun handle(msg: JSONObject, proxy: JavaScriptReplyProxy) {
@@ -157,10 +201,18 @@ class GameActivity : Activity() {
 
     private fun share(text: String, filename: String?, title: String): Boolean {
         val safeText = Utf8.tail(text, 256 * 1024)
+        val maxBody = LogReport.SHARE_TEXT_MAX_BYTES
         val name = filename?.takeIf(LogShareFiles::isValidName)
-        val uri = name?.let { LogShareProvider.write(this, it, safeText) }
+            ?: if (Utf8.length(safeText) > maxBody) LogShareFiles.name(BuildConfig.GIT_SHA, LocalDateTime.now()) else null
+        val uri = try {
+            name?.let { LogShareProvider.write(this, it, safeText) }
+        } catch (e: Exception) {
+            AppState.log("공유 파일 쓰기 실패: ${e.message}")
+            return false
+        }
+        val body = if (uri == null) safeText else LogReport.clipTail("맞고 공유 파일: $name\n$safeText", maxBody)
         val intent = Intent(Intent.ACTION_SEND).setType(if (name?.endsWith(".json") == true) "application/json" else "text/plain")
-            .putExtra(Intent.EXTRA_TEXT, if (uri == null) safeText else "맞고 공유 파일: $name")
+            .putExtra(Intent.EXTRA_TEXT, body)
             .putExtra(Intent.EXTRA_SUBJECT, Utf8.head(title, 200))
         if (uri != null) {
             intent.putExtra(Intent.EXTRA_STREAM, uri)
@@ -196,9 +248,9 @@ class GameActivity : Activity() {
 
     override fun onDestroy() {
         scope.cancel()
+        if (::container.isInitialized) onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
         if (::web.isInitialized) {
-            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
-            web.destroy()
+            destroyWebView(web)
         }
         super.onDestroy()
     }
@@ -216,12 +268,13 @@ class GameActivity : Activity() {
                 HotspotStatus.STARTING -> "starting"
                 HotspotStatus.RUNNING -> "on"
                 HotspotStatus.FAILED -> "failed"
+                HotspotStatus.ADDRESS_ONLY -> "addressOnly"
                 else -> "off"
             })
-            .put("ssid", s.ssid)
-            .put("password", s.password)
-            .put("ip", s.ip)
+            .put("ssid", s.ssid ?: JSONObject.NULL)
+            .put("password", s.password ?: JSONObject.NULL)
+            .put("ip", s.ip ?: JSONObject.NULL)
             .put("port", if (s.serverRunning) SERVER_PORT else JSONObject.NULL)
-            .put("error", s.lastError ?: s.serverError)
+            .put("error", s.lastError ?: s.serverError ?: JSONObject.NULL)
     }
 }
