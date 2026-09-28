@@ -1,6 +1,7 @@
 // 결정화(determinization, M1 리뷰 F-3, spec AI-01·AI-03): 좌석 뷰 + 숨은 정보 표본 → 뷰와 일관된 GameState.
 // ISMCTS·몬테카를로 AI가 엔진 내부 상태 모양을 흉내 내지 않고 가상 상태를 만들 수 있게 하는 공식 경로다.
-// 뷰에 없는 정보는 상대 손패·더미 순서·PRNG·선 고르기 후보·가려진 상대 프롬프트뿐이며, 모두 표본(과 rng)으로 받는다.
+// 뷰에 없는 정보는 상대 손패(공개된 카드 SeatView.revealed 제외)·더미 순서·PRNG·선 고르기 후보·가려진 상대 프롬프트뿐이며,
+// 모두 표본(과 rng)으로 받는다.
 import { deckCardIds, getCard, type CardId, type Month } from './cards.ts';
 import { createRng, shuffleWith, type Seed } from './rng.ts';
 import type { FirstPickState, GameState, Pending, Seat, SeatState } from './state.ts';
@@ -8,7 +9,11 @@ import type { PlayerView } from './view.ts';
 
 /** 보는 좌석이 모르는 정보의 한 가지 배치 */
 export interface DeterminizeSample {
-  /** 상대 손패. 장수는 view.seats[상대].handCount와 같아야 한다 */
+  /**
+   * 상대 손패 중 숨은 카드: 장수는 handCount − revealed.length이고 공개된 카드(view.seats[상대].revealed)는 넣지 않는다.
+   * 결정화는 공개된 카드를 손패에 자동으로 더한다. 호환: 공개된 카드를 모두 포함한 전체 손패(handCount장)도 받는다.
+   * 공개된 카드가 없으면 두 형식은 같다.
+   */
   readonly opponentHand: readonly CardId[];
   /** 더미, 0번이 맨 위. 장수는 view.deckCount와 같아야 한다 */
   readonly deck: readonly CardId[];
@@ -25,9 +30,10 @@ const other = (seat: Seat): Seat => (seat === 0 ? 1 : 0);
 const ascending = (ids: readonly CardId[]): CardId[] => ids.toSorted((a, b) => a - b);
 
 /**
- * 보는 좌석이 볼 수 없는 카드 ID(상대 손패 ∪ 더미), 오름차순.
- * 보이는 카드 = 자기 손패 + 바닥 + 양측 획득 패 + 진행 중인 턴의 낸 패·뒤집은 패·들고 있는 보너스.
- * 선 고르기 단계(분배 전)에는 후보가 가려져 있으므로 덱 전체다.
+ * 보는 좌석이 볼 수 없는 카드 ID(상대의 숨은 손패 ∪ 더미), 오름차순.
+ * 보이는 카드 = 자기 손패 + 바닥 + 양측 획득 패 + 진행 중인 턴의 낸 패·뒤집은 패·들고 있는 보너스
+ * + 상대가 규칙상 공개한 손패(SeatView.revealed: 흔들기로 보여 준 카드).
+ * 그래서 장수는 상대 handCount − revealed.length + deckCount다. 선 고르기 단계(분배 전)에는 후보가 가려져 있으므로 덱 전체다.
  */
 export function unseenCards(view: PlayerView): CardId[] {
   const seen = new Set<CardId>(view.seats[view.viewer].hand ?? []);
@@ -44,6 +50,7 @@ export function unseenCards(view: PlayerView): CardId[] {
     add(seat.captured.yeol);
     add(seat.captured.tti);
     add(seat.captured.pi);
+    add(seat.revealed);
   }
   const ctx = view.ctx;
   if (ctx !== null) {
@@ -72,23 +79,39 @@ function sameIds(a: readonly CardId[], b: readonly CardId[]): boolean {
   return x.length === y.length && x.every((id, i) => id === y[i]);
 }
 
-function checkSample(view: PlayerView, sample: DeterminizeSample): void {
+/** 표본을 검사하고 상대 전체 손패(공개된 카드 + 숨은 카드)를 돌려준다. 뷰와 모순되면 RangeError. */
+function opponentHandOf(view: PlayerView, sample: DeterminizeSample): CardId[] {
   const opp = view.seats[other(view.viewer)];
-  if (sample.opponentHand.length !== opp.handCount || sample.deck.length !== view.deckCount) {
+  const revealed = opp.revealed;
+  const given = sample.opponentHand;
+  const full = given.length === opp.handCount;
+  if (
+    (!full && given.length !== opp.handCount - revealed.length) ||
+    sample.deck.length !== view.deckCount
+  ) {
     throw new RangeError(
-      `결정화 표본 장수 불일치: 상대 손패 ${sample.opponentHand.length}/${opp.handCount}, 더미 ${sample.deck.length}/${view.deckCount}`,
+      `결정화 표본 장수 불일치: 상대 손패 ${given.length}/${opp.handCount}(공개 ${revealed.length}), 더미 ${sample.deck.length}/${view.deckCount}`,
     );
   }
+  if (full && !revealed.every((id) => given.includes(id))) {
+    throw new RangeError('결정화 표본의 전체 손패에 상대가 공개한 카드(revealed)가 빠져 있습니다');
+  }
+  const hand = full ? [...given] : [...revealed, ...given];
   // 선 고르기 단계는 아직 분배 전이라 손패·더미가 비어 있다(장수 검사로 충분).
   if (
     view.phase !== 'chooseFirst' &&
-    !sameIds([...sample.opponentHand, ...sample.deck], unseenCards(view))
+    !sameIds([...hand, ...sample.deck], [...unseenCards(view), ...revealed])
   ) {
     throw new RangeError('결정화 표본이 보이지 않는 카드 집합(unseenCards)과 다릅니다');
   }
+  return hand;
 }
 
-function resolvePending(view: PlayerView, sample: DeterminizeSample): Pending | null {
+function resolvePending(
+  view: PlayerView,
+  sample: DeterminizeSample,
+  opponentHand: readonly CardId[],
+): Pending | null {
   const shown = view.pending;
   const opponent = other(view.viewer);
   if (sample.pending !== undefined) {
@@ -104,7 +127,7 @@ function resolvePending(view: PlayerView, sample: DeterminizeSample): Pending | 
     return sample.pending;
   }
   if (shown?.kind === 'chongtong' && shown.seat === opponent && shown.months.length === 0) {
-    const months = fourOfAKindMonths(sample.opponentHand);
+    const months = fourOfAKindMonths(opponentHand);
     if (months.length === 0) {
       throw new RangeError(
         '상대 총통 프롬프트와 일관되려면 표본 손패에 같은 월 4장이 있어야 합니다',
@@ -130,6 +153,7 @@ function seatState(view: PlayerView, seat: Seat, hand: readonly CardId[]): SeatS
     noCaptureStreak: s.noCaptureStreak,
     gukjinAsPi: s.gukjinAsPi,
     score: s.score,
+    revealed: s.revealed,
   };
 }
 
@@ -142,13 +166,13 @@ function seatState(view: PlayerView, seat: Seat, hand: readonly CardId[]): SeatS
  * rng: 결정화한 상태의 PRNG 시드(또는 RngState 그대로). 판 도중에는 쓰이지 않고, 선 고르기·재분배에서만 쓰인다.
  */
 export function determinize(view: PlayerView, sample: DeterminizeSample, rng: Seed = 0): GameState {
-  checkSample(view, sample);
+  const opponentHand = opponentHandOf(view, sample);
   const me = view.viewer;
   const myHand = view.seats[me].hand ?? [];
   const seats: [SeatState, SeatState] =
     me === 0
-      ? [seatState(view, 0, myHand), seatState(view, 1, sample.opponentHand)]
-      : [seatState(view, 0, sample.opponentHand), seatState(view, 1, myHand)];
+      ? [seatState(view, 0, myHand), seatState(view, 1, opponentHand)]
+      : [seatState(view, 0, opponentHand), seatState(view, 1, myHand)];
   let rngState = createRng(rng);
   let firstPick: FirstPickState | null = null;
   const fp = view.firstPick;
@@ -179,10 +203,15 @@ export function determinize(view: PlayerView, sample: DeterminizeSample, rng: Se
     seats,
     floor: view.floor,
     deck: [...sample.deck],
-    pending: resolvePending(view, sample),
+    pending: resolvePending(view, sample, opponentHand),
     ctx: view.ctx,
     firstPick,
-    round: { number: view.round.number, carry: view.round.carry, fixedDeck: null },
+    round: {
+      number: view.round.number,
+      carry: view.round.carry,
+      pushes: view.round.pushes,
+      fixedDeck: null,
+    },
     instantPayouts: view.instantPayouts,
     result: view.result,
     eventSeq: view.eventSeq,

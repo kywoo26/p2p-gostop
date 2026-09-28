@@ -2,7 +2,9 @@
 // 기본 1,000판(npm test, plan §4 "매 커밋 축약 1,000판"), ENGINE_FULL=1이면 10,000판.
 // 선 고르기부터 시작하는 첫 판은 그 1/10을 추가로 돈다.
 // 매 수마다: 입력 상태 deepFreeze(불변성), 무작위·형태 오류 액션 ↔ legalActions(거부), 두 좌석 뷰의 숨은 정보
-// 무관성(누출), 상대에게 가는 이벤트의 숨은 카드 검사, 결정화 왕복, NP-07 크기 상한.
+// 무관성(누출), 상대에게 가는 이벤트의 숨은 카드 검사, 결정화 왕복, NP-07 크기 상한,
+// applyUnchecked ≡ reduce, 공개 손패(revealed), matchPreview, 점수 분해·고/스톱 문턱(step-checks.ts).
+// 판마다: 밀기(12.7) 정산 불변식, 승자 기본점수 = 정산에 쓴 국진 위치의 족보 합계 + 고 가산.
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,7 +25,7 @@ import {
   type Seat,
 } from '../src/index.ts';
 import { flipSeat, mirrorAction, playRandomRound, type PlayedRound } from './helpers.ts';
-import { checkStep, type StepChecker } from './step-checks.ts';
+import { checkSettlement, checkStep, coverage, type StepChecker } from './step-checks.ts';
 
 function envFlag(name: string): boolean {
   const proc: unknown = Reflect.get(globalThis, 'process');
@@ -79,6 +81,7 @@ const roundArb = fc.record({
   policySeed: fc.integer({ min: 0, max: 0xffffffff }),
   dealer: fc.constantFrom<Seat>(0, 1),
   carry: fc.constantFrom(1, 1, 2, 4),
+  pushes: fc.constantFrom(0, 0, 1, 2),
   roundNumber: fc.integer({ min: 1, max: 12 }),
   isNight: fc.boolean(),
 });
@@ -105,9 +108,9 @@ function playAndCheck(
   // 1. 매 단계 카드 보존. 더미가 모자라면 엔진이 불변식 예외를 던져 여기서 실패한다.
   //    + 매 단계 거부·누출·결정화·크기 검사(step-checks.ts). 입력 상태는 helpers가 deepFreeze한다.
   const checker: StepChecker = { policySeed, revealed: [new Set(), new Set()] };
-  const played = playRandomRound(rules, seed, opts, policySeed, (state, action, events) => {
+  const played = playRandomRound(rules, seed, opts, policySeed, (state, action, events, before) => {
     assertConservation(state);
-    checkStep(checker, state, action, events);
+    checkStep(checker, state, action, events, before);
   });
   const { state, actions, events } = played;
   expect(state.phase).toBe('end');
@@ -125,6 +128,8 @@ function playAndCheck(
   ]);
   expect(result.steps.at(-1)?.total ?? 0).toBe(result.finalPoints);
   expect(result.nextCarry).toBeLessThanOrEqual(rules.nagariCap ?? Number.POSITIVE_INFINITY);
+  // 3-1. 밀기(12.7, 해석 30) 정산 불변식, 3-2. 승자 기본점수 = 족보 합계 + 고 가산 (step-checks.ts)
+  checkSettlement(state, result);
   // 4. 제로섬 원장, 잔액은 음수가 되지 않는다
   let ledger = createLedger(100, 50_000);
   for (const payout of state.instantPayouts) {
@@ -159,8 +164,8 @@ describe('불변식 속성: 무작위 합법 정책', () => {
       fc.assert(
         fc.property(
           roundArb,
-          ({ rules, seed, policySeed, dealer, carry, roundNumber, isNight }) => {
-            const opts = { dealer, carry, roundNumber, isNight };
+          ({ rules, seed, policySeed, dealer, carry, pushes, roundNumber, isNight }) => {
+            const opts = { dealer, carry, pushes, roundNumber, isNight };
             const { state, actions, events } = playAndCheck(rules, seed, opts, policySeed);
             // 6. 좌석 대칭: 선을 바꾸면 같은 덱이 거울상으로 분배된다 → 거울 액션 → 거울 결과
             const mirrored = replay(rules, seed, actions.map(mirrorAction), {
@@ -186,6 +191,14 @@ describe('불변식 속성: 무작위 합법 정책', () => {
         ),
         { numRuns: RUNS },
       );
+      // 각 검사 경로를 실제로 지나갔는지 (빈 속성 방지)
+      expect(coverage.unchecked).toBeGreaterThan(RUNS * 10);
+      expect(coverage.pushes).toBeGreaterThan(0);
+      expect(coverage.revealedSeen).toBeGreaterThan(0);
+      expect([...coverage.previewKinds].toSorted()).toEqual(
+        ['bonus', 'choose', 'pile', 'place', 'place+shake', 'take'].toSorted(),
+      );
+      expect(coverage.scoreChecks).toBe(coverage.steps);
     },
   );
 

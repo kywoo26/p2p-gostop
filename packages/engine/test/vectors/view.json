@@ -1,0 +1,490 @@
+[
+  {
+    "id": "E11-shake-revealed",
+    "ruleId": "E11",
+    "case": "normal",
+    "description": "흔들면 보여 준 같은 월 카드 중 아직 손에 있는 것(5초·5피a)이 공개 손패(revealed)가 되고, 상대 뷰의 보이지 않는 카드(unseenCards)에서 빠진다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a", "9피a", "12비띠"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": true
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": ["5초", "5피a"]
+        },
+        {
+          "revealed": []
+        }
+      ],
+      "revealedView": {
+        "viewer": 1,
+        "seat": 0,
+        "revealed": ["5초", "5피a"]
+      }
+    }
+  },
+  {
+    "id": "E11-shake-revealed-shrinks",
+    "ruleId": "E11",
+    "case": "boundary",
+    "description": "공개 손패는 손에 남은 것만: 흔든 뒤 5초를 내면 공개 손패는 5피a 하나",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a", "9피a", "12비띠"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": true
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5초"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": ["5피a"],
+          "hand": ["5피a", "12열"]
+        },
+        null
+      ],
+      "revealedView": {
+        "viewer": 1,
+        "seat": 0,
+        "revealed": ["5피a"]
+      }
+    }
+  },
+  {
+    "id": "E11-shake-decline-not-revealed",
+    "ruleId": "E11",
+    "case": "counter",
+    "description": "흔들지 않으면 아무것도 공개되지 않는다(거절은 이벤트도 없다, 뷰 가림 규칙)",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a", "9피a", "12비띠"]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": false
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": []
+        },
+        null
+      ],
+      "revealedView": {
+        "viewer": 1,
+        "seat": 0,
+        "revealed": []
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-continue-not-revealed",
+    "ruleId": "E12",
+    "case": "counter",
+    "description": "총통 계속하기는 공개가 아니다(F-6): 공개 손패 없음",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "continue"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": []
+        },
+        null
+      ],
+      "revealedView": {
+        "viewer": 1,
+        "seat": 0,
+        "revealed": []
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-four-shake-revealed",
+    "ruleId": "E12",
+    "case": "boundary",
+    "description": "총통 계속 후 4장 흔들기를 하면 4장이 공개되고, 낸 1광을 뺀 3장(1홍·1피a·1피b)이 공개 손패로 남는다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "continue"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "1광"
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": true
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": ["1홍", "1피a", "1피b"]
+        },
+        null
+      ],
+      "revealedView": {
+        "viewer": 1,
+        "seat": 0,
+        "revealed": ["1홍", "1피a", "1피b"]
+      }
+    }
+  },
+  {
+    "id": "E12-chongtong-end-revealed",
+    "ruleId": "E12",
+    "case": "normal",
+    "description": "총통 끝내기는 4장을 보여 주는 공개 이벤트다: 끝난 판의 공개 손패는 1월 4장",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "end"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": ["1광", "1홍", "1피a", "1피b"]
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "E9-bomb-not-revealed",
+    "ruleId": "E9",
+    "case": "counter",
+    "description": "폭탄은 손패 3장을 공개하지만 곧바로 먹으므로 손에 남는 공개 카드가 없다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피b", "8광"],
+      "deck": ["11피a", "9피a", "12비띠"]
+    },
+    "actions": [
+      {
+        "type": "bomb",
+        "seat": 0,
+        "month": 5
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "revealed": []
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "E6-preview-choose",
+    "ruleId": "E6",
+    "case": "normal",
+    "description": "미리보기: 바닥에 같은 월 2장(5초·5피a)이면 둘 중 하나를 고른다(choose)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "5피a", "8광"],
+      "deck": ["11피a"]
+    },
+    "expect": {
+      "matchPreview": [
+        {
+          "seat": 0,
+          "card": "5열",
+          "kind": "choose",
+          "floor": ["5초", "5피a"],
+          "shake": false
+        },
+        {
+          "seat": 0,
+          "card": "12열",
+          "kind": "place",
+          "floor": [],
+          "shake": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "E1-preview-take",
+    "ruleId": "E1",
+    "case": "normal",
+    "description": "미리보기: 바닥 1장(5초)이면 그 1장을 먹는다(take). 뒤집은 카드가 같은 월이면 뻑이 될 수 있다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["11피a"]
+    },
+    "expect": {
+      "matchPreview": [
+        {
+          "seat": 0,
+          "card": "5열",
+          "kind": "take",
+          "floor": ["5초"],
+          "shake": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "E2-preview-pile",
+    "ruleId": "E2",
+    "case": "boundary",
+    "description": "미리보기: 뻑 무더기(5초·5열·5피a)는 4번째 패로 통째로 먹는다(pile)",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "ppeokPiles": [
+        {
+          "cards": ["5초", "5열", "5피a"],
+          "owner": 1
+        }
+      ],
+      "deck": ["11피a"]
+    },
+    "expect": {
+      "matchPreview": [
+        {
+          "seat": 0,
+          "card": "5피b",
+          "kind": "pile",
+          "floor": ["5초", "5열", "5피a"],
+          "shake": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "E11-preview-shake",
+    "ruleId": "E11",
+    "case": "boundary",
+    "description": "미리보기: 같은 월 3장을 쥐고 바닥에 그 월이 없으면 놓이는 카드(place)이면서 흔들기 질문이 나온다(shake). 다른 월 카드는 아니다",
+    "setup": {
+      "hands": [
+        ["5열", "5초", "5피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a", "9피a", "12비띠"]
+    },
+    "expect": {
+      "matchPreview": [
+        {
+          "seat": 0,
+          "card": "5피a",
+          "kind": "place",
+          "floor": [],
+          "shake": true
+        },
+        {
+          "seat": 0,
+          "card": "12열",
+          "kind": "place",
+          "shake": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "B1-preview-bonus",
+    "ruleId": "B1",
+    "case": "boundary",
+    "description": "미리보기: 보너스 카드는 바닥과 맞추지 않고 바로 획득한다(bonus)",
+    "setup": {
+      "hands": [
+        ["B3", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["8광"],
+      "deck": ["11피a"]
+    },
+    "expect": {
+      "matchPreview": [
+        {
+          "seat": 0,
+          "card": "B3",
+          "kind": "bonus",
+          "floor": [],
+          "shake": false
+        }
+      ]
+    }
+  }
+]

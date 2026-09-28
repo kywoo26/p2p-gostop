@@ -5,15 +5,19 @@ import {
   PRESETS,
   applyInstantPayout,
   applySettlement,
+  applyUnchecked,
   cardId,
   createLedger,
   createScenario,
   deckCardIds,
   legalActions,
+  matchPreview,
   newRound,
+  playerView,
   previewStop,
   reduce,
   settle,
+  unseenCards,
   type Action,
   type CardId,
   type EngineEvent,
@@ -43,6 +47,7 @@ const CARD_KEYS = new Set([
   'floorCards',
   'includes',
   'excludes',
+  'revealed',
 ]);
 
 function resolveDeep(value: unknown, key: string | null): unknown {
@@ -74,6 +79,8 @@ interface SeatExpect {
   readonly bombTokens?: number;
   readonly ppeokCount?: number;
   readonly gukjinAsPi?: boolean;
+  /** 공개된 손패 (SeatState.revealed, 순서 무관) */
+  readonly revealed?: readonly CardId[];
 }
 
 interface VectorExpect {
@@ -111,6 +118,20 @@ interface VectorExpect {
   };
   readonly preview?: Record<string, unknown> & { readonly seat: Seat };
   readonly reject?: { readonly index: number; readonly reason: string };
+  /** 끝 상태에서 matchPreview(state, seat, card)와 matchPreview(playerView(state, seat), seat, card) */
+  readonly matchPreview?: readonly {
+    readonly seat: Seat;
+    readonly card: CardId;
+    readonly kind: string;
+    readonly floor?: readonly CardId[];
+    readonly shake?: boolean;
+  }[];
+  /** viewer가 보는 seat의 공개 손패(SeatView.revealed). viewer ≠ seat이면 unseenCards에 없어야 한다 */
+  readonly revealedView?: {
+    readonly viewer: Seat;
+    readonly seat: Seat;
+    readonly revealed: readonly CardId[];
+  };
 }
 
 export interface RuleVector {
@@ -261,6 +282,13 @@ export function runVector(v: RuleVector): void {
     if (!result.ok) {
       throw new Error(`${v.id}: 액션 ${index} 거부됨: ${result.message}`);
     }
+    // 검증 생략 경로: 받아들여진(합법) 액션이면 applyUnchecked가 reduce와 같은 상태·이벤트를 낸다
+    const fast = applyUnchecked(state, action);
+    expect({ index, state: fast.state, events: fast.events }).toEqual({
+      index,
+      state: result.state,
+      events: result.events,
+    });
     state = result.state;
     events.push(...result.events);
   }
@@ -293,6 +321,7 @@ export function runVector(v: RuleVector): void {
       bombTokens: got.bombTokens,
       ppeokCount: got.ppeokTurns.length,
       gukjinAsPi: got.gukjinAsPi,
+      revealed: sorted(got.revealed),
     };
     const { capturedIncludes = [], capturedExcludes = [], ...rest } = want;
     const expected = Object.fromEntries(
@@ -300,6 +329,7 @@ export function runVector(v: RuleVector): void {
         ...rest,
         hand: rest.hand === undefined ? undefined : sorted(rest.hand),
         captured: rest.captured === undefined ? undefined : sorted(rest.captured),
+        revealed: rest.revealed === undefined ? undefined : sorted(rest.revealed),
       }).filter(([, value]) => value !== undefined),
     );
     expect(actual).toMatchObject({ seat, ...expected });
@@ -336,7 +366,10 @@ export function runVector(v: RuleVector): void {
     const result = settle(state, rules);
     expect(result).toMatchObject(rest);
     if (steps !== undefined) {
-      expect(result.steps.map((s) => ({ kind: s.kind, value: s.value }))).toEqual(steps);
+      // origin('push')은 기대값에 적었을 때만 비교된다(toEqual은 undefined 속성을 없는 것으로 본다)
+      expect(result.steps.map((s) => ({ kind: s.kind, value: s.value, origin: s.origin }))).toEqual(
+        steps,
+      );
     }
   }
   if (e.instantPayouts !== undefined) expect(state.instantPayouts).toEqual(e.instantPayouts);
@@ -362,5 +395,23 @@ export function runVector(v: RuleVector): void {
   if (e.preview !== undefined) {
     const { seat, ...rest } = e.preview;
     expect(previewStop(state, seat)).toMatchObject(rest);
+  }
+  for (const want of e.matchPreview ?? []) {
+    const { seat, card, ...rest } = want;
+    const got = matchPreview(state, seat, card);
+    expect(matchPreview(playerView(state, seat), seat, card)).toEqual(got);
+    expect({ seat, card, ...got, floor: sorted(got.floor) }).toMatchObject({
+      seat,
+      card,
+      ...rest,
+      ...(rest.floor === undefined ? {} : { floor: sorted(rest.floor) }),
+    });
+  }
+  if (e.revealedView !== undefined) {
+    const { viewer, seat, revealed } = e.revealedView;
+    const view = playerView(state, viewer);
+    expect(sorted(view.seats[seat].revealed)).toEqual(sorted(revealed));
+    const unseen = unseenCards(view);
+    expect(revealed.filter((id) => viewer !== seat && unseen.includes(id))).toEqual([]);
   }
 }

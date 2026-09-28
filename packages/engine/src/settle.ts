@@ -1,9 +1,10 @@
 // 판 정산 (rules 12.5 G3~G10, 12.4 E5·E12·E14). 점수 단위의 결과만 계산한다. 금액은 ledger.ts.
-import { INSTANT_UNIT_POINTS, type RuleOptions } from './rules.ts';
+import { INSTANT_UNIT_POINTS, MAX_PUSHES, type RuleOptions } from './rules.ts';
 import { gukjinOptions, scoreCaptured } from './score.ts';
 import type {
   EndReason,
   GameState,
+  RoundResult,
   Seat,
   SeatState,
   Settlement,
@@ -25,15 +26,25 @@ function add(chain: Chain, kind: SettleStepKind, value: number): void {
   chain.steps.push({ kind, op: 'add', value, total: chain.total });
 }
 
-function mul(chain: Chain, kind: SettleStepKind, value: number): void {
+function mul(chain: Chain, kind: SettleStepKind, value: number, origin?: 'push'): void {
   chain.total *= value;
-  chain.steps.push({ kind, op: 'mul', value, total: chain.total });
+  chain.steps.push(
+    origin === undefined
+      ? { kind, op: 'mul', value, total: chain.total }
+      : { kind, op: 'mul', value, total: chain.total, origin },
+  );
 }
 
-/** 나가리 이월 배수와 대박판 배수 (G9, 12.7 대박판) */
+/**
+ * 판 밖에서 온 배수: 나가리 이월(G9) → 밀기(12.7, ×2^연속 횟수, 'jackpot' + origin 'push') → 대박판(12.7).
+ * 밀기 배수는 §10.1이 "판 키우기(대박판) 장치"로 분류하므로 나가리 이월처럼 고정 점수 승리에도 곱한다(해석 30).
+ */
 function applyRoundMultipliers(chain: Chain, state: GameState, rules: RuleOptions): void {
   if (state.round.carry > 1) {
     mul(chain, 'nagariCarry', state.round.carry);
+  }
+  if (state.round.pushes > 0) {
+    mul(chain, 'jackpot', DOUBLE ** state.round.pushes, 'push');
   }
   const jackpot = rules.jackpotRound;
   if (jackpot !== null && jackpot.every > 0 && state.round.number % jackpot.every === 0) {
@@ -138,19 +149,40 @@ function nextCarry(state: GameState, rules: RuleOptions): number {
 }
 
 /**
- * 끝난 판을 정산한다. steps는 기본 → 고 가산 → 고 배수 → 흔들기·폭탄 → 피박·광박·멍따·고박 → 나가리 이월 → 대박판.
+ * 끝난 판을 정산한다. steps는 기본 → 고 가산 → 고 배수 → 흔들기·폭탄 → 피박·광박·멍따·고박 → 나가리 이월 → 밀기 → 대박판.
  * finalPoints = (가산 단계 합) × (곱 단계 곱).
- * 고정 점수 승리(3뻑·총통 끝내기·바닥/양측 총통 선 승리·허당)는 판 안의 배수 없이 나가리 이월·대박판만 곱한다.
+ * 고정 점수 승리(3뻑·총통 끝내기·바닥/양측 총통 선 승리·허당)는 판 안의 배수 없이 나가리 이월·밀기·대박판만 곱한다.
+ * 승자가 밀기를 했으면(result.pushed) 포기한 정산(pushed: true, finalPoints 0)을 돌려준다.
  *
  * 규칙은 항상 `state.rules`를 쓴다. 두 번째 인수는 예전 호출(`settle(state, rules)`)과의 호환용이며 무시한다
  * (상태의 규칙과 어긋난 규칙으로 정산하는 일을 막는다, M1 리뷰 F-10).
  */
 export function settle(state: GameState, _rules?: RuleOptions): Settlement {
-  const rules = state.rules;
   const result = state.result;
   if (result === null) {
     throw new RangeError('끝나지 않은 판은 정산할 수 없습니다');
   }
+  if (result.pushed === true && result.winner !== null) {
+    // 밀기(해석 30): 이 판 정산을 포기한다. 돈은 오가지 않고, 나가리 이월은 이 판(승자가 있는 판)에서 소진되며,
+    // 다음 판은 연속 밀기 횟수 + 1(상한 MAX_PUSHES)로 ×2^n. 선은 승자.
+    const forfeited = scoredSettlement(state, { reason: result.reason, winner: result.winner });
+    return {
+      ...forfeited,
+      steps: [],
+      basePoints: 0,
+      multiplier: 1,
+      finalPoints: 0,
+      nextCarry: 1,
+      pushed: true,
+      forfeitedPoints: forfeited.finalPoints,
+      nextPushes: Math.min(state.round.pushes + 1, MAX_PUSHES),
+    };
+  }
+  return scoredSettlement(state, result);
+}
+
+function scoredSettlement(state: GameState, result: RoundResult): Settlement {
+  const rules = state.rules;
   const dealer = state.dealer ?? 0;
   const winner = result.winner;
   if (winner === null) {
@@ -166,6 +198,10 @@ export function settle(state: GameState, _rules?: RuleOptions): Settlement {
       nextDealer: dealer,
       instantPayouts: state.instantPayouts,
       gukjinAsPi: [state.seats[0].gukjinAsPi, state.seats[1].gukjinAsPi],
+      pushed: false,
+      forfeitedPoints: 0,
+      // 해석 30: 밀어 둔 배수는 나가리를 건너 다음 판으로 이어진다(나가리 이월과 따로 곱한다)
+      nextPushes: state.round.pushes,
     };
   }
   const isStop = result.reason === 'stop' || result.reason === 'autoStop';
@@ -189,6 +225,9 @@ export function settle(state: GameState, _rules?: RuleOptions): Settlement {
     nextDealer: winner,
     instantPayouts: state.instantPayouts,
     gukjinAsPi,
+    pushed: false,
+    forfeitedPoints: 0,
+    nextPushes: 0,
   };
 }
 
