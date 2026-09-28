@@ -269,7 +269,7 @@ p2p-gostop/
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (push/PR): 개발 이미지(`docker/Dockerfile`)를 러너에서 빌드해 한 잡에서 로컬과 같은 `docker compose run --rm dev …` 명령으로 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → 컴포넌트 테스트·Playwright(E2E, 갤러리 스냅샷, axe; PR·수동만) → `assembleDebug` + Android 테스트·Lint → APK 아티팩트. 잡을 하나로 묶어 이미지 빌드를 한 번만 치른다(분 예산 우선, 벽시계 시간은 늘어남).
+- `ci.yml` (push/PR): 개발 이미지(`docker/Dockerfile`)를 러너에서 빌드해 한 잡에서 로컬과 같은 `docker compose run --rm dev …` 명령으로 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → 컴포넌트 테스트·Playwright(E2E, 갤러리 스냅샷, axe; PR·수동만) → 웹 번들을 `assets/web`에 복사(#33) → `assembleDebug` + Android 테스트·Lint(번들 포함 상태) → APK 아티팩트. 잡을 하나로 묶어 이미지 빌드를 한 번만 치른다(분 예산 우선, 벽시계 시간은 늘어남).
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
 - `release.yml`: 웹 빌드는 서명 잡 안에서 키스토어 복원 **전에**, 읽기 전용 마운트 + 비밀 없는 `docker run` 컨테이너(개발 이미지의 베이스 `playwright:v1.63.0-noble`, CI와 같은 Node)에서 `npm ci --ignore-scripts`로 수행한다(계정 아티팩트 용량 초과로 잡 분리 대신 컨테이너 격리 채택). 빌드 후 추적 파일 변경이 있으면 실패. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, 태그 커밋이 main에 있어야 함(M0 리뷰 R-1/R-4~R-7).

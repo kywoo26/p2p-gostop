@@ -53,6 +53,18 @@ jobs:
       - name: E2E (Playwright, Chromium + WebKit)
         if: env.FULL == 'true'
         run: docker compose run --rm --user root dev npm run e2e -w packages/web
+      # 이슈 #33: APK 단위 테스트·Lint를 웹 번들이 들어간 상태(릴리스와 같은 상태)에서 돌린다. 위 build 단계의
+      # packages/web/dist를 release.yml과 같은 방식으로 assets/web에 넣는다(Gradle copyWebDist도 같은 내용으로 동기화한다).
+      - name: 웹 번들을 APK 자산(assets/web)으로 복사
+        run: |
+          if [ ! -f packages/web/dist/index.html ]; then
+            echo "::error::웹 빌드 산출물(packages/web/dist/index.html)이 없습니다."
+            exit 1
+          fi
+          rm -rf android/app/src/main/assets/web
+          mkdir -p android/app/src/main/assets/web
+          cp -R packages/web/dist/. android/app/src/main/assets/web/
+          echo "assets/web: $(find android/app/src/main/assets/web -type f | wc -l)개 파일"
       # Gradle 의존성·배포판 캐시(약 0.9GB). 일회용 러너라 compose의 명명 볼륨은 매번 비므로, 러너 폴더를 컨테이너의
       # Gradle 홈(/root/.gradle)에 붙이고 actions/cache로 보존한다. build-cache-1은 파일 권한이 0600(root 소유)이라
       # 러너 사용자가 읽지 못해 제외한다.
