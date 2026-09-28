@@ -1,16 +1,52 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=$(jq -r .tool_input.file_path); \"${CLAUDE_PROJECT_DIR:-.}/dev.sh\" format:file \"$f\" >/dev/null 2>&1 || true'",
-            "timeout": 60
-          }
-        ]
-      }
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./dev.sh install)",
+      "Bash(./dev.sh lint *)",
+      "Bash(./dev.sh lint:fix *)",
+      "Bash(./dev.sh check *)",
+      "Bash(./dev.sh test *)",
+      "Bash(./dev.sh test:browser *)",
+      "Bash(./dev.sh build:web *)",
+      "Bash(./dev.sh e2e *)",
+      "Bash(./dev.sh ci)",
+      "Bash(./dev.sh apk:debug)",
+      "Bash(./dev.sh android:test)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr list *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh release view *)",
+      "Bash(gh release list *)"
+    ],
+    "ask": [
+      "Bash(gh pr merge *)",
+      "Bash(gh release create *)",
+      "Bash(gh release delete *)",
+      "Bash(git push * main)",
+      "Bash(git push *:main)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push *--tags*)",
+      "Bash(git push * v*)",
+      "Bash(docker volume rm *)",
+      "Bash(docker volume prune*)",
+      "Bash(docker system prune*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(secrets/**)",
+      "Read(*.jks)",
+      "Read(*.keystore)",
+      "Read(*.p12)",
+      "Read(*.pem)"
     ]
   }
 }
