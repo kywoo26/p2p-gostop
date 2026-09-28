@@ -460,6 +460,7 @@ export class GuestSession {
         }
         break;
       case 'events':
+        if (m.to <= this.seq) break;
         if (m.from !== this.seq + 1 || m.to !== m.from + m.list.length - 1) {
           this.errors.push('STALE_SEQ');
           this.join();
