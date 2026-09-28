@@ -6,7 +6,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: '.',
-  testMatch: /card-preview\.spec\.mjs$/,
+  testMatch: /card-(?:preview|classic-preview)\.spec\.mjs$/,
   reporter: 'list',
   outputDir: '../test-results/card-preview',
   projects: [{ name: 'chromium', use: { browserName: 'chromium', deviceScaleFactor: 2 } }],
