@@ -1,0 +1,11 @@
+{
+  "$comment": "기록 화면 픽스처 (spec 6.2 기록). 금액은 좌석 0 기준. 시작 50,000냥 → 53,200냥 (settlement.json과 이어짐).",
+  "names": ["나", "컴퓨터 · 상용급"],
+  "unit": "냥",
+  "startBalance": 50000,
+  "rows": [
+    { "round": 1, "winner": 1, "reason": "stop", "points": 7, "amount": -700 },
+    { "round": 2, "winner": 0, "reason": "stop", "points": 19, "amount": 1900 },
+    { "round": 3, "winner": 0, "reason": "stop", "points": 20, "amount": 2000 }
+  ]
+}

@@ -1,3 +1,6 @@
 dist/
 test-results/
 playwright-report/
+public/cards/
+.cache/
+.vitest/

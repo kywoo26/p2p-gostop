@@ -1,0 +1,3 @@
+.cache/
+# Vitest 브라우저 모드 실패 스크린샷
+.vitest/

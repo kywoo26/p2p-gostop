@@ -1,0 +1,330 @@
+{
+  "$comment": "게임판 화면 픽스처 (spec 6.2 게임판, 4.5 이벤트). 좌석 0이 보는 사람. states: 카드 내기 / 바닥 2장 중 대상 고르기 / 고·스톱. 모든 상태에서 보이는 카드 + 상대 손패 수 + 더미 수 = 51 (src/lib/fixtures.test.ts).",
+  "totalCards": 51,
+  "states": {
+    "play": {
+      "viewer": 0,
+      "turn": 0,
+      "seats": [
+        {
+          "name": "나",
+          "handCount": 5,
+          "hand": [30, 34, 36, 41, 47],
+          "captured": {
+            "gwang": [0],
+            "yeol": [4, 12, 29],
+            "tti": [1, 5, 9],
+            "pi": [3, 7, 48]
+          },
+          "score": 8,
+          "goCount": 1,
+          "shakes": 1,
+          "ppeokCount": 0,
+          "balance": 51200,
+          "progress": {
+            "gwang": 1,
+            "godori": 3,
+            "dan": 3,
+            "pi": 4
+          }
+        },
+        {
+          "name": "컴퓨터 · 상용급",
+          "handCount": 5,
+          "hand": null,
+          "captured": {
+            "gwang": [8],
+            "yeol": [24, 45],
+            "tti": [13, 21],
+            "pi": [11, 14, 27, 43]
+          },
+          "score": 0,
+          "goCount": 0,
+          "shakes": 0,
+          "ppeokCount": 1,
+          "balance": 48800,
+          "progress": {
+            "gwang": 1,
+            "godori": 0,
+            "dan": 1,
+            "pi": 5
+          }
+        }
+      ],
+      "floor": [
+        {
+          "month": 6,
+          "cards": [22],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 9,
+          "cards": [32, 33],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 5,
+          "cards": [16, 17, 19],
+          "kind": "ppeok",
+          "owner": 1
+        },
+        {
+          "month": 10,
+          "cards": [39],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 12,
+          "cards": [44],
+          "kind": "loose",
+          "owner": null
+        }
+      ],
+      "deckCount": 14,
+      "multiplier": 2,
+      "pending": {
+        "kind": "play",
+        "seat": 0
+      },
+      "playable": [30, 34, 36, 41, 47],
+      "round": 3,
+      "eventSeq": 212
+    },
+    "target": {
+      "viewer": 0,
+      "turn": 0,
+      "seats": [
+        {
+          "name": "나",
+          "handCount": 4,
+          "hand": [30, 36, 41, 47],
+          "captured": {
+            "gwang": [0],
+            "yeol": [4, 12, 29],
+            "tti": [1, 5, 9],
+            "pi": [3, 7, 48]
+          },
+          "score": 8,
+          "goCount": 1,
+          "shakes": 1,
+          "ppeokCount": 0,
+          "balance": 51200,
+          "progress": {
+            "gwang": 1,
+            "godori": 3,
+            "dan": 3,
+            "pi": 4
+          }
+        },
+        {
+          "name": "컴퓨터 · 상용급",
+          "handCount": 5,
+          "hand": null,
+          "captured": {
+            "gwang": [8],
+            "yeol": [24, 45],
+            "tti": [13, 21],
+            "pi": [11, 14, 27, 43]
+          },
+          "score": 0,
+          "goCount": 0,
+          "shakes": 0,
+          "ppeokCount": 1,
+          "balance": 48800,
+          "progress": {
+            "gwang": 1,
+            "godori": 0,
+            "dan": 1,
+            "pi": 5
+          }
+        }
+      ],
+      "floor": [
+        {
+          "month": 6,
+          "cards": [22],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 9,
+          "cards": [32, 33],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 5,
+          "cards": [16, 17, 19],
+          "kind": "ppeok",
+          "owner": 1
+        },
+        {
+          "month": 10,
+          "cards": [39],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 12,
+          "cards": [44],
+          "kind": "loose",
+          "owner": null
+        }
+      ],
+      "deckCount": 14,
+      "multiplier": 2,
+      "pending": {
+        "kind": "target",
+        "seat": 0,
+        "source": "play",
+        "card": 34,
+        "options": [32, 33]
+      },
+      "playable": [],
+      "round": 3,
+      "eventSeq": 214
+    },
+    "goStop": {
+      "viewer": 0,
+      "turn": 0,
+      "seats": [
+        {
+          "name": "나",
+          "handCount": 4,
+          "hand": [30, 36, 41, 47],
+          "captured": {
+            "gwang": [0],
+            "yeol": [4, 12, 29, 32, 20],
+            "tti": [1, 5, 9],
+            "pi": [3, 7, 48, 34, 22]
+          },
+          "score": 9,
+          "goCount": 1,
+          "shakes": 1,
+          "ppeokCount": 0,
+          "balance": 51200,
+          "progress": {
+            "gwang": 1,
+            "godori": 3,
+            "dan": 3,
+            "pi": 6
+          }
+        },
+        {
+          "name": "컴퓨터 · 상용급",
+          "handCount": 5,
+          "hand": null,
+          "captured": {
+            "gwang": [8],
+            "yeol": [24, 45],
+            "tti": [13, 21],
+            "pi": [11, 14, 27, 43]
+          },
+          "score": 0,
+          "goCount": 0,
+          "shakes": 0,
+          "ppeokCount": 1,
+          "balance": 48800,
+          "progress": {
+            "gwang": 1,
+            "godori": 0,
+            "dan": 1,
+            "pi": 5
+          }
+        }
+      ],
+      "floor": [
+        {
+          "month": 9,
+          "cards": [33],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 5,
+          "cards": [16, 17, 19],
+          "kind": "ppeok",
+          "owner": 1
+        },
+        {
+          "month": 10,
+          "cards": [39],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 12,
+          "cards": [44],
+          "kind": "loose",
+          "owner": null
+        }
+      ],
+      "deckCount": 13,
+      "multiplier": 2,
+      "pending": {
+        "kind": "goStop",
+        "seat": 0,
+        "score": 9,
+        "goCount": 1,
+        "stopAmount": 2000
+      },
+      "playable": [],
+      "round": 3,
+      "eventSeq": 221
+    }
+  },
+  "events": [
+    {
+      "seq": 180,
+      "type": "Ppeok",
+      "seat": 1,
+      "cards": [16, 17, 19]
+    },
+    {
+      "seq": 195,
+      "type": "Jjok",
+      "seat": 0,
+      "cards": [6, 7]
+    },
+    {
+      "seq": 201,
+      "type": "Ttadak",
+      "seat": 0,
+      "cards": [1, 2, 3, 0]
+    },
+    {
+      "seq": 205,
+      "type": "Sseul",
+      "seat": 0,
+      "cards": [29, 30]
+    },
+    {
+      "seq": 208,
+      "type": "Shake",
+      "seat": 0,
+      "cards": [30, 31, 28]
+    },
+    {
+      "seq": 209,
+      "type": "Bomb",
+      "seat": 1,
+      "cards": [40, 41, 42]
+    },
+    {
+      "seq": 222,
+      "type": "Go",
+      "seat": 0,
+      "cards": [],
+      "n": 2
+    },
+    {
+      "seq": 223,
+      "type": "Stop",
+      "seat": 0,
+      "cards": []
+    }
+  ]
+}

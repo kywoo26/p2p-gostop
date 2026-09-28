@@ -23,6 +23,7 @@
   <footer>
     <span data-testid="build-id">빌드 {BUILD_ID}</span>
     <time datetime={BUILD_TIME}>{BUILD_TIME.slice(0, 16).replace('T', ' ')}</time>
+    <a href="#/license">라이선스</a>
   </footer>
 </main>
 
@@ -84,5 +85,9 @@
     color: var(--color-text-muted);
     font-size: var(--font-size-s);
     font-variant-numeric: tabular-nums;
+  }
+
+  footer a {
+    color: var(--color-text-muted);
   }
 </style>

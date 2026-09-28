@@ -1,0 +1,60 @@
+import { expect, test } from 'vitest';
+import { render } from 'vitest-browser-svelte';
+import { bannerFor } from './banner.ts';
+import Card from './Card.svelte';
+import { cardLabel, cardMark, cardSrc } from './cards.ts';
+import EventBanner from './EventBanner.svelte';
+
+test('카드 이름·표식 (NF-08: 월 숫자·종류 병기)', () => {
+  expect([0, 4, 32, 43, 44, 46, 21, 13, 48, 50].map(cardLabel)).toEqual([
+    '1월 광',
+    '2월 고도리',
+    '9월 국진',
+    '11월 쌍피',
+    '12월 비광',
+    '12월 비띠',
+    '6월 청단',
+    '4월 초단',
+    '보너스 2피',
+    '보너스 3피',
+  ]);
+  expect([0, 4, 1, 2, 47, 49].map(cardMark)).toEqual(['1광', '2열', '1띠', '1피', '12쌍', '+2']);
+  expect(cardSrc(7)).toMatch(/cards\/7\.svg$/);
+});
+
+test('앞면 카드: 이름·그림·표식, 가려진 카드: 뒷면만', async () => {
+  const screen = await render(Card, { id: 0, size: 'l' });
+  const face = screen.getByRole('img', { name: '1월 광' });
+  await expect.element(face).toBeVisible();
+  const imgs = face.element().querySelectorAll('img');
+  expect([...imgs].map((i) => i.getAttribute('src'))).toEqual([cardSrc(0)]);
+  expect(face.element().textContent).toContain('1광');
+
+  const hidden = await render(Card, { id: null });
+  const back = hidden.getByRole('img', { name: '카드 뒷면' });
+  expect(back.element().querySelector('img')?.getAttribute('src')).toMatch(/cards\/back\.svg$/);
+});
+
+test('카드 크기 s < m < l, 비율 103.2:168.2', async () => {
+  const widths: number[] = [];
+  for (const size of ['s', 'm', 'l'] as const) {
+    const screen = await render(Card, { id: 8, size });
+    const rect = screen.getByRole('img', { name: '3월 광' }).element().getBoundingClientRect();
+    widths.push(rect.width);
+    expect(rect.height / rect.width).toBeCloseTo(168.2 / 103.2, 1);
+    screen.unmount();
+  }
+  expect(widths[0]).toBeLessThan(widths[1] ?? 0);
+  expect(widths[1]).toBeLessThan(widths[2] ?? 0);
+});
+
+test('이벤트 → 배너 (spec 6.5 문구)', async () => {
+  const base = { seq: 1, seat: 0 as const, cards: [] };
+  expect(bannerFor({ ...base, type: 'Ppeok' })).toEqual({ kind: 'ppeok', text: '뻑' });
+  expect(bannerFor({ ...base, type: 'Go', n: 3 })).toEqual({ kind: 'go', text: '3고' });
+  expect(bannerFor({ ...base, type: 'Bomb' })?.kind).toBe('bomb');
+  expect(bannerFor({ ...base, type: 'CardPlayed' })).toBeNull();
+
+  const screen = await render(EventBanner, { kind: 'jjok', text: '쪽' });
+  await expect.element(screen.getByRole('status')).toHaveTextContent('쪽!');
+});

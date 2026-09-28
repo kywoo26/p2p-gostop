@@ -1,0 +1,25 @@
+{
+  "$comment": "정산 화면 픽스처 (spec 6.2 정산). board.json의 goStop 상태에서 스톱했을 때: 고도리 5 + 홍단 3 + 열끗 5장 1 = 9점, 1고 +1, 흔들기 ×2.",
+  "winner": 0,
+  "loser": 1,
+  "reason": "stop",
+  "names": ["나", "컴퓨터 · 상용급"],
+  "breakdown": [
+    { "kind": "godori", "points": 5 },
+    { "kind": "hongdan", "points": 3 },
+    { "kind": "yeol", "points": 1 }
+  ],
+  "steps": [
+    { "kind": "base", "op": "add", "value": 9, "total": 9 },
+    { "kind": "goBonus", "op": "add", "value": 1, "total": 10 },
+    { "kind": "shake", "op": "mul", "value": 2, "total": 20 }
+  ],
+  "finalPoints": 20,
+  "pointValue": 100,
+  "amount": 2000,
+  "unit": "냥",
+  "balances": [
+    { "before": 51200, "after": 53200 },
+    { "before": 48800, "after": 46800 }
+  ]
+}

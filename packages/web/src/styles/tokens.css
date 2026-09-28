@@ -26,6 +26,10 @@
   --color-event-shake: oklch(64% 0.19 305);
   --color-event-go: oklch(84% 0.15 88);
   --color-event-stop: oklch(97% 0 0);
+  /* 어두운 표면 위 빨간 글자 (대비 4.5:1 이상) */
+  --color-event-ppeok-text: oklch(74% 0.16 27);
+  --color-banner-dark-text: oklch(18% 0.02 260);
+  --color-banner-light-text: oklch(100% 0 0);
 
   /* 간격·모서리·글자 */
   --space-1: 0.25rem;
@@ -36,6 +40,10 @@
   --radius-s: 0.375rem;
   --radius-m: 0.75rem;
   --touch-min: 48px; /* spec 6.1 최소 터치 영역 48×48dp */
+  /* 카드 폭 (비율 103.2:168.2). s 획득패, m 바닥, l 손패 — 손패 폭은 터치 영역 48px 이상 */
+  --card-w-s: 26px;
+  --card-w-m: 44px;
+  --card-w-l: 62px;
   --font-body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   --font-size-s: 0.8125rem;
   --font-size-m: 1rem;

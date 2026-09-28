@@ -1,0 +1,19 @@
+{
+  "$comment": "진단·로그 화면 픽스처 (spec 6.2, FR-30~32).",
+  "buildId": "a1b2c3d",
+  "device": "Galaxy S25 Ultra · Android 16 · WebView 142",
+  "mode": "host",
+  "checks": [
+    { "label": "근처 기기 권한", "status": "ok", "detail": "허용됨" },
+    { "label": "Wi-Fi", "status": "ok", "detail": "켜짐 (비행기 모드)" },
+    { "label": "로컬 핫스팟", "status": "ok", "detail": "192.168.49.1:17777" },
+    { "label": "게스트 연결", "status": "warn", "detail": "재접속 1회 (3.2초)" }
+  ],
+  "log": [
+    { "t": "14:02:11.204", "level": "info", "msg": "hotspot started ssid=AndroidShare_4821" },
+    { "t": "14:02:11.310", "level": "info", "msg": "server listening 0.0.0.0:17777" },
+    { "t": "14:03:40.022", "level": "info", "msg": "guest connected name=민지" },
+    { "t": "14:09:02.771", "level": "warn", "msg": "guest socket closed code=1006" },
+    { "t": "14:09:05.980", "level": "info", "msg": "guest resync from seq=198 (diff 14)" }
+  ]
+}

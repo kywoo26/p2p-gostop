@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- p2p-gostop 자체 제작 카드 뒷면. CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="103.2" height="168.2" viewBox="0 0 103.2 168.2">
+  <defs>
+    <!-- 마름모 격자 무늬 -->
+    <pattern id="lattice" width="12" height="12" patternUnits="userSpaceOnUse">
+      <path fill="none" stroke="#e8454b" stroke-width="1.2" d="M6 0L12 6L6 12L0 6Z"/>
+    </pattern>
+  </defs>
+  <path fill="#b8141b" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
+  <path fill="url(#lattice)" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
+  <!-- 가운데 꽃 문양 -->
+  <circle cx="51.6" cy="84.1" r="24" fill="#b8141b" stroke="#111" stroke-width="2"/>
+  <circle cx="51.6" cy="84.1" r="19.5" fill="none" stroke="#f3c64a" stroke-width="1.5"/>
+  <g fill="#fff" stroke="#111" stroke-width="1.2">
+    <ellipse cx="51.6" cy="73.6" rx="5.5" ry="8.5"/>
+    <ellipse cx="51.6" cy="94.6" rx="5.5" ry="8.5"/>
+    <ellipse cx="41.1" cy="84.1" rx="8.5" ry="5.5"/>
+    <ellipse cx="62.1" cy="84.1" rx="8.5" ry="5.5"/>
+  </g>
+  <circle cx="51.6" cy="84.1" r="4" fill="#f3c64a" stroke="#111" stroke-width="1.2"/>
+  <!-- 테두리 (Commons 세트와 같은 모양) -->
+  <path fill="#ef1d1e" d="M5 0Q0 0 0 5v158.2q0 5 5 5h93.2q5 0 5-5V5q0-5-5-5zm8.3 7.2h76.6q7 0 7 7V154q0 7-7 7H13.3q-7 0-7-7V14.2q0-7 7-7"/>
+  <path fill="none" stroke="#000" stroke-width="1.2" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
+</svg>

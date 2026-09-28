@@ -1,0 +1,13 @@
+{
+  "$comment": "방 열기(호스트) 화면 픽스처 (spec 6.2, FR-01~03). 접속 주소는 화면이 ip·port로 만든다(번들에 주소 문자열을 두지 않음).",
+  "hotspot": {
+    "state": "on",
+    "ssid": "AndroidShare_4821",
+    "password": "k3v9x2ma",
+    "ip": "192.168.49.1",
+    "port": 17777
+  },
+  "wifiQr": "WIFI:T:WPA;S:AndroidShare_4821;P:k3v9x2ma;;",
+  "guest": { "name": "민지", "connected": true },
+  "rules": { "preset": "표준", "pointValue": 100, "unit": "냥" }
+}

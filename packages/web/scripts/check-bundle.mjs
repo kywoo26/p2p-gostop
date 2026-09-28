@@ -4,6 +4,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ATTRIBUTION_URLS } from '../src/cards/attribution.ts';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const LIMIT_BYTES = 1.5 * 1024 * 1024;
@@ -36,6 +37,11 @@ const IDENTIFIER_URLS = new Set([
  * - Svelte 5 프로덕션 런타임은 오류 코드를 `https://svelte.dev/e/<code>` 문구로 던진다.
  */
 const MESSAGE_LINK_PREFIXES = ['https://svelte.dev/e/'];
+/**
+ * 라이선스 화면에 글자로만 보여 주는 주소 (CC BY-SA 4.0 표기 의무, spec NF-07). 링크를 걸지 않고 요청하지 않는다.
+ * 정확히 같은 문자열만 허용한다(src/cards/attribution.ts).
+ */
+const DISPLAYED_URLS = new Set(ATTRIBUTION_URLS);
 const URL_PATTERN = /https?:\/\/[^\s"'`<>()\\{}|^]+/g;
 
 async function* walk(dir) {
@@ -50,9 +56,10 @@ const allowed = new Map();
 
 function isExternal(raw) {
   const url = raw.replace(/[.,;:]+$/, '');
-  const known = IDENTIFIER_URLS.has(url)
-    ? url
-    : MESSAGE_LINK_PREFIXES.find((prefix) => url.startsWith(prefix));
+  const known =
+    IDENTIFIER_URLS.has(url) || DISPLAYED_URLS.has(url)
+      ? url
+      : MESSAGE_LINK_PREFIXES.find((prefix) => url.startsWith(prefix));
   if (known) {
     allowed.set(known, (allowed.get(known) ?? 0) + 1);
     return false;
@@ -103,6 +110,6 @@ if (external.length > 0) {
   console.log('외부 URL 0건');
 }
 for (const [url, count] of allowed) {
-  console.log(`  (허용: 요청이 아닌 식별자·오류 문구 ${url} ×${count})`);
+  console.log(`  (허용: 요청이 아닌 식별자·오류 문구·저작자 표기 ${url} ×${count})`);
 }
 process.exit(failed ? 1 : 0);

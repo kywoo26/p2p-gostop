@@ -1,0 +1,16 @@
+{
+  "$comment": "설정 화면 픽스처 (spec 6.2 설정, FR-20~21). 토글은 일부만 보인다(전체 24개는 M6).",
+  "preset": "standard",
+  "toggles": [
+    { "id": "firstPpeokPayout", "label": "첫뻑 즉시 정산", "on": true },
+    { "id": "bonusCards", "label": "보너스 카드 3장", "on": true },
+    { "id": "gukjinAsk", "label": "국진 매번 묻기", "on": false },
+    { "id": "threePpeokWin", "label": "3뻑 승리", "on": true },
+    { "id": "bombTwo", "label": "2장 폭탄", "on": false }
+  ],
+  "pointValue": 100,
+  "unit": "냥",
+  "speed": "fast",
+  "sound": true,
+  "vibration": true
+}

@@ -1,6 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // e2e의 page.evaluate·waitForFunction 콜백은 브라우저에서 돈다
+    "lib": ["es2023", "dom", "dom.iterable"],
     "types": ["node"]
   },
   "include": ["vite.config.ts", "vitest.config.ts", "playwright.config.ts", "e2e"]

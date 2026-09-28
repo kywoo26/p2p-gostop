@@ -14,6 +14,14 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
   },
+  // 스크린샷 기준 이미지는 도커 e2e 이미지 안에서만 만든다(글꼴·렌더러 고정): ./dev.sh e2e --update-snapshots
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
+  expect: {
+    toHaveScreenshot: {
+      // 같은 이미지 안에서도 안티에일리어싱이 드물게 몇 픽셀 흔들린다
+      maxDiffPixelRatio: 0.001,
+    },
+  },
   projects: [
     { name: 'chromium', use: { ...devices['Pixel 7'] } },
     { name: 'webkit', use: { ...devices['iPhone 15'] } },

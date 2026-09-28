@@ -1,0 +1,514 @@
+{
+  "$comment": "카드 ID(엔진 카탈로그 0~50) → 그림 원본 대응표. 엔진 카탈로그 순서가 바뀌면 이 파일만 고치고 `node scripts/build-cards.mjs`를 다시 실행한다. month/kind/piValue는 src/cards/map.test.ts가 엔진 CARDS와 대조한다.",
+  "viewBox": [103.2, 168.2],
+  "cards": [
+    {
+      "id": 0,
+      "month": 1,
+      "kind": "gwang",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu January Hikari.svg",
+      "sha1": "8928adf130c73b5d7cbeecb43ef16ab7189042c5",
+      "uploaded": "2024-12-25T11:57:37Z"
+    },
+    {
+      "id": 1,
+      "month": 1,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu January Tanzaku.svg",
+      "sha1": "007028c9e18d3f020a19f6416ebf8045b8042fe6",
+      "uploaded": "2024-12-25T11:57:40Z"
+    },
+    {
+      "id": 2,
+      "month": 1,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu January Kasu 1.svg",
+      "sha1": "978c06ad87100da29d3aca930395f68300a59835",
+      "uploaded": "2024-12-25T11:57:38Z"
+    },
+    {
+      "id": 3,
+      "month": 1,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu January Kasu 2.svg",
+      "sha1": "db6a0d1f84a64a9e052fec45c816465717c8c677",
+      "uploaded": "2024-12-25T11:57:39Z"
+    },
+    {
+      "id": 4,
+      "month": 2,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu February Tane.svg",
+      "sha1": "006c9d7f407d405ab971951be8faf48f9b25cc69",
+      "uploaded": "2024-12-25T11:57:34Z"
+    },
+    {
+      "id": 5,
+      "month": 2,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu February Tanzaku.svg",
+      "sha1": "f44c121ecec901416e1c37bc434009ed7bb18878",
+      "uploaded": "2024-12-26T00:58:41Z"
+    },
+    {
+      "id": 6,
+      "month": 2,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu February Kasu 1.svg",
+      "sha1": "37fb409d480e8ce58f14dc47cfdfab17bd22ccff",
+      "uploaded": "2024-12-25T11:57:33Z"
+    },
+    {
+      "id": 7,
+      "month": 2,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu February Kasu 2.svg",
+      "sha1": "e302f1cddd2ad02429beadf1ce58636b478630d9",
+      "uploaded": "2024-12-25T11:57:33Z"
+    },
+    {
+      "id": 8,
+      "month": 3,
+      "kind": "gwang",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu March Hikari.svg",
+      "sha1": "e02e2b7c8b29830ec43bdc930b95cef35f7d1881",
+      "uploaded": "2024-12-25T11:57:56Z"
+    },
+    {
+      "id": 9,
+      "month": 3,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu March Tanzaku.svg",
+      "sha1": "61cec04215e4ab857ba58700e7323844c5b42d25",
+      "uploaded": "2024-12-25T11:54:15Z"
+    },
+    {
+      "id": 10,
+      "month": 3,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu March Kasu 1.svg",
+      "sha1": "0d819c50dcb0861b43ee6e7f84a9ec103a4c4a9e",
+      "uploaded": "2024-12-25T11:54:03Z"
+    },
+    {
+      "id": 11,
+      "month": 3,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu March Kasu 2.svg",
+      "sha1": "8045be886dc709a817dfef78aa505cabf9e3bd60",
+      "uploaded": "2024-12-25T11:54:16Z"
+    },
+    {
+      "id": 12,
+      "month": 4,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu April Tane.svg",
+      "sha1": "e93911f4a6e2adaa07e2c731fef681443a516913",
+      "uploaded": "2024-12-25T11:53:43Z"
+    },
+    {
+      "id": 13,
+      "month": 4,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu April Tanzaku.svg",
+      "sha1": "f273bf818e75a9ddb554a6c230d514d7cacfb9f5",
+      "uploaded": "2024-12-25T11:57:27Z"
+    },
+    {
+      "id": 14,
+      "month": 4,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu April Kasu 1.svg",
+      "sha1": "fa65b06e697624cccc3cb4e6911a61899fd98c47",
+      "uploaded": "2024-12-25T11:57:24Z"
+    },
+    {
+      "id": 15,
+      "month": 4,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu April Kasu 2.svg",
+      "sha1": "117e19819210e7cdbd3abe0c99e3bd7b64832897",
+      "uploaded": "2024-12-26T23:39:41Z"
+    },
+    {
+      "id": 16,
+      "month": 5,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu May Tane.svg",
+      "sha1": "b65ebe95b8402b286723c68b421687c44081f9cf",
+      "uploaded": "2024-12-25T11:57:56Z"
+    },
+    {
+      "id": 17,
+      "month": 5,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu May Tanzaku.svg",
+      "sha1": "c5e0b920a955d18a130d0b62585dda4462384253",
+      "uploaded": "2024-12-25T11:54:28Z"
+    },
+    {
+      "id": 18,
+      "month": 5,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu May Kasu 1.svg",
+      "sha1": "378cecbf75aa7a50ac9ae160aa9660e784457737",
+      "uploaded": "2024-12-25T11:54:15Z"
+    },
+    {
+      "id": 19,
+      "month": 5,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu May Kasu 2.svg",
+      "sha1": "fd784138dda048c0f03d3b6ffd102b536214f84f",
+      "uploaded": "2024-12-25T11:54:26Z"
+    },
+    {
+      "id": 20,
+      "month": 6,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu June Tane.svg",
+      "sha1": "b85efd6d1d0f03bf5522764fe39130ffe70d0359",
+      "uploaded": "2024-12-25T11:57:55Z"
+    },
+    {
+      "id": 21,
+      "month": 6,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu June Tanzaku.svg",
+      "sha1": "0a8a4f2e015e8cfa0ca097fbc533ca1aff3894a9",
+      "uploaded": "2024-12-25T11:54:04Z"
+    },
+    {
+      "id": 22,
+      "month": 6,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu June Kasu 1.svg",
+      "sha1": "b80e95cc9a4118c1b9ee0f1687507f722ab6da81",
+      "uploaded": "2024-12-25T11:53:56Z"
+    },
+    {
+      "id": 23,
+      "month": 6,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu June Kasu 2.svg",
+      "sha1": "3baf0f6432ca89631a1fee55177f5527778ced99",
+      "uploaded": "2024-12-25T11:54:03Z"
+    },
+    {
+      "id": 24,
+      "month": 7,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu July Tane.svg",
+      "sha1": "4f903c0d820d8f7a3dccfa2d409dd0fbe8e87804",
+      "uploaded": "2024-12-25T11:57:52Z"
+    },
+    {
+      "id": 25,
+      "month": 7,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu July Tanzaku.svg",
+      "sha1": "2297c76870e40c723b6ae247ddfce4196c88dfff",
+      "uploaded": "2024-12-25T11:57:53Z"
+    },
+    {
+      "id": 26,
+      "month": 7,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu July Kasu 1.svg",
+      "sha1": "2a154e693d89d03c3c0888d76c3aaa10ee52c04d",
+      "uploaded": "2024-12-25T11:57:49Z"
+    },
+    {
+      "id": 27,
+      "month": 7,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu July Kasu 2.svg",
+      "sha1": "ed03726d46b0847923d9edce9233e1118ed63268",
+      "uploaded": "2024-12-25T11:57:50Z"
+    },
+    {
+      "id": 28,
+      "month": 8,
+      "kind": "gwang",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu August Hikari.svg",
+      "sha1": "a03c54f5520f6ba8d950da5c5d5bb05ca182303c",
+      "uploaded": "2024-12-25T11:57:28Z"
+    },
+    {
+      "id": 29,
+      "month": 8,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu August Tane.svg",
+      "sha1": "5de5ccd0d13022011b4ce137990a875187c7c124",
+      "uploaded": "2024-12-25T11:57:31Z"
+    },
+    {
+      "id": 30,
+      "month": 8,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu August Kasu 1.svg",
+      "sha1": "b52fd31d827d324021c26e5ffb7ed43a39a867f9",
+      "uploaded": "2024-12-25T11:57:30Z"
+    },
+    {
+      "id": 31,
+      "month": 8,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu August Kasu 2.svg",
+      "sha1": "ce259ce7305c9d11bc1775ebb7894121d9bc6ec1",
+      "uploaded": "2024-12-25T11:57:30Z"
+    },
+    {
+      "id": 32,
+      "month": 9,
+      "kind": "yeol",
+      "piValue": 2,
+      "source": "commons",
+      "file": "Hwatu September Tane.svg",
+      "sha1": "25cbb92bc5c434e7c4e1e7ff085570e2ab72e962",
+      "uploaded": "2024-12-25T11:57:21Z"
+    },
+    {
+      "id": 33,
+      "month": 9,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu September Tanzaku.svg",
+      "sha1": "aefd279740c8122ec10bfc42ed07eae3834eb84d",
+      "uploaded": "2024-12-25T11:57:21Z"
+    },
+    {
+      "id": 34,
+      "month": 9,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu September Kasu 1.svg",
+      "sha1": "a32af42456105b336bc2447306bbbec4d08a1430",
+      "uploaded": "2024-12-25T11:55:00Z"
+    },
+    {
+      "id": 35,
+      "month": 9,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu September Kasu 2.svg",
+      "sha1": "cc5ab8e20df4ea0d7457aa7ed29e74709c801b4c",
+      "uploaded": "2024-12-25T11:55:01Z"
+    },
+    {
+      "id": 36,
+      "month": 10,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu October Tane.svg",
+      "sha1": "bdd2712616185c6dfddbef8f6ebd15dd38d43b6d",
+      "uploaded": "2024-12-25T11:54:50Z"
+    },
+    {
+      "id": 37,
+      "month": 10,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu October Tanzaku.svg",
+      "sha1": "7a01826c4c93a4fe8fd4c3ac5b352972bc086dd9",
+      "uploaded": "2024-12-25T11:55:00Z"
+    },
+    {
+      "id": 38,
+      "month": 10,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu October Kasu 1.svg",
+      "sha1": "acf103c2a35ffd0497e63ef78b5bd75385598023",
+      "uploaded": "2024-12-25T11:54:49Z"
+    },
+    {
+      "id": 39,
+      "month": 10,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu October Kasu 2.svg",
+      "sha1": "058dbd70068237153c431d06d9b5cb1b5ebc9fdc",
+      "uploaded": "2024-12-25T11:54:49Z"
+    },
+    {
+      "id": 40,
+      "month": 11,
+      "kind": "gwang",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu November Hikari.svg",
+      "sha1": "b9d04e8a9b83c09a488a7155837875604bcffc1a",
+      "uploaded": "2024-12-25T11:54:28Z"
+    },
+    {
+      "id": 41,
+      "month": 11,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu November Kasu 1.svg",
+      "sha1": "38014417656433c874335f95770c65639fdfc5e1",
+      "uploaded": "2024-12-25T11:54:38Z"
+    },
+    {
+      "id": 42,
+      "month": 11,
+      "kind": "pi",
+      "piValue": 1,
+      "source": "commons",
+      "file": "Hwatu November Kasu 3.svg",
+      "sha1": "2740a3aef1a36329173a126d80570a01c45c7b35",
+      "uploaded": "2024-12-25T11:54:39Z"
+    },
+    {
+      "id": 43,
+      "month": 11,
+      "kind": "pi",
+      "piValue": 2,
+      "source": "commons",
+      "file": "Hwatu November Kasu 2.svg",
+      "sha1": "6d399849e549341ebfe774fc96bade58e44a6f23",
+      "uploaded": "2024-12-25T11:57:57Z"
+    },
+    {
+      "id": 44,
+      "month": 12,
+      "kind": "gwang",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu December Hikari.svg",
+      "sha1": "861c3cf90d59c33cb70604342416263c254ace3f",
+      "uploaded": "2024-12-25T11:53:44Z"
+    },
+    {
+      "id": 45,
+      "month": 12,
+      "kind": "yeol",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu December Tane.svg",
+      "sha1": "10903b941bc94265c58eddfa765f09b854883fe5",
+      "uploaded": "2024-12-25T11:53:51Z"
+    },
+    {
+      "id": 46,
+      "month": 12,
+      "kind": "tti",
+      "piValue": 0,
+      "source": "commons",
+      "file": "Hwatu December Tanzaku.svg",
+      "sha1": "97997cebf31b7f344604851b9e3fa11c739ae079",
+      "uploaded": "2024-12-25T11:53:51Z"
+    },
+    {
+      "id": 47,
+      "month": 12,
+      "kind": "pi",
+      "piValue": 2,
+      "source": "commons",
+      "file": "Hwatu December Kasu.svg",
+      "sha1": "b47633a7990304049ecf4338c0371086813f4949",
+      "uploaded": "2024-12-25T11:53:43Z"
+    },
+    {
+      "id": 48,
+      "month": null,
+      "kind": "bonus",
+      "piValue": 2,
+      "source": "original",
+      "file": "bonus-2pi-a.svg"
+    },
+    {
+      "id": 49,
+      "month": null,
+      "kind": "bonus",
+      "piValue": 2,
+      "source": "original",
+      "file": "bonus-2pi-b.svg"
+    },
+    {
+      "id": 50,
+      "month": null,
+      "kind": "bonus",
+      "piValue": 3,
+      "source": "original",
+      "file": "bonus-3pi.svg"
+    }
+  ],
+  "back": {
+    "source": "original",
+    "file": "back.svg"
+  }
+}

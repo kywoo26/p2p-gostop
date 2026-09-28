@@ -1,0 +1,7 @@
+{
+  "$comment": "접속(게스트) 화면 픽스처 (spec 6.2). iPhone Safari, 비보안 컨텍스트.",
+  "name": "민지",
+  "connection": "connecting",
+  "host": "192.168.49.1:17777",
+  "showAddToHomeScreen": true
+}
