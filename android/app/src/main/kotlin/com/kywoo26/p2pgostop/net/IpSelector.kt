@@ -85,8 +85,13 @@ object IpSelector {
             .toList()
 
     /** 핫스팟 URL에 쓸 IP. 사설 IPv4 후보가 없으면 null. */
+    /**
+     * 핫스팟 게이트웨이로 볼 수 있는 후보만 고른다. 점수가 음수인 후보(VPN tun0 등)는
+     * 핫스팟 인터페이스(swlan0)가 뜨기 전 잠깐 잘못 선택되는 문제가 실기기(S25 Ultra)에서
+     * 확인되어 제외한다. 폴백 화면은 [rank] 전체를 따로 보여 준다.
+     */
     fun selectHotspotIp(ifaces: List<NetIf>): String? =
-        rank(ifaces).firstOrNull { isPrivateIpv4(it.ip) }?.ip
+        rank(ifaces).firstOrNull { it.score >= 0 && isPrivateIpv4(it.ip) }?.ip
 
     /** 현재 기기의 인터페이스 스냅샷(Android/JVM 공통). */
     fun snapshot(): List<NetIf> =
