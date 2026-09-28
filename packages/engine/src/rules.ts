@@ -3,8 +3,8 @@
 // 진행 속도·자동치기 2개는 기기별 로컬 설정(LocalPlayOptions, FR-24)으로 나눈다.
 // 여기에 12.1 R7("뺏기 없음" 토글), 12.4 E14(허당, 기본 끔), 12.6 M2(승자 보유액 상한 선택)의 3개를 더해 25개다.
 //
-// 구현 상태 (M1): push(밀기)·missions(미션)·firstDealer='rockPaperScissors'는 타입만 있고 엔진이 무시한다(P2, M6).
-// 가위바위보는 패 고르기로 대체된다. 목록은 UNIMPLEMENTED_RULES.
+// 구현 상태: missions(미션)·firstDealer='rockPaperScissors'는 타입만 있고 엔진이 무시한다(P2, M6).
+// 가위바위보는 패 고르기로 대체된다. 목록은 UNIMPLEMENTED_RULES. push(밀기)는 E1 트랙(2026-09-28)에서 구현했다.
 
 export interface JackpotRoundOption {
   /** N판마다 */
@@ -50,7 +50,10 @@ export interface RuleOptions {
   readonly goScoring: 'plusNAndDouble' | 'doubleOnly';
   /** 국진 처리: 자동 최적(피망식) / 매번 묻기 — S5 */
   readonly gukjin: 'auto' | 'ask';
-  /** 밀기(최대 2회 연속, ×4) */
+  /**
+   * 밀기(rules-commercial §10.1 한게임 신맞고, 12.7): 판이 끝난 뒤 승자가 이번 판 정산을 포기하고 다음 판을 ×2로.
+   * 연속 MAX_PUSHES(2)회까지(×4). 액션 `push`는 phase 'end'에서 승자만 (docs/rules-vectors.md 해석 30)
+   */
   readonly push: boolean;
   /** 대박판 (null = 끔) */
   readonly jackpotRound: JackpotRoundOption | null;
@@ -66,9 +69,8 @@ export interface RuleOptions {
   readonly limitedLiability: boolean;
 }
 
-/** 타입만 있고 M1 엔진이 무시하는 옵션 (P2, plan.md M6). */
+/** 타입만 있고 엔진이 무시하는 옵션 (P2, plan.md M6). */
 export const UNIMPLEMENTED_RULES: readonly string[] = Object.freeze([
-  'push',
   'missions',
   'firstDealer:rockPaperScissors',
 ]);
@@ -84,6 +86,9 @@ export const DEFAULT_LOCAL_PLAY_OPTIONS: LocalPlayOptions = Object.freeze({
   speed: 'fast',
   autoPlay: false,
 });
+
+/** 밀기 연속 상한 (§10.1 "연속 2회까지(×4)"). 이 횟수만큼 민 판의 승자는 더 밀 수 없다 */
+export const MAX_PUSHES = 2;
 
 /** 나는 점수 (G1). 토글 아님. */
 export const WINNING_SCORE = 7;
@@ -139,7 +144,7 @@ const TRADITIONAL: RuleOptions = Object.freeze({
 });
 
 /**
- * 아케이드: 뺏기 켬, 대박판 켬, 밀기 켬, 미션은 P2 (FR-20).
+ * 아케이드: 뺏기 켬, 대박판 켬, 밀기 켬(판이 끝난 뒤 승자가 `push` 액션으로 고름), 미션은 P2 (FR-20).
  * 대박판 주기·배수는 spec 11.2 Q5 잠정값(5판마다 ×2).
  * TODO(M6): 미션 구현 후 missions 기본값 결정.
  */

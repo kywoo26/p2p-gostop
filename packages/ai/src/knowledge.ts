@@ -34,7 +34,7 @@ export function unknownCards(view: PlayerView): CardId[] {
  */
 export function determinize(view: PlayerView, rng: Rng): GameState {
   const opp = otherSeat(view.viewer);
-  const oppCount = view.seats[opp].handCount;
+  const oppCount = view.seats[opp].handCount - view.seats[opp].revealed.length; // 공개 카드는 엔진이 손패에 고정
   const unknown = view.phase === 'chooseFirst' ? [] : rng.shuffleInPlace(unseenCards(view));
   return engineDeterminize(
     view,

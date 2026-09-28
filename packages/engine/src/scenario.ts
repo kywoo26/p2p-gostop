@@ -20,6 +20,7 @@ export type SeatCounters = Partial<
     | 'turnsTaken'
     | 'noCaptureStreak'
     | 'gukjinAsPi'
+    | 'revealed'
   >
 >;
 
@@ -38,6 +39,8 @@ export interface ScenarioSetup {
   readonly turn?: Seat;
   readonly dealer?: Seat;
   readonly carry?: number;
+  /** 이번 판에 적용되는 연속 밀기 횟수 (RoundOptions.pushes) */
+  readonly pushes?: number;
   readonly roundNumber?: number;
   readonly seed?: Seed;
 }
@@ -56,6 +59,7 @@ export function createScenario(setup: ScenarioSetup): GameState {
   const rules = setup.rules ?? DEFAULT_RULES;
   const s = blankDraft(rules, setup.seed ?? 0, {
     carry: setup.carry ?? 1,
+    pushes: setup.pushes ?? 0,
     roundNumber: setup.roundNumber ?? 1,
   });
   const piles = setup.ppeokPiles ?? [];
@@ -91,6 +95,12 @@ export function createScenario(setup: ScenarioSetup): GameState {
     Object.assign(draft, setup.seats?.[seat] ?? {});
     draft.ppeokTurns = [...draft.ppeokTurns];
     draft.hand = [...setup.hands[seat]];
+    draft.revealed = [...draft.revealed];
+    if (!draft.revealed.every((id) => draft.hand.includes(id))) {
+      throw new RangeError(
+        `시나리오 오류: 공개 카드(revealed)는 좌석 ${seat}의 손패에 있어야 합니다`,
+      );
+    }
     draft.captured = pileOf(setup.captured?.[seat] ?? []);
     draft.score = seatScore(draft.captured, draft.gukjinAsPi, rules);
   }

@@ -28,6 +28,7 @@ data class HotspotState(
     val serverError: String? = null,
     val apiVariant: String? = null,
     val wsClients: Int = 0,
+    val lanEnabled: Boolean = false,
 ) {
     /** LOHS 요청이 진행 중이거나 켜져 있다. */
     val hotspotActive: Boolean
@@ -52,7 +53,7 @@ data class NotifContent(val status: HotspotStatus, val url: String?, val clients
 
 fun notifContent(s: HotspotState): NotifContent = NotifContent(
     status = if (s.status == HotspotStatus.IDLE) HotspotStatus.STARTING else s.status,
-    url = s.ip?.let { WifiQr.url(it, SERVER_PORT) },
+    url = if (s.lanEnabled) s.ip?.let { WifiQr.url(it, SERVER_PORT) } else null,
     clients = s.wsClients,
     action = if (s.hotspotActive) ToggleAction.STOP_HOTSPOT else ToggleAction.STOP_FALLBACK,
 )

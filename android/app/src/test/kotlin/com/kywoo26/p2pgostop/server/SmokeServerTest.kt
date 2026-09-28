@@ -30,6 +30,7 @@ class SmokeServerTest {
         guestLog = { guestLogs.add(it) },
         onClientsChanged = { clientCounts.add(it) },
         nowMs = { now },
+        remoteAddress = { "127.0.0.1" },
     )
 
     @Test

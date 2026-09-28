@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="open_game">게임 화면 열기</string>
+    <string name="exit_game_confirm">진행 중인 게임을 나가시겠습니까?</string>
+    <string name="exit_game">나가기</string>
+    <string name="stay_game">계속하기</string>
+    <string name="web_bundle_missing">웹 번들이 없습니다</string>
+    <string name="web_bridge_missing">WebView 브리지를 사용할 수 없습니다</string>
+    <string name="web_page_error">웹 페이지 오류: %1$s</string>
+    <string name="share_title">맞고 공유</string>
+    <string name="share_file_note">맞고 공유 파일: %1$s</string>
     <string name="app_name">맞고 P2P</string>
     <string name="title">핫스팟 스모크 테스트 (M0)</string>
     <string name="build_info">빌드 %1$s · git %2$s · %3$s</string>

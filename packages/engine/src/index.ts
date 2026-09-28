@@ -32,7 +32,8 @@ export {
   type LedgerEntry,
 } from './ledger.ts';
 export { CARD_NAMES, cardId, cardName } from './names.ts';
-export { reduce } from './reduce.ts';
+export { matchPreview, type MatchPreview, type MatchPreviewTable } from './preview.ts';
+export { applyUnchecked, reduce, type ApplyResult } from './reduce.ts';
 export { replay, type ReplayResult } from './replay.ts';
 export { createRng, nextInt, nextUint32, shuffleWith, type RngState, type Seed } from './rng.ts';
 export {
@@ -40,6 +41,7 @@ export {
   DEFAULT_LOCAL_PLAY_OPTIONS,
   DEFAULT_RULES,
   INSTANT_UNIT_POINTS,
+  MAX_PUSHES,
   PRESETS,
   UNIMPLEMENTED_RULES,
   WINNING_SCORE,

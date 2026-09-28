@@ -64,6 +64,12 @@ export interface SeatState {
   readonly gukjinAsPi: boolean;
   /** 현재 점수 (국진 자동 최적 반영) */
   readonly score: ScoreBreakdown;
+  /**
+   * 규칙상 상대에게 공개된 손패 중 아직 손에 있는 카드(흔들기 Shake, 총통 끝내기·자동 승리 Chongtong으로 보여 준 카드).
+   * 손에서 나가면(내기·폭탄) 빠진다. 총통 계속하기는 공개가 아니므로 들어가지 않는다(뷰 가림 규칙, F-6).
+   * 결정화가 상대 손패 표본에서 이 카드를 고정하는 데 쓴다(M1 리뷰 5.1 `SeatView.revealed`).
+   */
+  readonly revealed: readonly CardId[];
 }
 
 /**
@@ -139,6 +145,8 @@ export type EndReason =
 export interface RoundResult {
   readonly reason: EndReason;
   readonly winner: Seat | null;
+  /** 승자가 밀기(push)를 골라 이 판 정산을 포기했는지 (rules-commercial §10.1, 12.7 밀기). 밀지 않았으면 없음 */
+  readonly pushed?: boolean;
 }
 
 export type InstantPayoutKind = 'firstPpeok' | 'secondPpeok' | 'thirdPpeok' | 'firstTtadak';
@@ -169,6 +177,8 @@ export interface RoundInfo {
   readonly number: number;
   /** 이번 판에 적용되는 나가리 배수 (G9) */
   readonly carry: number;
+  /** 이번 판에 적용되는 연속 밀기 횟수 0~MAX_PUSHES (배수 ×2^pushes, 12.7 밀기) */
+  readonly pushes: number;
   /** 테스트용 고정 덱(없으면 셔플) */
   readonly fixedDeck: readonly CardId[] | null;
 }
@@ -205,7 +215,9 @@ export type Action =
   | { readonly type: 'chooseTarget'; readonly seat: Seat; readonly card: CardId }
   | { readonly type: 'gukjin'; readonly seat: Seat; readonly asPi: boolean }
   | { readonly type: 'go'; readonly seat: Seat }
-  | { readonly type: 'stop'; readonly seat: Seat };
+  | { readonly type: 'stop'; readonly seat: Seat }
+  /** 밀기 (12.7, 규칙 push 켬): 판이 끝난 뒤(phase 'end') 승자만, 정산을 원장에 넣기 전에 */
+  | { readonly type: 'push'; readonly seat: Seat };
 
 export type ActionType = Action['type'];
 
@@ -219,7 +231,11 @@ export type StealReason =
   | 'sseul'
   | 'bomb';
 
-/** 정산 단계 (code-refs 6.2: 기본 → 고 가산 → 고 배수 → 흔들기·폭탄 → 박 → 나가리 이월 → 대박판) */
+/**
+ * 정산 단계 (code-refs 6.2: 기본 → 고 가산 → 고 배수 → 흔들기·폭탄 → 박 → 나가리 이월 → 판 키우기(밀기 → 대박판)).
+ * 밀기 배수는 rules-commercial §10.1 "판 키우기(대박판) 장치"로 분류되므로 종류는 'jackpot'이고 `origin: 'push'`로 구분한다
+ * (protocol·web이 미러한 SettleStepKind를 깨지 않는 추가 필드).
+ */
 export type SettleStepKind =
   | 'base'
   | 'goBonus'
@@ -240,6 +256,8 @@ export interface SettleStep {
   readonly value: number;
   /** 이 단계까지 적용한 점수 */
   readonly total: number;
+  /** 'jackpot' 단계가 밀기(12.7)에서 왔으면 'push'. N판마다 대박판이면 없음 */
+  readonly origin?: 'push';
 }
 
 export interface Settlement {
@@ -261,6 +279,15 @@ export interface Settlement {
   readonly instantPayouts: readonly InstantPayout[];
   /** 정산에 쓴 국진 위치 [좌석0, 좌석1] */
   readonly gukjinAsPi: readonly [boolean, boolean];
+  /**
+   * 승자가 밀기를 골라 이 판 정산을 포기했는지. 참이면 steps는 비고 finalPoints = 0이며 applySettlement는 원장을 바꾸지
+   * 않는다(즉시 정산은 이미 반영된 그대로). 엔진이 만드는 정산에는 항상 있다(외부에서 만든 정산과의 호환 때문에 선택 필드).
+   */
+  readonly pushed?: boolean;
+  /** 밀기로 포기한 점수(밀지 않았으면 0). 표시용 */
+  readonly forfeitedPoints?: number;
+  /** 다음 판 연속 밀기 횟수 (RoundOptions.pushes로 넘긴다). 엔진이 만드는 정산에는 항상 있다 */
+  readonly nextPushes?: number;
 }
 
 interface EventBase {
@@ -323,7 +350,15 @@ type EventPayload =
   | { readonly type: 'Stop'; readonly auto: boolean }
   | { readonly type: 'Hudang' }
   | { readonly type: 'RoundEnded'; readonly reason: EndReason; readonly winner: Seat | null }
+  /** 정산. 밀기를 하면 포기한 정산(pushed)으로 한 번 더 낸다: 마지막 Settled가 유효하다 */
   | { readonly type: 'Settled'; readonly settlement: Settlement }
+  /** 밀기 (12.7): 승자가 이 판 정산을 포기하고 다음 판을 ×2^pushes로 */
+  | {
+      readonly type: 'Pushed';
+      readonly pushes: number;
+      readonly multiplier: number;
+      readonly forfeitedPoints: number;
+    }
   | { readonly type: 'Nagari'; readonly multiplier: number };
 
 /** 엔진 이벤트 (spec 4.5). 모든 이벤트는 순번·좌석·관련 카드 ID를 가진다. */
