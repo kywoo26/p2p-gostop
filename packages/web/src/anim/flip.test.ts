@@ -190,7 +190,43 @@ describe('will-change는 움직이는 동안만', () => {
   });
 });
 
-describe('flipCard: 3D 뒤집기', () => {
+describe('flipCard: 2D 뒤집기 (M3 리뷰 S-1: 3D 뒷면 감추기에 기대지 않는다)', () => {
+  test('앞 절반은 뒷면이 보이고, 접힌 뒤로는 앞면만 보인다', async () => {
+    const el = stage('1');
+    const back = document.createElement('div');
+    back.className = 'back';
+    back.style.opacity = '0';
+    el.append(back);
+    const anim = flipCard(el, { duration: 200, easing: 'linear' });
+    anim.pause();
+    const [backAnim] = back.getAnimations();
+    backAnim?.pause();
+    for (const [t, opacity] of [
+      [20, '1'],
+      [90, '1'],
+      [110, '0'],
+      [190, '0'],
+    ] as const) {
+      anim.currentTime = t;
+      if (backAnim) backAnim.currentTime = t;
+      expect(getComputedStyle(back).opacity, `${t}ms`).toBe(opacity);
+    }
+    anim.play();
+    backAnim?.play();
+    await anim.finished;
+    expect(getComputedStyle(back).opacity).toBe('0');
+  });
+
+  test('이미 뒷면이 보이는(가려진) 카드는 면을 바꾸지 않는다', () => {
+    const el = stage('1');
+    const back = document.createElement('div');
+    back.className = 'back';
+    el.append(back);
+    const anim = flipCard(el, { duration: 200 });
+    expect(back.getAnimations()).toHaveLength(0);
+    anim.cancel();
+  });
+
   test('반 바퀴 지점에서 옆면(폭 거의 0), 끝나면 원래 폭', async () => {
     const el = stage('1');
     const full = el.getBoundingClientRect();
