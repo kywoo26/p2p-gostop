@@ -7,9 +7,11 @@
   interface Props {
     kind: BannerKind;
     text: string;
+    /** 누가 했는지 ("상대 쪽!", M3 리뷰 I-4). 없으면 문구만 */
+    actor?: string | null;
   }
 
-  let { kind, text }: Props = $props();
+  let { kind, text, actor = null }: Props = $props();
 </script>
 
 <div
@@ -18,7 +20,7 @@
   in:scale={{ duration: scaledMs(DUR.modal), start: 0.7 }}
   out:fade={{ duration: scaledMs(DUR.banner / 2) }}
 >
-  {text}!
+  {#if actor}<span class="actor">{`${actor} `}</span>{/if}{text}!
 </div>
 
 <style>
@@ -38,6 +40,15 @@
     letter-spacing: 0.04em;
     text-align: center;
     box-shadow: 0 0.5rem 1.5rem oklch(0% 0 0 / 0.45);
+  }
+
+  .actor {
+    display: block;
+    font-size: var(--font-size-m);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.1;
+    opacity: 0.85;
   }
 
   /* 밝은 배경(따닥·쓸·고·스톱)은 어두운 글자, 진한 배경(뻑·쪽·흔들기·폭탄)은 흰 글자 (명도 대비 3:1 이상, 큰 글자) */

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import { bannerFor } from './banner.ts';
+import { bannerActor, bannerFor, bannerForEngineEvent } from './banner.ts';
 import Card from './Card.svelte';
 import { cardLabel, cardMark, cardSrc, sortHand } from './cards.ts';
 import EventBanner from './EventBanner.svelte';
@@ -50,13 +50,28 @@ test('카드 크기 s < m < l, 비율 103.2:168.2', async () => {
 
 test('이벤트 → 배너 (spec 6.5 문구)', async () => {
   const base = { seq: 1, seat: 0 as const, cards: [] };
-  expect(bannerFor({ ...base, type: 'Ppeok' })).toEqual({ kind: 'ppeok', text: '뻑' });
-  expect(bannerFor({ ...base, type: 'Go', n: 3 })).toEqual({ kind: 'go', text: '3고' });
+  expect(bannerFor({ ...base, type: 'Ppeok' })).toEqual({ kind: 'ppeok', text: '뻑', seat: 0 });
+  expect(bannerFor({ ...base, type: 'Go', n: 3 })).toEqual({ kind: 'go', text: '3고', seat: 0 });
   expect(bannerFor({ ...base, type: 'Bomb' })?.kind).toBe('bomb');
   expect(bannerFor({ ...base, type: 'CardPlayed' })).toBeNull();
 
   const screen = await render(EventBanner, { kind: 'jjok', text: '쪽' });
   await expect.element(screen.getByRole('status')).toHaveTextContent('쪽!');
+});
+
+test('엔진 이벤트 배너는 주체 좌석을 싣고, 보는 좌석 기준 "나"/"상대"가 된다 (M3 리뷰 I-4)', () => {
+  const jjok = bannerForEngineEvent({ seq: 5, seat: 1, cards: [], type: 'Jjok' });
+  expect(jjok).toEqual({ kind: 'jjok', text: '쪽', seat: 1 });
+  expect(jjok && bannerActor(jjok, 0)).toBe('상대');
+  expect(jjok && bannerActor(jjok, 1)).toBe('나');
+  const nagari = bannerForEngineEvent({
+    seq: 6,
+    seat: 0,
+    cards: [],
+    type: 'Nagari',
+    multiplier: 2,
+  });
+  expect(nagari && bannerActor(nagari, 0)).toBeNull();
 });
 
 test('손패 정렬: 월 → 광·열끗·띠·피 → 보너스는 끝 (M3 리뷰 I-2)', () => {

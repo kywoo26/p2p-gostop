@@ -28,7 +28,7 @@ test('카드 내기: 손패 5장이 버튼이고 모달이 없다', async () => 
   expect(minTouch(buttons)).toBeGreaterThanOrEqual(48);
   expect(screen.getByRole('dialog').elements()).toHaveLength(0);
   await expect.element(screen.getByRole('img', { name: '더미 14장' })).toBeVisible();
-  const progress = screen.getByRole('list', { name: '족보 진행도' });
+  const progress = screen.getByRole('list', { name: '내 족보 진행도' });
   await expect.element(progress).toBeVisible();
   expect(progress.element().textContent).toContain('고도리 3/3');
 });
@@ -139,4 +139,35 @@ test('키보드로 고른 카드는 누르기 없이도 낸다', async () => {
   await userEvent.keyboard('{Enter}');
   expect(onaction).toHaveBeenCalledTimes(1);
   expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 34 });
+});
+
+test('배너에 주체가 붙고 상대 배너는 위쪽에 뜬다 (M3 리뷰 I-4)', async () => {
+  const screen = await render(Board, {
+    view: play,
+    banner: { kind: 'jjok', text: '쪽', seat: 1, id: 1 },
+  });
+  const banner = () => screen.container.querySelector('.banner-layer [role="status"]');
+  expect(banner()?.textContent?.trim()).toBe('상대 쪽!');
+  expect(banner()?.closest('.banner-layer')?.classList.contains('at-top')).toBe(true);
+  await screen.rerender({ banner: { kind: 'ppeok', text: '뻑', seat: 0, id: 2 } });
+  await vi.waitFor(() => expect(banner()?.textContent?.trim()).toBe('나 뻑!'));
+  expect(banner()?.closest('.banner-layer')?.classList.contains('at-bottom')).toBe(true);
+});
+
+test('상시 정보: 양쪽 족보 진행도·뻑·흔들기·폭탄, 내 배수 (spec 6.1, M3 리뷰 I-4)', async () => {
+  await page.viewport(390, 844);
+  const screen = await render(Board, { view: play });
+  const mine = screen.getByRole('list', { name: '내 족보 진행도' }).element().textContent ?? '';
+  const theirs = screen.getByRole('list', { name: '상대 족보 진행도' }).element().textContent ?? '';
+  for (const text of [mine, theirs]) {
+    for (const label of ['광 ', '고도리 ', '단 ', '피 ', '뻑 ', '흔들 '])
+      expect(text).toContain(label);
+  }
+  // 픽스처: 상대 뻑 1, 광 1·피 5
+  expect(theirs).toContain('뻑 1');
+  expect(theirs).toContain('피 5/10');
+  expect(screen.container.textContent).toMatch(/배수\s*×2/);
+  // 한 손 세로 화면: 게임판이 가로로 넘치지 않는다
+  const board = screen.getByTestId('board').element();
+  expect(board.scrollWidth).toBeLessThanOrEqual(board.clientWidth + 1);
 });
