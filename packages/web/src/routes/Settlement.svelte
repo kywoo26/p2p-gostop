@@ -15,6 +15,10 @@
     nextCarry?: number | null;
     /** 누군가 잔액 0 (MN-02) */
     bankrupt?: boolean;
+    /** 친구와 대전: 셔플 검증 결과·상대 선택 대기 같은 안내 */
+    note?: string | null;
+    /** 상대의 선택을 기다리는 중이면 "다음 판"을 잠근다 */
+    waiting?: boolean;
     onnext?: (() => void) | undefined;
     onend?: (() => void) | undefined;
     onrefill?: (() => void) | undefined;
@@ -25,6 +29,8 @@
     instant = [],
     nextCarry = null,
     bankrupt = false,
+    note = null,
+    waiting = false,
     onnext,
     onend,
     onrefill,
@@ -133,6 +139,10 @@
     </table>
   </section>
 
+  {#if note}
+    <p class="note" role="status" data-testid="settlement-note">{note}</p>
+  {/if}
+
   {#if bankrupt}
     <p class="bankrupt" role="alert">
       {broke.length > 0 ? `${broke.join(', ')}: ` : ''}잔액이 0이 되었습니다. 시작 잔액으로
@@ -147,8 +157,12 @@
         >재충전</button
       >
     {:else}
-      <button type="button" class="button primary" data-choice="next" onclick={() => onnext?.()}
-        >다음 판</button
+      <button
+        type="button"
+        class="button primary"
+        data-choice="next"
+        disabled={waiting}
+        onclick={() => onnext?.()}>다음 판</button
       >
     {/if}
   {/snippet}
@@ -198,6 +212,12 @@
   .gukjin {
     margin: 0;
     color: var(--color-text-muted);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
   }
 
   .muted {

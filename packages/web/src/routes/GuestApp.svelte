@@ -45,9 +45,7 @@
   }
 
   function reconnect() {
-    if (game === null) return;
-    if (game.phase === 'rejected') p2p.join({ name: game.name, token: null });
-    else game.reconnect();
+    game?.reconnect();
   }
 
   function leave() {

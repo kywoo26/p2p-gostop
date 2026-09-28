@@ -13,10 +13,11 @@ import {
   type PlayerView,
   type Seat,
 } from '@p2p-gostop/engine';
-import { toBoardView, type BoardView } from '@p2p-gostop/protocol';
+import type { BoardView } from '@p2p-gostop/protocol';
 import { scaledMs } from '../anim/durations.ts';
 import { settings } from '../settings/settings.svelte.ts';
 import { readJson, removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
+import { toBoardView } from './adapter.ts';
 import type { AiClient } from './ai-client.ts';
 import type { GameController, GameStats } from './controller.ts';
 import { log } from './log.svelte.ts';
@@ -137,7 +138,7 @@ export class SoloSession implements GameController {
   private boardOf(session: SessionState): BoardView {
     return toBoardView(this.viewOf(session), {
       names: session.config.names,
-      ledger: session.ledger,
+      balances: session.ledger.balances,
     });
   }
 

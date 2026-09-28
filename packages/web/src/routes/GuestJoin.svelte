@@ -2,7 +2,8 @@
   import type { PresetId } from '@p2p-gostop/engine';
   import type { MoneyUnit } from '../lib/view-types.ts';
 
-  export type GuestConnection = 'idle' | 'connecting' | 'open' | 'closed' | 'replaced' | 'rejected';
+  export type GuestConnection =
+    'idle' | 'connecting' | 'open' | 'closed' | 'replaced' | 'stopped' | 'rejected';
 
   export interface GuestLobby {
     readonly names: readonly [string, string];
@@ -54,7 +55,8 @@
     connecting: '연결하는 중…',
     open: '연결됨',
     closed: '다시 연결하는 중…',
-    replaced: '다른 창에서 열림',
+    replaced: '다른 창에서 접속 중',
+    stopped: '연결 멈춤',
     rejected: '입장 거절',
   };
   const ids = $props.id();
@@ -107,7 +109,7 @@
     {#if error}
       <p class="warn" role="alert">{error}</p>
     {/if}
-    {#if connection === 'replaced' || connection === 'rejected'}
+    {#if connection === 'replaced' || connection === 'stopped' || connection === 'rejected'}
       <button type="button" class="button" onclick={() => onreconnect?.()}>다시 연결</button>
     {/if}
   </section>
@@ -230,6 +232,7 @@
   }
 
   .dot.replaced,
+  .dot.stopped,
   .dot.rejected {
     background: var(--color-event-ppeok);
   }

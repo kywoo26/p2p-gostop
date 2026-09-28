@@ -4,7 +4,7 @@ import { PRESETS } from '@p2p-gostop/engine';
 import { effectiveStartBalance, type AppSettings } from '../settings/settings.svelte.ts';
 import { GuestGame, type GuestOptions } from './guest.svelte.ts';
 import { clearHostSave, HostGame, loadHostSave, type HostConfig } from './host.svelte.ts';
-import { readTicket } from './ticket.ts';
+import { loadGuestState, readTicket } from './ticket.ts';
 
 export function hostConfigFrom(settings: AppSettings): HostConfig {
   return {
@@ -27,7 +27,7 @@ class P2pStore {
     current?.dispose();
     if (options.fresh) clearHostSave();
     const saved = loadHostSave();
-    const resume = saved !== null && !saved.ended ? saved : null;
+    const resume = saved !== null && saved.state.stage !== 'ended' ? saved : null;
     const room = new HostGame({ config: resume?.config ?? hostConfigFrom(settings), resume });
     this.host = room;
     return room;
@@ -55,7 +55,11 @@ class P2pStore {
     if (this.guest !== null) return this.guest;
     const ticket = readTicket();
     if (ticket.token === null || ticket.name === null) return null;
-    return this.join({ name: ticket.name, token: ticket.token });
+    return this.join({
+      name: ticket.name,
+      token: ticket.token,
+      restore: loadGuestState(ticket.name),
+    });
   }
 }
 

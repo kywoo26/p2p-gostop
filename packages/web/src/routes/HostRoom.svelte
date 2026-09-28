@@ -83,7 +83,7 @@
       : null,
   );
   const permission = $derived(hotspot.error === 'permissionRequired');
-  const canStart = $derived(guest?.connected === true && !busy);
+  const canStart = $derived(resume !== null || (guest?.connected === true && !busy));
 </script>
 
 <Screen title="방 열기">
@@ -232,7 +232,7 @@
       class="button primary"
       data-testid="host-start"
       disabled={!canStart}
-      onclick={() => onstart?.()}>시작</button
+      onclick={() => onstart?.()}>{resume ? '이어하기' : '시작'}</button
     >
   {/snippet}
 </Screen>

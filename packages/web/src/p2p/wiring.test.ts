@@ -61,11 +61,12 @@ function cardsSeenByGuest(message: Message): { ids: CardId[]; handVisible: boole
 test('로비 → 시작 → 여러 판: 양쪽 화면이 같은 원장·순번, 게스트는 호스트 손패를 못 본다 (AC-04 축소판, spec 4.5)', async () => {
   const [hostWire, guestWire] = createMemoryTransportPair();
   const tickets: GuestTicket[] = [];
-  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false });
+  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false, persist: false });
   const guest = new GuestGame({
     name: '민지',
     transport: guestWire,
     onTicket: (t) => tickets.push(t),
+    persist: false,
   });
 
   // 게스트에게 가는 모든 메시지에서 그 순간 호스트 손패가 보이는지 검사한다
@@ -161,8 +162,13 @@ test('로비 → 시작 → 여러 판: 양쪽 화면이 같은 원장·순번, 
 
 test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고 판이 이어진다 (spec 2.4, NF-05)', async () => {
   const [hostWire, guestWire] = createMemoryTransportPair();
-  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false });
-  const guest = new GuestGame({ name: '민지', transport: guestWire, onTicket: () => {} });
+  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false, persist: false });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+  });
   await settle();
   host.start();
   await settle();
@@ -181,12 +187,12 @@ test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고
   const before = host.stats.seq;
   guestWire.disconnect();
   // 게스트가 없는 동안 호스트는 입력을 막는다 (게임은 게스트 부재 중 진행되지 않는다, spec 2.4)
-  (host as unknown as { onRelay(peer: string): void }).onRelay('left');
+  (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'left' });
   expect(host.guestOnline).toBe(false);
   expect(host.canAct).toBe(false);
   expect(host.notice).toContain('연결 끊김');
   guestWire.reconnect();
-  (host as unknown as { onRelay(peer: string): void }).onRelay('joined');
+  (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'joined' });
   // GuestSession은 전송이 닫히면 hello를 다시 보낸다 (재접속 뒤 전달)
   (guest as unknown as { session: { join(): void } }).session.join();
   await settle();

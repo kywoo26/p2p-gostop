@@ -30,6 +30,10 @@ export interface GameController {
   readonly bankrupt: boolean;
   /** 판 밖의 상태 안내 (연결 끊김 등). 없으면 null */
   readonly notice: string | null;
+  /** 정산 화면 안내 (셔플 검증 결과·상대 선택 대기 등) */
+  readonly settlementNote?: string | null;
+  /** 정산 화면의 "다음 판"을 잠근다 (상대의 파산 선택 대기) */
+  readonly settlementWaiting?: boolean;
   readonly stats: GameStats;
   submit(action: Action, tapAt?: number): boolean;
   /** 정산 화면 → 다음 판 */

@@ -154,6 +154,8 @@
         instant={pb.settlement.instant}
         nextCarry={pb.settlement.nextCarry}
         bankrupt={controller.bankrupt}
+        note={controller.settlementNote ?? null}
+        waiting={controller.settlementWaiting ?? false}
         onnext={() => controller.nextRound()}
         onrefill={() => controller.refill()}
         onend={() => onend?.()}

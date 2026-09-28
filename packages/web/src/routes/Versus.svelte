@@ -34,13 +34,14 @@
   }
 
   function start() {
-    if (room.start()) location.hash = '#/match';
+    const ok = room.resumable !== null ? room.resumeSaved() : room.start();
+    if (ok) location.hash = '#/match';
   }
 
   const resume = $derived(
     room.resumable === null
       ? null
-      : { round: room.resumable.roundNumber, guestName: room.resumable.guestName },
+      : { round: room.resumable.state.roundNumber, guestName: room.resumable.state.guestName },
   );
   const guest = $derived(
     room.guestName === null ? null : { name: room.guestName, connected: room.guestOnline },

@@ -78,6 +78,7 @@ export function emptyBoard(
     bombMonths: [],
     canFlipOnly: false,
     dealer: null,
+    phase: 'chooseFirst',
   };
 }
 
