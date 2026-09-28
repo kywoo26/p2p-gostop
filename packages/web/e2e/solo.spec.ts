@@ -140,14 +140,14 @@ test('정산 → 다음 판, 설정 저장, 홈 이어하기 (spec 6.2, MN-05)',
 
   await startSolo(page, '?speed=instant', '보통');
   await playRounds(page, 1);
-  await expect(page.getByRole('heading', { name: '정산' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '정산', exact: true })).toBeVisible();
   const { start } = await ledger(page);
   expect(start).toBe(300_000);
 
   // 새로 열어도 홈에서 이어할 수 있다
   await page.goto('./?speed=instant#/');
   await page.getByRole('button', { name: /이어하기/ }).click();
-  await expect(page.getByRole('heading', { name: '정산' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '정산', exact: true })).toBeVisible();
   await page.locator('[data-choice="next"]').click();
   await expect(page.getByTestId('board')).toBeVisible();
   await expect(page.getByTestId('solo')).toHaveAttribute('data-round', '2');

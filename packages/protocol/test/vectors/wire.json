@@ -1,0 +1,124 @@
+[
+  {
+    "id": "NP-02-hello",
+    "description": "게스트 첫 접속",
+    "from": "guest",
+    "valid": true,
+    "value": { "t": "hello", "v": 1, "name": "민지", "lastSeq": 0 }
+  },
+  {
+    "id": "NP-02-action",
+    "description": "게스트 합법 형식 액션",
+    "from": "guest",
+    "valid": true,
+    "value": { "t": "action", "seq": 2, "payload": { "type": "play", "seat": 1, "card": 17 } }
+  },
+  {
+    "id": "NP-02-ping",
+    "description": "게스트 하트비트",
+    "from": "guest",
+    "valid": true,
+    "value": { "t": "ping" }
+  },
+  {
+    "id": "NP-06-commit",
+    "description": "게스트 커밋",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "commitGuest",
+      "round": 1,
+      "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "id": "NP-09-log",
+    "description": "진단 로그",
+    "from": "guest",
+    "valid": true,
+    "value": { "t": "log", "entries": ["연결 성공"] }
+  },
+  {
+    "id": "NP-04-version",
+    "description": "버전 불일치",
+    "from": "guest",
+    "valid": false,
+    "reason": "VERSION_MISMATCH",
+    "value": { "t": "hello", "v": 2, "name": "민지" }
+  },
+  {
+    "id": "NP-02-bad-action",
+    "description": "카드 문자열 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": { "t": "action", "seq": 0, "payload": { "type": "play", "seat": 1, "card": "17" } }
+  },
+  {
+    "id": "NP-02-bad-seat",
+    "description": "좌석 범위 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": { "t": "action", "seq": 0, "payload": { "type": "go", "seat": 2 } }
+  },
+  {
+    "id": "NP-06-bad-hash",
+    "description": "길이가 틀린 커밋 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": { "t": "commitGuest", "round": 1, "hash": "abc" }
+  },
+  {
+    "id": "NP-02-pong",
+    "description": "호스트 응답",
+    "from": "host",
+    "valid": true,
+    "value": { "t": "pong" }
+  },
+  {
+    "id": "NP-02-reject",
+    "description": "호스트 거부",
+    "from": "host",
+    "valid": true,
+    "value": { "t": "reject", "seq": 0, "reason": "ILLEGAL_ACTION", "message": "illegal" }
+  },
+  {
+    "id": "NP-06-host-commit",
+    "description": "호스트 커밋",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "commitHost",
+      "round": 1,
+      "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "id": "NP-03-bad-events",
+    "description": "순번 불연속 거부",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "events",
+      "from": 1,
+      "to": 2,
+      "list": [],
+      "view": {
+        "viewer": 1,
+        "turn": 0,
+        "seats": [{}, {}],
+        "floor": [],
+        "deckCount": 1,
+        "multiplier": 1,
+        "pending": null,
+        "playable": [],
+        "round": 1,
+        "eventSeq": 2
+      },
+      "ledger": { "perPoint": 100, "startBalance": 100, "balances": [100, 100], "entries": [] }
+    }
+  }
+]

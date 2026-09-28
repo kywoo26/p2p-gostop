@@ -5,6 +5,9 @@
   "description": "웹 앱 (Vite + Svelte 5): 호스트·게스트·솔로 모드",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    "./net": "./src/net/index.ts"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/check-bundle.mjs",
@@ -14,11 +17,13 @@
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
     "test:browser": "vitest run",
+    "test:net": "vitest run --config src/net/vitest.config.ts",
     "e2e": "playwright test"
   },
   "dependencies": {
     "@p2p-gostop/ai": "0.0.0",
-    "@p2p-gostop/engine": "0.0.0"
+    "@p2p-gostop/engine": "0.0.0",
+    "@p2p-gostop/protocol": "0.0.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

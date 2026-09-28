@@ -12,9 +12,11 @@
     "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@p2p-gostop/engine": "0.0.0"
+    "@p2p-gostop/engine": "0.0.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
+    "fast-check": "4.10.2",
     "vitest": "5.0.2"
   }
 }
