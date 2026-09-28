@@ -146,13 +146,14 @@ function trueSample(state: GameState, view: PlayerView): DeterminizeSample {
   };
 }
 
-/** 뷰와 일관된 무작위 표본 */
+/** 뷰와 일관된 무작위 표본 (숨은 손패 형식: 공개된 카드는 결정화가 더한다) */
 function randomSample(checker: StepChecker, view: PlayerView): DeterminizeSample {
   if (view.phase === 'chooseFirst') {
     return { opponentHand: [], deck: [] };
   }
   const unseen = shuffled(checker, unseenCards(view));
-  const count = view.seats[other(view.viewer)].handCount;
+  const opp = view.seats[other(view.viewer)];
+  const count = opp.handCount - opp.revealed.length;
   return { opponentHand: unseen.slice(0, count), deck: unseen.slice(count) };
 }
 

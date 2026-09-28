@@ -119,6 +119,20 @@ function removeFromHand(tx: Tx, seat: Seat, ids: readonly CardId[]): void {
     invariant(index !== -1, `손패에 없는 카드 ${id}`);
     state.hand.splice(index, 1);
   }
+  // 공개된 손패(revealed)는 "아직 손에 있는 것"만 둔다
+  if (state.revealed.length > 0) {
+    state.revealed = state.revealed.filter((id) => !ids.includes(id));
+  }
+}
+
+/** 규칙상 공개된 손패를 기록한다 (흔들기·총통 끝내기, SeatState.revealed) */
+function reveal(tx: Tx, seat: Seat, ids: readonly CardId[]): void {
+  const state = tx.s.seats[seat];
+  for (const id of ids) {
+    if (!state.revealed.includes(id)) {
+      state.revealed.push(id);
+    }
+  }
 }
 
 function drawTop(tx: Tx): CardId {
@@ -175,13 +189,9 @@ export function offerChongtong(
   resume: 'deal' | 'turn',
 ): void {
   if (!tx.s.rules.chongtongContinue) {
-    emit(tx, {
-      type: 'Chongtong',
-      seat,
-      cards: chongtongCards(tx, seat, months),
-      months,
-      choice: 'auto',
-    });
+    const cards = chongtongCards(tx, seat, months);
+    reveal(tx, seat, cards);
+    emit(tx, { type: 'Chongtong', seat, cards, months, choice: 'auto' });
     endRound(tx, 'chongtong', seat);
     return;
   }
@@ -204,13 +214,9 @@ export function actChongtong(tx: Tx, seat: Seat, choice: 'end' | 'continue'): vo
   const pending = tx.s.pending;
   invariant(pending?.kind === 'chongtong', '총통 프롬프트가 아닙니다');
   if (choice === 'end') {
-    emit(tx, {
-      type: 'Chongtong',
-      seat,
-      cards: chongtongCards(tx, seat, pending.months),
-      months: pending.months,
-      choice,
-    });
+    const cards = chongtongCards(tx, seat, pending.months);
+    reveal(tx, seat, cards);
+    emit(tx, { type: 'Chongtong', seat, cards, months: pending.months, choice });
     endRound(tx, 'chongtong', seat);
     return;
   }
@@ -228,6 +234,7 @@ export function actShake(tx: Tx, seat: Seat, accept: boolean): void {
   if (accept) {
     tx.s.seats[seat].shakes += 1;
     const shown = tx.s.seats[seat].hand.filter((id) => getCard(id).month === pending.month);
+    reveal(tx, seat, shown);
     emit(tx, { type: 'Shake', seat, cards: shown, month: pending.month, accepted: true });
   }
   playCard(tx, seat, pending.card);

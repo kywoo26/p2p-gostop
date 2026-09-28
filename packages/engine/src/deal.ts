@@ -48,6 +48,7 @@ function emptySeat(): DraftSeat {
     noCaptureStreak: 0,
     gukjinAsPi: false,
     score: scoreCaptured(captured, false),
+    revealed: [],
   };
 }
 

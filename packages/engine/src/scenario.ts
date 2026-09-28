@@ -20,6 +20,7 @@ export type SeatCounters = Partial<
     | 'turnsTaken'
     | 'noCaptureStreak'
     | 'gukjinAsPi'
+    | 'revealed'
   >
 >;
 
@@ -91,6 +92,12 @@ export function createScenario(setup: ScenarioSetup): GameState {
     Object.assign(draft, setup.seats?.[seat] ?? {});
     draft.ppeokTurns = [...draft.ppeokTurns];
     draft.hand = [...setup.hands[seat]];
+    draft.revealed = [...draft.revealed];
+    if (!draft.revealed.every((id) => draft.hand.includes(id))) {
+      throw new RangeError(
+        `시나리오 오류: 공개 카드(revealed)는 좌석 ${seat}의 손패에 있어야 합니다`,
+      );
+    }
     draft.captured = pileOf(setup.captured?.[seat] ?? []);
     draft.score = seatScore(draft.captured, draft.gukjinAsPi, rules);
   }

@@ -42,6 +42,11 @@ export interface SeatView {
   /** 국진 '매번 묻기'에서 고른 위치 (GukjinPlaced로 공개). 자동 모드에서는 score.gukjinAsPi가 현재 위치 */
   readonly gukjinAsPi: boolean;
   readonly score: ScoreBreakdown;
+  /**
+   * 규칙상 공개된 손패 중 아직 손에 있는 카드 (SeatState.revealed: 흔들기 Shake·총통 끝내기로 보여 준 카드).
+   * 양쪽 모두 보인다(공개 정보). 결정화는 상대 손패 표본에서 이 카드를 고정한다(unseenCards에서 빠짐).
+   */
+  readonly revealed: readonly CardId[];
 }
 
 export interface FirstPickView {
@@ -117,6 +122,7 @@ function seatView(state: GameState, seat: Seat, viewer: Seat): SeatView {
     noCaptureStreak: s.noCaptureStreak,
     gukjinAsPi: s.gukjinAsPi,
     score: s.score,
+    revealed: s.revealed,
   };
 }
 

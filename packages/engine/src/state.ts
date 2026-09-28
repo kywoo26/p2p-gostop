@@ -64,6 +64,12 @@ export interface SeatState {
   readonly gukjinAsPi: boolean;
   /** 현재 점수 (국진 자동 최적 반영) */
   readonly score: ScoreBreakdown;
+  /**
+   * 규칙상 상대에게 공개된 손패 중 아직 손에 있는 카드(흔들기 Shake, 총통 끝내기·자동 승리 Chongtong으로 보여 준 카드).
+   * 손에서 나가면(내기·폭탄) 빠진다. 총통 계속하기는 공개가 아니므로 들어가지 않는다(뷰 가림 규칙, F-6).
+   * 결정화가 상대 손패 표본에서 이 카드를 고정하는 데 쓴다(M1 리뷰 5.1 `SeatView.revealed`).
+   */
+  readonly revealed: readonly CardId[];
 }
 
 /**
