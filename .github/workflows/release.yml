@@ -1,0 +1,110 @@
+# 태그(v*) 푸시 → 서명된 릴리스 APK를 GitHub Releases에 올린다 (plan.md 5장, M0).
+# 필요한 저장소 Secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      APK_NAME: p2p-gostop-${{ github.ref_name }}.apk
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # versionName(git describe --tags)과 versionCode(커밋 수)를 위해 전체 이력과 태그가 필요하다.
+          fetch-depth: 0
+
+      # ---- 웹 앱(M4 이후). packages/web이 아직 없으면 건너뛴다. ----
+      - name: Node 설정 (웹 앱이 있을 때만)
+        if: hashFiles('packages/web/package.json') != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.21.0"
+          cache: npm
+      - name: 웹 빌드 (웹 앱이 있을 때만)
+        if: hashFiles('packages/web/package.json') != ''
+        run: |
+          npm ci
+          npm run build -w packages/web
+      - name: 웹 산출물을 assets/web으로 복사
+        run: |
+          if [ -d packages/web/dist ]; then
+            rm -rf android/app/src/main/assets/web
+            mkdir -p android/app/src/main/assets/web
+            cp -R packages/web/dist/. android/app/src/main/assets/web/
+            echo "assets/web 복사 완료: $(find android/app/src/main/assets/web -type f | wc -l)개 파일"
+          else
+            echo "packages/web/dist 없음 → 건너뜀 (M0는 내장 테스트 페이지만 사용)"
+          fi
+
+      # ---- Android ----
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: 서명 키스토어 복원
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret이 없습니다. 디버그 키로 서명된 APK는 배포하지 않습니다."
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: 단위 테스트 + assembleRelease
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+
+      - name: 서명 확인, 이름 변경, 체크섬
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs "$APK" | tee signer.txt
+          if grep -q "CN=Android Debug" signer.txt; then
+            echo "::error::디버그 키로 서명되었습니다. 서명 Secrets를 확인하세요."
+            exit 1
+          fi
+          mkdir -p dist
+          cp "$APK" "dist/$APK_NAME"
+          (cd dist && sha256sum "$APK_NAME" > "$APK_NAME.sha256" && cat "$APK_NAME.sha256")
+          echo "APK 크기: $(stat -c %s "dist/$APK_NAME") bytes"
+          rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: GitHub Release 업로드
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ github.ref_name }}
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: |
+            dist/${{ env.APK_NAME }}
+            dist/${{ env.APK_NAME }}.sha256
+          body: |
+            ## 설치
+            1. 이 페이지를 폰 브라우저(GitHub 로그인)로 열고 아래 **Assets**에서 `${{ env.APK_NAME }}`을 받습니다.
+            2. 설치 중 "출처를 알 수 없는 앱" 허용을 묻으면 이 브라우저에 한해 허용합니다.
+            3. 같은 서명 키로 만든 APK라 이전 버전 위에 덮어쓰기 설치됩니다.
+
+            ## 실기기 테스트 절차
+            - M0 핫스팟 스모크: [docs/device-test/M0.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/docs/device-test/M0.md)
+
+            빌드 커밋: `${{ github.sha }}` · 체크섬: `${{ env.APK_NAME }}.sha256`

@@ -1,6 +1,6 @@
 # p2p-gostop — 구현 계획 (plan.md)
 
-작성일: 2026-09-28 · 상태: v0.2 (사용자 검토 대기)
+작성일: 2026-09-28 · 상태: v0.3 승인됨 (2026-09-28, 구현 진행 중)
 상위 문서: `intend.md`(왜) → `spec.md` v0.3(무엇을) → **이 문서**(어떻게)
 근거: `docs/research/tech-stack.md`(버전·제약), `docs/research/code-refs.md`(설계 차용), `docs/research/rules-commercial.md`(규칙), `docs/research/agent-era-stack.md`(에이전트 시대 스택 판단)
 
@@ -105,8 +105,8 @@ p2p-gostop/
 |---|---|---|
 | Node / 패키지 | 24.21.0 LTS, npm workspaces, `.npmrc` `min-release-age=3` | 공급망 방어. pnpm·Turborepo 도입 안 함 |
 | 웹 UI | Vite 8.3.1 + Svelte 5.57.1 + `@sveltejs/vite-plugin-svelte` 7.3.1 | React·Solid·Vue 전환 안 함 |
-| **언어** | **TypeScript 6.0.3** (기본). `svelte-check` 4.7.6 | TS 7.0.2는 typescript-eslint(<6.1)·svelte-check(^5‖^6)와 비호환 확인 → 별칭으로 engine/ai/protocol 고속 타입 검사에만 선택적 사용 |
-| 린트·포맷 | ESLint 10.11.0 + `eslint-plugin-svelte` 3.23.0 + `typescript-eslint` 8.70.1, Prettier 3.9.9 + `prettier-plugin-svelte` 4.1.1 | Biome·oxlint는 .svelte 지원 실험적 → 보류 |
+| **언어 (하이브리드, 2026-09-28 결정)** | 순수 TS 패키지(engine/ai/protocol/relay-dev/sim): **TypeScript 7.0.2(tsgo)**. `packages/web`: **TypeScript 6.0.3** + `svelte-check` 4.7.6 | TS 7은 typescript-eslint·svelte-check와 비호환이라 web만 TS 6. 파이썬 ty에 해당하는 네이티브 검사기를 코드 양이 가장 많은 패키지에 적용 |
+| **린트·포맷 (하이브리드)** | 순수 TS 패키지: **oxlint + oxfmt**(Oxc, Rust). web: ESLint 10.11.0 + `eslint-plugin-svelte` 3.23.0 + `typescript-eslint` 8.70.1, Prettier 3.9.9 + `prettier-plugin-svelte` 4.1.1 | ruff에 해당. .svelte 템플릿 린트는 Oxc 미지원이라 web만 ESLint. Svelte 정식 지원 시 Vite+(`vp`, 2026-07 베타)로 일원화 재평가 |
 | 단위 테스트 | Vitest 5.0.2 + **fast-check 4.10.2**(engine/ai 속성 테스트) | JSON 벡터와 이중망 |
 | 컴포넌트 테스트 | **`@vitest/browser-playwright` 5.0.2 + `vitest-browser-svelte` 3.1.0** (Chromium+WebKit) | FLIP 측정 등 실제 레이아웃 필요 |
 | E2E | `@playwright/test` 1.63.0 + **`@axe-core/playwright` 4.13.0** + `toHaveScreenshot`(도커 안에서만 결정적) | Chromatic 등 유료 서비스 없음 |
@@ -117,8 +117,9 @@ p2p-gostop/
 | QR | `uqr` 0.1.3 | |
 | 위생 | **knip 6.38.0**, 번들 ≤1.5MB·외부 URL 0건 검사 스크립트(의존성 0) | CI 게이트 |
 | 의존성 갱신 | Dependabot(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | |
-| 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 Claude Code 플러그인/MCP(`@sveltejs/mcp` 0.1.26, autofixer)**, `chrome-devtools-mcp` 1.10.1, PostToolUse 포맷·린트 훅. `@playwright/mcp` TRIAL | 사용자 로컬 설정 변경은 승인 후 |
+| 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, PostToolUse 포맷 훅(프로젝트 `.claude/settings.json`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
+| Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
 
 ### 1.7 Android 앱 설계
 - 단일 `MainActivity` + `WebView`(androidx.webkit 1.17.1). 화면 전부 웹. 네이티브 UI는 권한 요청 다이얼로그와 오류 화면뿐.
@@ -276,5 +277,6 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
 - v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.
 - v0.1 (2026-09-28): 초안.

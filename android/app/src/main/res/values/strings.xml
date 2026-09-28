@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">맞고 P2P</string>
+    <string name="title">핫스팟 스모크 테스트 (M0)</string>
+    <string name="build_info">빌드 %1$s · git %2$s · %3$s</string>
+
+    <string name="permission_title">권한이 필요합니다</string>
+    <string name="permission_body">• 주변 기기(근처 Wi-Fi 기기): 휴대폰 안에서 로컬 핫스팟을 켜는 데 필요합니다. 위치 정보는 쓰지 않습니다.\n• 알림: 핫스팟이 켜져 있는 동안 상단 알림을 보여 줍니다(거부해도 동작합니다).</string>
+    <string name="permission_denied">주변 기기 권한이 거부되어 핫스팟을 켤 수 없습니다. 설정에서 권한을 허용해 주세요.</string>
+    <string name="permission_ok">허용하기</string>
+    <string name="open_settings">설정 열기</string>
+    <string name="cancel">취소</string>
+
+    <string name="start_hotspot">핫스팟 시작</string>
+    <string name="stop_hotspot">핫스팟 중지</string>
+    <string name="address_only">주소만 표시</string>
+    <string name="request_permissions">권한 허용</string>
+
+    <string name="status_idle">대기 중. 비행기 모드 ON → Wi-Fi ON 후 \'핫스팟 시작\'을 누르세요.</string>
+    <string name="status_starting">핫스팟을 켜는 중…</string>
+    <string name="status_running">핫스팟 실행 중</string>
+    <string name="status_address_only">주소만 표시 모드 (기존 Wi-Fi 또는 시스템 핫스팟 사용)</string>
+    <string name="status_failed">핫스팟 실패: %1$s</string>
+    <string name="status_stopped">핫스팟이 꺼졌습니다. 다시 시작하세요.</string>
+
+    <string name="label_ssid">Wi-Fi 이름: %1$s</string>
+    <string name="label_password">비밀번호: %1$s</string>
+    <string name="label_ip">IP: %1$s · 포트 %2$d</string>
+    <string name="label_url">주소: %1$s</string>
+    <string name="none">-</string>
+    <string name="ip_searching">찾는 중…</string>
+
+    <string name="qr_wifi_caption">① iPhone 카메라로 찍어 Wi-Fi 연결</string>
+    <string name="qr_url_caption">② 연결 후 이 QR로 Safari 열기</string>
+
+    <string name="fallback_title">핫스팟이 안 켜질 때</string>
+    <string name="fallback_body">1) 설정 → 연결 → 모바일 핫스팟 및 테더링 → 모바일 핫스팟을 직접 켭니다.\n2) iPhone을 그 핫스팟에 연결합니다(삼성 핫스팟 설정 화면의 QR 코드 사용 가능).\n3) 이 앱에서 \'주소만 표시\'를 누르고 아래 주소 QR을 iPhone으로 찍습니다.\n두 폰이 이미 같은 Wi-Fi에 있어도 \'주소만 표시\'로 접속할 수 있습니다.</string>
+    <string name="open_hotspot_settings">핫스팟 설정 열기</string>
+    <string name="all_addresses">이 폰의 IPv4 주소</string>
+
+    <string name="diagnostics_title">진단</string>
+    <string name="battery_settings">배터리 최적화 설정</string>
+    <string name="log_title">로그 (최근 200줄, 전체는 복사·공유)</string>
+    <string name="copy_log">로그 복사</string>
+    <string name="share_log">로그 공유</string>
+    <string name="log_copied">로그를 복사했습니다</string>
+    <string name="share_chooser">로그 보내기</string>
+    <string name="share_subject">맞고 P2P 로그</string>
+
+    <string name="notif_channel">핫스팟</string>
+    <string name="notif_title">맞고 P2P 핫스팟 실행 중</string>
+    <string name="notif_starting">핫스팟을 준비하는 중</string>
+</resources>
