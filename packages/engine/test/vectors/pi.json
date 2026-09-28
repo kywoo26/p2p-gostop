@@ -1,0 +1,492 @@
+[
+  {
+    "id": "S4-pi-value-crosses-ten",
+    "ruleId": "S4",
+    "case": "normal",
+    "description": "피는 장수가 아니라 가치로 센다(12.3 S4 '11·12월 쌍피 = 2, 보너스 2피 = 2, 3피 = 3', §3 '피 10장(쌍피=2, …) 1점'): 11쌍피·3피·일반피 4장(9)에 5피 2장을 먹으면 8장이지만 가치 11 → 2점",
+    "setup": {
+      "hands": [
+        ["5피b", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "8광"],
+      "deck": ["9청"],
+      "captured": [["11쌍피", "B3", "1피a", "1피b", "2피a", "2피b"], []],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5피b"
+      }
+    ],
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 2,
+            "piCount": 11,
+            "total": 2
+          }
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "ScoreChanged",
+          "seat": 0,
+          "breakdown": {
+            "pi": 2,
+            "piCount": 11,
+            "total": 2
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "S4-nine-value-boundary",
+    "ruleId": "S4",
+    "case": "counter",
+    "description": "피 가치 9는 0점: 11쌍피 + 일반피 7장 = 8장, 가치 9 (10부터 1점)",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "captured": [["11쌍피", "1피a", "1피b", "2피a", "2피b", "3피a", "3피b", "4피a"], []]
+    },
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 0,
+            "piCount": 9,
+            "total": 0
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S4-bonus-and-ssangpi-values",
+    "ruleId": "S4",
+    "case": "boundary",
+    "description": "보너스 2피 2장(2+2) + 3피(3) + 11·12월 쌍피(2+2) = 5장, 가치 11 → 2점",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "captured": [["B2a", "B2b", "B3", "11쌍피", "12쌍피"], []]
+    },
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "pi": 2,
+            "piCount": 11,
+            "total": 2
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "G6-pibak-counts-value",
+    "ruleId": "G6",
+    "case": "counter",
+    "toggle": "piBakThreshold=7",
+    "description": "피박 기준 '패자 피 7장 이하'(§7, 12.5 G6)의 장수도 S4와 같은 가치 기준이다: 패자가 4장(11쌍피·12쌍피·3피·일반피)뿐이어도 가치 8이면 피박이 아니다(7점 그대로)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피b"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "6피b",
+          "7피a",
+          "7피b",
+          "8피a",
+          "8피b",
+          "9피a"
+        ],
+        ["11쌍피", "12쌍피", "B3", "10피a"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "seats": [
+        null,
+        {
+          "piCount": 8
+        }
+      ],
+      "settlement": {
+        "finalPoints": 7,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G6-pibak-single-ssangpi",
+    "ruleId": "G6",
+    "case": "boundary",
+    "description": "패자 피가 쌍피 1장(가치 2)이면 0장 예외가 아니므로 피박: 7 × 2 = 14",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피b"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "6피b",
+          "7피a",
+          "7피b",
+          "8피a",
+          "8피b",
+          "9피a"
+        ],
+        ["11쌍피"]
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "piBak",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "S5-gukjin-auto-reaches-seven",
+    "ruleId": "S5",
+    "case": "normal",
+    "toggle": "gukjin=auto",
+    "description": "자동 최적(S5 '7점 도달 시 자동 이동'): 광 3 + 띠 6장 2 + 열끗 5장(국진 포함) 1 = 6점에서 피 2장을 먹어 피 가치 9가 되면, 국진을 쌍피로 옮겨 피 11(2점) + 열끗 4장(0) = 7점이 되므로 옮기고 고/스톱을 묻는다(열끗으로 두면 6점)",
+    "setup": {
+      "hands": [
+        ["11피b", "12열"],
+        ["10청", "10피b"]
+      ],
+      "floor": ["11피a", "8피a"],
+      "deck": ["10피a"],
+      "captured": [
+        [
+          "1광",
+          "3광",
+          "8광",
+          "1홍",
+          "2홍",
+          "4초",
+          "5초",
+          "6청",
+          "9청",
+          "9국진",
+          "5열",
+          "6열",
+          "7열",
+          "10열",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "11피b"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "goStop",
+        "seat": 0,
+        "score": 7
+      },
+      "seats": [
+        {
+          "score": {
+            "total": 7,
+            "gukjinAsPi": true,
+            "pi": 2,
+            "piCount": 11,
+            "yeol": 0,
+            "yeolCount": 4,
+            "gwang": 3,
+            "tti": 2
+          }
+        },
+        null
+      ],
+      "events": [
+        {
+          "type": "ScoreChanged",
+          "seat": 0,
+          "breakdown": {
+            "total": 7,
+            "gukjinAsPi": true
+          }
+        },
+        {
+          "type": "GoStopPrompt",
+          "seat": 0,
+          "score": 7
+        }
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-ask-no-auto-move",
+    "ruleId": "S5",
+    "case": "counter",
+    "toggle": "gukjin=ask",
+    "description": "'매번 묻기'에서 열끗으로 두었으면 자동으로 옮기지 않는다: 같은 배치에서 6점이라 고/스톱을 묻지 않는다",
+    "rulesPatch": {
+      "gukjin": "ask"
+    },
+    "setup": {
+      "hands": [
+        ["11피b", "12열"],
+        ["10청", "10피b"]
+      ],
+      "floor": ["11피a", "8피a"],
+      "deck": ["10피a"],
+      "captured": [
+        [
+          "1광",
+          "3광",
+          "8광",
+          "1홍",
+          "2홍",
+          "4초",
+          "5초",
+          "6청",
+          "9청",
+          "9국진",
+          "5열",
+          "6열",
+          "7열",
+          "10열",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "11피b"
+      }
+    ],
+    "expect": {
+      "pending": {
+        "kind": "play",
+        "seat": 1
+      },
+      "seats": [
+        {
+          "score": {
+            "total": 6,
+            "gukjinAsPi": false,
+            "pi": 0,
+            "piCount": 9,
+            "yeolCount": 5
+          }
+        },
+        null
+      ],
+      "noEvents": ["GoStopPrompt"]
+    }
+  },
+  {
+    "id": "S5-gukjin-auto-tie-yeol",
+    "ruleId": "S5",
+    "case": "boundary",
+    "toggle": "gukjin=auto",
+    "description": "옮겨도 총점이 같으면 열끗에 둔다(해석 29 '같으면 열끗'): 열끗 6장(2) + 피 8(0) = 2, 옮기면 열끗 5장(1) + 피 10(1) = 2",
+    "setup": {
+      "hands": [["5피a"], ["10청"]],
+      "floor": ["8광"],
+      "captured": [
+        [
+          "9국진",
+          "5열",
+          "6열",
+          "7열",
+          "10열",
+          "12열",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b"
+        ],
+        []
+      ]
+    },
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "total": 2,
+            "gukjinAsPi": false,
+            "yeol": 2,
+            "yeolCount": 6,
+            "pi": 0,
+            "piCount": 8
+          }
+        },
+        null
+      ]
+    }
+  },
+  {
+    "id": "S5-gukjin-godori-intact",
+    "ruleId": "S5",
+    "case": "boundary",
+    "toggle": "gukjin=auto",
+    "description": "국진(9월)은 고도리 새(2·4·8월, S2)가 아니므로 쌍피로 옮겨도 고도리 5점은 그대로다: 열끗 5장 1 + 고도리 5 = 6 → 옮기면 고도리 5 + 피 11(2) = 7",
+    "setup": {
+      "hands": [["5피b"], ["10청"]],
+      "floor": ["11광"],
+      "captured": [
+        [
+          "2고",
+          "4고",
+          "8고",
+          "9국진",
+          "5열",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a"
+        ],
+        []
+      ]
+    },
+    "expect": {
+      "seats": [
+        {
+          "score": {
+            "total": 7,
+            "gukjinAsPi": true,
+            "godori": 5,
+            "yeol": 0,
+            "yeolCount": 4,
+            "pi": 2,
+            "piCount": 11
+          }
+        },
+        null
+      ]
+    }
+  }
+]

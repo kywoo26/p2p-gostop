@@ -5,6 +5,7 @@ import bonus from './vectors/bonus.json' with { type: 'json' };
 import deal from './vectors/deal.json' with { type: 'json' };
 import events from './vectors/events.json' with { type: 'json' };
 import gostop from './vectors/gostop.json' with { type: 'json' };
+import pi from './vectors/pi.json' with { type: 'json' };
 import push from './vectors/push.json' with { type: 'json' };
 import score from './vectors/score.json' with { type: 'json' };
 import settleVectors from './vectors/settle.json' with { type: 'json' };
@@ -19,6 +20,7 @@ const FILES: Record<string, unknown> = {
   settle: settleVectors,
   push,
   view,
+  pi,
 };
 
 const range = (prefix: string, n: number): string[] =>
