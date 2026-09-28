@@ -37,8 +37,8 @@ updates:
       # Ktor 아티팩트 3개와 Ktor가 요구하는 코루틴 버전은 한 PR로 함께 올린다.
       ktor:
         patterns:
-          - "io.ktor:*"
-          - "org.jetbrains.kotlinx:kotlinx-coroutines*"
+          - 'io.ktor:*'
+          - 'org.jetbrains.kotlinx:kotlinx-coroutines*'
 
   - package-ecosystem: github-actions
     directory: /

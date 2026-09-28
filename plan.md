@@ -167,6 +167,11 @@ p2p-gostop/
 - **자동 검증**: 정보 은닉 테스트(AI가 더미·상대 손패에 접근하면 실패), 결정론 테스트, 강도 벤치마크(상용급 vs 보통 ≥ 65%, vs 쉬움 ≥ 80%, 각 2,000판), 응답 시간 벤치마크(Node에서 ≤ 0.7s를 기준으로 삼아 모바일 여유 확보).
 - **완료 기준**: AC-03, AC-10 통과.
 
+#### M2 결과 (2026-09-28, 조건부 완료)
+- 상용급(결정화 몬테카를로 + 루트 순차 반감) vs 보통 61.4%, vs 쉬움 79.1%(목표 65%/80% 미달, 쉬움 목표는 신뢰구간 안). 휴리스틱이 무작위를 78%만 이기는 운 상한을 감안해 사용자 우선순위(P2P 우선)에 따라 **M6에서 재도전**. 결정 시간 p95 246ms(단일 워커) → AI-05 충족. 결정론·정보 은닉 테스트 통과. 상세 `docs/ai-tuning.md`.
+- 머니 모델은 표준 프리셋 3,000판만 산정: 점당 100 기준 시작 잔액 **150,000냥**(30판 파산 확률 4.5%). 정통·아케이드는 표준값 준용, 10,000판 재산정은 M6. `docs/money-model.md`, `packages/ai/src/money-defaults.ts`.
+- 엔진 개선 후보(M6): `SeatView.revealed`(흔들기 공개 카드), 검증 생략 apply 경로(롤아웃 1.5~2배), 밀기 구현.
+
 ### M3 — 웹 UI (솔로 모드 우선)
 - **산출물**: `packages/web`. 홈, 게임판, 정산, 설정, 기록, 진단·로그 화면. 솔로 모드로 전 규칙 플레이 가능. 카드 SVG 통합과 저작자 표기, 보너스 카드·뒷면 자체 제작. 애니메이션 큐와 속도 설정. Worker에서 AI 실행.
 - **자동 검증**: 컴포넌트 테스트(Vitest + Testing Library), Playwright Chromium·WebKit로 솔로 20판 자동 플레이(AC-04의 솔로 절반), 스크린샷 회귀 7화면(AC-05), 애니메이션 계측(AC-06), 번들 크기 게이트(AC-07), 금지 API ESLint.
@@ -195,6 +200,20 @@ p2p-gostop/
 - BLE 전송 계층 + iOS 네이티브 앱(intend 3.2). `Transport` 인터페이스와 `protocol` 패키지를 그대로 재사용.
 
 ---
+
+## 3-1. 병렬 개발 라이프사이클 (2026-09-28부터)
+사용자 지시: 속도와 품질을 함께. Claude 서브에이전트와 Codex(Paseo) 에이전트를 작업 성격별로 배분하고, 워크트리·브랜치·PR로 격리한다.
+
+| 작업 성격 | 담당 | 근거 |
+|---|---|---|
+| 판단형(규칙·설계·리뷰), Svelte 5 UI·애니메이션 | Claude(Opus 5.5 서브에이전트, 리뷰는 별도 에이전트) | svelte-check·Svelte MCP·포맷 훅이 Claude Code에 연결. 구식 문법 혼입 위험 큰 영역 |
+| 계약형(명세 확정 + 자동 테스트 촘촘): 프로토콜 패키지, Android 릴레이·정적 서빙 | Codex GPT-6 Sol xhigh (Paseo 워크트리, full-access) | 독립 지표(Terminal-Bench 4.0: Sol 43.9 vs Astra 58.2 vs Fable 57.9)상 한 단계 아래라 계약형에 한정. 벤더 자기보고 벤치는 근거로 쓰지 않음 |
+| Sol이 막히는 어려운 문제 | Codex GPT-6 Astra(max) 예비 | 비용·한도 큼 |
+| 저위험 잡무(문서 동기화, 정리) | Codex GPT-6 Luna | 저렴 |
+
+규칙: 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
+
+진행 중(2026-09-28): `feat/m4-protocol`(Codex Sol), `feat/m4-android-shell`(Codex Sol), `feat/m3-solo`(Claude Opus), M2 마무리(Claude Opus, 메인 트리).
 
 ## 4. 테스트 전략
 
@@ -285,6 +304,7 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.5 (2026-09-28): 3-1 병렬 라이프사이클(모델 배분 원칙, 워크트리·PR 격리) 추가.
 - v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).
 - v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
 - v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.

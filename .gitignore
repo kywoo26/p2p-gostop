@@ -29,3 +29,5 @@ packages/web/dist/
 packages/web/test-results/
 packages/web/playwright-report/
 coverage/
+# Claude Code 에이전트 워크트리(저장소 내부 생성)
+.claude/worktrees/
