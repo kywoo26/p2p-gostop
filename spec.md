@@ -158,7 +158,7 @@ RoundPhase:
 - 좌석 대칭: 좌석 0/1을 바꾸어도 동일 결과.
 
 ### 4.5 이벤트 목록 (UI·로그 계약)
-`Dealt, FirstPickerChosen, CardPlayed, CardFlipped, Matched(target), Captured(cards, to), Ppeok, PpeokTaken, SelfPpeok, Jjok, Ttadak, Sseul, Bomb, Shake, Chongtong, BonusGained, PiStolen(from,to,card), InstantPayout(kind, points), ScoreChanged(seat, breakdown), GoStopPrompt, Go(n), Stop, RoundEnded(reason), Settled(ledgerEntry), Nagari(multiplier)`.
+`Dealt, Redealt, FirstPicked, CardPlayed, CardDrawn, CardFlipped, Placed(source), Matched(target), Captured(cards, to), Ppeok, PpeokTaken, SelfPpeok, Jjok, Ttadak, Sseul, Bomb, Shake(accepted), Chongtong, Hudang, BonusGained, GukjinPlaced, PiStolen(from,to), InstantPayout(kind, points, from), ScoreChanged(seat, breakdown), GoStopPrompt, Go(count), Stop, RoundEnded(reason), Settled(ledgerEntry), Nagari(multiplier)`. (정의의 단일 근거는 `packages/engine`의 `EngineEvent` 타입이며, 이 목록은 그 요약이다. 2026-09-28 엔진 기준으로 갱신.)
 각 이벤트는 좌석, 관련 카드 ID, 순번을 가진다. 상대에게 보내는 뷰에서는 손패 ID를 가린다.
 
 ---
