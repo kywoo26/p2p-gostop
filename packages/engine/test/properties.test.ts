@@ -1,5 +1,8 @@
-// 불변식 속성 테스트 (spec 4.4, AC-02, plan M1 (b)).
-// 기본 300판(npm test), ENGINE_FULL=1이면 10,000판. 선 고르기부터 시작하는 첫 판은 그 1/10을 추가로 돈다.
+// 불변식 속성 테스트 (spec 4.4, AC-02, plan M1 (b), M1 리뷰 F-1·F-3·F-11).
+// 기본 1,000판(npm test, plan §4 "매 커밋 축약 1,000판"), ENGINE_FULL=1이면 10,000판.
+// 선 고르기부터 시작하는 첫 판은 그 1/10을 추가로 돈다.
+// 매 수마다: 입력 상태 deepFreeze(불변성), 무작위·형태 오류 액션 ↔ legalActions(거부), 두 좌석 뷰의 숨은 정보
+// 무관성(누출), 상대에게 가는 이벤트의 숨은 카드 검사, 결정화 왕복, NP-07 크기 상한.
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
@@ -20,6 +23,7 @@ import {
   type Seat,
 } from '../src/index.ts';
 import { flipSeat, mirrorAction, playRandomRound, type PlayedRound } from './helpers.ts';
+import { checkStep, type StepChecker } from './step-checks.ts';
 
 function envFlag(name: string): boolean {
   const proc: unknown = Reflect.get(globalThis, 'process');
@@ -31,7 +35,7 @@ function envFlag(name: string): boolean {
 }
 
 const FULL = envFlag('ENGINE_FULL');
-const RUNS = FULL ? 10_000 : 300;
+const RUNS = FULL ? 10_000 : 1000;
 const FIRST_ROUND_RUNS = RUNS / 10;
 const TIMEOUT = FULL ? 900_000 : 60_000;
 
@@ -99,7 +103,12 @@ function playAndCheck(
   policySeed: number,
 ): PlayedRound {
   // 1. 매 단계 카드 보존. 더미가 모자라면 엔진이 불변식 예외를 던져 여기서 실패한다.
-  const played = playRandomRound(rules, seed, opts, policySeed, assertConservation);
+  //    + 매 단계 거부·누출·결정화·크기 검사(step-checks.ts). 입력 상태는 helpers가 deepFreeze한다.
+  const checker: StepChecker = { policySeed, revealed: [new Set(), new Set()] };
+  const played = playRandomRound(rules, seed, opts, policySeed, (state, action, events) => {
+    assertConservation(state);
+    checkStep(checker, state, action, events);
+  });
   const { state, actions, events } = played;
   expect(state.phase).toBe('end');
   // 2. 손패를 다 쓰고 끝났으면 더미 잔여는 보너스뿐 (12.8)

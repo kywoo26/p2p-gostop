@@ -557,7 +557,8 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b"
         ],
         []
       ],
@@ -565,7 +566,7 @@
         {
           "turnsTaken": 3,
           "goCount": 1,
-          "lastGoScore": 6
+          "lastGoScore": 7
         },
         {}
       ]
@@ -583,11 +584,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 8,
+        "finalPoints": 9,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 8
           },
           {
             "kind": "goBonus",
@@ -623,7 +624,9 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b",
+          "11피a"
         ],
         []
       ],
@@ -631,7 +634,7 @@
         {
           "turnsTaken": 3,
           "goCount": 2,
-          "lastGoScore": 6
+          "lastGoScore": 8
         },
         {}
       ]
@@ -649,11 +652,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 9,
+        "finalPoints": 11,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 9
           },
           {
             "kind": "goBonus",
@@ -689,7 +692,10 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b",
+          "11피a",
+          "11피b"
         ],
         []
       ],
@@ -697,7 +703,7 @@
         {
           "turnsTaken": 3,
           "goCount": 3,
-          "lastGoScore": 6
+          "lastGoScore": 9
         },
         {}
       ]
@@ -715,11 +721,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 20,
+        "finalPoints": 26,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 10
           },
           {
             "kind": "goBonus",
@@ -759,7 +765,10 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b",
+          "11피a",
+          "B3"
         ],
         []
       ],
@@ -767,7 +776,7 @@
         {
           "turnsTaken": 3,
           "goCount": 5,
-          "lastGoScore": 6
+          "lastGoScore": 11
         },
         {}
       ]
@@ -785,11 +794,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 96,
+        "finalPoints": 136,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 12
           },
           {
             "kind": "goBonus",
@@ -832,7 +841,10 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b",
+          "11피a",
+          "11피b"
         ],
         []
       ],
@@ -840,7 +852,7 @@
         {
           "turnsTaken": 3,
           "goCount": 3,
-          "lastGoScore": 6
+          "lastGoScore": 9
         },
         {}
       ]
@@ -858,11 +870,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 14,
+        "finalPoints": 20,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 10
           },
           {
             "kind": "goMultiplier",
@@ -901,7 +913,9 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b",
+          "11피a"
         ],
         []
       ],
@@ -909,7 +923,7 @@
         {
           "turnsTaken": 3,
           "goCount": 2,
-          "lastGoScore": 6
+          "lastGoScore": 8
         },
         {}
       ]
@@ -927,11 +941,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 9,
+        "finalPoints": 11,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 9
           },
           {
             "kind": "goBonus",
@@ -1091,7 +1105,8 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b"
         ],
         []
       ],
@@ -1099,7 +1114,7 @@
         {
           "turnsTaken": 3,
           "goCount": 1,
-          "lastGoScore": 6
+          "lastGoScore": 7
         },
         {}
       ]
@@ -1120,7 +1135,7 @@
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 8
           },
           {
             "kind": "goBonus",
@@ -2174,7 +2189,7 @@
     "id": "G10-go-and-bak",
     "ruleId": "G10",
     "case": "boundary",
-    "description": "고 가산 후 고 배수와 박을 곱한다: (7+3)×2×2 = 40",
+    "description": "고 가산 후 고 배수와 박을 곱한다: (10+3)×2×2 = 52",
     "setup": {
       "hands": [
         ["5열", "12열"],
@@ -2195,7 +2210,10 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b",
+          "11피a",
+          "11피b"
         ],
         ["7피a", "7피b", "8피a", "8피b", "9피a", "9피b", "10피b"]
       ],
@@ -2203,7 +2221,7 @@
         {
           "turnsTaken": 3,
           "goCount": 3,
-          "lastGoScore": 6
+          "lastGoScore": 9
         },
         {}
       ]
@@ -2221,11 +2239,11 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 40,
+        "finalPoints": 52,
         "steps": [
           {
             "kind": "base",
-            "value": 7
+            "value": 10
           },
           {
             "kind": "goBonus",

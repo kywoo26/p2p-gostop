@@ -3,7 +3,7 @@
 import { actPickFirst } from './deal.ts';
 import { beginTx } from './draft.ts';
 import { legalActions, sameAction } from './legal.ts';
-import type { Action, GameState, ReduceResult } from './state.ts';
+import type { Action, ActionType, GameState, ReduceResult, RejectReason } from './state.ts';
 import {
   actBomb,
   actChongtong,
@@ -16,20 +16,62 @@ import {
   actTarget,
 } from './turn.ts';
 
-function reject(
-  reason: 'roundOver' | 'notYourTurn' | 'illegalAction',
-  action: Action,
-): ReduceResult {
+const ACTION_TYPES: ReadonlySet<string> = new Set<ActionType>([
+  'pickFirst',
+  'chongtong',
+  'play',
+  'bomb',
+  'flipOnly',
+  'shake',
+  'chooseTarget',
+  'gukjin',
+  'go',
+  'stop',
+]);
+
+/**
+ * 신뢰할 수 없는 입력(네트워크 JSON)의 최소 형태 검사: 객체이고 type이 알려진 액션 종류, seat가 0 또는 1.
+ * 나머지 필드(카드·월·선택)는 legalActions와의 비교(sameAction, ===)에서 걸러진다.
+ */
+function isActionShape(value: unknown): value is Action {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const type: unknown = Reflect.get(value, 'type');
+  const seat: unknown = Reflect.get(value, 'seat');
+  return typeof type === 'string' && ACTION_TYPES.has(type) && (seat === 0 || seat === 1);
+}
+
+function describe(action: unknown): string {
+  try {
+    // JSON.stringify(undefined)는 undefined를 돌려준다
+    const text: string | undefined = JSON.stringify(action);
+    return text ?? String(action);
+  } catch {
+    return String(action);
+  }
+}
+
+function reject(reason: RejectReason, action: unknown): ReduceResult {
   const messages = {
     roundOver: '판이 끝났습니다',
     notYourTurn: '지금 입력할 차례가 아닙니다',
     illegalAction: '합법 수가 아닙니다',
   } as const;
-  return { ok: false, reason, message: `${messages[reason]}: ${JSON.stringify(action)}` };
+  return { ok: false, reason, message: `${messages[reason]}: ${describe(action)}` };
 }
 
-/** 액션 하나를 적용한다. 입력 상태는 바뀌지 않는다. */
-export function reduce(state: GameState, action: Action): ReduceResult {
+/**
+ * 액션 하나를 적용한다. 입력 상태는 바뀌지 않는다.
+ * 형태가 잘못된 입력(null, 알 수 없는 type, 좌석 '0' 등)도 예외 없이 illegalAction으로 거부한다(M1 리뷰 F-9).
+ * 네트워크에서 받은 검증 전 JSON은 두 번째 시그니처(unknown)로 그대로 넘겨도 된다.
+ */
+export function reduce(state: GameState, action: Action): ReduceResult;
+export function reduce(state: GameState, action: unknown): ReduceResult;
+export function reduce(state: GameState, action: unknown): ReduceResult {
+  if (!isActionShape(action)) {
+    return reject('illegalAction', action);
+  }
   if (state.phase === 'end') {
     return reject('roundOver', action);
   }

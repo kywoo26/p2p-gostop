@@ -1,7 +1,7 @@
 // 판 시작: 선 고르기(R4), 분배(R2), 바닥 보너스(R3), 바닥·손패 총통(R6·E12·E13).
 import { gainCards } from './capture.ts';
 import { deckCardIds, getCard, type CardId, type Month } from './cards.ts';
-import { emit, other, type Draft, type DraftSeat, type Tx } from './draft.ts';
+import { emit, invariant, other, type Draft, type DraftSeat, type Tx } from './draft.ts';
 import { buildFloor, placeLoose } from './floor.ts';
 import { createRng, nextInt, shuffleWith, type Seed } from './rng.ts';
 import type { RuleOptions } from './rules.ts';
@@ -133,8 +133,9 @@ export function actPickFirst(tx: Tx, seat: Seat, index: number): void {
     tx.s.pending = { kind: 'pickFirst', seats: waiting };
     return;
   }
-  const a = fp.pool[picks[0] ?? 0] ?? 0;
-  const b = fp.pool[picks[1] ?? 0] ?? 0;
+  const a = fp.pool[picks[0] ?? -1];
+  const b = fp.pool[picks[1] ?? -1];
+  invariant(a !== undefined && b !== undefined, '선 고르기 후보 위치가 잘못되었습니다');
   emit(tx, { type: 'FirstPicked', seat: null, cards: [a, b], picks: [a, b] });
   const decided = compareFirstPick(a, b, tx.s.rules.firstDealer === 'timeOfDay' && fp.isNight);
   if (decided !== null) {

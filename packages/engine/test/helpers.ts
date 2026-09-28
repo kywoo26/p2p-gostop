@@ -31,19 +31,34 @@ export interface PlayedRound {
 
 const MAX_STEPS = 500;
 
+/** 객체 그래프 전체를 얼린다. 얼린 상태로 reduce를 부르면 입력을 바꾸는 순간 TypeError가 난다(불변성 검사). */
+function deepFreeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) {
+      deepFreeze(child);
+    }
+  }
+  return value;
+}
+
+/**
+ * onStep(state, action, events): 매 단계 뒤(처음에는 action = null, events = 분배 이벤트).
+ * 모든 상태를 reduce에 넘기기 전에 deepFreeze한다.
+ */
 export function playRandomRound(
   rules: RuleOptions,
   seed: number,
   opts: RoundOptions,
   policySeed: number,
-  onStep?: (state: GameState, action: Action | null) => void,
+  onStep?: (state: GameState, action: Action | null, events: readonly EngineEvent[]) => void,
 ): PlayedRound {
   const started = newRound(rules, seed, opts);
   let state = started.state;
   const events: EngineEvent[] = [...started.events];
   const actions: Action[] = [];
   let rng = createRng(policySeed);
-  onStep?.(state, null);
+  onStep?.(state, null, started.events);
   for (let step = 0; state.phase !== 'end'; step++) {
     if (step > MAX_STEPS) {
       throw new Error('판이 끝나지 않습니다');
@@ -59,14 +74,14 @@ export function playRandomRound(
     if (action === undefined) {
       throw new Error('합법 수가 없습니다');
     }
-    const result = reduce(state, action);
+    const result = reduce(deepFreeze(state), action);
     if (!result.ok) {
       throw new Error(`합법 수가 거부됨: ${result.message}`);
     }
     actions.push(action);
     events.push(...result.events);
     state = result.state;
-    onStep?.(state, action);
+    onStep?.(state, action, result.events);
   }
   return { start: started.state, state, actions, events };
 }

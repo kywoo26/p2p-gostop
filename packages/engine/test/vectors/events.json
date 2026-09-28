@@ -747,7 +747,7 @@
     "ruleId": "E4",
     "case": "normal",
     "toggle": "ppeokPayout=baseMultiple",
-    "description": "넷마블식 토글: 첫뻑은 기본점수×1(1점)",
+    "description": "넷마블식 토글: 첫뻑은 기본점수(맞고 7점, §5.8)×1 = 7점. 기본값 7/14/21과 같은 금액(결정 D3)",
     "rulesPatch": {
       "ppeokPayout": "baseMultiple"
     },
@@ -778,7 +778,7 @@
           "kind": "firstPpeok",
           "to": 0,
           "from": 1,
-          "points": 1
+          "points": 7
         }
       ]
     }
@@ -788,7 +788,7 @@
     "ruleId": "E4",
     "case": "boundary",
     "toggle": "ppeokPayout=baseMultiple",
-    "description": "넷마블식 토글: 연뻑은 기본점수×2(2점)",
+    "description": "넷마블식 토글: 연뻑은 기본점수 7점×2 = 14점(결정 D3)",
     "rulesPatch": {
       "ppeokPayout": "baseMultiple"
     },
@@ -820,9 +820,58 @@
           "kind": "secondPpeok",
           "to": 0,
           "from": 1,
-          "points": 2
+          "points": 14
         }
       ]
+    }
+  },
+  {
+    "id": "E4-base-multiple-third",
+    "ruleId": "E4",
+    "case": "boundary",
+    "toggle": "ppeokPayout=baseMultiple",
+    "description": "넷마블식 토글: 3연뻑은 기본점수 7점×3 = 21점, 이어서 3뻑 승리 7점(결정 D3: 기본값과 같은 금액)",
+    "rulesPatch": {
+      "ppeokPayout": "baseMultiple"
+    },
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 2,
+          "ppeokTurns": [1, 2]
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "result": {
+        "reason": "threePpeok",
+        "winner": 0
+      },
+      "instantPayouts": [
+        {
+          "kind": "thirdPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 21
+        }
+      ],
+      "settlement": {
+        "finalPoints": 7
+      }
     }
   },
   {
@@ -1000,7 +1049,7 @@
     "id": "E5-three-ppeok-no-multiplier",
     "ruleId": "E5",
     "case": "boundary",
-    "description": "3뻑 승리에는 배수를 적용하지 않는다(나가리 이월 ×4·흔들기가 있어도 7점)",
+    "description": "3뻑 승리에는 판 안의 배수(흔들기·고박)를 적용하지 않지만 나가리 이월 ×4는 곱한다: 7×4 = 28, 다음 판 배수는 1로 돌아간다(§8 \"나가리 다음 판 무조건 ×2\", 결정 D2)",
     "setup": {
       "hands": [
         ["5열", "12열"],
@@ -1029,12 +1078,69 @@
     ],
     "expect": {
       "settlement": {
-        "finalPoints": 7,
-        "multiplier": 1,
+        "finalPoints": 28,
+        "multiplier": 4,
+        "nextCarry": 1,
         "steps": [
           {
             "kind": "base",
             "value": 7
+          },
+          {
+            "kind": "nagariCarry",
+            "value": 4
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "E5-three-ppeok-jackpot",
+    "ruleId": "E5",
+    "case": "normal",
+    "toggle": "jackpotRound=5x2",
+    "description": "3뻑 승리에도 대박판 배수는 곱한다: 아케이드 5번째 판이면 7×2 = 14(결정 D2, 총통·허당과 같은 고정 점수 승리 규칙)",
+    "preset": "arcade",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "8광"],
+      "deck": ["5피a", "11피a"],
+      "seats": [
+        {
+          "turnsTaken": 6,
+          "ppeokTurns": [2, 5],
+          "shakes": 1
+        },
+        {}
+      ],
+      "roundNumber": 5
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      }
+    ],
+    "expect": {
+      "result": {
+        "reason": "threePpeok",
+        "winner": 0
+      },
+      "settlement": {
+        "finalPoints": 14,
+        "nextCarry": 1,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "jackpot",
+            "value": 2
           }
         ]
       }
@@ -2333,7 +2439,7 @@
     "id": "E11-shake-decline",
     "ruleId": "E11",
     "case": "boundary",
-    "description": "흔들지 않기로 하면 배수 없이 그냥 낸다",
+    "description": "흔들지 않기로 하면 배수 없이 그냥 낸다. 거절은 이벤트를 내지 않는다(상대에게 그 월 3장 보유가 드러나지 않게, M1 리뷰 F-1)",
     "setup": {
       "hands": [
         ["5열", "5초", "5피a", "12열"],
@@ -2363,11 +2469,16 @@
       ],
       "events": [
         {
-          "type": "Shake",
-          "accepted": false,
-          "cards": []
+          "type": "CardPlayed",
+          "cards": ["5열"]
+        },
+        {
+          "type": "Placed",
+          "source": "play",
+          "cards": ["5열"]
         }
-      ]
+      ],
+      "noEvents": ["Shake"]
     }
   },
   {
@@ -2807,7 +2918,7 @@
     "id": "E12-chongtong-continue",
     "ruleId": "E12",
     "case": "normal",
-    "description": "계속하기를 고르면 판을 진행하고, 4장 중 1장을 내면 4장 흔들기를 물을 수 있다(흔들기+폭탄 ×4 경로)",
+    "description": "계속하기를 고르면 판을 진행하고, 4장 중 1장을 내면 4장 흔들기를 물을 수 있다(흔들기+폭탄 ×4 경로). 계속하기는 이벤트를 내지 않는다(M1 리뷰 F-6)",
     "deal": {
       "seed": 1,
       "dealer": 0,
@@ -2866,11 +2977,8 @@
         },
         null
       ],
+      "noEvents": ["Chongtong"],
       "events": [
-        {
-          "type": "Chongtong",
-          "choice": "continue"
-        },
         {
           "type": "Shake",
           "cards": ["1광", "1홍", "1피a", "1피b"]

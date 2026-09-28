@@ -14,6 +14,7 @@ export {
   type Ribbon,
 } from './cards.ts';
 export { shuffle } from './deck.ts';
+export { determinize, unseenCards, type DeterminizeSample } from './determinize.ts';
 export {
   FIRST_PICK_MAX_TIES,
   FIRST_PICK_POOL_SIZE,
@@ -35,6 +36,7 @@ export { reduce } from './reduce.ts';
 export { replay, type ReplayResult } from './replay.ts';
 export { createRng, nextInt, nextUint32, shuffleWith, type RngState, type Seed } from './rng.ts';
 export {
+  BASE_POINTS,
   DEFAULT_LOCAL_PLAY_OPTIONS,
   DEFAULT_RULES,
   INSTANT_UNIT_POINTS,
@@ -46,6 +48,7 @@ export {
   type PresetId,
   type RuleOptions,
 } from './rules.ts';
+// 테스트 도우미: 새 코드는 '@p2p-gostop/engine/testing'을 쓴다(F-10). 호환을 위해 루트에도 남긴다.
 export { collectCards, createScenario, type ScenarioSetup, type SeatCounters } from './scenario.ts';
 export { GUKJIN_ID, scoreCaptured, seatScore } from './score.ts';
 export { previewStop, settle } from './settle.ts';
@@ -82,5 +85,7 @@ export {
   redactEvent,
   type FirstPickView,
   type PlayerView,
+  type PlayerViewOptions,
   type SeatView,
+  type StopPreview,
 } from './view.ts';

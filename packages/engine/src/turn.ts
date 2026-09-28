@@ -12,7 +12,7 @@ import {
   removeGroup,
   removeLooseCard,
 } from './floor.ts';
-import { INSTANT_UNIT_POINTS, WINNING_SCORE } from './rules.ts';
+import { BASE_POINTS, INSTANT_UNIT_POINTS, WINNING_SCORE } from './rules.ts';
 import { seatScore } from './score.ts';
 import { settle } from './settle.ts';
 import type {
@@ -176,37 +176,41 @@ function chongtongCards(tx: Tx, seat: Seat, months: readonly Month[]): CardId[] 
   });
 }
 
+/**
+ * 총통 응답. 끝내기는 공개 이벤트(Chongtong)와 함께 판을 끝낸다.
+ * 계속하기는 이벤트를 내지 않는다: 상대가 "총통을 들고 있다"는 사실을 알면 안 되기 때문이다(M1 리뷰 F-6).
+ * 계속한 좌석 자신은 액션으로 알고, 월은 4장 흔들기(E12)를 고를 때에만 공개된다.
+ */
 export function actChongtong(tx: Tx, seat: Seat, choice: 'end' | 'continue'): void {
   const pending = tx.s.pending;
   invariant(pending?.kind === 'chongtong', '총통 프롬프트가 아닙니다');
-  emit(tx, {
-    type: 'Chongtong',
-    seat,
-    cards: chongtongCards(tx, seat, pending.months),
-    months: pending.months,
-    choice,
-  });
   if (choice === 'end') {
+    emit(tx, {
+      type: 'Chongtong',
+      seat,
+      cards: chongtongCards(tx, seat, pending.months),
+      months: pending.months,
+      choice,
+    });
     endRound(tx, 'chongtong', seat);
     return;
   }
   promptPlay(tx, pending.resume === 'deal' ? tx.s.turn : seat);
 }
 
+/**
+ * 흔들기 응답 (E11). 흔들면 그 월 카드를 모두 보여 주는 공개 이벤트(Shake)를 낸다.
+ * 흔들지 않으면 이벤트를 내지 않는다: 거절 사실만으로도 뒤이은 CardPlayed의 월에 3장 이상을 쥐고 있다는 것이
+ * 드러나기 때문이다(M1 리뷰 F-1). 상대 뷰에서는 흔들기 프롬프트도 카드 내기 대기로 보인다(view.ts).
+ */
 export function actShake(tx: Tx, seat: Seat, accept: boolean): void {
   const pending = tx.s.pending;
   invariant(pending?.kind === 'shake', '흔들기 프롬프트가 아닙니다');
   if (accept) {
     tx.s.seats[seat].shakes += 1;
+    const shown = tx.s.seats[seat].hand.filter((id) => getCard(id).month === pending.month);
+    emit(tx, { type: 'Shake', seat, cards: shown, month: pending.month, accepted: true });
   }
-  const shown = tx.s.seats[seat].hand.filter((id) => getCard(id).month === pending.month);
-  emit(tx, {
-    type: 'Shake',
-    seat,
-    cards: accept ? shown : [],
-    month: pending.month,
-    accepted: accept,
-  });
   playCard(tx, seat, pending.card);
 }
 
@@ -322,11 +326,12 @@ function matchSingle(
   const floor = tx.s.floor;
   const month = monthOf(card);
   const group = findGroup(floor, month);
+  const seat = ctx.seat;
   if (group === undefined) {
     placeLoose(floor, card);
+    emit(tx, { type: 'Placed', seat, cards: [card], source });
     return;
   }
-  const seat = ctx.seat;
   if (group.kind === 'loose') {
     const matched = group.cards.length === 2 ? target : group.cards[0];
     invariant(matched !== null && matched !== undefined, '대상이 정해지지 않았습니다');
@@ -386,7 +391,9 @@ function ppeokPayout(tx: Tx, seat: Seat, turnIndex: number): void {
   if (kind === undefined || !fromFirstTurn || mode === 'off') {
     return;
   }
-  recordPayout(tx, seat, kind, mode === 'points' ? INSTANT_UNIT_POINTS * turnIndex : turnIndex);
+  // 'points': 7/14/21점, 'baseMultiple': 기본점수(7) × 1/2/3 (결정 D3: 지금은 같은 값)
+  const unit = mode === 'points' ? INSTANT_UNIT_POINTS : BASE_POINTS;
+  recordPayout(tx, seat, kind, unit * turnIndex);
 }
 
 /** RESOLVE: 획득 이동, 뻑·쪽·따닥·쓸 판정, 피 뺏기, 즉시 정산 */

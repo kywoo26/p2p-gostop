@@ -22,7 +22,7 @@ export interface RuleOptions {
   readonly dealFloorBonusSteal: boolean;
   /** 2장 폭탄: 끔 / 켬(배수 없음) / 켬(×2, 피망식) — E10 */
   readonly twoCardBomb: 'off' | 'noMultiplier' | 'double';
-  /** 첫뻑·연뻑·3연뻑 즉시 정산: 7/14/21점 / 기본점수×1/2/3 / 끔 — E4 */
+  /** 첫뻑·연뻑·3연뻑 즉시 정산: 7/14/21점 / 기본점수(BASE_POINTS = 7)×1/2/3 / 끔 — E4. 지금은 앞의 둘이 같은 금액 */
   readonly ppeokPayout: 'points' | 'baseMultiple' | 'off';
   /** 첫따닥 즉시 정산(7점) — E6 */
   readonly firstTtadakPayout: boolean;
@@ -90,6 +90,13 @@ export const WINNING_SCORE = 7;
 
 /** 즉시 정산·허당의 단위 점수 (E4·E6·E14: 7점 단위) */
 export const INSTANT_UNIT_POINTS = 7;
+
+/**
+ * 맞고의 기본점수 (rules-commercial §5.8 "7점(맞고류 기본점수)", §6.3 넷마블 "기본점수 이상의 점수로 '고'").
+ * `ppeokPayout: 'baseMultiple'`(넷마블식 기본점수×1/2/3)은 이 값 × n이다. 그래서 지금은 기본값 'points'(7/14/21)와
+ * 금액이 같다(결정 D3). 토글은 기본점수 정의가 바뀔 때를 위해 남겨 둔다.
+ */
+export const BASE_POINTS = 7;
 
 export type PresetId = 'standard' | 'traditional' | 'arcade';
 

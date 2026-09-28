@@ -285,6 +285,8 @@ type EventPayload =
   | { readonly type: 'CardDrawn' }
   | { readonly type: 'CardFlipped' }
   | { readonly type: 'Matched'; readonly source: 'play' | 'flip'; readonly target: CardId }
+  /** 낸 패·뒤집은 패가 먹지 못하고 바닥에 놓임 (M1 리뷰 F-8: UI가 Matched 부재로 추론하지 않게) */
+  | { readonly type: 'Placed'; readonly source: 'play' | 'flip' }
   | { readonly type: 'Captured'; readonly to: Seat }
   | { readonly type: 'Ppeok'; readonly count: number; readonly turnIndex: number }
   | { readonly type: 'PpeokTaken'; readonly pileOwner: Seat | null; readonly natural: boolean }
@@ -293,7 +295,9 @@ type EventPayload =
   | { readonly type: 'Ttadak' }
   | { readonly type: 'Sseul' }
   | { readonly type: 'Bomb'; readonly month: Month; readonly handCards: number }
+  /** 흔들기(E11). 공개 이벤트이므로 흔든 경우에만 낸다(accepted는 항상 true, 호환용 필드) */
   | { readonly type: 'Shake'; readonly month: Month; readonly accepted: boolean }
+  /** 총통 끝내기(end)·계속하기 불허 즉시 승리(auto). 계속하기(continue)는 숨기므로 엔진이 내지 않는다(F-6) */
   | {
       readonly type: 'Chongtong';
       readonly months: readonly Month[];

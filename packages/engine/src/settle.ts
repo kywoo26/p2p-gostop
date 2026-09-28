@@ -117,9 +117,10 @@ function fixedChain(state: GameState, rules: RuleOptions, reason: EndReason): Ch
   const chain: Chain = { steps: [], total: 0 };
   switch (reason) {
     case 'threePpeok':
-      // E5: 7점(토글 10점)으로 즉시 승리, 배수 미적용(나가리 이월 포함)
+      // E5: 7점(토글 10점)으로 즉시 승리. "배수 미적용"은 판 안의 배수(고·흔들기·폭탄·박)만이고
+      // 나가리 이월·대박판은 곱한다(§8 "나가리 다음 판은 점수가 나면 무조건 ×2", 결정 D2). 총통·허당과 같다.
       add(chain, 'base', rules.threePpeokPoints);
-      return chain;
+      break;
     case 'hudang':
       add(chain, 'base', INSTANT_UNIT_POINTS);
       break;
@@ -139,8 +140,13 @@ function nextCarry(state: GameState, rules: RuleOptions): number {
 /**
  * 끝난 판을 정산한다. steps는 기본 → 고 가산 → 고 배수 → 흔들기·폭탄 → 피박·광박·멍따·고박 → 나가리 이월 → 대박판.
  * finalPoints = (가산 단계 합) × (곱 단계 곱).
+ * 고정 점수 승리(3뻑·총통 끝내기·바닥/양측 총통 선 승리·허당)는 판 안의 배수 없이 나가리 이월·대박판만 곱한다.
+ *
+ * 규칙은 항상 `state.rules`를 쓴다. 두 번째 인수는 예전 호출(`settle(state, rules)`)과의 호환용이며 무시한다
+ * (상태의 규칙과 어긋난 규칙으로 정산하는 일을 막는다, M1 리뷰 F-10).
  */
-export function settle(state: GameState, rules: RuleOptions = state.rules): Settlement {
+export function settle(state: GameState, _rules?: RuleOptions): Settlement {
+  const rules = state.rules;
   const result = state.result;
   if (result === null) {
     throw new RangeError('끝나지 않은 판은 정산할 수 없습니다');

@@ -302,7 +302,7 @@
     "id": "M3-no-fee",
     "ruleId": "M3",
     "case": "normal",
-    "description": "수수료 없음: 승자는 패자가 낸 금액을 그대로 받는다(8점 × 1000)",
+    "description": "수수료 없음: 승자는 패자가 낸 금액을 그대로 받는다(9점 × 1000)",
     "setup": {
       "hands": [
         ["5열", "12열"],
@@ -323,7 +323,8 @@
           "4피a",
           "4피b",
           "6피a",
-          "B2b"
+          "B2b",
+          "6피b"
         ],
         []
       ],
@@ -331,7 +332,7 @@
         {
           "turnsTaken": 3,
           "goCount": 1,
-          "lastGoScore": 6
+          "lastGoScore": 7
         },
         {}
       ]
@@ -351,7 +352,7 @@
       "ledger": {
         "perPoint": 1000,
         "start": [100000, 100000],
-        "balances": [108000, 92000]
+        "balances": [109000, 91000]
       }
     }
   },
