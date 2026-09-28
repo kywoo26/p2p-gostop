@@ -11,5 +11,6 @@
     "packages/web": {
       "entry": ["scripts/*.mjs"]
     }
-  }
+  },
+  "ignore": ["tools/p2p-mini/**", "packages/web/public/p2p/**"]
 }
