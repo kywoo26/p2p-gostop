@@ -215,6 +215,22 @@ p2p-gostop/
 
 2026-09-28 결과: PR #1(Android 셸)·#2(M3 솔로)·#3(프로토콜) 모두 main 병합. MVP 릴리스 `v0.1.0-alpha`→`v0.1.2-alpha`(P2P 최소 페이지 `tools/p2p-mini` + 솔로 모드 + Android 수정). 남은 통합(M4 마무리): 게스트/호스트 화면을 `tools/p2p-mini` 대신 정식 UI(M3 Board + protocol HostSession/GuestSession + `src/net` WsTransport + `bridge.ts`↔HostBridge)로 교체, 로비 화면, 2브라우저 E2E, 호스트 원장 저장·복원, 60초 연결 상태 시계. 그 뒤 M5 실기기 회차·M6.
 
+## 3-2. 재개 계획 (2026-09-28, MVP 이후)
+사용자 피드백(알파 기내 플레이): 규칙 적용 의심, 잔버그, UI/UX 부족. 지시: 원래 계획대로 재개, 분산, 충분한 검증, 적정 effort, 플랜 이행 빠짐없이.
+
+| 트랙 | 내용 | 담당 / effort | 산출 |
+|---|---|---|---|
+| R1 | 리뷰 없이 병합된 PR #2(M3 솔로) 사후 리뷰: 규칙 표시·프롬프트 누락·UX(spec §6)·표시 버그 | reviewer(Opus, medium) | `docs/reviews/M3-review.md` + GitHub 이슈 |
+| R2 | PR #3(프로토콜) 사후 리뷰: spec §5, 검증·commit-reveal·재동기화·보안 | reviewer(Opus, medium) | `docs/reviews/M4-protocol-review.md` + 이슈 |
+| I1 | M4 통합: `tools/p2p-mini` 제거, 정식 UI로 호스트/게스트 모드(HostSession/GuestSession + WsTransport + bridge↔HostBridge), 로비, 재접속·재동기화, 2브라우저 E2E | implementer(Opus, high), 워크트리 PR | PR → 리뷰 → 병합 → `v0.2.0` |
+| A1 | Android 후속: PR #1 리뷰 이연 항목(I-11 문서, N-1~N-10, Gradle 10 deprecation, copyWebDist), 진동 브리지 | Codex Sol high, 워크트리 PR | PR → 리뷰 → 병합 |
+| E1 | 엔진 M6 선행: `SeatView.revealed`, 검증 생략 apply 경로(+속성 테스트), 밀기 구현(+벡터), M1 리뷰 잔여 | implementer(Opus, high) | PR → 리뷰 → 병합 |
+| U1 | R1/R2 이슈 수정 라운드(규칙·UX 버그) | implementer 또는 Codex(이슈 성격별) | PR → 리뷰 → 병합 |
+| M5 | `v0.2.0` 실기기 회차(호스트/게스트 정식 UI) | 사용자 | 로그 → 이슈 |
+| M6 | 토글 UI, 기록, 리플레이 내보내기, 효과음, 접근성, 아케이드, 머니 모델 재산정, AI 강도 재도전 | 분할 배분 | `v1.0.0` |
+
+규칙: 모든 PR은 CI 녹색 + reviewer 검토(판정 '병합 가능')를 받은 뒤 병합한다. 리뷰 결함은 GitHub 이슈로 등록해 트랙 U1이 소화한다.
+
 ## 4. 테스트 전략
 
 | 층 | 대상 | 도구 | 실행 |
@@ -304,6 +320,7 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.6 (2026-09-28): 3-2 재개 계획(사후 리뷰·통합·후속 트랙, 리뷰 필수 규칙).
 - v0.5 (2026-09-28): 3-1 병렬 라이프사이클(모델 배분 원칙, 워크트리·PR 격리) 추가.
 - v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).
 - v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
