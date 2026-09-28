@@ -1,6 +1,8 @@
 // 게임판: 픽스처 상태별 조작 요소와 실제 레이아웃의 터치 영역(spec 6.1 48×48) 검사.
-import { expect, test } from 'vitest';
-import { page } from 'vitest/browser';
+import type { Action } from '@p2p-gostop/engine';
+import { flushSync } from 'svelte';
+import { expect, test, vi } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 import { fixtures } from '../lib/fixtures.ts';
 import type { BoardView } from '../lib/view-types.ts';
@@ -72,4 +74,69 @@ test('손패 10장: 두 줄로 나눠 겹침 스크롤 없이 카드마다 48px 
     expect(r.left).toBeGreaterThanOrEqual(0);
     expect(r.right).toBeLessThanOrEqual(390);
   }
+});
+
+test('손패는 월·종류 순으로 정렬되고 판이 바뀌어도 같은 순서다 (M3 리뷰 I-2)', async () => {
+  // 엔진 손패 순서(셔플 순) 그대로: 1월 피 | 6월 청단 | 2월 홍단 | 5월 열끗 | 10월 피 | 5월 피 | 3월 광 | 7월 열끗 | 5월 피 | 1월 홍단
+  const hand = [3, 21, 5, 16, 38, 19, 8, 24, 18, 1];
+  const view: BoardView = {
+    ...play,
+    seats: [{ ...play.seats[0], hand, handCount: hand.length }, play.seats[1]],
+    playable: hand,
+  };
+  const screen = await render(Board, { view });
+  const order = () =>
+    [...screen.container.querySelectorAll<HTMLElement>('[aria-label="내 손패"] [data-slot]')].map(
+      (b) => Number(b.dataset['slot']),
+    );
+  expect(order()).toEqual([1, 3, 5, 8, 16, 18, 19, 21, 24, 38]);
+  // 한 장 내고 보충 카드(끝에 붙음)가 들어와도 정렬은 유지된다
+  const next = [21, 5, 16, 38, 19, 8, 24, 18, 1, 0];
+  await screen.rerender({
+    view: { ...view, seats: [{ ...view.seats[0], hand: next }, view.seats[1]], playable: next },
+  });
+  expect(order()).toEqual([0, 1, 5, 8, 16, 18, 19, 21, 24, 38]);
+});
+
+test('건너뛰기 탭은 카드를 내지 않는다: 재생 중 누른 카드는 재생이 끝나도 나가지 않는다 (M3 리뷰 I-3)', async () => {
+  const onaction = vi.fn<(action: Action, at: number) => void>();
+  const onskip = vi.fn();
+  const screen = await render(Board, { view: play, busy: true, onaction, onskip });
+  const button = () =>
+    screen.container.querySelector<HTMLButtonElement>('[aria-label="내 손패"] [data-slot="30"]')!;
+  expect(button().disabled).toBe(true);
+
+  // 1. 재생 중 손패를 누른다 → 건너뛰기
+  button().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
+  expect(onskip).toHaveBeenCalledTimes(1);
+  // 2. 손가락을 떼기 전에 재생이 끝나 버튼이 풀린다
+  await screen.rerender({ busy: false });
+  expect(button().disabled).toBe(false);
+  // 3. 손을 떼면 click이 이제 활성인 같은 버튼으로 온다 → 내지 않는다
+  button().dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }));
+  button().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  flushSync();
+  expect(onaction).not.toHaveBeenCalled();
+
+  // 비활성 버튼에 pointerdown이 오지 않는 브라우저: 누르기 기록 없이 온 포인터 click도 내지 않는다
+  await screen.rerender({ busy: true });
+  await screen.rerender({ busy: false });
+  button().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  flushSync();
+  expect(onaction).not.toHaveBeenCalled();
+
+  // 판이 멈춘 뒤 새로 탭하면 낸다 (실제 포인터 입력)
+  await userEvent.click(button());
+  expect(onaction).toHaveBeenCalledTimes(1);
+  expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 30 });
+});
+
+test('키보드로 고른 카드는 누르기 없이도 낸다', async () => {
+  const onaction = vi.fn<(action: Action, at: number) => void>();
+  const screen = await render(Board, { view: play, onaction });
+  const button = screen.container.querySelector<HTMLButtonElement>('[data-slot="34"]')!;
+  button.focus();
+  await userEvent.keyboard('{Enter}');
+  expect(onaction).toHaveBeenCalledTimes(1);
+  expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 34 });
 });

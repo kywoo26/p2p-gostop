@@ -51,3 +51,17 @@ export function cardMark(id: CardId): string {
             : '피';
   return `${card.month}${kind}`;
 }
+
+const KIND_ORDER = { gwang: 0, yeol: 1, tti: 2, pi: 3, bonus: 4 } as const;
+
+/**
+ * 손패 표시 순서 (M3 리뷰 I-2): 월 → 종류(광·열끗·띠·피, 엔진 카탈로그 순) → ID, 보너스(월 없음)는 끝.
+ * 엔진 손패 배열(분배 순서, 보충 카드는 끝)은 그대로 두고 화면에서만 정렬한다. 같은 입력이면 늘 같은 순서다.
+ */
+export function sortHand(cards: readonly CardId[]): CardId[] {
+  return cards.toSorted((a, b) => {
+    const x = getCard(a);
+    const y = getCard(b);
+    return (x.month ?? 13) - (y.month ?? 13) || KIND_ORDER[x.kind] - KIND_ORDER[y.kind] || a - b;
+  });
+}

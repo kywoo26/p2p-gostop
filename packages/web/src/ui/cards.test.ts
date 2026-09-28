@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { bannerFor } from './banner.ts';
 import Card from './Card.svelte';
-import { cardLabel, cardMark, cardSrc } from './cards.ts';
+import { cardLabel, cardMark, cardSrc, sortHand } from './cards.ts';
 import EventBanner from './EventBanner.svelte';
 
 test('카드 이름·표식 (NF-08: 월 숫자·종류 병기)', () => {
@@ -57,4 +57,12 @@ test('이벤트 → 배너 (spec 6.5 문구)', async () => {
 
   const screen = await render(EventBanner, { kind: 'jjok', text: '쪽' });
   await expect.element(screen.getByRole('status')).toHaveTextContent('쪽!');
+});
+
+test('손패 정렬: 월 → 광·열끗·띠·피 → 보너스는 끝 (M3 리뷰 I-2)', () => {
+  expect(sortHand([50, 47, 44, 45, 46, 32, 35, 33, 0])).toEqual([
+    0, 32, 33, 35, 44, 45, 46, 47, 50,
+  ]);
+  // 입력 순서와 무관하다
+  expect(sortHand([33, 0, 50, 32])).toEqual(sortHand([50, 32, 33, 0]));
 });
