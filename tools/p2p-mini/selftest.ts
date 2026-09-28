@@ -8,10 +8,18 @@ for (let r = 0; r < 5; r++) {
     let moved = false;
     for (const seat of [0, 1] as const) {
       const legal = g.legal(seat);
-      if (legal.length) { const a = legal[Math.floor(Math.random() * legal.length)]!; if (!g.act(seat, a)) throw new Error('reject ' + JSON.stringify(a)); moved = true; steps++; break; }
+      if (legal.length) {
+        const a = legal[Math.floor(Math.random() * legal.length)]!;
+        if (!g.act(seat, a)) throw new Error('reject ' + JSON.stringify(a));
+        moved = true;
+        steps++;
+        break;
+      }
     }
-    if (!moved) throw new Error('no legal action for either seat: ' + JSON.stringify(g.state.pending));
-    void g.proj(0, true); void g.proj(1, true);
+    if (!moved)
+      throw new Error('no legal action for either seat: ' + JSON.stringify(g.state.pending));
+    void g.proj(0, true);
+    void g.proj(1, true);
   }
   console.log('round', r + 1, g.result?.text, 'balances', g.balances.join('/'));
 }
