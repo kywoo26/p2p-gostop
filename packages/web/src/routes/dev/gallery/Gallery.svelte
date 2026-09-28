@@ -36,6 +36,7 @@
     ['home', '홈'],
     ['host', '방 열기(호스트)'],
     ['guest', '접속(게스트)'],
+    ['guest-lobby', '접속(게스트): 대기실'],
     ['records', '기록'],
     ['settings', '설정'],
     ['diagnostics', '진단·로그'],
@@ -106,9 +107,33 @@
 {:else if page === 'home'}
   <Home />
 {:else if page === 'host'}
-  <HostRoom view={fixtures.hostRoom} />
-{:else if page === 'guest'}
-  <GuestJoin view={fixtures.guestJoin} />
+  <HostRoom
+    hotspot={{ ...fixtures.hostRoom.hotspot, error: null, lanEnabled: true, warning: null }}
+    guest={fixtures.hostRoom.guest}
+    rules={{
+      preset: 'standard',
+      perPoint: fixtures.hostRoom.rules.pointValue,
+      startBalance: 150_000,
+      hostName: '호스트',
+      unit: fixtures.hostRoom.rules.unit,
+    }}
+  />
+{:else if page === 'guest' || page === 'guest-lobby'}
+  <GuestJoin
+    name={fixtures.guestJoin.name}
+    joined={page === 'guest-lobby'}
+    connection={page === 'guest-lobby' ? 'open' : 'idle'}
+    hostPresent={page === 'guest-lobby' ? true : null}
+    lobby={page === 'guest-lobby'
+      ? {
+          names: ['호스트', fixtures.guestJoin.name],
+          preset: 'standard',
+          pointValue: 100,
+          startBalance: 150_000,
+          unit: '냥',
+        }
+      : null}
+  />
 {:else if page === 'records'}
   <Records view={fixtures.records} />
 {:else if page === 'settings'}

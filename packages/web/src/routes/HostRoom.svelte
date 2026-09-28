@@ -1,74 +1,239 @@
+<script lang="ts" module>
+  import type { PresetId } from '@p2p-gostop/engine';
+  import type { MoneyUnit } from '../lib/view-types.ts';
+
+  export interface HostRoomRules {
+    readonly preset: PresetId;
+    readonly perPoint: number;
+    readonly startBalance: number;
+    readonly hostName: string;
+    readonly unit: MoneyUnit;
+  }
+</script>
+
 <script lang="ts">
-  // 방 열기(호스트) (spec 6.2, FR-01~03). 정적 틀. QR 그림은 M4에서 uqr로 그린다.
+  // 방 열기(호스트) (spec 2.1·6.2, FR-01~03·05·22, NF-06). 핫스팟 상태·Wi-Fi QR·주소 QR·3단계 안내·접속자·규칙·금액·시작.
+  // 화면만 그린다. 핫스팟·세션 동작은 Versus.svelte가 브리지와 HostGame으로 한다.
+  import { PER_POINT_OPTIONS } from '@p2p-gostop/ai';
+  import type { HotspotInfo } from '../bridge/bridge.ts';
   import { formatMoney } from '../lib/format.ts';
-  import type { HostRoomView } from '../lib/view-types.ts';
+  import { PRESET_LABEL } from '../p2p/common.ts';
+  import QrCode from '../p2p/QrCode.svelte';
+  import { wifiQrText } from '../p2p/qr.ts';
+  import { guestUrl } from '../p2p/role.ts';
   import Screen from '../ui/Screen.svelte';
 
   interface Props {
-    view: HostRoomView;
+    hotspot: HotspotInfo;
+    /** 브라우저(개발)에서 연 경우 게스트가 쓸 주소 (host:port) */
+    pageAddress?: string | null;
+    guest: { readonly name: string; readonly connected: boolean } | null;
+    rules: HostRoomRules;
+    /** 저장된 세션 이어하기 (MN-05). 있으면 규칙·금액은 그 세션 값으로 고정 */
+    resume?: { readonly round: number; readonly guestName: string | null } | null;
+    busy?: boolean;
+    onhotspot?: (() => void) | undefined;
+    onaddressonly?: (() => void) | undefined;
+    ondiagnostics?: (() => void) | undefined;
+    onrules?: ((patch: Partial<HostRoomRules>) => void) | undefined;
+    onstart?: (() => void) | undefined;
+    onfresh?: (() => void) | undefined;
   }
 
-  let { view }: Props = $props();
+  let {
+    hotspot,
+    pageAddress = null,
+    guest,
+    rules,
+    resume = null,
+    busy = false,
+    onhotspot,
+    onaddressonly,
+    ondiagnostics,
+    onrules,
+    onstart,
+    onfresh,
+  }: Props = $props();
 
-  const STATE_LABEL: Record<HostRoomView['hotspot']['state'], string> = {
-    starting: '켜는 중',
+  const STATE_LABEL: Record<HotspotInfo['state'], string> = {
+    unsupported: 'Android 앱에서만',
+    starting: '켜는 중…',
     on: '켜짐',
     failed: '실패',
     off: '꺼짐',
+    addressOnly: '주소만 표시',
   };
+  const PRESETS: readonly PresetId[] = ['traditional', 'standard', 'arcade'];
+  const ids = $props.id();
 
-  // 접속 주소는 ip·port로 만든다(번들에 사설 IP 주소 문자열을 두지 않음)
-  const address = $derived(`${view.hotspot.ip}:${view.hotspot.port}`);
+  const address = $derived(
+    hotspot.ip !== null && hotspot.port !== null
+      ? { ip: hotspot.ip, port: hotspot.port }
+      : pageAddress !== null
+        ? (() => {
+            const [ip = '', port = '80'] = pageAddress.split(':');
+            return { ip, port: Number(port) };
+          })()
+        : null,
+  );
+  const url = $derived(address === null ? null : guestUrl(address.ip, address.port));
+  const wifi = $derived(
+    hotspot.state === 'on' && hotspot.ssid !== null
+      ? wifiQrText(hotspot.ssid, hotspot.password)
+      : null,
+  );
+  const permission = $derived(hotspot.error === 'permissionRequired');
+  const canStart = $derived(guest?.connected === true && !busy);
 </script>
 
 <Screen title="방 열기">
-  <section aria-labelledby="host-hotspot">
-    <h2 id="host-hotspot">핫스팟 · {STATE_LABEL[view.hotspot.state]}</h2>
-    <dl class="pairs">
-      <dt>이름</dt>
-      <dd>{view.hotspot.ssid}</dd>
-      <dt>비밀번호</dt>
-      <dd>{view.hotspot.password}</dd>
-      <dt>주소</dt>
-      <dd>{address}</dd>
-    </dl>
+  <section aria-labelledby={`${ids}-hotspot`} data-testid="hotspot" data-state={hotspot.state}>
+    <h2 id={`${ids}-hotspot`}>핫스팟 · {STATE_LABEL[hotspot.state]}</h2>
+    {#if hotspot.state === 'on' || hotspot.state === 'addressOnly' || hotspot.state === 'unsupported'}
+      <dl class="pairs">
+        {#if hotspot.ssid !== null}
+          <dt>이름</dt>
+          <dd>{hotspot.ssid}</dd>
+          <dt>비밀번호</dt>
+          <dd>{hotspot.password ?? '없음'}</dd>
+        {/if}
+        <dt>주소</dt>
+        <dd data-testid="guest-url">{url ?? '확인 중…'}</dd>
+      </dl>
+    {/if}
+    {#if hotspot.warning !== null || (hotspot.state === 'addressOnly' && hotspot.lanEnabled !== false)}
+      <p class="warn" role="note" data-testid="lan-warning">
+        {hotspot.warning ??
+          '주소만 표시: 같은 Wi-Fi의 누구나 이 주소로 들어올 수 있습니다. 믿을 수 있는 네트워크에서만 쓰세요.'}
+        시작한 뒤에는 세션 토큰이 없는 접속을 거절합니다.
+      </p>
+    {:else if hotspot.state === 'unsupported'}
+      <p class="hint">
+        핫스팟은 Android 앱에서 켭니다. 지금은 같은 네트워크의 브라우저가 위 주소로 들어올 수
+        있습니다.
+      </p>
+    {:else if hotspot.state === 'failed'}
+      <p class="warn" role="alert">
+        핫스팟을 켜지 못했습니다{hotspot.error !== null && !permission
+          ? ` (${hotspot.error})`
+          : ''}. 휴대폰 설정에서 핫스팟을 직접 켜고 친구 폰을 연결한 뒤 "주소만 표시"를 누르세요.
+      </p>
+    {/if}
+    {#if permission}
+      <p class="hint" role="status">근처 기기 권한을 허용한 뒤 다시 누르세요.</p>
+    {/if}
+    {#if hotspot.state === 'addressOnly' && hotspot.lanEnabled === false}
+      <p class="hint">친구 폰이 접속하려면 "주소만 표시"로 LAN 접속을 여세요.</p>
+    {/if}
+    {#if hotspot.state !== 'unsupported' && hotspot.state !== 'on'}
+      <div class="row-buttons">
+        <button
+          type="button"
+          class="button primary"
+          disabled={hotspot.state === 'starting'}
+          onclick={() => onhotspot?.()}>핫스팟 켜기</button
+        >
+        {#if hotspot.state !== 'addressOnly' || hotspot.lanEnabled === false}
+          <button type="button" class="button" onclick={() => onaddressonly?.()}>주소만 표시</button
+          >
+        {/if}
+      </div>
+    {/if}
+    {#if hotspot.state !== 'unsupported'}
+      <button type="button" class="link" onclick={() => ondiagnostics?.()}>기기 진단 열기</button>
+    {/if}
   </section>
 
-  <section aria-labelledby="host-steps">
-    <h2 id="host-steps">친구 폰에서</h2>
-    <ol class="steps">
-      <li>
-        <span class="qr" role="img" aria-label="Wi-Fi 접속 QR (M4에서 표시)">QR</span>
-        <span>카메라로 <b>Wi-Fi QR</b>을 찍어 연결</span>
-      </li>
-      <li>
-        <span class="qr" role="img" aria-label="게임 주소 QR (M4에서 표시)">QR</span>
-        <span>"인터넷 없이 사용"을 누른 뒤 <b>주소 QR</b>을 찍기</span>
-      </li>
-      <li>
-        <span class="qr step-icon" aria-hidden="true">3</span>
-        <span>Safari에서 이름을 적고 입장</span>
-      </li>
-    </ol>
-  </section>
+  {#if url !== null}
+    <section aria-labelledby={`${ids}-steps`}>
+      <h2 id={`${ids}-steps`}>친구 폰(iPhone)에서</h2>
+      <ol class="steps">
+        {#if wifi !== null}
+          <li>
+            <span class="qr"><QrCode text={wifi} label="Wi-Fi 접속 QR" /></span>
+            <span>카메라로 <b>Wi-Fi QR</b>을 찍어 연결 → "인터넷 없이 사용"</span>
+          </li>
+        {/if}
+        <li>
+          <span class="qr"><QrCode text={url} label="게임 주소 QR" /></span>
+          <span>카메라로 <b>주소 QR</b>을 찍어 Safari로 열기</span>
+        </li>
+        <li>
+          <span class="qr step-icon" aria-hidden="true">{wifi === null ? 2 : 3}</span>
+          <span>이름을 적고 입장. 게임 중에는 자동 잠금을 "안 함"으로</span>
+        </li>
+      </ol>
+    </section>
+  {/if}
 
-  <section aria-labelledby="host-guest">
-    <h2 id="host-guest">접속자</h2>
-    <p class="guest">
-      {#if view.guest}
-        <span class={['dot', { on: view.guest.connected }]} aria-hidden="true"></span>
-        {view.guest.name} · {view.guest.connected ? '연결됨' : '끊김'}
+  <section aria-labelledby={`${ids}-guest`}>
+    <h2 id={`${ids}-guest`}>접속자</h2>
+    <p class="guest" role="status" data-testid="guest-status">
+      {#if guest}
+        <span class={['dot', { on: guest.connected }]} aria-hidden="true"></span>
+        {guest.name} · {guest.connected ? '연결됨' : '끊김'}
       {:else}
         기다리는 중…
       {/if}
     </p>
-    <p class="rules">
-      규칙 {view.rules.preset} · 점당 {formatMoney(view.rules.pointValue, view.rules.unit)}
-    </p>
+  </section>
+
+  <section aria-labelledby={`${ids}-rules`}>
+    <h2 id={`${ids}-rules`}>{resume ? '이어하기' : '규칙·금액'}</h2>
+    {#if resume}
+      <p class="rules">
+        {resume.round}판째부터 · {PRESET_LABEL[rules.preset]} · 점당 {formatMoney(
+          rules.perPoint,
+          rules.unit,
+        )}{resume.guestName ? ` · 지난 상대 ${resume.guestName}` : ''}
+      </p>
+      <button type="button" class="link" onclick={() => onfresh?.()}>새 세션으로 시작</button>
+    {:else}
+      <label class="row">
+        <span>내 이름</span>
+        <input
+          type="text"
+          maxlength="12"
+          autocomplete="nickname"
+          value={rules.hostName}
+          onchange={(e) => onrules?.({ hostName: e.currentTarget.value })}
+        />
+      </label>
+      <label class="row">
+        <span>규칙</span>
+        <select
+          value={rules.preset}
+          onchange={(e) => onrules?.({ preset: e.currentTarget.value as PresetId })}
+        >
+          {#each PRESETS as id (id)}<option value={id}>{PRESET_LABEL[id]}</option>{/each}
+        </select>
+      </label>
+      <label class="row">
+        <span>점당</span>
+        <select
+          value={rules.perPoint}
+          onchange={(e) => onrules?.({ perPoint: Number(e.currentTarget.value) })}
+        >
+          {#each PER_POINT_OPTIONS as value (value)}
+            <option {value}>{formatMoney(value, rules.unit)}</option>
+          {/each}
+        </select>
+      </label>
+      <p class="row">
+        <span>시작 잔액</span>
+        <strong>{formatMoney(rules.startBalance, rules.unit)}</strong>
+      </p>
+    {/if}
   </section>
 
   {#snippet actions()}
-    <button type="button" class="button primary" disabled={!view.guest?.connected}>시작</button>
+    <button
+      type="button"
+      class="button primary"
+      data-testid="host-start"
+      disabled={!canStart}
+      onclick={() => onstart?.()}>시작</button
+    >
   {/snippet}
 </Screen>
 
@@ -87,6 +252,7 @@
   .pairs dd {
     margin: 0;
     font-family: ui-monospace, monospace;
+    overflow-wrap: anywhere;
   }
 
   .steps {
@@ -99,7 +265,7 @@
 
   .steps li {
     display: grid;
-    grid-template-columns: 4.5rem 1fr;
+    grid-template-columns: 7.5rem 1fr;
     align-items: center;
     gap: var(--space-3);
   }
@@ -108,24 +274,76 @@
     display: grid;
     place-items: center;
     aspect-ratio: 1;
-    border: 2px dashed var(--color-border);
+  }
+
+  .step-icon {
+    width: 3rem;
+    justify-self: center;
+    border: 2px solid var(--color-border);
     border-radius: var(--radius-s);
     color: var(--color-text-muted);
     font-weight: 700;
   }
 
-  .step-icon {
-    border-style: solid;
-  }
-
   .guest,
-  .rules {
+  .rules,
+  .hint,
+  .warn {
     margin: 0;
   }
 
+  .hint,
   .rules {
     color: var(--color-text-muted);
     font-size: var(--font-size-s);
+  }
+
+  .warn {
+    padding: var(--space-2) var(--space-3);
+    border-left: 3px solid var(--color-event-ppeok);
+    font-size: var(--font-size-s);
+  }
+
+  .row-buttons {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--touch-min);
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  input,
+  select {
+    min-height: var(--touch-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+  }
+
+  input {
+    width: 9rem;
+  }
+
+  .link {
+    justify-self: start;
+    min-height: var(--touch-min);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-accent);
+    font: inherit;
+    text-decoration: underline;
   }
 
   .dot {
