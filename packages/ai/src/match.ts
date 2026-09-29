@@ -49,6 +49,8 @@ export interface PlayRoundOptions {
   readonly debugReduce?: boolean;
   /** 판 시작 시 좌석별 잔액(점 단위). 밀기 결정 전에 즉시 정산을 반영한다. */
   readonly balancePoints?: readonly [number, number];
+  /** 독립 판 평가에서는 후속 판이 없으므로 밀지 않고 정산을 받는다. 기본 true. */
+  readonly allowPush?: boolean;
 }
 
 const MAX_STEPS = 500;
@@ -119,7 +121,7 @@ export function playRound(
     events.push(...result.events);
   }
   const winner = state.result?.winner;
-  if (winner !== null && winner !== undefined) {
+  if (opts.allowPush !== false && winner !== null && winner !== undefined) {
     const push = legalActions(state, winner).find((action) => action.type === 'push');
     if (push !== undefined) {
       const n = counters[winner] ?? 0;

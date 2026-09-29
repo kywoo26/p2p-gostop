@@ -174,9 +174,12 @@ export class IsmctsPolicy implements Policy {
   }
 
   decidePush(view: PlayerView, ctx: DecisionContext): boolean {
+    const now = clockOf(ctx);
+    const budget = ctx.timeBudgetMs ?? this.defaultTimeBudgetMs;
+    const deadline = budget === null ? null : { now, until: now() + budget };
     return (
-      analyzePush(view, ctx.rng, 16, this.weights, ctx.balancePoints, this.debugReduce).decision ===
-      'push'
+      analyzePush(view, ctx.rng, 16, this.weights, ctx.balancePoints, this.debugReduce, deadline)
+        .decision === 'push'
     );
   }
 

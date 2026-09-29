@@ -96,6 +96,7 @@ export function analyzePush(
   weights: Weights,
   balances?: readonly [number, number],
   debugReduce = false,
+  deadline: { readonly now: () => number; readonly until: number } | null = null,
 ): PushAnalysis {
   const winner = view.result?.winner;
   if (
@@ -113,7 +114,10 @@ export function analyzePush(
   const afterTake = afterTransfer(available, winner, takeNow, view.rules.limitedLiability);
   let takeFuture = 0;
   let pushFuture = 0;
-  for (let i = 0; i < samples; i++) {
+  let completed = 0;
+  for (; completed < samples; completed++) {
+    // 두 선택지의 공통 난수 표본 쌍은 끝까지 평가한다. 최소 한 쌍을 확보한 뒤 만료를 확인한다.
+    if (deadline !== null && completed > 0 && deadline.now() >= deadline.until) break;
     const seed = rng.nextU32();
     const rolloutSeed = rng.nextU32();
     for (const pushes of [0, view.round.pushes + 1]) {
@@ -129,7 +133,13 @@ export function analyzePush(
       else pushFuture += futureNet(end, winner, available, view.rules.limitedLiability);
     }
   }
-  const takeEv = takeNow + takeFuture / samples;
-  const pushEv = pushFuture / samples;
-  return { takeNow, takeEv, pushEv, samples, decision: pushEv > takeEv ? 'push' : 'take' };
+  const takeEv = takeNow + takeFuture / completed;
+  const pushEv = pushFuture / completed;
+  return {
+    takeNow,
+    takeEv,
+    pushEv,
+    samples: completed,
+    decision: pushEv > takeEv ? 'push' : 'take',
+  };
 }

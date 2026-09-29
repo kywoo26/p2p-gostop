@@ -15,7 +15,7 @@ import { analyzePush } from '../push.ts';
 import type { Rng } from '../rng.ts';
 import type { DecisionContext, Policy } from '../types.ts';
 import { DEFAULT_WEIGHTS, type Weights } from '../weights.ts';
-import { firstOf, onlyAction } from './common.ts';
+import { clockOf, firstOf, onlyAction } from './common.ts';
 
 export interface GreedyOptions {
   /** 뒤집기 표본 수 K (결정화 사본 수) */
@@ -56,9 +56,12 @@ export class GreedyPolicy implements Policy {
   }
 
   decidePush(view: PlayerView, ctx: DecisionContext): boolean {
+    const budget = ctx.timeBudgetMs;
+    const now = budget === undefined ? null : clockOf(ctx);
+    const deadline = now === null || budget === undefined ? null : { now, until: now() + budget };
     return (
-      analyzePush(view, ctx.rng, 8, this.weights, ctx.balancePoints, this.debugReduce).decision ===
-      'push'
+      analyzePush(view, ctx.rng, 8, this.weights, ctx.balancePoints, this.debugReduce, deadline)
+        .decision === 'push'
     );
   }
 

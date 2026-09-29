@@ -88,6 +88,7 @@ interface RoundInput {
   readonly carry: number;
   readonly pushes: number;
   readonly balancePoints?: readonly [number, number];
+  readonly allowPush?: boolean;
 }
 
 function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
@@ -109,6 +110,7 @@ function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
     ...(config.timeMs === null ? {} : { timeBudgetMs: config.timeMs }),
     clock,
     ...(input.balancePoints === undefined ? {} : { balancePoints: input.balancePoints }),
+    allowPush: input.allowPush ?? true,
   });
   const state = played.state;
   const settled = played.events.findLast((e) => e.type === 'Settled');
@@ -164,6 +166,7 @@ export function runPair(config: SimConfig, policies: Policies, pair: number): Ro
         dealer,
         carry: 1,
         pushes: 0,
+        allowPush: false,
       }).record,
   );
 }

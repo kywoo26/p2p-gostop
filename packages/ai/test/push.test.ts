@@ -61,4 +61,28 @@ describe('밀기 결정 (AI-02)', () => {
     const choice = commercial.decidePush(view, { rng: new Rng(91), balancePoints: balances });
     expect(commercial.decidePush(view, { rng: new Rng(91), balancePoints: balances })).toBe(choice);
   });
+
+  it('시간 초과 시 공통 표본 한 쌍까지 평가하고 주입 시계를 확인한다', () => {
+    const view = playerView(settled(), 0);
+    const one = analyzePush(view, new Rng(91), 1, DEFAULT_WEIGHTS);
+    let calls = 0;
+    const now = () => {
+      calls++;
+      return 100;
+    };
+    const limited = analyzePush(view, new Rng(91), 16, DEFAULT_WEIGHTS, undefined, false, {
+      now,
+      until: 100,
+    });
+    expect(limited).toEqual(one);
+    expect(calls).toBe(1);
+
+    for (const policy of [new GreedyPolicy(), new IsmctsPolicy({ maxIterations: 20 })]) {
+      calls = 0;
+      expect(policy.decidePush(view, { rng: new Rng(91), timeBudgetMs: 0, now })).toBe(
+        one.decision === 'push',
+      );
+      expect(calls).toBe(2); // 시작 시각 + 첫 표본 쌍 뒤 기한 확인
+    }
+  });
 });
