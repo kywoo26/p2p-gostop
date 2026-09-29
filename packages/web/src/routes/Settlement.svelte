@@ -8,7 +8,16 @@
 
   interface Props {
     /** 국진 위치(gukjin)는 솔로 어댑터만 넣는다(프로토콜 뷰에는 아직 없다) */
-    view: SettlementDisplay;
+    view: SettlementDisplay | null;
+    decision?: {
+      readonly winner: boolean;
+      readonly canPush: boolean;
+      readonly nextMultiplier: number;
+      readonly acceptAmount: number | null;
+      readonly forfeitedPoints: number | null;
+    } | null;
+    guest?: boolean;
+    onpush?: ((push: boolean) => void) | undefined;
     /** 이 판의 즉시 정산 (첫뻑·첫따닥 등, FR-18 "별도 원장 항목") */
     instant?: readonly { readonly label: string; readonly name: string; readonly points: number }[];
     /** 나가리면 다음 판 배수 (G9) */
@@ -28,6 +37,9 @@
 
   let {
     view,
+    decision = null,
+    guest = false,
+    onpush,
     instant = [],
     nextCarry = null,
     bankrupt = false,
@@ -41,27 +53,53 @@
   }: Props = $props();
 
   const headline = $derived(
-    view.winner === null
-      ? `나가리${nextCarry !== null && nextCarry > 1 ? ` · 다음 판 ×${nextCarry}` : ''}`
-      : `${view.names[view.winner]} 승리 · ${REASON_LABEL[view.reason]}`,
+    view === null
+      ? '밀기 선택 대기'
+      : view.pushed
+        ? `${view.names[view.winner ?? 0]} 밀기 · 다음 판 ×${2 ** (view.nextPushes ?? 0)}`
+        : view.winner === null
+          ? `나가리${nextCarry !== null && nextCarry > 1 ? ` · 다음 판 ×${nextCarry}` : ''}`
+          : `${view.names[view.winner]} 승리 · ${REASON_LABEL[view.reason]}`,
   );
-  const baseTotal = $derived(view.breakdown.reduce((sum, row) => sum + row.points, 0));
+  const baseTotal = $derived(view?.breakdown.reduce((sum, row) => sum + row.points, 0) ?? 0);
   /** 정산에 쓴 국진 위치 (rules S5: 승자는 점수 최대, 패자는 피박 회피 쪽) */
   const gukjin = $derived(
-    (view.winner === null ? [] : (view.gukjin ?? []))
-      .map(({ seat, asPi }) => `${view.names[seat]} ${asPi ? '쌍피' : '열끗'}`)
+    (view?.winner === null ? [] : (view?.gukjin ?? []))
+      .map(({ seat, asPi }) => `${view?.names[seat]} ${asPi ? '쌍피' : '열끗'}`)
       .join(' · '),
   );
   /** 잔액이 0이 된 좌석 (MN-02, M3 리뷰 L-12) */
   const broke = $derived(
-    view.balances.flatMap((b, seat) => (b.after <= 0 ? [view.names[seat as 0 | 1]] : [])),
+    view?.balances.flatMap((b, seat) => (b.after <= 0 ? [view.names[seat as 0 | 1]] : [])) ?? [],
   );
 </script>
 
 <Screen title="정산" back={null}>
   <p class="headline" data-testid="settlement-headline">{headline}</p>
 
-  {#if view.breakdown.length > 0}
+  {#if view?.pushed}
+    <p data-testid="push-forfeit">
+      정산 0{view.unit} · {view.forfeitedPoints ?? 0}점 포기 · 다음 판 ×{2 **
+        (view.nextPushes ?? 0)}
+    </p>
+  {/if}
+
+  {#if decision}
+    {#if decision.winner}
+      <p role="status">
+        {#if decision.acceptAmount !== null}
+          받기 {formatMoney(decision.acceptAmount, view?.unit ?? '냥')} · 밀면 {decision.forfeitedPoints ??
+            0}점 포기, 정산 0{view?.unit ?? '냥'} · 다음 판 ×{decision.nextMultiplier}
+        {:else}
+          이번 판을 받고 정산하거나 포기하고 다음 판 ×{decision.nextMultiplier}로 밉니다.
+        {/if}
+      </p>
+    {:else}
+      <p role="status">승자의 받기·밀기 선택을 기다리는 중</p>
+    {/if}
+  {/if}
+
+  {#if view && view.breakdown.length > 0}
     <section aria-labelledby="settle-score">
       <h2 id="settle-score">점수</h2>
       <table>
@@ -78,13 +116,13 @@
     <p class="gukjin" data-testid="settlement-gukjin">국진: {gukjin}</p>
   {/if}
 
-  {#if view.steps.length > 0}
+  {#if view && view.steps.length > 0}
     <section aria-labelledby="settle-chain">
       <h2 id="settle-chain">배수</h2>
       <ol class="chain">
         {#each view.steps as step, i (i)}
           <li>
-            <span>{stepLabel(step.kind)}</span>
+            <span>{stepLabel(step.kind, step.origin)}</span>
             <span class="op">{step.op === 'add' ? (i === 0 ? '' : '+') : '×'}{step.value}</span>
             <span class="num">{step.total}점</span>
           </li>
@@ -93,7 +131,7 @@
     </section>
   {/if}
 
-  {#if view.winner !== null}
+  {#if view && view.winner !== null}
     <section aria-labelledby="settle-amount">
       <h2 id="settle-amount">금액</h2>
       <p class="amount">
@@ -117,31 +155,33 @@
     </section>
   {/if}
 
-  <section aria-labelledby="settle-balance">
-    <h2 id="settle-balance">잔액</h2>
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">이름</th>
-          <th scope="col" class="num">이전</th>
-          <th scope="col" class="num">이후</th>
-          <th scope="col" class="num">변화</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each view.balances as balance, seat (seat)}
+  {#if view}
+    <section aria-labelledby="settle-balance">
+      <h2 id="settle-balance">잔액</h2>
+      <table>
+        <thead>
           <tr>
-            <th scope="row">{view.names[seat]}</th>
-            <td class="num">{formatNumber(balance.before)}</td>
-            <td class="num" data-testid={`balance-${seat}`}>{formatNumber(balance.after)}</td>
-            <td class={['num', balance.after >= balance.before ? 'gain' : 'loss']}>
-              {formatSignedMoney(balance.after - balance.before, view.unit)}
-            </td>
+            <th scope="col">이름</th>
+            <th scope="col" class="num">이전</th>
+            <th scope="col" class="num">이후</th>
+            <th scope="col" class="num">변화</th>
           </tr>
-        {/each}
-      </tbody>
-    </table>
-  </section>
+        </thead>
+        <tbody>
+          {#each view.balances as balance, seat (seat)}
+            <tr>
+              <th scope="row">{view.names[seat]}</th>
+              <td class="num">{formatNumber(balance.before)}</td>
+              <td class="num" data-testid={`balance-${seat}`}>{formatNumber(balance.after)}</td>
+              <td class={['num', balance.after >= balance.before ? 'gain' : 'loss']}>
+                {formatSignedMoney(balance.after - balance.before, view.unit)}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </section>
+  {/if}
 
   {#if note}
     <p class="note" role="status" data-testid="settlement-note">{note}</p>
@@ -155,18 +195,33 @@
   {/if}
 
   {#snippet actions()}
-    {#if ended}
+    {#if decision}
+      {#if decision.winner}
+        <button
+          type="button"
+          class="button primary"
+          data-choice="accept"
+          onclick={() => onpush?.(false)}>{guest ? '받기 · 다음 판 준비' : '받기'}</button
+        >
+        {#if decision.canPush}<button
+            type="button"
+            class="button"
+            data-choice="push"
+            onclick={() => onpush?.(true)}>밀기 · 다음 판 ×{decision.nextMultiplier}</button
+          >{/if}
+      {/if}
+    {:else if ended}
       <button type="button" class="button primary" data-choice="fresh" onclick={() => onfresh?.()}
         >새로 참가</button
       >
     {:else}
       <button type="button" class="button" data-choice="end" onclick={() => onend?.()}>종료</button>
     {/if}
-    {#if !ended && bankrupt}
+    {#if !decision && !ended && bankrupt}
       <button type="button" class="button primary" data-choice="refill" onclick={() => onrefill?.()}
         >재충전</button
       >
-    {:else if !ended}
+    {:else if !decision && !ended}
       <button
         type="button"
         class="button primary"
