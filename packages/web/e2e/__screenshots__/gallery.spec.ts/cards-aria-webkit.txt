@@ -1,0 +1,485 @@
+- main:
+  - heading "개발 갤러리" [level=1]
+  - paragraph:
+    - link "홈으로":
+      - /url: "#/"
+    - text: ·
+    - link "목차":
+      - /url: "#/dev/gallery"
+  - region "카드 작게 (획득패) · 51장 + 뒷면":
+    - heading "카드 작게 (획득패) · 51장 + 뒷면" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+        - text: "#0"
+      - listitem:
+        - img "1월 홍단"
+        - text: "#1"
+      - listitem:
+        - img "1월 피"
+        - text: "#2"
+      - listitem:
+        - img "1월 피"
+        - text: "#3"
+      - listitem:
+        - img "2월 고도리"
+        - text: "#4"
+      - listitem:
+        - img "2월 홍단"
+        - text: "#5"
+      - listitem:
+        - img "2월 피"
+        - text: "#6"
+      - listitem:
+        - img "2월 피"
+        - text: "#7"
+      - listitem:
+        - img "3월 광"
+        - text: "#8"
+      - listitem:
+        - img "3월 홍단"
+        - text: "#9"
+      - listitem:
+        - img "3월 피"
+        - text: "#10"
+      - listitem:
+        - img "3월 피"
+        - text: "#11"
+      - listitem:
+        - img "4월 고도리"
+        - text: "#12"
+      - listitem:
+        - img "4월 초단"
+        - text: "#13"
+      - listitem:
+        - img "4월 피"
+        - text: "#14"
+      - listitem:
+        - img "4월 피"
+        - text: "#15"
+      - listitem:
+        - img "5월 열끗"
+        - text: "#16"
+      - listitem:
+        - img "5월 초단"
+        - text: "#17"
+      - listitem:
+        - img "5월 피"
+        - text: "#18"
+      - listitem:
+        - img "5월 피"
+        - text: "#19"
+      - listitem:
+        - img "6월 열끗"
+        - text: "#20"
+      - listitem:
+        - img "6월 청단"
+        - text: "#21"
+      - listitem:
+        - img "6월 피"
+        - text: "#22"
+      - listitem:
+        - img "6월 피"
+        - text: "#23"
+      - listitem:
+        - img "7월 열끗"
+        - text: "#24"
+      - listitem:
+        - img "7월 초단"
+        - text: "#25"
+      - listitem:
+        - img "7월 피"
+        - text: "#26"
+      - listitem:
+        - img "7월 피"
+        - text: "#27"
+      - listitem:
+        - img "8월 광"
+        - text: "#28"
+      - listitem:
+        - img "8월 고도리"
+        - text: "#29"
+      - listitem:
+        - img "8월 피"
+        - text: "#30"
+      - listitem:
+        - img "8월 피"
+        - text: "#31"
+      - listitem:
+        - img "9월 국진"
+        - text: "#32"
+      - listitem:
+        - img "9월 청단"
+        - text: "#33"
+      - listitem:
+        - img "9월 피"
+        - text: "#34"
+      - listitem:
+        - img "9월 피"
+        - text: "#35"
+      - listitem:
+        - img "10월 열끗"
+        - text: "#36"
+      - listitem:
+        - img "10월 청단"
+        - text: "#37"
+      - listitem:
+        - img "10월 피"
+        - text: "#38"
+      - listitem:
+        - img "10월 피"
+        - text: "#39"
+      - listitem:
+        - img "11월 광"
+        - text: "#40"
+      - listitem:
+        - img "11월 피"
+        - text: "#41"
+      - listitem:
+        - img "11월 피"
+        - text: "#42"
+      - listitem:
+        - img "11월 쌍피"
+        - text: "#43"
+      - listitem:
+        - img "12월 비광"
+        - text: "#44"
+      - listitem:
+        - img "12월 열끗"
+        - text: "#45"
+      - listitem:
+        - img "12월 비띠"
+        - text: "#46"
+      - listitem:
+        - img "12월 쌍피"
+        - text: "#47"
+      - listitem:
+        - img "보너스 2피"
+        - text: "#48"
+      - listitem:
+        - img "보너스 2피"
+        - text: "#49"
+      - listitem:
+        - img "보너스 3피"
+        - text: "#50"
+      - listitem:
+        - img "카드 뒷면"
+        - text: 뒷면
+  - region "카드 보통 (바닥) · 51장 + 뒷면":
+    - heading "카드 보통 (바닥) · 51장 + 뒷면" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+        - text: "#0"
+      - listitem:
+        - img "1월 홍단"
+        - text: "#1"
+      - listitem:
+        - img "1월 피"
+        - text: "#2"
+      - listitem:
+        - img "1월 피"
+        - text: "#3"
+      - listitem:
+        - img "2월 고도리"
+        - text: "#4"
+      - listitem:
+        - img "2월 홍단"
+        - text: "#5"
+      - listitem:
+        - img "2월 피"
+        - text: "#6"
+      - listitem:
+        - img "2월 피"
+        - text: "#7"
+      - listitem:
+        - img "3월 광"
+        - text: "#8"
+      - listitem:
+        - img "3월 홍단"
+        - text: "#9"
+      - listitem:
+        - img "3월 피"
+        - text: "#10"
+      - listitem:
+        - img "3월 피"
+        - text: "#11"
+      - listitem:
+        - img "4월 고도리"
+        - text: "#12"
+      - listitem:
+        - img "4월 초단"
+        - text: "#13"
+      - listitem:
+        - img "4월 피"
+        - text: "#14"
+      - listitem:
+        - img "4월 피"
+        - text: "#15"
+      - listitem:
+        - img "5월 열끗"
+        - text: "#16"
+      - listitem:
+        - img "5월 초단"
+        - text: "#17"
+      - listitem:
+        - img "5월 피"
+        - text: "#18"
+      - listitem:
+        - img "5월 피"
+        - text: "#19"
+      - listitem:
+        - img "6월 열끗"
+        - text: "#20"
+      - listitem:
+        - img "6월 청단"
+        - text: "#21"
+      - listitem:
+        - img "6월 피"
+        - text: "#22"
+      - listitem:
+        - img "6월 피"
+        - text: "#23"
+      - listitem:
+        - img "7월 열끗"
+        - text: "#24"
+      - listitem:
+        - img "7월 초단"
+        - text: "#25"
+      - listitem:
+        - img "7월 피"
+        - text: "#26"
+      - listitem:
+        - img "7월 피"
+        - text: "#27"
+      - listitem:
+        - img "8월 광"
+        - text: "#28"
+      - listitem:
+        - img "8월 고도리"
+        - text: "#29"
+      - listitem:
+        - img "8월 피"
+        - text: "#30"
+      - listitem:
+        - img "8월 피"
+        - text: "#31"
+      - listitem:
+        - img "9월 국진"
+        - text: "#32"
+      - listitem:
+        - img "9월 청단"
+        - text: "#33"
+      - listitem:
+        - img "9월 피"
+        - text: "#34"
+      - listitem:
+        - img "9월 피"
+        - text: "#35"
+      - listitem:
+        - img "10월 열끗"
+        - text: "#36"
+      - listitem:
+        - img "10월 청단"
+        - text: "#37"
+      - listitem:
+        - img "10월 피"
+        - text: "#38"
+      - listitem:
+        - img "10월 피"
+        - text: "#39"
+      - listitem:
+        - img "11월 광"
+        - text: "#40"
+      - listitem:
+        - img "11월 피"
+        - text: "#41"
+      - listitem:
+        - img "11월 피"
+        - text: "#42"
+      - listitem:
+        - img "11월 쌍피"
+        - text: "#43"
+      - listitem:
+        - img "12월 비광"
+        - text: "#44"
+      - listitem:
+        - img "12월 열끗"
+        - text: "#45"
+      - listitem:
+        - img "12월 비띠"
+        - text: "#46"
+      - listitem:
+        - img "12월 쌍피"
+        - text: "#47"
+      - listitem:
+        - img "보너스 2피"
+        - text: "#48"
+      - listitem:
+        - img "보너스 2피"
+        - text: "#49"
+      - listitem:
+        - img "보너스 3피"
+        - text: "#50"
+      - listitem:
+        - img "카드 뒷면"
+        - text: 뒷면
+  - region "카드 크게 (손패) · 51장 + 뒷면":
+    - heading "카드 크게 (손패) · 51장 + 뒷면" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+        - text: "#0"
+      - listitem:
+        - img "1월 홍단"
+        - text: "#1"
+      - listitem:
+        - img "1월 피"
+        - text: "#2"
+      - listitem:
+        - img "1월 피"
+        - text: "#3"
+      - listitem:
+        - img "2월 고도리"
+        - text: "#4"
+      - listitem:
+        - img "2월 홍단"
+        - text: "#5"
+      - listitem:
+        - img "2월 피"
+        - text: "#6"
+      - listitem:
+        - img "2월 피"
+        - text: "#7"
+      - listitem:
+        - img "3월 광"
+        - text: "#8"
+      - listitem:
+        - img "3월 홍단"
+        - text: "#9"
+      - listitem:
+        - img "3월 피"
+        - text: "#10"
+      - listitem:
+        - img "3월 피"
+        - text: "#11"
+      - listitem:
+        - img "4월 고도리"
+        - text: "#12"
+      - listitem:
+        - img "4월 초단"
+        - text: "#13"
+      - listitem:
+        - img "4월 피"
+        - text: "#14"
+      - listitem:
+        - img "4월 피"
+        - text: "#15"
+      - listitem:
+        - img "5월 열끗"
+        - text: "#16"
+      - listitem:
+        - img "5월 초단"
+        - text: "#17"
+      - listitem:
+        - img "5월 피"
+        - text: "#18"
+      - listitem:
+        - img "5월 피"
+        - text: "#19"
+      - listitem:
+        - img "6월 열끗"
+        - text: "#20"
+      - listitem:
+        - img "6월 청단"
+        - text: "#21"
+      - listitem:
+        - img "6월 피"
+        - text: "#22"
+      - listitem:
+        - img "6월 피"
+        - text: "#23"
+      - listitem:
+        - img "7월 열끗"
+        - text: "#24"
+      - listitem:
+        - img "7월 초단"
+        - text: "#25"
+      - listitem:
+        - img "7월 피"
+        - text: "#26"
+      - listitem:
+        - img "7월 피"
+        - text: "#27"
+      - listitem:
+        - img "8월 광"
+        - text: "#28"
+      - listitem:
+        - img "8월 고도리"
+        - text: "#29"
+      - listitem:
+        - img "8월 피"
+        - text: "#30"
+      - listitem:
+        - img "8월 피"
+        - text: "#31"
+      - listitem:
+        - img "9월 국진"
+        - text: "#32"
+      - listitem:
+        - img "9월 청단"
+        - text: "#33"
+      - listitem:
+        - img "9월 피"
+        - text: "#34"
+      - listitem:
+        - img "9월 피"
+        - text: "#35"
+      - listitem:
+        - img "10월 열끗"
+        - text: "#36"
+      - listitem:
+        - img "10월 청단"
+        - text: "#37"
+      - listitem:
+        - img "10월 피"
+        - text: "#38"
+      - listitem:
+        - img "10월 피"
+        - text: "#39"
+      - listitem:
+        - img "11월 광"
+        - text: "#40"
+      - listitem:
+        - img "11월 피"
+        - text: "#41"
+      - listitem:
+        - img "11월 피"
+        - text: "#42"
+      - listitem:
+        - img "11월 쌍피"
+        - text: "#43"
+      - listitem:
+        - img "12월 비광"
+        - text: "#44"
+      - listitem:
+        - img "12월 열끗"
+        - text: "#45"
+      - listitem:
+        - img "12월 비띠"
+        - text: "#46"
+      - listitem:
+        - img "12월 쌍피"
+        - text: "#47"
+      - listitem:
+        - img "보너스 2피"
+        - text: "#48"
+      - listitem:
+        - img "보너스 2피"
+        - text: "#49"
+      - listitem:
+        - img "보너스 3피"
+        - text: "#50"
+      - listitem:
+        - img "카드 뒷면"
+        - text: 뒷면
