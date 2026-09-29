@@ -1,6 +1,7 @@
 /*
  * 디자인 토큰 (plan.md 1.6). 다크 배경, OKLCH 팔레트, 애니메이션 시간 예산(spec 6.4).
- * 모든 --dur-*는 --dur-scale 배율 하나로 조절한다: 빠름 1(기준) / 보통 1.5 / 매우 빠름 0.6 / E2E 즉시 0.
+ * 보통은 단계별 이동·정지 시간표, 빠름은 AC-06 표, 매우 빠름은 빠름 ×0.6이다.
+ * --dur-scale: 0은 스킵·동작 줄이기·E2E 즉시 모드에 공통으로 적용한다.
  */
 :root {
   color-scheme: dark;
@@ -78,10 +79,29 @@
   --dur-modal: calc(150ms * var(--dur-scale));
   --dur-deal-total: calc(1200ms * var(--dur-scale));
   --dur-turn-budget: calc(700ms * var(--dur-scale));
+  --dur-play-hold: calc(0ms * var(--dur-scale));
+  --dur-match-hold: calc(0ms * var(--dur-scale));
+  --dur-reveal-hold: calc(0ms * var(--dur-scale));
+  --dur-capture-hold: calc(0ms * var(--dur-scale));
+  --dur-ai-think: calc(250ms * var(--dur-scale));
 }
 
 :root[data-speed='normal'] {
-  --dur-scale: 1.5;
+  --dur-hand-to-floor: calc(270ms * var(--dur-scale));
+  --dur-match-highlight: calc(100ms * var(--dur-scale));
+  --dur-flip: calc(280ms * var(--dur-scale));
+  --dur-capture: calc(300ms * var(--dur-scale));
+  --dur-capture-stagger: calc(40ms * var(--dur-scale));
+  --dur-steal: calc(350ms * var(--dur-scale));
+  --dur-banner: calc(900ms * var(--dur-scale));
+  --dur-modal: calc(225ms * var(--dur-scale));
+  --dur-deal-total: calc(1800ms * var(--dur-scale));
+  --dur-turn-budget: calc(2200ms * var(--dur-scale));
+  --dur-play-hold: calc(100ms * var(--dur-scale));
+  --dur-match-hold: calc(200ms * var(--dur-scale));
+  --dur-reveal-hold: calc(250ms * var(--dur-scale));
+  --dur-capture-hold: calc(160ms * var(--dur-scale));
+  --dur-ai-think: calc(500ms * var(--dur-scale));
 }
 
 :root[data-speed='very-fast'] {
