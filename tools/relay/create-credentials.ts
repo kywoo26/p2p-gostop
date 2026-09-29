@@ -4,10 +4,10 @@ import { mkdir, open } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const output = process.argv[2];
-if (output === undefined || !output.startsWith('/relay-secret/')) {
+const path = resolve(output ?? '');
+if (output === undefined || !path.startsWith('/relay-secret/')) {
   throw new Error('비밀은 저장소 밖 /relay-secret 바인드 마운트에만 생성합니다');
 }
-const path = resolve(output);
 await mkdir(resolve(path, '..'), { recursive: true, mode: 0o700 });
 const file = await open(path, 'wx', 0o600);
 try {

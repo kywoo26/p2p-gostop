@@ -313,8 +313,8 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 | ID | 상태 | 코드·검증 근거 | 남은 항목 |
 |---|---|---|---|
-| RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. 이미지 build·비root/읽기 전용/루프백 기동 확인 | RP-02C `/health`·정적 release 경로가 아직 main에 없어 통합 health/호환 경로 실측 대기. Galaxy APK 동시 release·사람 PC 검증 대기 |
-| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검 | RP-02C health 응답 계약 인계 후 로컬/공개 health 검사, Windows 수동 시작·종료·재부팅 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
+| RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. `feat/relay-public` 임시 병합 이미지에서 비root/읽기 전용/루프백 기동, 로컬 `/health`·`/version`·정적 release 경로·Compose healthy 확인 | RP-02가 main에 병합된 뒤 재검사. Galaxy APK 동시 release·사람 PC 검증 대기 |
+| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검 | Windows 수동 시작·종료·Funnel·재부팅과 공개 health 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
 
 위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
 

@@ -19,14 +19,15 @@ services:
     environment:
       RELAY_PUBLIC: '1'
       RELAY_CREATION_SECRET_FILE: /run/secrets/creation-secret
-      RELAY_ALLOWED_ORIGINS: ${RELAY_ALLOWED_ORIGINS:?Funnel HTTPS origin required}
-      RELAY_RELEASE: ${RELAY_RELEASE:?release tag required}
+      # 기본값은 ps/down 조회용이다. start 스크립트가 실제 origin/release를 넘긴다.
+      RELAY_ALLOWED_ORIGINS: ${RELAY_ALLOWED_ORIGINS:-https://relay.invalid}
+      RELAY_RELEASE: ${RELAY_RELEASE:-v0.0.0}
       RELAY_DIST_DIR: /app/packages/web/dist
       PORT: '17777'
       HOST: 0.0.0.0
     volumes:
       - type: bind
-        source: ${RELAY_CREATION_SECRET_PATH:?secret file path required}
+        source: ${RELAY_CREATION_SECRET_PATH:-/dev/null}
         target: /run/secrets/creation-secret
         read_only: true
     healthcheck:

@@ -82,12 +82,21 @@ if ($Action -eq 'stop') {
   $failed = $false
   if (Test-Path $Marker) {
     try {
-      $null = & $Tailscale funnel --https=443 $Target off 2>&1
-      if ($LASTEXITCODE -ne 0) { Fail 'Tailscale rejected Funnel off.' }
+      $ownerDns = (Get-Content $Marker -Raw).Trim()
+      if ((DnsName) -ne $ownerDns) { Fail 'The active Tailscale node differs from the node saved by start. Inspect the Funnel status before stopping it.' }
+      if ((FunnelStatus).Contains($Target)) {
+        $null = & $Tailscale funnel --https=443 $Target off 2>&1
+        if ($LASTEXITCODE -ne 0) { Fail 'Tailscale rejected Funnel off.' }
+      }
       Remove-Item $Marker -Force
       Write-Host 'Owned Funnel endpoint disabled.'
     } catch { [Console]::Error.WriteLine("Funnel may still be public: $_. Run tailscale funnel --https=443 $Target off manually."); $failed = $true }
-  } else { Write-Host 'No owned Funnel marker; other Funnel settings were left untouched.' }
+  } else {
+    try {
+      if ((FunnelStatus).Contains($Target)) { Fail 'This target is active without an ownership marker; inspect it and turn it off manually.' }
+      Write-Host 'No owned Funnel endpoint is active.'
+    } catch { [Console]::Error.WriteLine("Funnel status is unconfirmed: $_"); $failed = $true }
+  }
   try { $null = Compose 'down'; Write-Host 'Relay container stopped.' }
   catch { [Console]::Error.WriteLine("Relay container may still be running: $_"); $failed = $true }
   if ($failed) { exit 3 } else { exit 0 }
