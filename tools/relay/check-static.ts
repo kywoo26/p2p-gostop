@@ -28,6 +28,7 @@ assert.match(stop, /relay\.ps1" stop/i);
 assert.match(helper, /funnel --https=443 \$Target off/);
 assert.match(helper, /Compose 'down'/);
 assert.match(helper, /\/health/);
+assert.match(helper, /http:\/\/127\.0\.0\.1:17777,\$url/);
 assert.doesNotMatch(helper, /^\s*[^#\r\n]*funnel\s+--bg\b/im);
 assert.doesNotMatch(helper, /funnel reset|tailscale down/i);
 

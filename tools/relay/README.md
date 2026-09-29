@@ -14,7 +14,7 @@
    mkdir -p -m 700 "$HOME/.local/share/p2p-gostop/relay"
    docker compose run --rm -v "$HOME/.local/share/p2p-gostop/relay:/relay-secret" dev node tools/relay/create-credentials.ts /relay-secret/creation-secret
    export RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret"
-   export RELAY_ALLOWED_ORIGINS="https://<이 PC>.ts.net,http://127.0.0.1:17777"
+   export RELAY_ALLOWED_ORIGINS="http://127.0.0.1:17777,https://<이 PC>.ts.net"
    export RELAY_RELEASE="$(git describe --tags --exact-match)" # APK와 같은 release 태그
    RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) docker compose -f compose.relay.yaml build
    ```
@@ -24,7 +24,7 @@
 
 ## 게임 시작과 종료
 
-- Windows 탐색기에서 `tools/relay/start.cmd`를 더블클릭한다. 저장소 위치가 다르면 현재 사용자 환경변수 `RELAY_WSL_REPO`에 WSL 절대 경로를 설정한다. Tailscale 설치 경로가 다르면 `RELAY_TAILSCALE_EXE`를 설정한다. 체크아웃은 APK와 같은 정확한 release 태그여야 한다. 별도 빌드 체크아웃이면 Windows 사용자 환경변수 `RELAY_RELEASE`에 `vN.N.N`을 지정한다. 시작은 Docker 상태 → 로컬 health·`/version` → Funnel → 공개 health 순으로 검사한다. 공개 URL·호환 웹 경로와 기본 URL의 QR SVG(`tools/relay/relay-url.svg`)를 출력한다. 이 QR은 **중계 기본 주소**이며 방 초대 QR은 앱에서 별도로 만든다. 출력된 URL을 Galaxy 원격 설정에 등록한다.
+- Windows 탐색기에서 `tools/relay/start.cmd`를 더블클릭한다. 저장소 위치가 다르면 현재 사용자 환경변수 `RELAY_WSL_REPO`에 WSL 절대 경로를 설정한다. Tailscale 설치 경로가 다르면 `RELAY_TAILSCALE_EXE`를 설정한다. 체크아웃은 APK와 같은 정확한 release 태그여야 한다. 별도 빌드 체크아웃이면 Windows 사용자 환경변수 `RELAY_RELEASE`에 `vN.N.N`을 지정한다. 스크립트는 `tailscale status --json`의 이 노드 MagicDNS와 `tailscale funnel status`의 공개 호스트를 대조해 `RELAY_ALLOWED_ORIGINS=http://127.0.0.1:17777,https://<funnel-host>`를 자동 구성한다. 이름/상태가 다르면 시작을 멈추고 두 상태를 확인하도록 안내한다. 시작은 Docker 상태 → 로컬 health·`/version` → Funnel → 공개 health 순으로 검사한다. 공개 URL·호환 웹 경로와 기본 URL의 QR SVG(`tools/relay/relay-url.svg`)를 출력한다. 이 QR은 **중계 기본 주소**이며 방 초대 QR은 앱에서 별도로 만든다. 출력된 URL을 Galaxy 원격 설정에 등록한다.
 - 앱에서는 **① PC 중계 켜기 → ② 저장된 URL health 확인 → ③ 방 만들기·초대 공유** 순서로 진행한다. health 성공은 중계 응답만 뜻한다. 상대 접속이나 게임 시작 성공을 뜻하지 않는다.
 - 게임 후 `tools/relay/stop.cmd`를 더블클릭한다. 이 스크립트가 시작한 Funnel 443과 전용 Compose 프로젝트만 끈다. Tailscale 자체나 다른 컨테이너는 끄지 않는다. 중복 실행은 안전해야 한다. 시작 스크립트는 Tailscale `--bg`를 쓰지 않는다. 공식 문서상 `--bg`는 재부팅 뒤 Funnel 공개를 재개하기 때문이다.
 

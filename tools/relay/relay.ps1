@@ -6,7 +6,7 @@ $Repo = if ($env:RELAY_WSL_REPO) { $env:RELAY_WSL_REPO } else { '/home/k/github/
 $Docker = '/home/k/.local/bin/docker'
 $Target = 'http://127.0.0.1:17777'
 $SecretDirectory = '$HOME/.local/share/p2p-gostop/relay'
-$Origin = 'https://relay.invalid'
+$Origin = 'http://127.0.0.1:17777'
 $Release = 'v0.0.0'
 $Marker = Join-Path $PSScriptRoot '.funnel-owned'
 $Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { 'C:\Program Files\Tailscale\tailscale.exe' }
@@ -114,9 +114,12 @@ try {
   EnsureSecret
   $dns = DnsName
   $url = "https://$dns"
-  $Origin = "$url,http://127.0.0.1:17777"
+  $Origin = "http://127.0.0.1:17777,$url"
   $before = FunnelStatus
   $ours = $before.Contains($Target)
+  if ($ours -and -not $before.ToLowerInvariant().Contains($dns)) {
+    Fail 'Funnel target is active on a different hostname. Inspect tailscale status --json and tailscale funnel status; no relay was started.'
+  }
   if ($ours -and -not (Test-Path $Marker)) { Fail 'Port 443 already points to this target but this script does not own it. Inspect tailscale funnel status before changing it.' }
   if (-not $ours -and $before -match 'https://') { Fail 'Another HTTPS Serve/Funnel endpoint is active. Inspect tailscale funnel status; this script will not replace it.' }
   $null = Compose 'up -d --no-build'
@@ -131,7 +134,9 @@ try {
     Start-Sleep -Seconds 2
     if ($process.HasExited) { Fail 'Funnel did not stay running. Check node approval in the Tailscale admin console and tailscale funnel status.' }
     $after = FunnelStatus
-    if (-not $after.Contains($Target)) { Fail 'Funnel target is not active. Check node approval in the Tailscale admin console.' }
+    if (-not $after.Contains($Target) -or -not $after.ToLowerInvariant().Contains($dns)) {
+      Fail 'Funnel target or hostname does not match this Tailscale node. Check node approval and tailscale funnel status.'
+    }
     Set-Content -Path $Marker -Value $dns -NoNewline
   }
   PublicHealth $url
