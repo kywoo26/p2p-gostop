@@ -109,6 +109,8 @@ p2p-gostop/
 
 **A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/art-direction.md#결정-이력`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
+PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 그림을 일관된 먹선·황금/주홍 팔레트로 편집한 투명 PNG 원본2개를 고정한다. 개발 이미지의 기존 Pillow로 같은 여백의96px WebP 두 종(합계4,326 bytes)을 결정적으로 변환하고 카드 모서리22px 받침 안20px로 표시한다. npm/런타임 의존성0, 원본 SHA/결과 바이트 검증 및 출처·가공 내역은 assets-src/skin-icons와 skin/NOTICE. Phosphor SVG 검토안은 최종 화면에서 제외. NF-03 전체1.5MiB gate 유지.
+
 | 선택 | 이유·범위 |
 |---|---|
 | Vite + Svelte, scoped CSS·토큰, WAAPI FLIP | 작은 UI·번들 예산; React/Tailwind/shadcn/Storybook/Pixi/Phaser/GSAP 도입 안 함 |
@@ -243,6 +245,7 @@ p2p-gostop/
 | RP-03C3 · Pages/Worker 배포·rollback, 4~6h | 운영 담당: 신규 relay-cloud 배포 설정·`.github/workflows/remote-cloud.yml`, 운영/기기 절차 | C2·02C·03A artifact 계약 + CI 담당 인계 → Free·비밀/namespace 분리·동일 dist·버전/rollback 검사. 기존 release workflow 변경 필요 시 소유자 PR 선행; 공개 배포/사람 실측 대기는 별도 |
 
 모든 빌드·테스트는 저장소 루트의 `docker compose run --rm dev …`(이 환경 Docker는 `/home/k/.local/bin/docker`)로 실행한다. 문서 PR에서 에이전트는 실제 Funnel 공개·클라우드 생성·실기기 검증을 수행하지 않는다. 사용자가 제공한 2026-09-29 시험 결과만 `docs/device-test/remote-play.md`에 기록했다.
+
 
 ## 2. 개발 환경 (Docker)
 
@@ -598,3 +601,9 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 - v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
 - v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.
 - v0.1 (2026-09-28): 초안.
+
+### PA-05~07 전문 스킨 구현 분할 (#104 이후)
+
+- **PA-05 / design/pro-skin**: #104 구조와 #166 제한시간 계약을 보존하고 Board·HUD·Home에 아트 디렉션을 적용한다. 사용자 확정 C/A/b안에 따라 SeatBar 마크업을 진영별로 재배치하고 공개 뷰의 스톱 예상액을 표시한다. PromptPanel의 WebKit 초점 순환 시점도 보완한다. 규칙·행동·`data-hand-*` 판정·`anim/*`·`--dur-*`는 변경하지 않는다. `public/skin`은 승인된 `public/pro`의 1x WebP 17개(재질4·홈1·초상12)와 행동 그림2개·manifest를 고른 ≤128KiB 하위 예산이다. 새 런타임 의존성0, 기존 Docker Pillow 파이프라인 재사용. `build-skin-assets.py --check`가 원본·카드 해시와 선택 산출물 동일성/추가 파일/용량을 검사한다. 전체 dist 1.5MiB gate는 그대로이며 큰 atlas·2x/3x·AVIF/오디오 이중 포맷은 평가 팩에 둔다.
+- **PA-06 / 사건 효과·음향**: EventRail의 예약 공간·#86 시간표 안 사건별 도형/입자. #117·#49의 CC0 사건음·강조/소리/진동 켬 기본과 기존 명시 off/절제 값 보존, BGM 없음. #128은 #49에 통합. 설정 스키마/이전은 Sol #62 소유(effectIntensity·sound·vibrate, 필드 없음에만 신규 기본)이며 디자인은 읽기만 한다. sound.ts·재생 큐 효과 훅·p2p/common.ts 기존 bridge.vibrate 호출은 디자인 소유, 새 웹 진동 API 없음.
+- **PA-07 / 정산·설정·기록**: #100 정산 상태·고정 행동 및 Sol 설정 UI 결과에 같은 화조도/먹색 프레임을 적용. 각 분할은 KEEP-01~18·최소4화면·axe·픽셀 갱신 사유·접근성 전후·필수 검사로 검증한다. NF-03 개정 승인 대기 유지, 실기기·청취 결과는 사람이 제공한 것만 기록한다.

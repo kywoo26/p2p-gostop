@@ -82,5 +82,5 @@
 | Melt UI / Skeleton / UnoCSS | 보류 / 기각 | Melt는 Bits 대비 유지비 이점 미확인; Skeleton·UnoCSS는 스타일·토큰 체계 중복 |
 | Motion mini | 조건부 시험 | 현재 WAAPI로 충분하며 추가 취소·완료 계약이 필요할 때만 비교 |
 | Rive / Lottie·dotLottie | 기각 | 짧은 국소 효과에 별도 렌더러·WASM/JSON·수명 관리가 과함 |
-| 아이콘: 자체 CSS/SVG / Lucide / Phosphor | 채택 / 제외 / 보류 | 자체 도형 우선; Lucide ISC는 당시 허용 자산 범위 밖, 필요할 때만 MIT SVG 소수 검토 |
+| 손패 행동 그림 | 사용자 참고 폭탄·종의 화풍 통일 가공물 채택 | 일관된 두꺼운 먹선·황금/주홍 강조·투명 배경. `assets-src/skin-icons/`에 편집 원본과 SHA, `public/skin/`에 같은 여백의96px WebP. 카드 모서리22px 받침 안20px 그림. 종/폭탄은 화면에서 각 카드 그림으로 구분, 출처·가공·권리 확인 상태는 skin/NOTICE에 기록. 기존 Phosphor 검토안은 미채택 |
 | 사운드: Web Audio + Kenney / Howler·BGM | 채택 후보 / 비채택 | 제스처 뒤 로컬 CC0 짧은 음만 예산 내 선택하고 별도 라이브러리·배경음은 추가하지 않음 |

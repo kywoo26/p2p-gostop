@@ -1,0 +1,83 @@
+# PA-05 · 판·HUD·홈 전문 스킨
+
+기준 main `261e826`(#104·#159·#164 병합), 브랜치 `design/pro-skin`. spec FR-40·UX-11/13·NF-01/03/07/08, plan .1-A·PA-05~07. **예산 개정 승인 전**이며 정규 dist 1.5MiB gate를 유지한다.
+
+## 적용과 경계
+
+| 적용 | 가공·배치 | 보존 |
+|---|---|---|
+| ambientCG CC0 펠트/나무/금속/가죽 | #147 색조·normal 조명 bake의 512px WebP 재사용. 펠트380 CSS px·가죽160px·5px 나무/1px 금 트림 | 패딩·입력 크기 유지, 사용자 C의7행 배치, 정적 배경/그림자만, 실시간 필터·RAF0 |
+| Met JP660 CC0 학·소나무 | 승인된 먹/한지 크롭512×400, 기존 Home 장식 영역 배경 | 기능 라벨·메뉴/이어하기/복귀 이벤트 유지, 슬로건0 |
+| Commons CC BY-SA 4.0 월별 초상12종 | 승인된 64px 원형 듀오톤. CSS 기본 초상1월/10월, 12종 검토 시트 | 이름 열56px 이상이며 별도 이름이 없는 좌석만20px 장식. 좁은 열/기명 좌석은 이름 우선 생략. 선택 UI·선택 저장은 추가하지 않음 |
+| 자체 CSS 프레임·칩·버튼 | 먹색 읽기 면·한지 주요 버튼·무광 황동 경계, 기존 형태 차이 유지 | RPG 프레임0, 원본 카드/SVG·핸들러·상태 로직 변경0. SeatBar 위치 이동·예상액 표현 prop 추가만 |
+
+출처·원본/카드 SHA·크롭은 `assets-src/manifest.json`, 본선 선별 결과는 `public/skin/manifest.json`, 저작자·변경·라이선스는 기존 License 화면과 `/pro/NOTICE.md`에 유지한다. 1x라는 명칭은 평가 파이프라인의 해상도 단계이며 실제 CSS 1배와 같다는 뜻은 아니다. 초상은20px 표시의 약3.2배 소스다. 작은 텍스처를 반복하며 DPR3.5로 모든 원본을 키우지 않는다.
+
+## 용량·후속 분할
+
+선별 질감·화조도 WebP17개 + 사용자 참고 편집 행동 그림 WebP2개·manifest·고지 **125,917 bytes(123.0KiB)**. 기존 승인 변환물과 바이트 동일성·해시·추가/누락·128KiB 하위 gate를 정규 build에서 검사한다. 변환 도구/런타임 의존성 추가0. 2x/3x·AVIF 중복·대형 atlas·오디오 이중 포맷은 기존 평가 팩에만 남는다. lazy loading을 총량 예외로 쓰지 않는다.
+
+PA-06은 EventRail 도형/파티클과 #117·#49 음향/기본값 보존, PA-07은 정산·설정·기록이다. 이번 PR에서 효과·소리·진동 기본값을 바꾸지 않는다. PA-06 경계 확정: Sol `feat/settings-rules-ui`가 effectIntensity(off/subtle/strong, 신규 strong)·sound(신규 true)·vibrate(신규 true)와 U13 이전(필드 없음에만 신규 기본)을 소유한다. 디자인은 이 필드를 읽기만 한다. game/sound.ts 재생/중단·100ms 중복 합침·사건별 음, 재생 큐 효과 훅과 p2p/common.ts의 기존 bridge.vibrate 호출은 디자인 소유다. #128은 #49에 통합됐으며 웹 vibrate API/iPhone 진동은 추가하지 않는다. 재생 큐·duration 계약과 소리 종료를 기다리지 않는 동작은 그대로 둔다.
+
+## 회귀·접근성 비교
+
+| 항목 | #104 전 | PA-05 후 |
+|---|---|---|
+| 구역·숫자 열 | #104 고정6행·숫자24/14px | 사용자 C 승인으로7행·진영별HUD, 이름 최소88px/두 줄, 판 정보64px/한 줄. A 승인으로 두 줄 전체 카드의 크기/노출 동일. 4화면×2엔진 검증 |
+| 입력 | 48px·선택과 손패 간격·inert/초점 | 최소 마크업 이동, 핸들러 변경0, 기존 hit-test/키보드·메뉴·초점 회귀 유지 |
+| 대비 | 기존 AA 팔레트·색+형태 | 글자색 유지, 판독 면은 어두운 거의 불투명 가죽. 최소4화면 axe 재검사; 장식용 금선은 정보 전달 수단이 아님 |
+| reduced-motion | #86 scale0·정지 | 새 이동/플래시/상시 애니메이션0, --dur-* diff0 |
+| 장식 읽기 | hero aria-hidden | 기존 aria-hidden 영역/CSS 빈 가상 요소·배경만, 장식 ARIA 추가0, 점수판 순서/예상액 표현에 따른 기준샷 갱신 |
+| 이미지 실패 | 기능 라벨·카드 | skin 요청을 모두 차단해도 단색 fallback·선택/카드/axe 통과 |
+| 실기기 | Galaxy/iPhone·스크린리더 확인 대기 | 동일. 데스크톱 WebKit/DPR3.5는 실기기 결과가 아님 |
+
+픽셀 기준샷 갱신 이유는 화면별로 기록한다. gallery Board 390/430폭과 target/gostop은 판 질감·각 진영 점수판·원형 행동 그림·묶음 외곽선, Home은 화조도와 버튼, layout target/gostop-expanded 4화면은 같은 구역 배치와 가죽 받침, License는 em dash를 제거한 구두점 변경이다. #164의 ARIA 기준샷은 병합된 main을 새 기준으로 재생성한다. 카드 단독·Settings·Settlement 자체 외관은 변경하지 않는다. 스냅샷 허용 오차는 늘리지 않는다.
+
+## 사용자 추가 피드백의 최종 반영
+
+| 항목 | 최종 적용 |
+|---|---|
+| 빈 바닥 | center의 배경 가상 요소에 저대비 둥근 내부 면/비네트. 카드의 바닥 내 좌표 규칙 유지, 전체7행 개정 |
+| 판 정보 | 최소64px·nowrap, 선택 내용만 나머지 폭 사용. 모든 입력48px 유지 |
+| 이름 | 이름 열 최소88px·이름 두 줄. 긴 잔액 모드도 첫 행28px/금액18px로 두 줄 유지. 전체 이름 title/aria-label 유지 |
+| 일반/비활성 | 기본 카드 / 기존 opacity0.7·disabled |
+| 먹기/확정 | 카드 창2px 들림·황동 단선 발광 / 4px 들림·청록 이중선 발광. 텍스트/마름모/아이콘/배지0 |
+| 폭탄/총통 | 폭탄은 멤버마다 카드 안 모서리22px 폭탄 그림, 황동 가장자리·5px 들림 및 바닥 짝 발광. 총통은 기존 강한 가장자리만 유지. 연결선 제거 |
+| 흔들기 | 멤버마다 카드 안 모서리22px 종 그림. 월 배지 반대 모서리, 연결선 제거 |
+| 공간 | 아래 표식 띠0px, 줄 사이8px. 되찾은 공간은 카드 그림 노출에 사용. 두 줄 전체 그림 같은 크기·그룹 선택 점선·키보드 실선은 유지 |
+
+표시 속성 계약은 ui-spec §14.5에 반영했다. CSS는 `data-hand-cue`, `data-hand-action`, `data-hand-group`, 바닥 `data-hand-link`만 소비하고 규칙을 판정하지 않는다. 동작 그림은 사용자가 제공한 폭탄·종 참고 PNG를 같은 먹선/금색/주홍색으로 이미지 편집한 투명 PNG에서 결정적으로96px WebP로 최적화했다. 참고/편집 원본·SHA는 assets-src/skin-icons, 가공·권리 상태는 skin/NOTICE.md에 기록했다. #164가 표시 속성과 묶음 비분할 정렬을 제공하며 Board/Hand/Floor의 판정 코드는 이 브랜치에서 수정하지 않았다. 범례는 첫 실행 요약 #62/#135 인계, aria-label 전체 설명 유지.
+
+**four-states-review.png는 #164가 제공한 실제 fixture 속성을 그대로 쓴다.** 캡처 스크립트의 임시 속성 주입은 제거했다. `scripts/skin-cue-proposal.css`는 이제 바닥 슬롯 폭 활용안만 남긴 검토 전용 파일로 앱에서 import하지 않는다. `*-proposal.png`에서도3~4장 전체 식별은 해결되지 않으며, 확대/펼침 입력은 별도 계약이 필요하다. 기존 바닥8px 노출은 카드 폭40px의20%이고 #104 구역 가림0과 개별 도상 식별은 구분한다.
+
+재현: `docker compose run --rm dev npm run build -w packages/web` 뒤 `docker compose run --rm dev node packages/web/scripts/review-skin.mjs`. 결과는 `packages/web/test-results/pro-skin/`. CSS 배경·container query는 Context7 도구가 제공되지 않아 [MDN 배경](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/background-image)·[MDN 크기 쿼리](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Containment/Container_size_and_style_queries)의 공식 문서를 확인했다.
+
+동작 그림·묶음 외곽선 검수: 22×22px 적/금 원형 받침 안20×20px 색조 통일 일러스트, 상단/모서리2px. 색상에 기대지 않는 폭탄/종 실루엣. 최소4화면×2엔진에서6개 그림의 크기·카드 안 포함·월 배지/다른 카드 겹침0을 실측한다. 원본 카드 도상 중앙 가림0, 모서리22px 사용. 별도 연속 묶음 외곽선은2px 적색/금색이며 낮은 채도 채움은 카드 그림 뒤에만 놓인다. 참고 이미지·편집 원본 SHA와 가공 내역은 assets-src/skin-icons와 skin/NOTICE.md에 기록한다.
+
+### 패널 전체 검수 범위
+
+구역간 교차뿐 아니라 SeatBar의 이름/점수/고/배수/잔액, 이름 내부 두 줄, 문턱/상태 카운터, 프롬프트 제목/설명/행동, 위험 요약과 버튼끼리의 교차를 검사한다. 점수·금액·칩·버튼 문구의 scroll 크기 초과도 실패로 처리한다(fixture 이름도 두 줄 안에 전체 노출). Home은 메뉴48px·화면 내 배치·axe, 갤러리 픽셀로 키비주얼/버튼/하단 고지를 확인한다. 기존 메뉴·판 정보 모달은 키보드/E2E를 유지한다. 원래 스택으로 겹친 바닥/획득패는 이 가림0 주장에 포함하지 않는다.
+
+HUD 글자 대비: 기존 상대10.16:1/나7.53:1 → 재질 적용 후 보수적 하한 상대7.60:1/나5.42:1. 실제 재질보다 밝은 흰색 위에 HUD 불투명도를 합성한 하한으로, 모든 texel이 그보다 어둡다. 측정값은 test-results/pro-skin/measurements.json.
+
+프레임 후속 교정: 기존 inset8px 금선과 top8px 점수판의 외곽1px 선이 교차했다. 금선 inset4px·나무5px로 줄여 본문 좌표를 유지하면서 점수판 선 포함 최소2px 간격을 확보했다. hand-feedback의 자연 safe-area 상태4화면×2엔진에서 점수판/예약/획득/손패 영역의 프레임 내부 포함을 단언한다. 고정 safe-area34px 검사만으로는 발견할 수 없던 차이다.
+
+
+## main 병합과 C/A 재검수
+
+2026-09-29 main `e1a5255`를 fast-forward 병합했다. 작업 내용 복원 중 plan.md의 원격 중계 절만 충돌해 main 내용을 보존했다. Hand.svelte는 main과 diff0이며 Board의 #159 입력/흔들기 시트 코드도 보존했다. 최신 layout·hand-feedback·hand-input은4화면×2엔진 **138개 통과**. 손패10장의 실제 카드와 노출 창 모두 같은 폭/높이(허용 오차0.01px), 행동 그림22px·월 배지 겹침0·카드 밖0·패널 프레임 내부 여유2px를 검사한다.
+
+정산 지연의 이전 trace에서는 axe 보조 페이지 생성9.23초와 runPartial6.61초가 누적되어7상태를 한 테스트에서 도는30초 제한에 걸렸다. main과 스킨을 같은 workers4로 검사해 각각8/8 통과(main Chromium4.2~4.4초/WebKit5.0초, 스킨3.6~3.7초/4.9~5.1초). 공유 머신 부하가 있어 성능 인과는 미확정이다. 정산의 간헐 지연은 [#169](https://github.com/kywoo26/p2p-gostop/issues/169)로 분리했고 timeout/worker 정책은 완화하지 않았다. 최종 전체 E2E와 hosted CI에서 재확인한다.
+
+
+## 2026-09-30 채택 마감
+
+main `76ba6ae`(#166 제한시간)를 통합했다. 상대 시계는 상단 상대 SeatBar, 내 시계는 하단 내 SeatBar에 두고, 제한시간 안내는 중앙 결정 영역과 판 정보에 유지한다. 각 시계는 이름 열의 별도 줄에 배치해 점수·금액과 겹치지 않도록 했다. `host.svelte.ts`의 오프라인 분 경과 계산은 #166의 `Date.now()`를 유지하고 안내 문장부호의 em dash만 제거했다. 이 단락 이후 수치·캡처는 통합 전 측정 이력이며 #166 범위 재검증 및 최종 전체 게이트 결과를 별도 기록한다.
+
+사용자 C/A/B 결정으로 각 진영 HUD, 두 줄 동일 치수, b안 원형 메달리온+연속 묶음 외곽선을 확정했다. c안 상단 띠는 카드 도상 가림으로 제외하고 a안은 b안의 부분집합으로 비교 캡처만 남겼다. 폭탄은 적색2px, 종은 진한 금색2px의 연속 사각을 **같은 달 3장 바깥**에 그리고 카드 사이도 잇는다. 채움은 카드 뒤의 낮은 채도이며 카드 그림을 덮는 가로 띠가 아니다. 먹기 상태는 황동 얇은 선/2px 들림, 확정은 청록 이중선/4px 들림으로 색과 형태가 다르다. 색/위치/크기는 skin.css 의미 변수와 공통 카드 폭 토큰에 둔다.
+
+사용자가 제공한 원본 참고 이미지는 `assets-src/skin-icons/*-reference.png`, 편집 PNG는 `*-edited.png`, 배포 최적화물은 `public/skin/*-illustrated.webp`다. bell-edited SHA-256 `113d4613593f70173a059aa727ce644066264a1c8f3864be4425b72d4e2ee713`, bomb-edited SHA-256 `924cc8782f2cc53af51f56a925ca2b1e4b72d7484cbf75194909a3b5b954d0e5`. 같은 Pillow/Docker 입력에서 WebP 합계4,326 bytes로 동일 출력 검사를 build gate에 포함했다. 사용자 참고 이미지의 외부 권리 출처는 확인되지 않아 NOTICE에 상태를 명시했다. 릴리스 전 제품 소유자의 사용 권리 확인이 필요하다.
+
+`data-effect-intensity`는 #162 설정 UI가 앱 루트에 부여하는 속성이다. 스킨은 `strong` 조상에서만1.6초 느린 메달리온 광택 펄스를 사용하고 속성 없음/subtle/off/reduced-motion에서는 정지한다. 필드·저장/마이그레이션 로직은 수정하지 않았다. PR은 #164 뒤에 병합한다.
+
+정산 axe 간헐 지연은 [#169](https://github.com/kywoo26/p2p-gostop/issues/169)로 분리했다. 앞선 main/skin 같은 workers4 비교는 각각8/8 통과, 상태7개/테스트 Chromium main4.2~4.4초·skin3.6~3.7초, WebKit 약5초였다. 전체 E2E와 공유 부하의 간헐30초 타임아웃 원인은 별도 추적하며 정산 테스트의 timeout/worker 기준은 완화하지 않았다.
