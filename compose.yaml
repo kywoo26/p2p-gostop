@@ -1,7 +1,8 @@
-# p2p-gostop 개발 환경 (plan.md 2장). 모든 빌드·테스트는 이 서비스 하나에서 돈다.
-#   docker compose run --rm dev npm test
+# p2p-gostop 개발 이미지 (plan.md 2장). 목적이 있는 명령만 이 서비스에서 돌고 나머지는 호스트가 표준이다(AGENTS.md §5).
+# 목적: CI, 스크린샷 비교(@visual), 호스트 WebKit 의존성이 없을 때의 WebKit, Android SDK, 자산 변환 도구.
+#   npm run verify:image                      (호스트에서: @visual 스크린샷 + Android)
+#   docker compose run --rm dev npm run e2e:visual -w packages/web
 #   docker compose run --rm dev android/gradlew -p android assembleDebug
-#   docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web   (포트 게시가 필요할 때만)
 # 저장소 루트의 compose.yaml은 Compose 기본 탐색 대상이라 -f 없이 저장소 어느 하위 폴더에서도 찾아진다.
 # 프로젝트 이름은 체크아웃 폴더 이름이 되므로 워크트리마다 컨테이너가 자연히 분리된다.
 # node_modules는 소스와 함께 바인드 마운트된다(체크아웃마다 따로, 호스트에서도 보인다).
@@ -24,6 +25,7 @@ services:
       - android:/home/dev/.android
     environment:
       CI: # 값 없이 선언: 호스트에 있을 때만 전달
+      P2P_GOSTOP_DEV_IMAGE: '1' # playwright.config.ts: 이 이미지에서만 스크린샷을 비교한다
       # 릴리스 서명(선택). 비어 있으면 Gradle이 디버그 키로 폴백한다.
       ANDROID_KEYSTORE_PATH:
       ANDROID_KEYSTORE_PASSWORD:

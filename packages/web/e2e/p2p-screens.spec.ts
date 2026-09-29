@@ -52,7 +52,7 @@ test('루프백 `/`와 `/?role=host`는 호스트 앱 홈 (Android WebView), `?r
   await expect(page.getByRole('heading', { name: '게임 참가' })).toBeVisible();
 });
 
-test('게스트 대기실 스크린샷·axe (FR-05)', async ({ page }) => {
+test('게스트 대기실 스크린샷·axe (FR-05)', { tag: '@visual' }, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('./#/dev/gallery/guest-lobby');
   await expect(page.getByTestId('lobby')).toBeVisible();

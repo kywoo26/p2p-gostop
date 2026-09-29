@@ -21,11 +21,11 @@
 ## 결정
 
 - 스크린샷 비교는 이미지 전용이다. `compose.yaml`이 `P2P_GOSTOP_DEV_IMAGE=1`을 주고, `playwright.config.ts`는 그 값이 없으면 `ignoreSnapshots`로 비교(와 `--update-snapshots`)를 건너뛴다. 스크린샷 테스트는 `@visual` 태그로 이미지에서 따로 돈다(`npm run e2e:visual`).
-- 진입점: 호스트 `npm run verify`(lint·check·test·build·test:browser·e2e), 이미지가 필요한 것만 `npm run verify:image`(`@visual`·Android). 처음 한 번 `tools/setup-host.sh`.
+- 진입점: 호스트 `npm run verify`(lint·check·test·build·test:browser·e2e), 이미지가 필요한 것만 `npm run verify:image`(`@visual`·Android). 처음 한 번 `tools/host/setup.sh`.
 - 공유 머신 부하: 로컬 E2E 워커 4(설정 기본값), `sim`은 `--workers 4`, `@timing`은 기존대로 직렬.
 - 로컬·CI 동일성: CI는 같은 이미지로 전 명령을 돈다. PR 본문에 호스트 `verify`와 CI 결과 수치를 함께 적어 차이를 드러낸다.
 
 ## 사용자 결정 항목
 
-1. **호스트 WebKit 의존성**(추천: 설치). `sudo npx playwright install-deps webkit` 1회(apt 196개). 설치 전에는 WebKit이 필요한 `test:browser`·`e2e`를 이미지에서 돌린다.
+1. **호스트 WebKit 의존성**(추천: 설치). 사람이 Playwright 공식 명령 `npx playwright install --with-deps chromium webkit`을 1회 실행한다(apt 196개, root가 아니면 Playwright가 sudo를 요청). 설치 전에는 WebKit이 필요한 `test:browser`·`e2e`를 이미지에서 돌린다.
 2. **Android SDK 로컬화**(추천: 이미지 유지). sudo 없이 cmdline-tools를 `~/Android/Sdk`에 풀 수 있지만([sdkmanager](https://developer.android.com/tools/sdkmanager)) Android 작업 빈도가 낮고, 호스트 JDK가 버전 표의 Temurin과 달라 불일치 지점이 늘어난다.

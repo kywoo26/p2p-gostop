@@ -1,20 +1,32 @@
-// E2E: Playwright Chromium(Android WebView 대역) + WebKit(iPhone Safari 대역). 도커 e2e 컨테이너에서만 실행.
+// E2E: Playwright Chromium(Android WebView 대역) + WebKit(iPhone Safari 대역). 호스트와 개발 이미지 모두에서 돈다(AGENTS.md §5).
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
 const baseURL = `http://127.0.0.1:${PORT}`;
+// 스크린샷은 기준 이미지를 만든 환경에서만 비교한다(Playwright visual comparisons). compose.yaml의 dev 서비스가 표시를 준다.
+const inDevImage = process.env['P2P_GOSTOP_DEV_IMAGE'] === '1';
+if (process.env['CI'] && !inDevImage) {
+  throw new Error(
+    'CI E2E는 개발 이미지(docker compose run --rm dev)에서 실행해야 스크린샷을 비교한다.',
+  );
+}
 
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
+  // 공유 머신 부하 규칙: 로컬은 4 workers(기본값은 코어의 절반). CI는 --workers=2를 준다.
+  ...(process.env['CI'] ? {} : { workers: 4 }),
+  // 호스트에서는 toHaveScreenshot 비교·갱신을 건너뛰고 나머지 단언은 그대로 돈다. 비교는 npm run verify:image(@visual)와 CI.
+  ignoreSnapshots: !inDevImage,
   reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
     trace: 'retain-on-failure',
   },
-  // 스크린샷 기준 이미지는 개발 이미지 안에서만 만든다(글꼴·렌더러 고정): docker compose run --rm dev npm run e2e -w packages/web -- --update-snapshots
+  // 스크린샷 기준 이미지는 개발 이미지 안에서만 만든다(글꼴·렌더러 고정): docker compose run --rm dev npm run e2e:visual -w packages/web -- --update-snapshots
+  // 새 toHaveScreenshot 테스트에는 { tag: '@visual' }를 붙인다(이미지 비교 대상).
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
   expect: {
     toHaveScreenshot: {

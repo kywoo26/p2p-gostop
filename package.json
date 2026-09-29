@@ -20,7 +20,9 @@
     "check": "npm run check --workspaces --if-present && knip",
     "build": "npm run build -w packages/web",
     "e2e": "npm run e2e -w packages/web",
-    "sim": "npm run sim -w tools/sim --"
+    "sim": "npm run sim -w tools/sim --",
+    "verify": "npm run lint && npm run check && npm test && npm run build && npm run test:browser && npm run e2e",
+    "verify:image": "docker compose run --rm dev npm run e2e:visual -w packages/web && docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint"
   },
   "devDependencies": {
     "knip": "6.38.0",

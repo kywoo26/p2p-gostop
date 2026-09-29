@@ -1,5 +1,5 @@
-// Dev Container (containers.dev). compose.yaml의 dev 서비스를 그대로 쓴다(로컬 docker compose run·CI와 같은 이미지).
-// VS Code "Reopen in Container" / Codespaces / devcontainer CLI 안에서는 npm, android/gradlew를 그냥 실행하면 된다.
+// Dev Container (containers.dev, 선택). 표준은 호스트 실행이다(AGENTS.md §5). Codespaces처럼 호스트 도구가 없을 때 쓴다.
+// compose.yaml의 dev 서비스를 그대로 쓰므로(CI와 같은 이미지) 안에서는 npm, android/gradlew를 그냥 실행하면 되고 스크린샷도 비교한다.
 {
   "name": "p2p-gostop",
   "dockerComposeFile": "../compose.yaml",
