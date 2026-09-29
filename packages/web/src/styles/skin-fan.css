@@ -560,7 +560,7 @@
   }
 }
 
-/* 고정 격자 대신 실제 카드 사각형을 배치해 더미 주위에 여백을 달리 둔다. */
+/* 5×3 격자 좌표·셀 내부 흩뿌림은 floor-layout.ts가 계산한다. */
 :root .board .center {
   align-items: stretch;
   justify-items: stretch;
