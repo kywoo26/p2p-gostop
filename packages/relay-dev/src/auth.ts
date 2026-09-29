@@ -12,6 +12,7 @@ export interface PublicRoom {
   readonly id: string;
   readonly hostHash: Buffer;
   readonly credentials: Map<string, Credential>;
+  readonly expiredGuestHashes: Map<string, Buffer>;
   readonly createdAt: number;
 }
 
@@ -45,6 +46,7 @@ export class RoomAuth {
       id,
       hostHash: tokenHash(hostToken),
       credentials: new Map(),
+      expiredGuestHashes: new Map(),
       createdAt: now,
     };
     this.issuedHostHashes.add(room.hostHash.toString('hex'));
@@ -78,6 +80,7 @@ export class RoomAuth {
     const key = hash.toString('hex');
     if (
       room.credentials.has(key) ||
+      room.expiredGuestHashes.has(key) ||
       equalHash(this.creationHash, hash) ||
       this.issuedHostHashes.has(key)
     )
@@ -90,15 +93,21 @@ export class RoomAuth {
     role: PublicRole,
     token: unknown,
     now = Date.now(),
-  ): GuestPermission | 'host' | null {
+  ): GuestPermission | 'host' | 'expired' | null {
     if (!room || !validToken(token)) return null;
     if (role === 'host') return this.isHost(room, token) ? 'host' : null;
     const hash = tokenHash(token);
     let permission: GuestPermission | null = null;
+    let expired = false;
     for (const credential of room.credentials.values()) {
       const matches = equalHash(credential.hash, hash);
-      if (matches && credential.expiresAt > now) permission = credential.permission;
+      if (matches) {
+        if (credential.expiresAt > now) permission = credential.permission;
+        else expired = true;
+      }
     }
-    return permission;
+    for (const expiredHash of room.expiredGuestHashes.values())
+      if (equalHash(expiredHash, hash)) expired = true;
+    return permission ?? (expired ? 'expired' : null);
   }
 }
