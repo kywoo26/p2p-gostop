@@ -10,7 +10,7 @@
 | 실증 연구 | 비교군·과제·평가지표가 있는 연구 | 다른 언어·모델·과제에 같은 효과가 난다는 보장 |
 | 경험담 | 당사자의 운영 사례·엔지니어링 블로그·OSS 관례 | 보편적 최적 구조·최적 파일 길이 |
 
-1차 출처만 읽었다. 공식 회사 블로그라도 통제 비교가 없는 경험 보고는 경험담으로 분류했다. 검색 결과에 논문이 있다는 이유만으로 동료 심사 완료로 분류하지 않았다. 아래 R1은 arXiv v2 원문을 확인했으나 학회 채택 여부는 확인하지 못했다. 동료 심사된 것으로 주장하지 않는다.
+1차 출처만 읽었다. 공식 회사 블로그라도 통제 비교가 없는 경험 보고는 경험담으로 분류했다. 검색 결과에 논문이 있다는 이유만으로 동료 심사 완료로 분류하지 않았다. 아래 R1은 arXiv v2 원문을 확인했으나 학회 채택 여부는 확인하지 못했다. R2는 ICLR 2024 정식 논문집과 논문을 확인했다. 두 근거를 구별한다.
 
 ## 2. 읽은 1차 출처
 
@@ -22,7 +22,8 @@
 | E2 경험담(OSS 관례) | [OpenAI Codex AGENTS.md](https://github.com/openai/codex/blob/main/AGENTS.md) | 크레이트 이름·대상 테스트·공개 API 규약·큰 중심 모듈의 책임 분리를 명시한다. Rust 저장소 사례를 TS에 그대로 이식하지 않는다. |
 | E3 경험담(OSS 관례) | [VS Code CONTRIBUTING](https://github.com/microsoft/vscode/blob/main/CONTRIBUTING.md), [Writing Tests](https://github.com/microsoft/vscode/wiki/Writing-Tests) | 기여 안내가 상세 개발/테스트 문서로 연결되고 단위 테스트는 `src/vs/**/*.test.ts`다. 테스트 동거가 에이전트 성능을 높였다는 실험은 없다. |
 | R1 실증 연구(사전 공개 논문) | [Gloaguen 외, Evaluating AGENTS.md, v2](https://arxiv.org/html/2602.11988v2), 2026-06-23 | CTXbench 12개 Python 저장소·138과제와 SWE-bench에서 비교. 컨텍스트 파일은 일반적으로 성공률을 개선하지 않았고 평균 추론 비용은 20% 이상 증가했다. 지침 준수와 탐색/테스트 증가가 성공률 향상과 같지 않다. 언어·과제·모델 제한 때문에 현재 TS/Kotlin 앱의 결과로 일반화하지 않는다. |
-| O3 공식 문서 | [Node package entry points](https://nodejs.org/docs/latest-v24.x/api/packages.html#package-entry-points) | `exports`는 공개 하위 경로를 제한한다. 파일시스템 상대경로까지 경계를 강제하는 보안 장치는 아니다. |
+| R2 실증 연구(동료 심사) | [Jimenez 외, SWE-bench, ICLR 2024](https://proceedings.iclr.cc/paper_files/paper/2024/hash/edac78c3e300629acfe6cbe9ca88fb84-Abstract-Conference.html), [논문](https://proceedings.iclr.cc/paper_files/paper/2024/file/edac78c3e300629acfe6cbe9ca88fb84-Paper-Conference.pdf) | 12개 Python 저장소의 실제 이슈/PR 2,294개로 저장소 수준 수정 능력을 평가한다. 여러 함수·파일에 걸친 변경을 다룬다. 파일 크기·테스트 동거·타입 단일화의 효과를 분리해 입증한 연구는 아니므로 해당 권고의 실증 근거로 쓰지 않는다. |
+| O3 공식 문서 | [Node package entry points](https://nodejs.org/api/packages.html#package-entry-points) | `exports`는 공개 하위 경로를 제한한다. 파일시스템 상대경로까지 경계를 강제하는 보안 장치는 아니다. |
 | O4 공식 문서 | [Oxlint no-restricted-imports](https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-restricted-imports), [ESLint no-restricted-imports](https://eslint.org/docs/latest/rules/no-restricted-imports) | 경로·패턴·이름 제한을 설정할 수 있다. 정적 import/export 검사는 가능하지만 모든 동적 경로의 의미론적 의존 분석을 대신하지 않는다. |
 | O5 공식 문서 | [Zod Mini](https://zod.dev/packages/mini), [Zod enums](https://zod.dev/api#enums) | 타입 추론과 리터럴 목록 기반 검증을 제공한다. 도메인 모델 전체를 Zod로 옮겨야 한다는 근거는 아니다. |
 | O6 공식 문서 | [TypeScript Compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API) | AST 순회·소스 위치로 함수 범위와 import를 계측할 수 있다. 감사 부록은 이미 설치된 TS 6을 분석에만 사용하며 순수 TS 타입 검사기는 TS 7 그대로다. |

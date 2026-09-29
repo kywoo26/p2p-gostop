@@ -123,7 +123,7 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 | RF-09 | `knip.json`·기준선 `./dev.sh check` | 기준 코드의 knip 미사용 항목 **0**, exit 0. entry/export와 `ignoreExportsUsedInFile` 범위 내 결과이며 죽은 코드 부재 증명 아님. 신규 감사 `.mjs`가 unused file 1로 검출되어 문서 `.txt` 부록으로 변경; 제품 예외 추가 없음 |
 | RF-10 | `protocol/test/m4.test.ts`, engine `e1-api.test.ts`, 나머지 기능명 테스트 | 마일스톤명과 기능명이 혼재. engine/ai/protocol은 `test/`, web은 src 동거+e2e, Android는 src/test. 위치는 유지하고 소유 기능 수정 시 명칭/지도 개선 |
 | RF-11 | plan §1.6 FLIP “수십 줄”, §2 gradle-cache/pw-browsers | 실제 flip.ts와 관련 모듈, compose는 node_modules/android-home. 계획/현황 혼동. #38·#73 인계 후 원문 담당이 정정 |
-| RF-12 | docs/protocol §1 Kotlin 벡터 후속, `RelayScenarioTest.kt:33` | 공유 relay-scenarios.json을 이미 읽음. 현재 문서의 미구현 표시는 낡음; protocol 문서 담당 인계 항목 |
+| RF-12 | docs/protocol §1 Kotlin 벡터 후속, `RelayScenarioTest.kt:33`; §10 wire 벡터 수 | 공유 relay-scenarios.json을 이미 읽음. wire.json도 문서 36개와 달리 실제 41개. 원문 담당 인계 때 정정 |
 | RF-13 | `web/game/adapter.ts` SettlementDisplay 주석 | protocol에 국진 위치가 없다는 주석이 `SettlementView.gukjinAsPi`와 어긋남. 추가 표시 모양은 다르므로 주석 정정과 실제 어댑터 중복 축소를 분리 |
 | RF-14 | `protocol/transport.ts`, `ai/types.ts`, protocol 저장 version, `game/session.ts` | Transport·Policy·저장 버전 접점은 이미 있음. BLE/AI 공통 프레임워크를 새로 만드는 작업은 불필요 |
 
@@ -172,7 +172,7 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 | BLE/다른 transport | protocol Transport(send/onMessage/onClose/reconnect, 선택 onRelay), 메모리/큐/WS 구현 | 이미 분리됨. 미래 adapter가 같은 계약 테스트 통과하게 문서화. BLE framing·보안·재접속 제품 정책은 미정, 구현 안 함 |
 | FR-21 24행 | engine 25 규칙 필드+LocalPlayOptions, Galaxy §3 매핑 | 도메인 키/지원 상태 레지스트리 후보. 라벨/속도는 web에 유지, 미지원 missions/가위바위보 활성화 금지 |
 | AI 정책 | Policy/DecisionContext·시드·now·timeBudgetMs 주입 | 새 전략도 동일 인터페이스. 시드 반복과 시간 제한 결과를 구별. 강도·예산 변경은 #66 영역 |
-| 프로토콜 버전 | v2, 버전 오류 우선 판정·wire 36벡터 | 직렬화 모양 변경 없으면 버전 유지. 변경 시 vN 고정 fixture + 호환/거절 표부터, 무조건 자동 마이그레이션 금지 |
+| 프로토콜 버전 | v2, 버전 오류 우선 판정·wire 41벡터 | 직렬화 모양 변경 없으면 버전 유지. 변경 시 vN 고정 fixture + 호환/거절 표부터, 무조건 자동 마이그레이션 금지 |
 | 저장 스키마 | 호스트/게스트·솔로 각각 version·복원 경로 | namespace별 envelope와 순수 migrate/validate 경계. 이전 저장본·손상·quota 실패·원장 중복 지급 테스트 먼저. #88/.3-C 인계 뒤 |
 | 정산/라벨 | 엔진 SettleStep, protocol 화면 변환, web settle-labels | 도메인 모양만 공유. 한국어 라벨을 엔진 의존으로 만들지 않기 |
 
@@ -230,3 +230,7 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 실기기 검증과 에이전트 비교 실험은 미실시다. 이 기준선은 미래 계획 기능의 합격 증거가 아니다.
 
 문서 로컬 링크 11개·계측 JSON 파싱·벡터 합계/순환 수 교차 검사 및 `git diff --check` 통과.
+
+## 9. 첫 실행 인계
+
+R1은 별도 브랜치 `refactor/protocol-domain-types`의 [PR #93](https://github.com/kywoo26/p2p-gostop/pull/93)으로 제출했다(head `611074f`, base `bb389e5`). 이 문서 PR의 병합을 기다리지 않았다. 7개 도메인 모양 재정의→0, 오류 목록 3→1, protocol LOC 5,762→5,726. 공개 타입 30개 모양 비교와 wire 41벡터+14추가 입력 결과 해시가 일치했다. 전체 Docker 회귀의 전후 테스트 수가 같으며 상세 재현은 [R1 검증 기록](https://github.com/kywoo26/p2p-gostop/blob/611074f/docs/reviews/refactor-protocol-domain-types.md)에 있다. R2 이후는 미착수이고 웹 UI·빌드 영역은 사용자 재지시를 기다린다.
