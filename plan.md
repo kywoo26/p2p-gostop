@@ -12,7 +12,7 @@
 2. **저명한 패키지만.** 다운로드·유지보수·라이선스가 검증된 패키지만 의존성에 넣는다. 작은 기능을 위해 정체된 패키지를 쓰지 않고 직접 구현한다(예: SHA-256, QR은 `uqr`).
 3. **표준 프로젝트 구조.** npm workspaces 모노레포, Vite/Svelte 공식 템플릿 구조, Android Studio 표준 프로젝트 레이아웃(Gradle Kotlin DSL, version catalog). 새로 익힐 관례를 만들지 않는다.
 4. **테스트 동반.** 엔진과 AI는 테스트 먼저(규칙 벡터 → 구현). 모든 마일스톤에 자동 검증 기준이 있고, CI가 PR마다 실행한다. 실기기 검증만 사람이 한다.
-5. **네이티브 설치 지양.** 모든 빌드·테스트는 Docker 컨테이너에서 실행. WSL에는 git, gh, docker CLI만 쓴다.
+5. **표준 설치, 같은 버전 핀.** 빌드·테스트는 호스트와 CI 러너(Ubuntu 24.04)에서 네이티브로 실행한다. 도구는 공식 절차로 `tools/setup-host.sh` 한 번에 설치하고, 동일성은 `.nvmrc`·package-lock·Gradle 설정으로 담보한다(2026-09-30 사용자 지시로 개발 컨테이너 삭제).
 6. **결정론.** 엔진·AI·셔플은 시드 주입 가능한 순수 함수. 버그 리포트는 시드+액션 열로 재현한다.
 7. **규칙의 단일 근거.** 규칙 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 기대값으로 쓰지 않는다.
 8. **작게 자주 커밋.** Conventional Commits(`feat:`, `fix:`, `test:`, `docs:`, `build:`, `ci:`). 마일스톤 완료 시 태그(`v0.<M>.x`).
@@ -69,9 +69,6 @@ p2p-gostop/
 │  ├─ app/src/main/{kotlin,res,assets/web}
 │  ├─ gradle/libs.versions.toml
 │  └─ settings.gradle.kts
-├─ docker/                      # 단일 개발 이미지 Dockerfile·진입점·태그 검사
-├─ compose.yaml                  # 개발 이미지의 dev 서비스
-├─ .devcontainer/               # 같은 dev 서비스의 VS Code 설정
 ├─ .github/workflows/           # ci.yml, release.yml
 ├─ docs/                        # research/, ai-tuning.md, money-model.md, device-test-log/
 ├─ intend.md · spec.md · plan.md
@@ -102,11 +99,11 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
-**RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`·개발 이미지로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
+**RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
 
 **RP-04A 테스트 의존성(2026-09-29):** `packages/web`의 Node 전용 `test:net`에서 공개 중계 WebSocket과 실제로 통신하기 위해 `ws` 8.21.3 및 `@types/ws` 8.18.1을 개발 의존성으로 추가한다. 두 버전은 AGENTS.md §2의 기존 고정 버전이며 브라우저 번들 런타임에는 포함되지 않는다. `web/src/net`의 생산 코드는 브라우저 내장 WebSocket을 사용한다.
 
-**PA-01~04 전문 자산 평가(2026-09-29, 예산 개정 승인 전):** NF-03의 전체1.5MiB·게스트 첫 로딩≤2초와 기존 카테고리 예산은 현행 유지한다. `design/pro-assets`의 명시적 `PRO_ASSET_REVIEW=1` 평가 빌드만 초과 자산을 포함한다. 기본/릴리스 빌드에는 평가 팩을 제외하고 기존 용량 gate를 적용한다. `docs/research/pro-assets.md`의 NF-03 개정안은 리뷰·사용자 승인 전 규범이 아니다. 원본은 `assets-src/`, 평가 변환물은 `public/pro/`에 둔다. Pillow 10.2.0-1ubuntu1.3(HPND), FFmpeg 7:6.1.1-3ubuntu5(Ubuntu GPL dev 도구), libavif-bin 1.0.4-1ubuntu3(BSD-2-Clause)을 개발 이미지4에 고정 추가해 WebP/AVIF·해상도 단계·atlas·ogg/m4a·고지를 생성한다. 앱 런타임 npm 의존성0, Pixi/GSAP 등 금지 유지. 아트 디렉션은 `docs/design/art-direction.md`로 통일하고 RPG UI/Animal 팩은 제외한다. Met CC0 원화·기존 Hwatu의 CC BY-SA 4.0 파생 초상을 구분 고지하며 Commons48 원본은 유지한다. Ogg는 bitexact/serial=0과 두 번 인코딩 해시 검사를 고정한다. FPS·메모리·배터리 NF 후보는 연구 문서에만 두고 리뷰 전 spec를 바꾸지 않는다.
+**PA-01~04 전문 자산 평가(2026-09-29, 예산 개정 승인 전):** NF-03의 전체1.5MiB·게스트 첫 로딩≤2초와 기존 카테고리 예산은 현행 유지한다. `design/pro-assets`의 명시적 `PRO_ASSET_REVIEW=1` 평가 빌드만 초과 자산을 포함한다. 기본/릴리스 빌드에는 평가 팩을 제외하고 기존 용량 gate를 적용한다. `docs/research/pro-assets.md`의 NF-03 개정안은 리뷰·사용자 승인 전 규범이 아니다. 원본은 `assets-src/`, 평가 변환물은 `public/pro/`에 둔다. Pillow 10.2.0(HPND, PEP 723 `uv run`), FFmpeg 7:6.1.1-3ubuntu5(Ubuntu GPL dev 도구), libavif-bin 1.0.4-1ubuntu3(BSD-2-Clause, 둘은 Ubuntu 24.04 apt)으로 고정해(`tools/setup-host.sh`) WebP/AVIF·해상도 단계·atlas·ogg/m4a·고지를 생성한다. 앱 런타임 npm 의존성0, Pixi/GSAP 등 금지 유지. 아트 디렉션은 `docs/design/art-direction.md`로 통일하고 RPG UI/Animal 팩은 제외한다. Met CC0 원화·기존 Hwatu의 CC BY-SA 4.0 파생 초상을 구분 고지하며 Commons48 원본은 유지한다. Ogg는 bitexact/serial=0과 두 번 인코딩 해시 검사를 고정한다. FPS·메모리·배터리 NF 후보는 연구 문서에만 두고 리뷰 전 spec를 바꾸지 않는다.
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
 **A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/art-direction.md#결정-이력`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
@@ -117,7 +114,7 @@ p2p-gostop/
 | TS·린트 하이브리드 | 순수 TS는 TS 7·oxlint·oxfmt, web은 TS 6·ESLint·Prettier·svelte-check; .svelte와 TS 7 도구 비호환 |
 | npm workspaces·공급망 쿨다운 | 비배포 모노레포에 pnpm·Turborepo·Biome 추가 안 함 |
 | Vitest·fast-check·브라우저 모드·Playwright·axe·knip·svgo | 규칙·실제 레이아웃·회귀·번들·죽은 코드 검증 |
-| 개발 이미지·CI 레이어 캐시 (B1) | Compose 이미지에 Docker 공식 setup-docker·setup-buildx·build-push 액션의 GHA 캐시 적용; containerd 저장소·docker driver로 중복 export/load 제거, npm 다운로드 캐시 사용 |
+| CI 네이티브 설치 (plan §2) | `actions/setup-node`(.nvmrc, npm 캐시)·`actions/setup-java`(Temurin 21)·`npx playwright install --with-deps`(Playwright 공식 CI 절차)·러너 내장 Android SDK. 개발 이미지와 BuildKit 레이어 캐시는 2026-09-30 삭제 |
 | Gradle CI 캐시 (B1) | setup-gradle로 build/configuration cache 보존; main만 쓰기, PR·태그 읽기 전용, 구성 캐시 암호화 Secret 사용. 컨테이너의 Gradle 홈·작업 경로를 러너와 일치시킴(조사: docs/research/build-performance.md) |
 | zod/mini·uqr | 프로토콜 입력 검증(TRIAL), 로컬 QR 생성. web 저장 경계도 동일 zod 4.6.5의 mini를 직접 의존해 사용한다(R5, MN-05·NF-05): v0→v1 보완과 #88의 중첩 검증을 스키마로 분리하며 저장 키·형식·수용 범위는 보존한다. |
 | `androidx.activity:activity` 1.13.0 | `GameActivity`의 Back을 `OnBackPressedCallback`으로 받고 HostBridge에 전달(v0.2.1-B, #10); Compose 미도입 |
@@ -174,7 +171,7 @@ p2p-gostop/
 |---|---|
 | PC 기본 운영 | 고정 release artifact+SHA 식별자, 한 번 설치 후 명시적 업데이트, 게임할 때만 start/stop 스크립트 실행. 상시·로그인/부팅 자동 기동 없음. 서버 생성 키는 PC secret 파일(제한된 권한)과 Galaxy 개인 설정에만, Tailscale state는 운영 PC의 보호된 상태로 보관. git/로그/공용 웹에 키 없음. 키 폐기·PC 이전·Funnel 중지/복구 절차 포함 |
 | 정적 웹 | release별 경로·content hash, 앱과 동일 artifact. 초기 지원은 현재 release와 직전 호환 release, 불일치 시 명시적 업데이트 안내; 게임 wire가 다르면 연결 거부. PC 정적 경로도 traversal/소스맵/설정 파일 노출 금지 |
-| cloud 선택 시만 | Workers Free·SQLite DO·Pages 기본 도메인, 유료 플랜/자동 과금 금지. GitHub Actions 기존 ubuntu-24.04/개발 이미지에서 검사·빌드→분리된 staging→검증된 artifact를 production으로 승격. DO/웹/APK 호환 행렬 확인 후 배포, 방 연결은 배포 중 끊길 수 있어 재접속 검증 |
+| cloud 선택 시만 | Workers Free·SQLite DO·Pages 기본 도메인, 유료 플랜/자동 과금 금지. GitHub Actions 기존 ubuntu-24.04에서 검사·빌드→분리된 staging→검증된 artifact를 production으로 승격. DO/웹/APK 호환 행렬 확인 후 배포, 방 연결은 배포 중 끊길 수 있어 재접속 검증 |
 | cloud 비밀 | 최소 권한 Cloudflare API token은 GitHub environment secret, 서비스 생성 키는 Worker secret. PR/fork에 운영 secret 미제공. 운영/검증 DO namespace·생성 키 분리. 신규 CLI/Action 버전·권한은 RP-03C3에서 확정, 이 문서에 임의 최신 버전 추가 안 함 |
 | 비용·장애 | PC 전기·회선/관리 시간을 인정하고 추가 서비스 요금 0 유지. Funnel 수치 미공개 한도/PC 장애 또는 Cloudflare quota 초과 시 새 방 차단·진행 입력 잠금·재시도 안내, 유료 이전 없음. 오류 로그는 내용/토큰 없이 집계만. 관리자에게 임의 진단 업로드 없음 |
 
@@ -244,14 +241,14 @@ p2p-gostop/
 | RP-03C2 · 휴면·TTL·quota 복구, 6~8h | cloud 담당: relay-cloud `src/`·`test/`만 | C1 병합 → attachment·만료 삭제·재시작/무료 한도 실패·게임 내용 무저장 테스트. deployment binding/compatibility 설정 계약을 C3에 인계 |
 | RP-03C3 · Pages/Worker 배포·rollback, 4~6h | 운영 담당: 신규 relay-cloud 배포 설정·`.github/workflows/remote-cloud.yml`, 운영/기기 절차 | C2·02C·03A artifact 계약 + CI 담당 인계 → Free·비밀/namespace 분리·동일 dist·버전/rollback 검사. 기존 release workflow 변경 필요 시 소유자 PR 선행; 공개 배포/사람 실측 대기는 별도 |
 
-모든 빌드·테스트는 저장소 루트의 `docker compose run --rm dev …`(이 환경 Docker는 `/home/k/.local/bin/docker`)로 실행한다. 문서 PR에서 에이전트는 실제 Funnel 공개·클라우드 생성·실기기 검증을 수행하지 않는다. 사용자가 제공한 2026-09-29 시험 결과만 `docs/device-test/remote-play.md`에 기록했다.
+빌드·테스트 진입점은 §2·AGENTS.md §5를 따른다. 문서 PR에서 에이전트는 실제 Funnel 공개·클라우드 생성·실기기 검증을 수행하지 않는다. 사용자가 제공한 2026-09-29 시험 결과만 `docs/device-test/remote-play.md`에 기록했다.
 
-## 2. 개발 환경 (Docker)
+## 2. 개발 환경 (네이티브, 버전 핀)
 
-- `docker/Dockerfile`은 Playwright 공식 이미지(Node 24.20.0, Chromium·WebKit)에 Temurin 21과 Android SDK 36을 더한 단일 개발 이미지다. 루트 `compose.yaml`의 `dev` 서비스가 소스를 바인드 마운트한다. CI도 이 이미지를 빌드해 같은 명령을 실행한다(NF-06).
-- 저장소 루트에서 `docker compose run --rm dev <명령>`으로 실행한다. 새 체크아웃은 먼저 `npm ci`; lint·check·test·test:browser·웹 빌드·E2E·Android 명령은 [AGENTS.md §5](AGENTS.md)를 따른다. Dev Container는 같은 서비스를 쓰며, Claude Code 공식 feature와 dev(uid 1000) 소유 `/home/dev/.claude` 볼륨을 사용한다.
-- `node_modules`는 체크아웃마다 소스와 함께 바인드 마운트된다. 이전 환경의 root 소유 디렉터리가 남으면 진입점이 안내하고 종료한다. 비어 있으면 호스트에서 `rmdir node_modules`, 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 복구한다. 옛 명명 볼륨은 이름을 확인한 뒤 개별 제거한다(README 전환 절차).
-- `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. `docker/check-dev-image-tag.sh`가 커밋·스테이지·작업 트리의 Dockerfile 변경을 검사한다. 없는 태그는 첫 `run`에서 빌드한다.
+- 호스트(WSL2 Ubuntu 24.04)와 CI(`ubuntu-24.04`)가 같은 명령을 네이티브로 실행한다. 명령·부하 규칙은 [AGENTS.md §5](AGENTS.md)가 정본이다(NF-09, 전환 근거 [process-local-first](docs/reviews/process-local-first.md)).
+- 동일성은 버전 핀으로 맞춘다: Node `.nvmrc`, npm `package-lock.json`(Playwright 1.63.0 → 브라우저 빌드), JDK 21, Android `platforms;android-36`·`build-tools;36.0.0`(Gradle 설정), 자산 변환 apt 버전(AGENTS §2).
+- 호스트는 `tools/setup-host.sh`가 한 번에 준비한다(nvm, sudo apt: Playwright 의존성·`openjdk-21-jdk-headless`·FFmpeg·libavif, uv 확인, `~/Android/Sdk`). 파이썬 스크립트(자산 변환·폰트)는 PEP 723 메타데이터로 `uv run`한다. CI는 `setup-node`(.nvmrc)·`setup-java`(Temurin 21)·`playwright install --with-deps`·러너 내장 Android SDK를 쓴다.
+- 릴리스 웹 빌드는 비밀 없는 읽기 전용 잡에서 돌고 산출물만 서명 잡으로 넘긴다(§5, M0 R-1).
 - 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요하면 Android SDK 에뮬레이터를 별도 이미지에 추가해 WebView 셸 스모크에만 쓴다.
 
 ---
@@ -565,10 +562,10 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (B1): 같은 개발 이미지·Compose 명령으로 두 잡을 병렬 실행한다. ① npm ci → lint/check/단위 테스트 → 웹 빌드·예산·외부 URL 검사 → 웹 번들 포함 `assembleDebug testDebugUnitTest lint` 한 호출, ② 컴포넌트 테스트 → 전체 Playwright(기존 PR·수동 범위, timing 프로젝트 직렬 의존성 유지). BuildKit GHA 레이어 캐시·npm 다운로드 캐시를 쓰며 Gradle 캐시는 setup-gradle로 main만 갱신한다. 잡 분리의 분 예산 증가와 벽시계 이득은 `docs/research/build-performance.md`에서 비교한다.
+- `ci.yml` (B1·plan §2): 러너에서 네이티브로 두 잡을 병렬 실행한다. ① npm ci → lint/check/단위 테스트 → 웹 빌드·예산·외부 URL 검사 → 웹 번들 포함 `assembleDebug testDebugUnitTest lint` 한 호출, ② 컴포넌트 테스트 → 전체 Playwright(기존 PR·수동 범위, timing 프로젝트 직렬 의존성 유지). npm 다운로드 캐시를 쓰며 Gradle 캐시는 setup-gradle로 main만 갱신한다. 잡 분리의 분 예산 증가와 벽시계 이득은 `docs/research/build-performance.md`에서 비교한다.
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
-- `release.yml` (B1): 정확한 SHA의 성공한 main push CI 웹 번들을 재사용한다. 없거나 만료·용량 초과이면 키스토어 복원 **전에** 읽기 전용 마운트 + 비밀 없는 개발 이미지 컨테이너에서 `npm ci --ignore-scripts`로 빌드한다. Gradle·서명 검증도 개발 이미지에서 실행하고 Gradle 캐시는 읽기 전용이다. 빌드 후 추적 파일 변경이 있으면 실패. `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, main 이력·CI 성공 게이트를 유지한다(M0 리뷰 R-1/R-4~R-7).
+- `release.yml` (B1): 정확한 SHA의 성공한 main push CI 웹 번들을 재사용한다. 재사용과 빌드는 비밀 없는 읽기 권한 전용 `web` 잡(새 VM, `npm ci --ignore-scripts`, npm 캐시 미사용)이 하고, 산출물만 아티팩트로 서명 잡 `apk`에 넘긴다. Gradle·`apksigner`는 러너 네이티브(내장 SDK)이고 Gradle 캐시는 읽기 전용이다. 빌드 후 추적 파일 변경이 있으면 실패. `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, main 이력·CI 성공 게이트를 유지한다(M0 리뷰 R-1/R-4~R-7).
 - `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
 - 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
 - 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.
@@ -624,6 +621,7 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 ---
 
 ## 10. 변경 이력
+- v0.12 (2026-09-30): 원칙 5·§2를 네이티브·버전 핀으로 개정하고 개발 이미지·Compose·Dev Container를 삭제(NF-09). CI·릴리스도 러너 네이티브.
 - v0.11 (2026-09-29): PR #153 리뷰 반영. main `daa5e7d`(#151·#94/#95) 병합, FR-15 완료 및 #30 환급 정책 재개 반영, 기존82개 분모 명칭 정정, §3-3 문서/PNG/디자인 반복 계측 추가.
 - v0.10 (2026-09-29): §3-2에 spec FR/NF/NP/AI/MN/AC 93행(고유86개)의 코드·테스트 대조 매트릭스, 릴리스 이슈 분류를 추가. §3-3 의도 이탈 진단, AGENTS §1 상태 변경 PR의 매트릭스 갱신 의무.
 - v0.9 (2026-09-29): §2를 단일 개발 이미지·루트 Compose·Dev Container로 교체하고, CI 명령과 기존 볼륨 전환 절차를 동기화(PR #38, NF-06).

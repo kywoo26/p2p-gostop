@@ -1,5 +1,5 @@
 // Docker / Node 전용. 동일 fixture·변이 입력에 대한 수용/거부와 반환 JSON을 함께 해시한다.
-// docker compose run --rm -T dev node --input-type=module < docs/research/session-storage-probes.mjs.txt
+// node --input-type=module < docs/research/session-storage-probes.mjs.txt
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { parseSession } from './packages/web/src/game/session.ts';
