@@ -2,7 +2,7 @@
   // 게임판 위에 작게 뜨는 선택 창 (spec 6.3: 배경은 계속 보인다). 네이티브 <dialog> 비모달 표시.
   import type { Snippet } from 'svelte';
   import { fly } from 'svelte/transition';
-  import { DUR, scaledMs } from '../anim/durations.ts';
+  import { durationMs } from '../anim/durations.ts';
 
   interface Props {
     title: string;
@@ -17,7 +17,7 @@
   class="prompt"
   open
   aria-labelledby={titleId}
-  transition:fly={{ y: 24, duration: scaledMs(DUR.modal) }}
+  transition:fly={{ y: 24, duration: durationMs('modal') }}
 >
   <h2 id={titleId}>{title}</h2>
   {@render children()}

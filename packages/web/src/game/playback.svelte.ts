@@ -6,7 +6,7 @@
 import { getCard, type Action, type EngineEvent, type Seat } from '@p2p-gostop/engine';
 import { tick } from 'svelte';
 import { deal, replay, skip, unskip, type ReplayHost } from '../anim/choreo.ts';
-import { DUR, scaledMs } from '../anim/durations.ts';
+import { durationMs, scaledMs } from '../anim/durations.ts';
 import type { BoardView } from '../lib/view-types.ts';
 import { bannerForEngineEvent, type Banner } from '../ui/banner.ts';
 import { cardLabel } from '../ui/cards.ts';
@@ -207,7 +207,7 @@ export class Playback {
         // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
         if (batch.tapAt !== null && batch.action !== null) this.recordTiming(batch);
         if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
-          await sleep(scaledMs(DUR.banner * 2));
+          await sleep(durationMs('banner') * 2);
         }
         if (batch.settlement !== null) this.settlement = batch.settlement;
       }
@@ -236,7 +236,7 @@ export class Playback {
       for (const e of events) this.onEvent(e);
       if (events.some((e) => e.type === 'FirstPicked')) {
         // 선 고르기 결과를 읽을 시간
-        await sleep(scaledMs(DUR.banner * 2));
+        await sleep(durationMs('banner') * 2);
       }
       await deal(host, batch.board);
     } else {
@@ -266,8 +266,8 @@ export class Playback {
     this.bannerSeq += 1;
     this.banner = { ...banner, id: this.bannerSeq };
     if (this.bannerTimer !== null) clearTimeout(this.bannerTimer);
-    // spec 6.4: 350ms 표시 후 다음 단계와 겹쳐 사라진다
-    this.bannerTimer = setTimeout(() => (this.banner = null), scaledMs(DUR.banner) + 1);
+    // 사건 문구는 빠름 350ms / 보통 900ms 동안 읽을 수 있게 남긴다.
+    this.bannerTimer = setTimeout(() => (this.banner = null), durationMs('banner') + 1);
   }
 
   /** 짧은 알림. 일정 시간 뒤 사라진다(이슈 #6). 새 판 분배 때도 지운다 */

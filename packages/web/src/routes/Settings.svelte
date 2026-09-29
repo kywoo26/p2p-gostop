@@ -22,7 +22,7 @@
     { id: 'standard', label: '표준' },
     { id: 'arcade', label: '아케이드' },
   ];
-  // spec 6.4: 보통 ×1.5, 빠름 ×1, 매우 빠름 ×0.6
+  // UX-15: 보통은 단계별 정지가 있는 기본 페이싱, 빠름은 AC-06 시간표
   const SPEED_OPTIONS: { id: SpeedSetting; label: string }[] = [
     { id: 'normal', label: '보통' },
     { id: 'fast', label: '빠름' },

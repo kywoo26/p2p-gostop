@@ -196,7 +196,8 @@ test.describe('턴 시간 계측 (@timing)', () => {
     async ({ page, browserName }) => {
       test.setTimeout(4 * 60_000);
       const errors = watchErrors(page);
-      await startSolo(page, '', '쉬움');
+      await page.setViewportSize({ width: 412, height: 915 });
+      await startSolo(page, '?speed=fast', '쉬움');
       const read = async () =>
         ((await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '')
           .split(',')
@@ -242,6 +243,46 @@ test.describe('턴 시간 계측 (@timing)', () => {
       // spec 6.4: 700ms(빠름). 꼬리는 스케줄링 이상치 하나를 흡수하도록 두 번째로 큰 값을 900ms로 본다(이슈 #20)
       expect(p50).toBeLessThanOrEqual(700 * factor);
       expect(secondMax).toBeLessThanOrEqual(900 * factor);
+      expect(errors).toEqual([]);
+    },
+  );
+
+  test(
+    '혼자 연습: 기본 보통 속도의 선택 없는 턴 p50 1.4~2.4초 (UX-15, AC-06)',
+    { tag: '@timing' },
+    async ({ page }) => {
+      test.setTimeout(5 * 60_000);
+      const errors = watchErrors(page);
+      await page.setViewportSize({ width: 412, height: 915 });
+      await startSolo(page, '', '쉬움');
+      expect(await page.locator('html').getAttribute('data-speed')).toBe('normal');
+      let timings: number[] = [];
+      for (let rounds = 1; rounds <= 2; rounds++) {
+        await playRounds(page, rounds);
+        const all = ((await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '')
+          .split(',')
+          .filter(Boolean)
+          .map(Number);
+        const prompt = new Set(
+          await page.evaluate(
+            () => (window as unknown as { __auto: AutoStats }).__auto.promptAfter,
+          ),
+        );
+        timings = all.filter((ms, i) => i !== all.length - 1 && !prompt.has(i) && ms >= 100);
+        if (timings.length >= 5) break;
+      }
+      expect(timings.length).toBeGreaterThanOrEqual(5);
+      const sorted = [...timings].sort((a, b) => a - b);
+      const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
+      console.log(
+        `[UX-15] 보통 탭→턴 종료 ms (${test.info().project.name}): n=${sorted.length} p50=${p50} all=${sorted.join(',')}`,
+      );
+      test.info().annotations.push({
+        type: 'normal-turn-ms',
+        description: `n=${sorted.length} p50=${p50} all=${sorted.join(',')}`,
+      });
+      expect(p50).toBeGreaterThanOrEqual(1400);
+      expect(p50).toBeLessThanOrEqual(2400);
       expect(errors).toEqual([]);
     },
   );

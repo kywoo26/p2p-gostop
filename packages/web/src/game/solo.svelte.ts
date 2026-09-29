@@ -14,7 +14,7 @@ import {
   type Seat,
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
-import { scaledMs } from '../anim/durations.ts';
+import { durationMs } from '../anim/durations.ts';
 import { settings } from '../settings/settings.svelte.ts';
 import { readJson, removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
 import { toBoardView } from './adapter.ts';
@@ -281,17 +281,15 @@ export class SoloSession implements GameController {
     if (fallback === undefined) return;
     this.thinking = true;
     let action: Action = fallback;
+    // 실패해 첫 합법 수로 대체할 때도 최소 생각 간격을 지킨다.
+    const minimumThink = sleep(durationMs('aiThink'));
     try {
-      const [result] = await Promise.all([
-        this.ai.decide({
-          difficulty: this.difficulty,
-          view,
-          seed: decisionSeed(session),
-          timeBudgetMs: this.timeBudgetMs,
-        }),
-        // CPU 수가 너무 순식간이면 따라가기 어렵다: 빠름 기준 250ms (즉시 모드 0)
-        sleep(scaledMs(250)),
-      ]);
+      const result = await this.ai.decide({
+        difficulty: this.difficulty,
+        view,
+        seed: decisionSeed(session),
+        timeBudgetMs: this.timeBudgetMs,
+      });
       if (legal.some((a) => sameAction(a, result.action))) {
         action = result.action;
       } else {
@@ -301,6 +299,7 @@ export class SoloSession implements GameController {
     } catch (error) {
       log.error(`CPU 결정 오류: ${String(error)} → 첫 합법 수`);
     } finally {
+      await minimumThink;
       this.thinking = false;
     }
     if (this.disposed || generation !== this.generation) return;
