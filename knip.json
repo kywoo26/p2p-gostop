@@ -9,7 +9,7 @@
     "packages/*": {},
     "tools/*": {},
     "packages/web": {
-      "entry": ["scripts/*.mjs"]
+      "entry": ["scripts/*.mjs", "e2e/design/wireframe.config.ts", "e2e/design/wireframe.render.ts"]
     }
   },
   "ignore": ["tools/p2p-mini/**", "packages/web/public/p2p/**"]
