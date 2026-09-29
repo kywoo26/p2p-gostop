@@ -1,4 +1,4 @@
-// Docker에서만 실행: docker compose run --rm -T dev node --input-type=module < docs/research/import-boundary-probes.mjs.txt
+// 실행: node --input-type=module < docs/research/import-boundary-probes.mjs.txt
 // 실제 패키지 위치의 일회 파일을 검사하고 finally에서 지운다. 제품 의존성·lint 예외를 추가하지 않는다.
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';

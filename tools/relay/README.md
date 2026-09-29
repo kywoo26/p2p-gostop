@@ -8,11 +8,11 @@
 2. 배포할 정확한 release를 WSL 저장소에 체크아웃하고 APK와 **같은 commit의 웹 번들**을 준비한다. 저장소 루트에서 다음을 실행한다.
 
    ```sh
-   docker compose run --rm dev npm ci
-   docker compose run --rm dev npm run build -w packages/web
-   docker compose build dev
+   source "$HOME/.nvm/nvm.sh" && nvm use
+   npm ci
+   npm run build -w packages/web
    mkdir -p -m 700 "$HOME/.local/share/p2p-gostop/relay"
-   docker compose run --rm -v "$HOME/.local/share/p2p-gostop/relay:/relay-secret" dev node tools/relay/create-credentials.ts /relay-secret/creation-secret
+   node tools/relay/create-credentials.ts "$HOME/.local/share/p2p-gostop/relay/creation-secret"
    export RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret"
    export RELAY_ALLOWED_ORIGINS="http://127.0.0.1:17777,https://<이 PC>.ts.net"
    export RELAY_RELEASE="$(git describe --tags --exact-match)" # APK와 같은 release 태그

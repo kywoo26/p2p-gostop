@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
+# dependencies = []
+# ///
 """PA-03: input hashes, excluded packs, Ogg repeatability and committed-output equality."""
 from pathlib import Path
 import hashlib, importlib.util, json, tempfile

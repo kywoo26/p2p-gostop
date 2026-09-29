@@ -13,6 +13,8 @@ const [dockerfile, compose, start, stop, helper] = await Promise.all(
 );
 
 assert.match(dockerfile, /COPY .*packages\/web\/dist/);
+assert.match(dockerfile, /FROM node:24\.21\.0-alpine AS dependencies/);
+assert.doesNotMatch(dockerfile, /p2p-gostop-dev/);
 assert.match(dockerfile, /^USER node$/m);
 assert.match(compose, /127\.0\.0\.1:17777:17777/);
 assert.match(compose, /restart: 'no'/);
@@ -33,6 +35,7 @@ assert.match(helper, /\$startedFunnelThisRun = \$true/);
 assert.match(helper, /if \(\$startedFunnelThisRun -or \$ownedBeforeStart\)/);
 assert.match(helper, /function OwnedFunnelProcessIds/);
 assert.match(helper, /Get-CimInstance Win32_Process/);
+assert.doesNotMatch(helper, /compose run[^\r\n]*\bdev\b/);
 assert.doesNotMatch(helper, /^\s*[^#\r\n]*funnel\s+--bg\b/im);
 assert.doesNotMatch(helper, /funnel reset|tailscale down/i);
 

@@ -13,7 +13,7 @@ $Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { '
 
 function Fail([string]$Message) { throw $Message }
 function Wsl([string]$Command) {
-  $output = & wsl.exe --cd $Repo --exec /bin/sh -lc $Command 2>&1
+  $output = & wsl.exe --cd $Repo --exec /bin/bash -lc $Command 2>&1
   if ($LASTEXITCODE -ne 0) { Fail "WSL command failed: $Command`n$output" }
   return $output
 }
@@ -28,7 +28,7 @@ function EnsureSecret {
   $null = Wsl ('mkdir -p -m 700 "' + $SecretDirectory + '" && chmod 700 "' + $SecretDirectory + '"')
   $exists = (Wsl ('if test -f "' + $SecretDirectory + '/creation-secret"; then printf yes; else printf no; fi') | Out-String).Trim()
   if ($exists -eq 'yes') { return }
-  $command = $Docker + ' compose run --rm -v "' + $SecretDirectory + ':/relay-secret" dev node tools/relay/create-credentials.ts /relay-secret/creation-secret'
+  $command = 'source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && node tools/relay/create-credentials.ts "' + $SecretDirectory + '/creation-secret"'
   $null = Wsl $command
   Write-Host 'A new creation secret was saved under the WSL user home directory.'
 }
@@ -130,7 +130,7 @@ $ownedBeforeStart = $false
 $startSucceeded = $false
 try {
   try { $null = Wsl 'test -d packages/web/dist' }
-  catch { Fail 'Web dist is missing. Build the same release as the Galaxy APK in the dev image.' }
+  catch { Fail 'Web dist is missing. Build the same release as the Galaxy APK on the WSL host.' }
   $releaseInput = if ($env:RELAY_RELEASE) { $env:RELAY_RELEASE } else {
     try { (Wsl 'git describe --tags --exact-match' | Out-String).Trim() }
     catch { Fail 'This checkout is not a release tag. Check out the matching APK release tag or set RELAY_RELEASE explicitly.' }
@@ -168,7 +168,7 @@ try {
     Set-Content -Path $Marker -Value $dns -NoNewline
   }
   PublicHealth $url
-  $null = Wsl "$Docker compose run --rm dev node tools/relay/write-qr.ts $url/ tools/relay/relay-url.svg"
+  $null = Wsl ('source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && node tools/relay/write-qr.ts ' + $url + '/ tools/relay/relay-url.svg')
   try {
     $qrWindows = (Wsl 'wslpath -w "$PWD/tools/relay/relay-url.svg"' | Out-String).Trim()
     if ($qrWindows) { Start-Process -FilePath $qrWindows }

@@ -1,6 +1,6 @@
 # RP-03A: 릴리스 웹 번들과 공개 중계 소스만 실행 이미지에 둔다.
-# 빌드 전에 개발 이미지에서 `npm ci && npm run build -w packages/web`를 실행한다.
-FROM p2p-gostop-dev:4 AS dependencies
+# 빌드 전에 호스트에서 `npm ci && npm run build -w packages/web`를 실행한다.
+FROM node:24.21.0-alpine AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/ai/package.json packages/ai/package.json
@@ -11,7 +11,7 @@ COPY packages/web/package.json packages/web/package.json
 COPY tools/sim/package.json tools/sim/package.json
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
-FROM node:24.20.0-alpine
+FROM node:24.21.0-alpine
 ENV NODE_ENV=production PORT=17777 HOST=0.0.0.0
 WORKDIR /app
 COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules

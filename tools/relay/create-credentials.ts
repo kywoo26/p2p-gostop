@@ -1,4 +1,4 @@
-// RP-03A / NP-RP-02. 개발 이미지에서 한 번 실행한다. 비밀은 stdout에 쓰지 않는다.
+// RP-03A / NP-RP-02. WSL 호스트에서 한 번 실행한다. 비밀은 stdout에 쓰지 않는다.
 import { randomBytes } from 'node:crypto';
 import { mkdir, open } from 'node:fs/promises';
 import { resolve } from 'node:path';
