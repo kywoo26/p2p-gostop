@@ -73,8 +73,12 @@ for (const [width, height] of [
           .map((el) => el.textContent);
         const handHit = [...document.querySelectorAll('.hand .slot')].every((el) => {
           const r = el.getBoundingClientRect();
+          // 선택 중 배경은 inert라 hit-test에서 빠져야 한다. 그림의 무가림은 위 기하/PNG로 검사.
+          const locked = el.closest('[inert]') !== null;
           return [4, 24, 44].every((x) =>
-            [4, 24, 44].every((y) => el.contains(document.elementFromPoint(r.left + x, r.top + y))),
+            [4, 24, 44].every(
+              (y) => el.contains(document.elementFromPoint(r.left + x, r.top + y)) !== locked,
+            ),
           );
         });
         const marks = [...document.querySelectorAll('.hand .row:first-child .slot')].map((el) => {

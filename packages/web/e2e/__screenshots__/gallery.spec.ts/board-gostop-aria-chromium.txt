@@ -45,7 +45,7 @@
       - strong: 9점
       - text: 상대 0점 · 피 5
     - button "2고"
-    - button "스톱":
+    - button "스톱 · 2,000냥":
       - text: 스톱
       - strong: 2,000냥
   - button "판 정보"

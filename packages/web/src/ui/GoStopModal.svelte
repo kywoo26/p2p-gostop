@@ -57,7 +57,7 @@
         class="stop"
         class:large-amount={formatMoney(stopAmount, unit).length > 8}
         data-choice="stop"
-        aria-label="스톱"
+        aria-label={`스톱 · ${formatMoney(stopAmount, unit)}`}
         onclick={() => onstop?.()}
         ><span>스톱</span><strong>{formatMoney(stopAmount, unit)}</strong></button
       >

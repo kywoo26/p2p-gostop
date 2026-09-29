@@ -51,7 +51,7 @@ test('고/스톱: 2고·스톱 버튼과 스톱 금액', async () => {
   expect(dialog.element().textContent).toContain('9점');
   expect(dialog.element().textContent).toContain('2,000냥');
   const go = dialog.getByRole('button', { name: '2고' });
-  const stop = dialog.getByRole('button', { name: '스톱' });
+  const stop = dialog.getByRole('button', { name: '스톱 · 2,000냥' });
   expect(minTouch([go.element(), stop.element()])).toBeGreaterThanOrEqual(48);
 });
 
@@ -106,9 +106,9 @@ test('건너뛰기 탭은 카드를 내지 않는다: 재생 중 누른 카드�
     screen.container.querySelector<HTMLButtonElement>('[aria-label="내 손패"] [data-slot="30"]')!;
   expect(button().disabled).toBe(true);
 
-  // 1. 재생 중 손패를 누른다 → 건너뛰기
+  // 1. 재생 중 손패는 스킵 범위가 아니다
   button().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
-  expect(onskip).toHaveBeenCalledTimes(1);
+  expect(onskip).not.toHaveBeenCalled();
   // 2. 손가락을 떼기 전에 재생이 끝나 버튼이 풀린다
   await screen.rerender({ busy: false });
   expect(button().disabled).toBe(false);

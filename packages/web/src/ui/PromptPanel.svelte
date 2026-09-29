@@ -1,7 +1,8 @@
 <script lang="ts">
-  // 게임판 위에 작게 뜨는 선택 창 (spec 6.3: 배경은 계속 보인다). 네이티브 <dialog> 비모달 표시.
+  // 게임판 위에 작게 뜨는 선택 창 (spec 6.3: 배경은 계속 보인다). 예약 행의 인라인 dialog + 초점/배경 잠금.
   import type { Snippet } from 'svelte';
   import { fly } from 'svelte/transition';
+  import { promptFocus } from './prompt-focus.ts';
   import { durationMs } from '../anim/durations.ts';
 
   interface Props {
@@ -25,6 +26,9 @@
 <dialog
   class="prompt"
   open
+  aria-modal="true"
+  tabindex="-1"
+  use:promptFocus
   aria-labelledby={titleId}
   transition:fly={{ y: 24, duration: durationMs('modal') }}
 >

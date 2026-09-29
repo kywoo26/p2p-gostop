@@ -1,7 +1,7 @@
 <script lang="ts">
   // 게임판 (spec 6.2, FR-40): 상단 양쪽 점수판·상대 획득패, 중앙 바닥·더미, 선택 영역, 내 획득패·현황·손패.
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
-  // 재생 중(busy)에는 입력을 받지 않고, 판을 탭하면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
+  // 재생 중(busy)에는 입력을 받지 않고, 빈 바닥을 누르고 떼면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
   import { getCard, type Action, type CardId, type Month } from '@p2p-gostop/engine';
   import type { BoardExtras } from '../game/adapter.ts';
@@ -162,6 +162,7 @@
   }
 
   function play(card: CardId, at: number) {
+    if (selecting || busy || landscape) return;
     const month = getCard(card).month;
     if (month !== null && extras?.bombMonths.includes(month)) {
       bombCard = card;
@@ -178,8 +179,34 @@
     return (me.hand ?? []).filter((id) => getCard(id).month === month);
   }
 
-  function skipIfBusy() {
-    if (busy) onskip?.();
+  let skipPress: { id: number; x: number; y: number } | null = null;
+  function emptyFloor(target: EventTarget | null) {
+    return (
+      target instanceof Element &&
+      !!target.closest('.center') &&
+      !target.closest('.card, .group, .deck-area, button, [role="dialog"]')
+    );
+  }
+  function startSkip(event: PointerEvent) {
+    skipPress =
+      busy && event.button === 0 && emptyFloor(event.target)
+        ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+        : null;
+  }
+  function finishSkip(event: PointerEvent) {
+    const press = skipPress;
+    skipPress = null;
+    if (
+      !busy ||
+      !press ||
+      press.id !== event.pointerId ||
+      !emptyFloor(event.target) ||
+      Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    onskip?.();
   }
 </script>
 
@@ -200,7 +227,9 @@
   data-busy={busy}
   data-turn-ms={turnMs}
   bind:this={root}
-  onpointerdowncapture={skipIfBusy}
+  onpointerdowncapture={startSkip}
+  onpointerupcapture={finishSkip}
+  onpointercancel={() => (skipPress = null)}
 >
   <div class="hud" inert={landscape} data-testid="hud">
     <div class="scoreboard" class:expanded={expandedHud} aria-label="양쪽 점수판">
@@ -355,7 +384,6 @@
       class="info-button"
       type="button"
       onclick={() => {
-        if (busy) onskip?.();
         infoDialog.showModal();
       }}>판 정보</button
     >
