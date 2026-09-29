@@ -91,6 +91,9 @@
   --card-w-s: 26px;
   --card-w-m: 44px;
   --card-w-l: 62px;
+  /* RP-06: 배치가 참조하는 폭. 모바일의 실제 48/32px 계약은 스킨이 유지한다. */
+  --board-card-wide: 56px;
+  --board-card-compact: 44px;
   /* 카드 높이: 원본 비율을 1% 이내로 근사. SVG 내부 비율은 보존한다.
      정수 CSS px도 DPR 3.5·부모 transform에서는 기기 픽셀 정렬을 보장하지 않는다. */
   --card-h-s: 42px;

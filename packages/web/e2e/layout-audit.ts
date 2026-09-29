@@ -150,10 +150,16 @@ export function auditLayout() {
         .map((el) => el.offsetWidth)
     : [];
   const scales = [...new Set(cards.map((n) => Math.round(n * 100) / 100))];
+  const boardCard = board
+    ? parseFloat(getComputedStyle(board).getPropertyValue('--table-card')) || 48
+    : 48;
+  const captureCard = board
+    ? parseFloat(getComputedStyle(board).getPropertyValue('--capture-card')) || 32
+    : 32;
   for (const card of board?.querySelectorAll<HTMLElement>(
     '.hand .card, .floor .card, .captured-zone .card',
   ) ?? []) {
-    const expected = card.closest('.captured-zone') ? 32 : 48;
+    const expected = card.closest('.captured-zone') ? captureCard : boardCard;
     if (card.offsetWidth !== expected)
       issues.push(`card scale: ${card.offsetWidth}, expected ${expected}`);
   }
@@ -210,8 +216,8 @@ export function auditLayout() {
   }
   const grid = board?.querySelector('.floor')?.getBoundingClientRect();
   if (grid) {
-    const cw = Math.min(60, grid.width / 5),
-      ch = Math.min(48 / 0.614 + 12, grid.height / 3);
+    const cw = Math.min(boardCard * 1.25, grid.width / 5),
+      ch = Math.min(boardCard / 0.614 + boardCard / 4, grid.height / 3);
     const used = new Set<number>();
     for (const cell of floorCells) {
       const slot = Number(cell.dataset['floorSlot']),
@@ -252,11 +258,13 @@ export function auditLayout() {
     const ownCapture = board?.querySelector('.captured-zone.mine')?.getBoundingClientRect();
     const opponent = seatPanels[0]!.getBoundingClientRect();
     const own = seatPanels[1]!.getBoundingClientRect();
-    if (opponentCapture && opponent.top - opponentCapture.bottom < 5.5)
+    const sideLayout = getComputedStyle(board!).gridTemplateColumns.split(' ').length > 1;
+    if (!sideLayout && opponentCapture && opponent.top - opponentCapture.bottom < 5.5)
       issues.push('opponent summary gap');
-    if (ownCapture && ownCapture.top - own.bottom < 5.5) issues.push('own summary gap');
+    if (!sideLayout && ownCapture && ownCapture.top - own.bottom < 5.5)
+      issues.push('own summary gap');
     const firstHandCard = board?.querySelector('.hand .card')?.getBoundingClientRect();
-    if (ownCapture && firstHandCard && firstHandCard.top - ownCapture.bottom < 17.5)
+    if (!sideLayout && ownCapture && firstHandCard && firstHandCard.top - ownCapture.bottom < 17.5)
       issues.push('captured/hand separation');
   }
   const floor = board?.querySelector('.floor')?.getBoundingClientRect();
