@@ -386,7 +386,7 @@ test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53,
     const guestContext = await guestBrowser.newContext();
     let guest = await guestContext.newPage();
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await host.getByRole('button', { name: '핫스팟 대전' }).click();
     await expect(host.getByRole('combobox', { name: '생각 시간' })).toHaveValue('10000');
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
