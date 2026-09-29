@@ -1,6 +1,6 @@
 # p2p-gostop — 구현 계획 (plan.md)
 
-작성일: 2026-09-28 · 상태: v0.8 현황 정리 (2026-09-29)
+작성일: 2026-09-28 · 상태: v0.11 진행 매트릭스 리뷰 반영 (2026-09-29)
 상위 문서: `intend.md`(왜) → `spec.md`(무엇을) → **이 문서**(어떻게)
 근거: `docs/research/tech-stack.md`(플랫폼 제약), `docs/research/code-refs.md`(설계 차용), `docs/research/rules-commercial.md`(규칙), `docs/research/agent-era-stack.md`(에이전트 시대 스택 판단)
 
@@ -89,7 +89,7 @@ p2p-gostop/
 
 ### 1.5 AI 설계
 - `packages/ai`는 공개 `PlayerView`만 받고 시드 주입으로 결정론을 유지한다. 쉬움·보통·상용급 3단계이며 상용급은 결정화 몬테카를로와 루트 순차 반감을 사용한다(UCT 모드는 옵션으로 유지).
-- Web Worker에서 실행하며 가중치·벤치마크 근거는 [AI 튜닝](docs/ai-tuning.md)에 둔다. AI-04·AC-03은 미달이며 PR #56과 #66이 후속이다. Node 응답 시간은 AI-05 모바일 실측을 대체하지 않는다.
+- Web Worker에서 실행하며 가중치·벤치마크 근거는 [AI 튜닝](docs/ai-tuning.md)에 둔다. AI-04·AC-03은 PR #106 이후에도 미달이며 #66이 후속이다(PR #56 병합). Node 응답 시간은 AI-05 모바일 실측을 대체하지 않는다.
 
 ### 1.6 웹 앱 설계
 - 모드: `host`(권위 엔진 보유, 게스트에게 뷰 전송), `guest`(뷰 수신, 액션 요청), `solo`(엔진+AI 로컬, 네트워크 없음).
@@ -150,34 +150,37 @@ p2p-gostop/
 
 ## 3. 마일스톤 상태
 
-코드 기준 main `9651364`(v0.2.0 + PR #54·#55·#59). 과거 검토의 결함·측정값은 Git 이력과 리뷰 인덱스에 보존하며, 병합 자체를 수용 기준 통과로 간주하지 않는다.
+최신 요구사항 판정은 §3-2(main `daa5e7d`)를 따른다. 아래는 마일스톤 요약이다. 과거 검토의 결함·측정값은 Git 이력과 리뷰 인덱스에 보존하며, 병합 자체를 수용 기준 통과로 간주하지 않는다.
 
 | 단계 | 현재 상태·남은 기준 | 근거 |
 |---|---|---|
-| M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월 | [리뷰 인덱스](docs/reviews/README.md), [실기기 원문](docs/device-test/results.md) |
+| M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월 | [M0 리뷰](docs/reviews/README.md), [실기기 원문](docs/device-test/results.md) |
 | M1 엔진 | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28) | [M1 리뷰](docs/reviews/README.md), [규칙 벡터](docs/rules-vectors.md) |
-| M2 AI·머니 | 조건부 진행: AC-03 미달(61.4%/79.1%), MN-03·AC-10 부분(표준 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67 |
+| M2 AI·머니 | 조건부 진행: AC-03 미달(63.35%/77.02%), MN-03·AC-10 부분(각 프리셋 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67 |
 | M3 솔로 UI | 구현·표시 수정 병합(#34); UX 규범 격차는 후속 | [M3 리뷰](docs/reviews/README.md), [UI 규범](docs/design/ui-spec.md) |
-| M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54·#59); 웹 밀기·로비 준비·판 무효 UI 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/README.md), #30·#44·#58·#60 |
+| M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54·#59); 밀기 웹 PR #100 병합; 로비 준비·기록/연결 상태 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/README.md), #44·#75, §3-2 |
 | M5 실기기 | 현재 UI AC-08·AC-09 미검증, iPhone 확보 후 재개(#75) | [통합 절차](docs/device-test/procedure.md), [결과 로그](docs/device-test/results.md) |
 | M6 완성도 | Galaxy 호스트·솔로 우선, P1·AC 전부 충족해야 v1.0.0 | [현재 트랙](#현재-트랙) |
 
 ### 현재 트랙
 
+- 최신 상태·릴리스 우선순위는 §3-2를 정본으로 삼고, PR별 계획·공유 파일 소유권은 아래 #152 이관 내용을 따른다.
+- 병합된 #56·#60·#38·#73은 진행 중으로 세지 않는다. PR #151(선택 자동화·국진 설정)과 #94/#95(의존성)는 병합됐고, PR #104(화면)는 미완이며, §3-2의 릴리스 분류·코드 기준을 따른다.
+
 <a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 Galaxy 계획의 경로·절 앵커는 [이관표](docs/plan-galaxy-solo.md)에서 이 절과 해당 정본으로 연결한다.
 
-Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone 확보 후 #75에서 재개한다. 아래는 완료 항목을 제외한 v0.2.2/v0.2.3 PR 단위와 파일 소유권이다. 각 선행 작업의 병합본을 인계받아 충돌 파일을 직렬로 수정한다.
+Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone 확보 후 #75에서 재개한다. 아래는 #152에서 이관한 PR 단위 ID와 파일 소유권이다. 단위 ID의 버전 접두사는 기존 인계 순서를 보존한 이름이며, 현재 릴리스 배정·완료 상태는 §3-2가 우선한다. 각 선행 작업의 병합본을 인계받아 충돌 파일을 직렬로 수정한다.
 
 | 트랙·PR 단위 | 남은 범위 / 이슈 | 파일 소유권·인계 |
 |---|---|---|
-| v0.2.2 .2-A | 솔로·호스트·게스트 밀기/받기·배수·AI 연결 #30 | Sol: `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `p2p/{host,guest}.svelte.ts`, `Settlement.svelte`, AI worker, `e2e/push.spec.ts`; 메뉴/guest 계약 인계 뒤 |
+| v0.2.2 .2-A | 밀기/받기·배수·AI 연결은 #100 완료; #30의 이탈 환급 정책만 v0.2.3 검토 | Sol: `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `p2p/{host,guest}.svelte.ts`, `Settlement.svelte`, AI worker, `e2e/push.spec.ts`; 메뉴/guest 계약 인계 뒤 |
 | v0.2.2 .2-B | FR-21 설정 24항목·규칙/금액 UI #62 | Sol: `settings/**`, `Settings.svelte`, `RuleSettings.svelte`, `current.svelte.ts`, `p2p/common.ts` preset 판별, `HostRoom.svelte`; .2-A 뒤 |
-| v0.2.2 .2-C | 원장 기록·재충전·실지급·판 무효 #44/#63 | Sol: `records.ts`, `Records.svelte`, 기록 타입·E2E; .2-A의 session/solo/host/Settlement와 `App.svelte`·`routes/Game.svelte` 라우팅 소유권 인계 |
-| v0.2.2 .2-D | 정산·은닉·설정·P2P 시간 통합 E2E #58 | Sol: `e2e/p2p.spec.ts`, `solo.spec.ts`, `settings.spec.ts`; .2-A~C 뒤 |
-| v0.2.3 .3-A | 효과음·진동·효과 강도·중복 억제 #117/#128 | Sol: `sound.ts`, `playback.svelte.ts`, `banner.ts`, `p2p/common.ts` 진동, 피드백 설정/테스트; anim 계약 인계 |
-| v0.2.3 .3-B | AI 기본값·생각 시간·오류 대체 UX #65/#66 | Sol: `ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, worker, SoloSetup/E2E; .2-A/C 뒤 |
-| v0.2.3 .3-C | Galaxy 안내·화면 유지·저장 실패·복구 #64/#68/#69 | Sol: Android Activity/Service/Diagnostics와 웹 session/solo/current/local/Diagnostics; .2-B·.3-B 저장 소유권 인계 |
-| v0.2.3 .3-D | 카드·Galaxy 예산·강도 보고 #66/#70 | Sol 통합: 갤러리/E2E 기준샷, device-test 절차, `ai-tuning.md`; 카드·AI 담당 산출물 인계 |
+| v0.2.2 .2-C | 원장 기록·재충전·실지급·판 무효 #44(옛 #63 이관) | Sol: `records.ts`, `Records.svelte`, 기록 타입·E2E; .2-A의 session/solo/host/Settlement와 `App.svelte`·`routes/Game.svelte` 라우팅 소유권 인계 |
+| v0.2.2 .2-D | 정산·은닉·설정·P2P 시간 통합 E2E #75(옛 #58 이관) | Sol: `e2e/p2p.spec.ts`, `solo.spec.ts`, `settings.spec.ts`; .2-A~C 뒤 |
+| v0.2.3 .3-A | 효과음·진동·효과 강도·중복 억제 #117/#49(옛 #128 이관, 현재 v0.2.2) | Sol: `sound.ts`, `playback.svelte.ts`, `banner.ts`, `p2p/common.ts` 진동, 피드백 설정/테스트; anim 계약 인계 |
+| v0.2.3 .3-B | AI 기본값·생각 시간·오류 대체 UX #66(옛 #65 이관, 현재 v0.2.2) | Sol: `ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, worker, SoloSetup/E2E; .2-A/C 뒤 |
+| v0.2.3 .3-C | Galaxy 안내·화면 유지·복구 #75(옛 #68/#69 이관; #64는 #88/#150 완료) | Sol: Android Activity/Service/Diagnostics와 웹 session/solo/current/local/Diagnostics; .2-B·.3-B 저장 소유권 인계 |
+| v0.2.3 .3-D | 카드·Galaxy 예산·강도 보고 #66/#75(옛 #70 이관) | Sol 통합: 갤러리/E2E 기준샷, device-test 절차, `ai-tuning.md`; 카드·AI 담당 산출물 인계 |
 
 `settings/**`는 .2-B→.3-A→.3-B, `solo.svelte.ts`는 .2-A→.2-C→.3-B→.3-C, `session.ts`는 .2-A→.2-C→.3-C 순으로 소유한다. 공용 갤러리 기준샷은 각 기능 병합 뒤 .3-D가 갱신한다. 규칙 항목의 정본은 [rules-commercial §12.7](docs/research/rules-commercial.md#127-사용자-설정으로-노출할-토글)과 [spec FR-21](spec.md)이다.
 
@@ -187,22 +190,217 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 |---|---|
 | `p2p/common.ts` | .2-B가 preset 판별을 완료해 .3-A 진동 담당에게 인계한다. #44 로비 준비는 별도 protocol 계약 뒤 반영한다. |
 | `App.svelte`·`routes/Game.svelte`·`SoloSetup.svelte` | 메뉴/Back 작업→.2-A Game 밀기→.2-C App/Game 라우팅→.3-B SoloSetup AI UX. 같은 파일을 동시에 수정하지 않는다. |
-| `bridge/bridge.ts`·Android Back/셸 | 메뉴/Back 계약을 .3-C가 이어받아 저장 오류·복귀를 처리한다. 릴레이 서버/벡터는 별도 #61 담당 이력에 따른다. |
+| `bridge/bridge.ts`·Android Back/셸 | 메뉴/Back 계약을 .3-C가 이어받아 저장 오류·복귀를 처리한다. 릴레이 서버/벡터는 #75로 이관된 #61 담당 이력에 따른다. |
 | `styles/tokens.css`·`anim/*`·카드 | HUD 층위 토큰과 anim `--dur-*` 예약을 .1-A가 소비한 뒤 .3-D가 의미 색을 맡는다. 카드 토큰·비율/props는 카드 담당 산출물과 먼저 맞추고 전체 파일 포맷을 겹치지 않는다. |
 | `p2p/{guest,link}`·`GuestApp`·`protocol/src/guest.ts` | 재접속/시계 계약 뒤 .2-A guest 밀기→.2-C 정산. #44 ready는 별도 protocol 계약을 선행한다. |
 | `settings/**`·`Settings.svelte`·저장소 | anim 속도 기본값→.2-B 규칙→.3-A 피드백→.3-B AI 기본값. `current.svelte.ts`는 .2-B→.3-C, `storage/local.ts`는 .3-C 전용이다. |
 | `packages/ai/**`·`tools/sim/**`·관련 문서 | 확정된 #56 기준→#66 강도→#67 머니. `ai-tuning.md`·`money-model.md`와 결과 표를 함께 인계하고 공개 API만 사용한다. |
 | 공용 E2E·갤러리 | 기능 담당이 전용 테스트를 소유하고 .2-D/.3-D가 선행 병합 뒤 공용 기준샷·통합 검증을 맡는다. |
-- 진행 중: AI #56, 병합된 응답 유실 복구 #59의 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. 새 진입점은 체크아웃별 Compose 프로젝트로 컨테이너를 분리한다.
 - 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 끝난 리뷰·통합·수정 트랙은 위 상태 표와 리뷰 이력으로 대체한다.
 - 작업은 워크트리·브랜치·PR로 격리한다. 위임 시 Codex(Paseo)를 기본으로 판단·리뷰는 Astra, 구현은 Sol, 저위험 정리는 Luna를 배분하며 Claude 서브에이전트는 사용자 명시 때만 쓴다. 병합은 CI 녹색 + reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터만 수행한다.
 
 ---
 
-## 3-3. 우선순위 변경 (2026-09-29)
-- iPhone 실기기 사용 불가 → M5의 Safari 실기기 회차 보류. Safari 호환은 Playwright WebKit(E2E·브라우저 모드)로만 검증하고, iPhone 확보 시 재개.
-- 우선순위: **Galaxy 호스트 + 혼자 연습(AI) 완성도**(UX-spec 격차 #46~#53, #44, 밀기 UI #30/#31, 토글 UI FR-21, 기록·효과음·진동·접근성, 카드 렌더링 개선) → `v0.2.x`로 자주 릴리스.
-- **빌드·릴리스 성능**(B1): Astra가 현재 CI/릴리스 소요를 계측하고 정석·모던 수단만으로 단축안을 조사·도입(Gradle 빌드 캐시·구성 캐시, Docker 레이어 캐시, Playwright 샤딩, 릴리스 잡 구조, 자체 러너 검토). 우회·억지 방법 금지.
+## 3-2. 진행 매트릭스 (2026-09-29, main `daa5e7d` 코드 대조)
+
+후속 main `8d2911b`(#152 문서/계획 이관, #154 sim 통계/보고 분리)을 병합했다. 아래 코드 대조·실행 수치는 `daa5e7d` 기준으로 보존하고, 삭제 문서 링크와 계획 소유권은 #152 정본으로 연결한다. 이번 병합에서는 링크 검사·lint를 수행하며 요구사항 완료율은 바꾸지 않는다.
+
+**집계 단위:** spec의 FR/NF/NP/AI/MN/AC 표는 93행이지만 고유 ID는 **86개**다. FR-16·NP-02·NP-03·NP-05·NF-05·FR-46(49·50 병기)의 개정안 재등장 6행과 NP-10 경계 표제 1행은 중복이다. 타이머 신규 ID FR-51~53·NP-10을 포함한 86개를 아래에서 빠짐없이 평가하고, 중복 7행은 뒤의 개정안 대응표로 추적한다. 보조 분모는 타이머 신규 ID를 제외한 기존 82개다. FR-51의 기본10초·호스트 끄기/조정·솔로 제외는 이미 사용자 확정이며, 이를 미확정으로 분류하는 뜻이 아니다. RL/UX의 별도 하위 규칙은 이번 ID 집계 밖이며 FR-10·NF-08 등에서 검증 근거로 연결한다.
+
+**판정:** 완료=해당 범위의 구현·검증 근거 확인, 부분=일부 구현 또는 정량 기준 미달, 미구현=사용 가능한 기능 경로 없음, 미검증=구현은 있으나 필수 측정/실기기 증거 없음. 테스트 파일의 존재만으로 수치 기준이나 실기기 통과를 인정하지 않는다. 진행 중 PR #104의 코드는 기준 SHA에 없으므로 완료에 넣지 않는다. #151의 자동 선택·자동 진행·국진 설정은 코드와 회귀 테스트를 대조해 반영했다. 부분에 임의의 50% 가중치를 주지 않는다.
+
+경로 약어: E=`packages/engine`, A=`packages/ai`, P=`packages/protocol`, W=`packages/web`, S=`tools/sim`, K=`android/app/src/main/kotlin/com/kywoo26/p2pgostop`, KT=`android/app/src/test/kotlin/com/kywoo26/p2pgostop`. `src/`·`test/`·`e2e/` 경로는 각 접두사의 실제 파일이다. 실기기 열의 `—`는 순수 로직/자동 검증 범위, `미`는 현재 정식 UI·기기의 사람 검증 없음, `M0`는 [사람 제공 스모크 기록](docs/device-test/results.md)만 확인됨을 뜻한다. `M0`도 현재 게임 전체 통과는 아니다.
+
+### 기능 (FR)
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
+|---|---|---|---|---|
+| FR-01 | 완료 | K/HotspotService.kt·net/IpSelector.kt; KT/HotspotSessionTest.kt·net/IpSelectorTest.kt | 현재 UI 통합은 AC-08에서 별도 판정 | M0 |
+| FR-02 | 완료 | K/MainActivity.kt, W/src/routes/HostRoom.svelte의 실패·주소 모드; KT/HotspotModelTest.kt, W/src/bridge/bridge.test.ts | 현장 권한/폴백 재검증 #75 | 미 |
+| FR-03 | 완료 | K/qr/WifiQr.kt, W/src/p2p/qr.ts·routes/HostRoom.svelte; KT/qr/WifiQrTest.kt, W/src/p2p/p2p.test.ts의 T:WPA | 새 UI QR 스캔은 AC-08/09 | M0 |
+| FR-04 | 완료 | W/src/p2p/role.ts·routes/GuestJoin.svelte, K/server/SmokeServer.kt; W/e2e/p2p-screens.spec.ts의 비루프백 진입 | 현재 1판·복귀는 AC-09 | M0 |
+| FR-05 | 완료 | W/src/routes/HostRoom.svelte·GuestApp.svelte; W/e2e/p2p-screens.spec.ts 대기실, p2p.spec.ts 20판 | 준비 토글은 FR-06 별도 | 미 |
+| FR-06 | 미구현 | HostRoom.svelte는 접속 여부로 시작, 로비 준비 토글 없음(판 사이 ready만 P/src/host.ts에 존재) | 준비·미준비 시작 경고 #44 | 미 |
+| FR-07 | 완료 | P/src/host.ts, K/server/SmokeServer.kt; KT/server/RelayScenarioTest.kt, W/e2e/reconnect.spec.ts 4001 교체 | 릴레이 경미 경계 추가 검증 #75 | — |
+| FR-10 | 완료 | E/src/reduce.ts·turn.ts·capture.ts·score.ts·settle.ts; E/test/vectors.test.ts 및 vectors/*.json | §4의 확정 규칙 기준. 미션·가위바위보 P2 옵션은 FR-21의 미지원으로 분리 | — |
+| FR-11 | 완료 | P/src/host.ts의 apply/수신 검증; P/test/m4.test.ts의 좌석0·합법 수, session.test.ts | — | — |
+| FR-12 | 부분 | E/src/preview.ts, W/src/ui/Board.svelte·Hand.svelte; W/src/ui/Board.test.ts | 합법/매칭/선택 시각 구별·초점 동등 #80·#115 | 미 |
+| FR-13 | 완료 | E/src/turn.ts·legal.ts, W/src/ui/TargetModal.svelte·game/controller.ts; W/src/ui/Board.prompts.test.ts·game/controller.test.ts, W/e2e/auto-choices.spec.ts 동등 대상 최소 ID 1회 선택, PR #151 | 비동등 대상은 수동, 동등 대상만 자동; #110 닫힘 | — |
+| FR-14 | 부분 | W/src/ui/GoStopModal.svelte의 steps·상한·상대 점수/피, P/src/view.ts; W/src/ui/Board.prompts.test.ts | 족보별 현재 점수 분해와 위험/상세 표시 보강 #79·#82 (기존 #116은 #79 통합) | 미 |
+| FR-15 | 완료 | E/src/score.ts·rules.ts, W/src/routes/Settings.svelte 매번 묻기·세션 중 잠금, W/src/p2p/common.ts; W/src/routes/Settings.test.ts, W/e2e/auto-choices.spec.ts “국진 매번 묻기 설정은 새로고침 뒤에도 복원된다”, PR #151 | #113 구현 완료로 닫힘; 현재 실기기 확인은 #75 | 미 |
+| FR-16 | 완료 | W/src/game/session.ts·ui/Board.svelte, P/src/host.ts; W/e2e/push.spec.ts의 사람/CPU·호스트/게스트 밀기·받기, PR #100 | 기존 필수 결정은 수동 유지(#151 자동 진행 제외). 밀기 뒤 상대 이탈 환급 정책은 #30 재개(v0.2.3), 타이머는 #123 | — |
+| FR-17 | 미구현 | W/src/ui/Hand.svelte는 즉시 activate, settings에 120ms 취소 필드 없음 | 취소 지연 옵션 #111 (기존 #72 통합) | 미 |
+| FR-18 | 완료 | W/src/routes/Settlement.svelte·game/session.ts, E/src/ledger.ts; W/src/game/display.test.ts·session-push.test.ts, W/e2e/push.spec.ts | P2P 표시 세부 추가 단언은 #75에 유지 | — |
+| FR-19 | 부분 | W/src/routes/Records.svelte·game/records.ts; W/src/game/display.test.ts | P2P 기록 연결·순액/즉시정산 대조 #44 (기존 #63·#134 통합) | 미 |
+| FR-20 | 완료 | E/src/rules.ts PRESETS, W/src/routes/Settings.svelte; E/test/rules.test.ts, W/src/game/display.test.ts | 미션 P2 제외 | — |
+| FR-21 | 부분 | E/src/rules.ts의 RuleOptions·UNIMPLEMENTED_RULES, W/src/routes/Settings.svelte; E/test/rules.test.ts | 24행 매핑·사용자 지정 UI·미지원 옵션 안내 #62 | 미 |
+| FR-22 | 부분 | W/src/routes/Settings.svelte·HostRoom.svelte, A/src/money-defaults.ts; A/test/money-defaults.test.ts | 시작 잔액 수동 입력 #62, 기본값 재산정 #67 | 미 |
+| FR-23 | 부분 | W/src/settings/settings.svelte.ts·routes/Settings.svelte·game/sound.ts; W/src/anim/durations.test.ts | 진동 UI·효과음 설정 보존/음색 #49·#117 | 미 |
+| FR-24 | 완료 | W/src/game/session.ts·p2p/host.svelte.ts, P/src/host.ts welcome, Settings.svelte의 새 세션 안내; W/e2e/navigation.spec.ts·solo.spec.ts | 개별 미노출 설정은 FR-21/23 | — |
+| FR-30 | 완료 | W/src/game/diagnostics.ts·log.svelte.ts·routes/Diagnostics.svelte, K/BridgeLogs.kt·log/LogReport.kt; P/test/m4.test.ts, KT/BridgeLogsTest.kt·log/LogReportTest.kt | 현재 공유 시트 체감 재확인 #75 | M0 |
+| FR-31 | 완료 | W/src/lib/build-info.ts, K/DeviceInfo.kt; W/e2e/smoke.spec.ts의 홈 빌드 식별자 | — | — |
+| FR-32 | 미검증 | K/Diagnostics.kt에 권한·Wi-Fi·포트·클라이언트·배터리, MainActivity.kt 진단 UI; W/src/routes/Diagnostics.svelte | 실제 권한/배터리 상태와 표시 대조 #75, 직접 전 항목 자동 테스트 없음 | 미 |
+| FR-33 | 미구현 | E/src/replay.ts와 W/src/game/session.ts 액션 보존은 존재하나 JSON 내보내기 UI 없음 | 후순위 보류(종료 #71); 재개 시 새 추적 필요, 요구사항 삭제 아님 | — |
+| FR-40 | 부분 | W/src/ui/SeatBar.svelte·Board.svelte·seat-stats.ts; W/src/ui/Board.test.ts 상시 정보 | 양 좌석 같은 열·메뉴 예약·배수 미확인 표시 #79, PR #104 진행 | 미 |
+| FR-41 | 부분 | W/src/ui/Hand.svelte·Floor.svelte·Board.svelte, E/src/preview.ts; W/src/ui/Board.test.ts | 초점/터치·세 종류 표식 구별 #80·#115 | 미 |
+| FR-42 | 부분 | W/src/ui/seat-stats.ts는 광/고도리/최대 단/피 진행만; W/src/game/display.test.ts | 광 문턱·개별 단·부족 카드/가치 API→전달→표시 #81·#87·#82 | 미 |
+| FR-43 | 미구현 | E/src/settle.ts 박 정산만 존재, W/src/ui/Board.svelte에 양방향 조건 설명 없음 | 현재 박 조건 설명 #81·#87·#82 | 미 |
+| FR-44 | 부분 | W/src/ui/Board.svelte 합법 폭탄/흔들기, E/src/interaction-assist.ts; E/test/interaction-assist.test.ts | 조건부 사건 설명·표식 연결 #80·#81·#82·#115 | 미 |
+| FR-45 | 부분 | W/src/ui/GoStopModal.svelte·Board.svelte, P/src/view.ts; W/src/ui/Board.prompts.test.ts | 정적 대기/위험 설명·뷰 변경 수명 통합 #82 | 미 |
+| FR-46 | 미구현 | W/src/settings/settings.svelte.ts AppSettings·routes/Settings.svelte에 hintLevel 없음 | 끔/기본/상세·즉시 적용·취소 #80·#115; #151 유일 합법 수 자동 진행·메뉴/판 정보/백그라운드 보류는 구현됐으나 힌트 설정 구현은 아님(#140 닫힘) | 미 |
+| FR-47 | 부분 | E/src/view.ts·interaction-assist.ts, P/src/view.ts; E/test/api.test.ts·interaction-assist.test.ts, P/test/view.test.ts 은닉 | 추가 힌트의 DOM/ARIA/로그 동일성 #115·#87·#143·#90 | — |
+| FR-48 | 부분 | E/src/preview.ts·interaction-assist.ts, P/src/view.ts; E/test/interaction-assist.test.ts·api.test.ts | 상세 순수 API·선 형태/라벨·200%·초점 통합 #81·#115·#51 | 미 |
+| FR-49 | 미구현 | A/src/policies/ismcts.ts는 CPU 전용, W/src/settings/settings.svelte.ts에 조언 opt-in/요청 경로 없음 | 솔로 전용 조언·P2P 계산 차단 회귀 #90 | — |
+| FR-50 | 미구현 | W/src/game/records.ts·storage/session-schema.ts에 판별 힌트 최고 단계/조언 사용 기록 없음 | 단조 사용 이력·옛 기록 미확인 #80·#90·#44 | — |
+| FR-51 | 미구현 | W/src/routes/HostRoom.svelte·P/src/messages.ts에 P2P 제한 설정 없음 | 10초 기본·호스트 끄기/조정은 확정, 후보값·세부 계약 제안 #123 | 미 |
+| FR-52 | 미구현 | W/src/ui/Board.svelte에 결정별 남은 초/준비 상태 시계 없음 | 예약 HUD 시계 #123 | 미 |
+| FR-53 | 미구현 | P/src/host.ts advanceTime은 연결 감시이며 결정 초과 액션 실행 없음 | 결정당 최대1회 초과 정책(제안) #123 | — |
+
+### 프로토콜 (NP)
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
+|---|---|---|---|---|
+| NP-01 | 완료 | P/src/transport.ts·codec.ts, W/src/p2p/link.ts; P/test/protocol.test.ts, W/src/p2p/wiring.test.ts | — | — |
+| NP-02 | 완료 | P/src/messages.ts·host.ts·guest.ts, W/src/p2p/guest.svelte.ts; P/test/schema-contracts.test.ts·session.test.ts, W/e2e/reconnect.spec.ts 응답 유실 | v2 기준. v3 제안은 아래 #123 | — |
+| NP-03 | 완료 | P/src/host.ts·guest.ts; P/test/session.test.ts, W/e2e/p2p.spec.ts 토큰 복귀·순번 | 시계 연속성은 v3 제안 #123 | — |
+| NP-04 | 완료 | P/src/messages.ts·guest.ts 버전 거부; P/test/m4.test.ts·session.test.ts | — | — |
+| NP-05 | 완료 | P/src/guest.ts ping·host.ts 60초 감시; P/test/session.test.ts advanceTime | 결정 마감 확인은 별도 제안 #123 | — |
+| NP-06 | 완료 | P/src/crypto.ts·verify.ts·host.ts·guest.ts; P/test/m4.test.ts SHA 벡터·20판, session.test.ts 검증 | — | — |
+| NP-07 | 완료 | P/src/codec.ts·schema.ts; P/test/protocol.test.ts 16KB/64KB 구별, E/test/properties.test.ts 뷰 크기 | 로그/원장 페이지 64KB 예외는 현행 계약 | — |
+| NP-08 | 완료 | K/server/SmokeServer.kt, android/app/build.gradle.kts SDK36, W/scripts/check-bundle.mjs; KT/NoExternalUrlTest.kt | — | — |
+| NP-09 | 완료 | P/src/codec.ts·host.ts, W/src/game/diagnostics.ts, K/log/LogBuffer.kt·BridgeLogs.kt; KT/log/Utf8Test.kt·BridgeLogsTest.kt, P/test/m4.test.ts | — | M0 |
+| NP-10 | 미구현 | P/src/host.ts·messages.ts에 결정 ID/deadline/decisionReady 계약 없음 | 단일 호스트 결정 시계·경합/복귀 계약 제안 #123 | — |
+
+### AI·머니 (AI/MN)
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
+|---|---|---|---|---|
+| AI-01 | 완료 | A/src/knowledge.ts·types.ts는 PlayerView 입력; A/test/info-hiding.test.ts | — | — |
+| AI-02 | 완료 | A/src/push.ts·match.ts·policies/, W/src/game/ai-core.ts; A/test/push.test.ts·policies.test.ts, W/e2e/push.spec.ts CPU Worker, PR #56·#100 | — | — |
+| AI-03 | 완료 | A/src/factory.ts·policies/easy.ts·greedy.ts·ismcts.ts; A/test/policies.test.ts·ismcts.test.ts | 구조 3단 구현. 실력/시간 합격은 AI-04/05 별도 | — |
+| AI-04 | 부분 | A/src/policies/ismcts.ts, S/results/gostop/after-normal.json·after-easy.json(각2,000판), PR #106 | **63.35%/77.02%**, 기준65%/80% 미달; 독립 시드 재검증 #66 | — |
+| AI-05 | 미검증 | W/src/workers/ai.worker.ts·game/ai-client.ts, A/test/ismcts.test.ts 기한 제한, S/results/gostop/timing-after.json | Galaxy≤1초·iPhone≤1.5초 실측, Worker 실패 UX #66·#75 | 미 |
+| AI-06 | 완료 | A/src/policies/ismcts.ts·rollout.ts, A/src/weights/default.json; A/test/ismcts.test.ts 고/스톱 EV·과감성, PR #106 결과 JSON | 체감/독립 시드 후속은 #66 유지 | — |
+| AI-07 | 완료 | A/src/weights/default.json·src/weights.ts, S/src/gostop.ts; A/test/weights.test.ts, S/results/gostop/*.json·docs/ai-tuning.md §8 | 강도 합격과 구별 | — |
+| AI-08 | 완료 | A/src/rng.ts·policies/ismcts.ts; A/test/policies.test.ts·ismcts.test.ts 반복 상한 결정성 | 동일 시드·고정 반복 예산 기준(실시간 마감은 실행 속도에 영향받음) | — |
+| AI-09 | 미구현 | A/src/weights.ts의 내부 조정값은 있으나 사용자 성향·실수 확률 옵션 없음 | P2 보류; 재개 시 #66에서 별도 범위 결정 | — |
+| MN-01 | 완료 | E/src/ledger.ts, P/src/ledger.ts·host.ts; P/test/m4.test.ts 20판 제로섬, W/src/game/session.test.ts | — | — |
+| MN-02 | 완료 | E/src/ledger.ts, P/src/host.ts·guest.ts; P/test/session.test.ts 좌석별 파산/종료·재충전, W/src/game/display.test.ts | 상태 화면 추가 회귀는 #44 | — |
+| MN-03 | 부분 | A/src/money-defaults.ts, S/src/runner.ts·stats.ts; A/test/money-defaults.test.ts, S/test/money-doc.test.ts | 프리셋별≥10,000판·최신 AI 재산정·도움말 #67 (기존 각 프리셋3,000판 및 프리셋 기본값 구현을 완료로 확대하지 않음) | — |
+| MN-04 | 부분 | A/src/money-defaults.ts, W/src/routes/Settings.svelte; A/test/money-defaults.test.ts | 수동 시작 잔액 입력 #62 | — |
+| MN-05 | 완료 | W/src/storage/session-save.ts·session-schema.ts·p2p/host-save.ts·p2p/ticket.ts; W/src/storage/session-save.test.ts·p2p/host-save.test.ts, W/e2e/navigation.spec.ts | OS 프로세스 종료 실측은 NF-05/#75 | 미 |
+| MN-06 | 부분 | W/src/lib/format.ts·settings/settings.svelte.ts 기본 냥; W/src/game/display.test.ts | 원 단위 저장 지원은 있으나 Settings UI에 변경 조작 없음 #62 | — |
+
+### 비기능·수용 (NF/AC)
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
+|---|---|---|---|---|
+| NF-01 | 완료 | W/scripts/check-bundle.mjs, 로컬 public/cards·src/styles/fonts, K/server/SmokeServer.kt; KT/NoExternalUrlTest.kt, W/e2e/fonts.spec.ts 로컬 요청 | — | M0 |
+| NF-02 | 부분 | android/app/build.gradle.kts min33/target36, W/eslint.config.js 금지 API; W/e2e/p2p-screens.spec.ts HTTP·WebKit | 현재 iOS26.5 Safari·Android16 실제 UI 확인 #75 | 미 |
+| NF-03 | 미검증 | W/scripts/check-bundle.mjs·src/anim/flip.ts, W/e2e/solo.spec.ts timing·fonts.spec.ts | 첫 로딩2초/응답100ms/60fps 실제 핫스팟·기기 측정 #75; 평가 자산 빌드는 릴리스 근거 제외 | 미 |
+| NF-04 | 부분 | P/src/guest.ts·host.ts, K/HotspotService.kt, W/src/p2p/link.ts·styles/tokens.css; P/test/session.test.ts, W/src/p2p/wiring.test.ts | 실제 서비스 알림1개·유휴/복귀·배터리 회차 #75 | 미 |
+| NF-05 | 부분 | W/src/p2p/link.ts·host-save.ts·storage/session-save.ts; W/e2e/reconnect.spec.ts·navigation.spec.ts, P/test/session.test.ts | 정상 복귀와 응답 유실 경로의 5초 목표 구별·OS 종료 복구 실측 #75, 타이머 복귀 제안 #123 | 미 |
+| NF-06 | 부분 | K/server/SmokeServer.kt LAN gate, P/src/host.ts 토큰, W/src/routes/HostRoom.svelte 경고; KT/server/M4ServerTest.kt, P/test/session.test.ts | 토큰은 random32 전체 hex로 **256비트**, 명세128비트와 불일치(보안 약화 아님). #44에서 명세 정합 결정 | — |
+| NF-07 | 부분 | W/src/routes/License.svelte·fonts/attribution.ts; W/e2e/smoke.spec.ts·fonts.spec.ts | 배포 웹/Android 의존성 고지 목록 #74 | — |
+| NF-08 | 부분 | W/src/ui/Card.svelte·Screen.svelte·styles/tokens.css; W/e2e/gallery.spec.ts axe·cards.spec.ts | 200% 확대·초점/색 외 표식·진동 개별 끄기 #51·#49·#115 | 미 |
+| NF-09 | 완료 | E/src/reduce.ts·rng.ts·replay.ts, A/src/rng.ts; E/test/api.test.ts·properties.test.ts, A/test/info-hiding.test.ts | AI 고정 반복 예산 기준 | — |
+| NF-10 | 미검증 | android/app/build.gradle.kts min33, AndroidManifest.xml NEARBY_WIFI_DEVICES·위치권한 없음, MainActivity.kt 이유 안내 | 서명 릴리스 APK≤15MB 실측·권한 UX #75; debug 크기를 릴리스 증거로 쓰지 않음 | 미 |
+| AC-00 | 완료 | K/HotspotService.kt·qr/WifiQr.kt·server/SmokePage.kt; KT/HotspotSessionTest.kt, docs/device-test/results.md v0.0.1·v0.0.2 사용자 로그 | 잠금 장시간·현재 게임은 AC-08/09 | M0 |
+| AC-01 | 완료 | E/test/vectors.test.ts·vector-harness.ts·vectors/{deal,score,bonus,events,gostop,pi,push,settle,view}.json, E/src/reduce.ts | 규칙 기대값 정본은 rules-commercial §12 | — |
+| AC-02 | 완료 | E/test/properties.test.ts·step-checks.ts; 이번 대조에서 ENGINE_FULL=1 실행: 10,000판+선 고르기 첫 판1,000판, 2개 테스트 통과(42.35초) | 기본 npm test의1,000판 축약과 구별 | — |
+| AC-03 | 부분 | S/results/gostop/after-normal.json·after-easy.json, A/src/policies/ismcts.ts | AI-04와 동일한63.35%/77.02% 미달 #66 | — |
+| AC-04 | 완료 | W/e2e/p2p.spec.ts “호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀”, P/src/host.ts·guest.ts | 실제 핫스팟은 AC-08/09 | — |
+| AC-05 | 완료 | W/e2e/gallery.spec.ts 및 __screenshots__/gallery.spec.ts/*-webkit.png, p2p-screens.spec.ts | 현재 기준샷 회귀만 의미; 새 디자인 규범 완료는 아님 | — |
+| AC-06 | 부분 | W/src/anim/choreo.ts·durations.ts, W/e2e/solo.spec.ts timing·timing-fixtures.ts, PR #145 | P2P 단언·Galaxy 실측 #75(기존 #58·#70 통합); hosted WebKit 벽시계는 기록만 | 미 |
+| AC-07 | 완료 | W/scripts/check-bundle.mjs, W/package.json build 게이트 | 기본 릴리스 빌드≤1.5MB, PRO_ASSET_REVIEW 평가 팩 제외 | — |
+| AC-08 | 미검증 | K/HotspotService.kt, W/e2e/p2p.spec.ts는 대체 자동 검사; docs/device-test/results.md 현재 회차 없음 | Android 정식 UI 핫스팟→QR→1판 사람 검증 #75 | 미 |
+| AC-09 | 미검증 | W/src/p2p/link.ts·guest.svelte.ts, W/e2e/reconnect.spec.ts는 대체 자동 검사 | iPhone Safari 정식 UI1판·잠금복귀 #75 | 미 |
+| AC-10 | 부분 | A/src/money-defaults.ts, S/test/money-doc.test.ts·docs/money-model.md | 프리셋별 표본 수·최신 AI 기본값/도움말 정합 #67 | — |
+
+### 중복 7행·개정안 대응 (93행 전수 대조)
+
+| spec 재등장 행 | 현행 상태 | 개정안 상태·근거/추적 |
+|---|---|---|
+| §3.6 FR-16 | 완료(본표) | 부분: 수동 선택 구현, 예약 구역/흔들기 바텀 시트 #46·#112, 제한 초과 #123 미구현 |
+| §5.1 NP-02 | 완료(v2) | 미구현: P/src/messages.ts에 v3 결정 메시지 없음, #123 |
+| §5.1 NP-03 | 완료(v2) | 미구현: P/src/host.ts·guest.ts에 timerRev 없음, #123 |
+| §5.1 NP-05 | 완료(하트비트) | 미구현: 마감 확인 교환 없음, #123 |
+| §5.1 NF-05 | 부분 | 미구현: 시계 연속성·복귀 보정 없음, #123 |
+| §5.1 NP-10 경계 표제 | 미구현 | NP-10 세부 표의 제목이며 별도 요구사항 아님, #123 |
+| §6.8 FR-46·49·50 | 미구현 | 미구현: 카운트다운은 힌트 이력에 합산하지 않는 표시 계약·회귀 없음, #123·#80·#90 |
+
+제안 행의 검증 테스트는 아직 없으며 실기기 미검증이다. 문서 PR #149 병합은 구현·초과 세부 정책 승인·시험 통과를 뜻하지 않는다.
+
+### 요약·의도별 달성도
+
+고유 ID **86개 중 완료 42·부분 26·미구현 12·미검증 6**. 완료율은 **42/86 = 48.8%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **42/82 = 51.2%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
+
+- **기내 오프라인 1:1:** 아키텍처·M0 기내 모드 연결·자동20판 경로 확보, 현재 정식 UI 실기기 AC-08/09 미검증(#75).
+- **iPhone 무설치:** Safari HTTP 진입·QR 스모크 달성, 현재 게임/잠금복귀를 실기기로 다시 확인해야 함(#75).
+- **상용 규칙:** 확정 엔진 규칙·밀기/정산 회귀 확보, 24개 설정 UI와 미지원 P2 옵션 안내가 남음(#62).
+- **상용급 AI:** 탐색·공정성·과감성 구현, 승률63.35%/77.02%로 기준 미달이며 모바일 시간도 미검증(#66·#75).
+- **가상 머니·UI:** 원장/올인/저장·기본 플레이 가능, 프리셋별머니10,000판·스코어보드/손패 가림/힌트/음향 마무리 필요(#67·#79·#114·#115·#117).
+
+현재 정식 UI의 **실기기 미검증 연결 목록**: FR-01~05·FR-12·FR-14·FR-15·FR-17·FR-19·FR-21~23·FR-30·FR-32·FR-40~46·FR-48·FR-51~52, AI-05, MN-04·MN-05, NF-02~05·NF-08·NF-10, AC-06·AC-08·AC-09. M0/구버전 결과를 이 목록의 통과로 전용하지 않는다. 미구현 기능은 구현 후 사람 회차에 포함한다. 순수 엔진·머니 산술·프로토콜 단위 검증은 실기기 요구와 분리한다.
+
+초기 head `e0a0bd8`의 실행 근거(아래 수치는 #151 병합 후 결과가 아님; 모두 `/home/k/.local/bin/docker compose run --rm dev …`): `npm ci`, `npm run check`, `npm test`(27파일·519테스트), `npm run test:browser`(52파일·350테스트), `npm run build -w packages/web`(1242.8KiB/1536KiB·외부 요청0), `npm run e2e -w packages/web`(108통과·평가용 등18건 skip), `android/gradlew -p android assembleDebug testDebugUnitTest lint` 통과. 별도 `env ENGINE_FULL=1 npm test -- packages/engine/test/properties.test.ts`의10,000판+첫 판1,000판도 통과했다. 포맷·린트 및 ID 누락/중복 검사는 PR 검증 기록으로 남긴다. 이 실행에 실기기·AI 강도 재측정·머니10,000판 재산정은 포함하지 않았다.
+
+리뷰 반영 병합 트리(`daa5e7d` 포함)에서도 같은 Docker 진입점으로 `npm ci`, lint/check, Node519개, 브라우저56파일·366개, E2E117통과·19 skip, 웹 빌드1247.5/1536KiB·외부 요청0, Android assembleDebug/testDebugUnitTest/lint를 다시 통과했다. ENGINE_FULL의10,000판+첫 판1,000판도2/2 통과(44.96초). 매트릭스86 ID·닫힘33개·§3-3 진단5줄을 별도 검사했다. 실기기 판정은 바꾸지 않는다.
+
+### 이슈 정리 결과 (초기 정리와 리뷰 반영 시점 구분)
+
+초기 head `e0a0bd8`에서 58→25개(17/8/33)로 정리했다. 리뷰 반영 시점 main `daa5e7d`에서는 #151 구현으로 #113이 닫히고 #30이 환급 정책 범위로 재개되어 원래 정리 대상58개 중 열린25개를 유지하되 구성은 **v0.2.2 16개 / v0.2.3 9개 / 닫힘33개**다. #110·#140은 기존 통합 종료 뒤 #151 구현까지 확인됐으며 닫힘을 유지한다. 아래 목록은 원래58개 범위의 현재 구성이다. 2026-09-29 21:55 KST 추가 조회에서 신규 #155(회전 후 선택창 inert 충돌)가 별도로 열려 저장소 전체 OPEN은26개다. 신규 이슈는 이 정리의 종료/재개 수에 섞지 않는다.
+
+- **(a) v0.2.2 필수 16개:** [#46](https://github.com/kywoo26/p2p-gostop/issues/46)·[#47](https://github.com/kywoo26/p2p-gostop/issues/47)·[#49](https://github.com/kywoo26/p2p-gostop/issues/49)·[#51](https://github.com/kywoo26/p2p-gostop/issues/51)·[#62](https://github.com/kywoo26/p2p-gostop/issues/62)·[#66](https://github.com/kywoo26/p2p-gostop/issues/66)·[#74](https://github.com/kywoo26/p2p-gostop/issues/74)·[#79](https://github.com/kywoo26/p2p-gostop/issues/79)·[#80](https://github.com/kywoo26/p2p-gostop/issues/80)·[#111](https://github.com/kywoo26/p2p-gostop/issues/111)·[#112](https://github.com/kywoo26/p2p-gostop/issues/112)·[#114](https://github.com/kywoo26/p2p-gostop/issues/114)·[#115](https://github.com/kywoo26/p2p-gostop/issues/115)·[#117](https://github.com/kywoo26/p2p-gostop/issues/117)·[#123](https://github.com/kywoo26/p2p-gostop/issues/123)·[#136](https://github.com/kywoo26/p2p-gostop/issues/136). 직접 지적과 기본 플레이/고지 우선.
+- **(b) v0.2.3 9개:** [#30](https://github.com/kywoo26/p2p-gostop/issues/30)· [#44](https://github.com/kywoo26/p2p-gostop/issues/44)·[#67](https://github.com/kywoo26/p2p-gostop/issues/67)·[#75](https://github.com/kywoo26/p2p-gostop/issues/75)·[#81](https://github.com/kywoo26/p2p-gostop/issues/81)·[#82](https://github.com/kywoo26/p2p-gostop/issues/82)·[#87](https://github.com/kywoo26/p2p-gostop/issues/87)·[#90](https://github.com/kywoo26/p2p-gostop/issues/90)·[#143](https://github.com/kywoo26/p2p-gostop/issues/143). 상세 힌트·머니 재산정·연결/기록·실기기 통합. #75의 iPhone 회차는 기기 확보 조건부이며 Galaxy 회차는 먼저 진행.
+- **(c) 원래58개 중 닫힘 33개:** 아래 표. 원문 수용 기준 통합25건은 보존하며, #113 구현 완료를 추가하고 재개된 #30은 제외했다.
+
+| 종료 이슈 | 대표 이슈 또는 사유 |
+|---|---|
+| #10 | PR #88의 게임 메뉴·Android Back 구현과 e2e/navigation.spec.ts, BackRouteTest.kt로 원래 결함이 해소됨. 실제 기기 후속 회차는 #75에서 유지. |
+| #18 | #75로 원문 수용 기준 통합 |
+| #19 | PR #42로 p2p-mini 은퇴. e2e/p2p-screens.spec.ts가 비루프백 루트·레거시 북마크·호스트 진입을 검증하며 현행 lint/check 대상은 정식 웹임. |
+| #48 | #46로 원문 수용 기준 통합 |
+| #50 | #44로 원문 수용 기준 통합 |
+| #52 | #111로 원문 수용 기준 통합 |
+| #53 | 기각된 리마스터·녹색 방향을 전제로 한 중복 시각 정리. 현재 A 방향은 PR #101·#102, 화면 수렴은 #104와 보호 이슈 #46/#47/#79에서 추적. 별도 재디자인을 계획하지 않음. |
+| #58 | #75로 원문 수용 기준 통합 |
+| #61 | #75로 원문 수용 기준 통합 |
+| #63 | #44로 원문 수용 기준 통합 |
+| #64 | PR #88·#150의 새 게임 확인·손상/저장 실패 안내·버전 스키마와 navigation.spec.ts·session-save.test.ts·push.spec.ts로 해소. OS 장애 실측은 #75 유지. |
+| #65 | #66로 원문 수용 기준 통합 |
+| #68 | #75로 원문 수용 기준 통합 |
+| #69 | #75로 원문 수용 기준 통합 |
+| #70 | #75로 원문 수용 기준 통합 |
+| #71 | FR-33 리플레이 내보내기는 플레이 가치·직접 지적 우선의 v0.2.2/3 범위에서 보류. 요구사항은 plan 진행 매트릭스에 미구현으로 보존하며 재개 시 별도 추적. 현재 진단 로그/재현 단계 경로 사용. |
+| #72 | #111로 원문 수용 기준 통합 |
+| #77 | release.yml의 testDebugUnitTest assembleRelease와 apksigner 모두 동일 dev 이미지 및 SDK36 경로 사용. 원래의 러너 SDK 불일치가 해소되어 추가 작업 계획 없음. |
+| #110 | #111로 원문 수용 기준 통합 후 PR #151 동등 대상 자동 선택 구현 확인; 닫힘 유지 |
+| #113 | PR #151 국진 자동 최적 기본·매번 묻기 설정·저장/복원 회귀 완료로 닫힘 |
+| #116 | #79로 원문 수용 기준 통합 |
+| #120 | #115로 원문 수용 기준 통합 |
+| #121 | #79로 원문 수용 기준 통합 |
+| #124 | 최근 3턴 요약은 후순위 편의 기능으로 보류. 현재 공개 로그는 유지. v0.2.2/3에서는 스코어보드·손패 가림·필수 선택·힌트·음향·타이머에 집중하며 재개 시 범위 재평가. |
+| #125 | #47로 원문 수용 기준 통합 |
+| #127 | #51로 원문 수용 기준 통합 |
+| #128 | #49로 원문 수용 기준 통합 |
+| #131 | #44로 원문 수용 기준 통합 |
+| #132 | #62로 원문 수용 기준 통합 |
+| #133 | #44로 원문 수용 기준 통합 |
+| #134 | #44로 원문 수용 기준 통합 |
+| #135 | #62로 원문 수용 기준 통합 |
+| #140 | #111로 원문 수용 기준 통합 후 PR #151 유일 합법 수 자동 진행·메뉴/판 정보 보류 구현 확인; 닫힘 유지 |
+
+닫기는 요구사항 완료/삭제가 아니다. 중복의 원문 수용 기준·파일 소유권은 대표 이슈 통합 코멘트로 이관하고, 의도적으로 보류한 FR-33·AI-09는 위 표에 남긴다. 사용자 직접 지적(스코어보드·손패 가림·폭탄 탭·흔들기·국진·확정 표식·힌트·효과음·AI 과감성·타이머)을 단순 이슈 축소 대상으로 닫지 않는다. 국진 #113은 #151 구현 완료에 따른 종료다. #81→#87/#143→#82 및 #80/#115는 같은 기능군으로 조율하되 보호 항목이므로 개별 이슈를 유지한다.
+
+
+## 3-3. 우선순위 변경·의도 이탈 진단 (2026-09-29)
+
+- 핵심 구조는 intend의 기내 오프라인1:1·iPhone 무설치와 일치하나 현재 실기기1판/복귀·상용급 AI 수용은 미완이다. 관측량 자체를 낭비로 단정하지 않고, 아래 반복·확장이 검증보다 앞서는 점을 과투자 위험으로 판단한다.
+- 문서 관측: PR #84 직전(`bb389e5^1`)→직후(`bb389e5`)→#152 이전 main(`daa5e7d`)의 추적 `docs/**/*.md`는 **4,548→4,071→7,002줄**(당시46파일), 루트 intend/spec/plan 합은 **841→759→854줄**(이 PR 매트릭스 추가분 제외). 재현: 각 ref에 `git ls-tree -r --name-only <ref> -- docs`로 .md를 골라 `git show <ref>:<path>`를 연결한 뒤 `wc -l`; 루트3파일도 동일. 이미 병합된 [문서 정리 #84](https://github.com/kywoo26/p2p-gostop/pull/84)를 이어 상태 정본을 §3-2로 모은다.
+- PNG 관측: `git ls-tree -rl daa5e7d`의 .png blob 크기 합 **82개·16,520,127바이트**(15.76MiB), 그중 docs/design **31개·3,890,113바이트**, E2E __screenshots__ **32개·5,241,545바이트**. #84 전후는36개·4,281,640바이트로 동일했다. 회귀 기준샷은 필요한 검증 자산이며 낭비로 일괄 취급하지 않는다.
+- 디자인 반복은 개별 A/B 후보 수가 아닌 방향 검토 회차로 **4회**: [#37](https://github.com/kywoo26/p2p-gostop/pull/37)의 모던 A/B→클래식 리마스터(2회, [기각 기록](docs/design/cards-polish.md)), [#92/#101의 A/B/C 검토·A 채택](docs/design/art-direction.md#결정-이력)(1회), [#146→#147 전문 자산 평가](https://github.com/kywoo26/p2p-gostop/pull/147)(1회). **#104 화면/손패 무가림 수렴→스킨** 순서로 고정하고 평가 자산을 출시 완료로 세지 않는다.
+- 이슈는 초기58→25, 원래58개는 #113 종료/#30 재개 후에도25(16/9)다(신규 #155 포함 전체26). v0.2.2 직접 지적·필수 플레이→v0.2.3 상세 보조·머니·환급 정책 검토로 제한하고 새 편의/빌드 미세 최적화는 후순위로 둔다. Galaxy 검증을 계속하고 iPhone은 #75에서 확보 후 재개하며, 다음 판단 근거는 AI 강도·사용자 플레이 결과다.
 
 ## 4. 테스트 전략
 
@@ -238,7 +436,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 1. 마일스톤 APK가 Releases에 올라가면 사용자에게 절차서 링크와 확인 항목을 전달한다.
 2. 사용자는 절차대로 수행하고 앱의 "로그 공유"로 텍스트를 보낸다(카톡·메일 등 아무 경로). 로그에는 빌드 해시, 기기 모델, OS 버전, 상태 전이, 오류가 자동 포함된다.
-3. 재현이 필요한 게임 버그는 리플레이 JSON(시드+액션) 내보내기 구현(#71) 후 받아 테스트 벡터로 추가한다. 현재는 로그·재현 단계를 받는다.
+3. 재현이 필요한 게임 버그는 현재 로그·재현 단계를 받아 테스트 벡터로 추가한다. 리플레이 JSON(시드+액션) 내보내기 FR-33은 후순위 보류(#71 종료, §3-2)이며 구현 완료로 간주하지 않는다.
 4. 수정 → 태그 → 재배포. 회차 기록은 `docs/device-test/`에 남긴다.
 
 ---
@@ -283,6 +481,8 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 ---
 
 ## 10. 변경 이력
+- v0.11 (2026-09-29): PR #153 리뷰 반영. main `daa5e7d`(#151·#94/#95) 병합, FR-15 완료 및 #30 환급 정책 재개 반영, 기존82개 분모 명칭 정정, §3-3 문서/PNG/디자인 반복 계측 추가.
+- v0.10 (2026-09-29): §3-2에 spec FR/NF/NP/AI/MN/AC 93행(고유86개)의 코드·테스트 대조 매트릭스, 릴리스 이슈 분류를 추가. §3-3 의도 이탈 진단, AGENTS §1 상태 변경 PR의 매트릭스 갱신 의무.
 - v0.9 (2026-09-29): §2를 단일 개발 이미지·루트 Compose·Dev Container로 교체하고, CI 명령과 기존 볼륨 전환 절차를 동기화(PR #38, NF-06).
 - v0.8 (2026-09-29): 마일스톤 이력을 상태 표로, 진행 계획을 현재 트랙으로 통합. 버전 표는 AGENTS.md로, 세부 증분은 Galaxy·솔로 계획으로 일원화.
 - v0.7 (2026-09-29): 1.1 중계 규칙을 최신 연결 우선(4001)·알림·위조 차단·1003/1009/1008로 확정(M4 프로토콜 리뷰 #15·#24).
