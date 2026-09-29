@@ -17,8 +17,20 @@
       .content { position: relative; height: 100%; display: grid; grid-template-rows: 56px 44px minmax(0,1fr) 56px 48px 168px; gap: 4px; }
       .zone { position: relative; min-height: 0; border: 1px dashed #96d5b1; border-radius: 8px; background: #0d2f2599; padding: 4px 7px; overflow: hidden; }
       .zone-tag { position: absolute; top: 3px; right: 6px; color: #a8e1b9; font-size: 10px; font-weight: 700; background: #0b2c21; padding: 1px 3px; border-radius: 3px; }
-      .hud-line { display: flex; justify-content: space-between; align-items: center; height: 22px; padding-right: 82px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+      .hud { padding: 0 56px 0 0; border: 0; background: transparent; overflow: visible; }
+      .menu-reserved { position: absolute; top: 0; right: 0; width: 48px; height: 48px; border: 1px dashed #c0c9c2; display: grid; place-content: center; text-align: center; font-size: 12px; color: #d9e6cf; }
+      .hud { display: grid; grid-template-columns: minmax(0,1fr) max-content max-content max-content max-content; column-gap: 4px; }
+      .hud-line { display: grid; grid-template-columns: subgrid; grid-column: 1/-1; align-items: center; height: 28px; background: #10231d; font-size: 14px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; outline: 1px solid #8eaaa0; outline-offset: -1px; }
       .hud-line.mine { color: #ffe49d; }
+      .hud-name { overflow: hidden; text-overflow: ellipsis; }
+      .hud-money { text-align: right; }
+      .hud-score b { font-size: 20px; line-height: 24px; }
+      .long .hud-line { height: 42px; grid-template-rows: 24px 18px; }
+      .long .hud-money { grid-column: 1/-1; line-height: 18px; }
+      .long .content { grid-template-rows: 84px 44px minmax(0,1fr) 28px 48px 168px; }
+      .long.prompt .content { grid-template-rows: 84px 44px minmax(0,1fr) 104px 48px 168px; }
+      .long .normal-note, .long .prompt-note, .long .prompt-content > .small { display: none; }
+      .long .prompt-title { height: 24px; margin-bottom: 8px; }
       .small { font-size: 11px; color: #d9e6cf; }
       .piles { display: flex; gap: 8px; align-items: center; height: 20px; }
       .pile { min-width: 50px; white-space: nowrap; font-size: 11px; }
@@ -51,7 +63,7 @@
       .toast { position: absolute; z-index: 5; top: 95px; left: 20px; max-width: 160px; padding: 4px 8px; background: #1b2830; border: 1px solid #9cabb2; border-radius: 30px; font-size: 11px; }
       .prompt .floor .group:nth-child(2), .prompt .floor .group:nth-child(6) { outline: 3px solid #f8c143; }
       .prompt .callout.a, .prompt .banner, .prompt .floor .zone-tag { display: none; }
-      @media (min-width: 410px) { .content { grid-template-rows: 60px 48px minmax(0,1fr) 64px 56px 184px; } .prompt .content { grid-template-rows: 60px 48px minmax(0,1fr) 144px 56px 184px; } .floor { padding: 4px 6px; } .floor .group { width: 46px; height: 74px; } .groups { grid-template-rows: repeat(3,74px); gap: 7px 10px; } .hand-card { width: 61px; height: 96px; } .hand-row { height: 96px; gap: 10px; } }
+      @media (min-width: 410px) { .content { grid-template-rows: 60px 48px minmax(0,1fr) 64px 56px 184px; } .prompt .content { grid-template-rows: 60px 48px minmax(0,1fr) 144px 56px 184px; } .hud-line { height: 30px; } .long .content { grid-template-rows: 84px 48px minmax(0,1fr) 40px 56px 184px; } .long.prompt .content { grid-template-rows: 84px 48px minmax(0,1fr) 120px 56px 184px; } .floor { padding: 4px 6px; } .floor .group { width: 46px; height: 74px; } .groups { grid-template-rows: repeat(3,74px); gap: 7px 10px; } .hand-card { width: 61px; height: 96px; } .hand-row { height: 96px; gap: 10px; } }
     </style>
   </head>
   <body>
@@ -60,8 +72,8 @@
       <div class="island" aria-hidden="true"></div>
       <div class="safe bottom">하단 안전 영역 · 아래는 Safari 탭 막대</div>
       <div class="content">
-        <section class="zone"><span class="zone-tag">① 양쪽 HUD</span><div class="hud-line"><span>상대 · 8점 · 손패 5</span><span>48,800냥</span></div><div class="hud-line mine"><span>나 · 8점 · 1고 · ×2</span><span>51,200냥</span></div></section>
-        <section class="zone"><span class="zone-tag">② 상대 획득패</span><div class="piles"><div class="pile"><span class="mini">광</span>1</div><div class="pile"><span class="mini">열</span>2</div><div class="pile"><span class="mini">띠</span>2</div><div class="pile"><span class="mini">피</span>5</div></div><div class="progress-line">상대 광 1/3 · 고도리 0/3 · 단 1/3 · 피 5/10</div></section>
+        <section class="zone hud" aria-label="양쪽 점수판"><div class="menu-reserved">메뉴<br />예약</div><div class="hud-line"><span class="hud-name">상대</span><span class="hud-score"><b>8</b>점</span><span class="hud-go">0고</span><span class="hud-mult">—</span><span class="hud-money">48,800냥</span></div><div class="hud-line mine"><span class="hud-name">나</span><span class="hud-score"><b>8</b>점</span><span class="hud-go">1고</span><span class="hud-mult">×2</span><span class="hud-money">51,200냥</span></div></section>
+        <section class="zone"><span class="zone-tag">② 상대 획득패</span><div class="piles"><div class="pile"><span class="mini">광</span>1</div><div class="pile"><span class="mini">열</span>2</div><div class="pile"><span class="mini">띠</span>2</div><div class="pile"><span class="mini">피</span>5</div></div><div class="progress-line">상대 광 1/3 · 고도리 0/3 · 단 1/3 · 피 5/10 · 손패 5</div></section>
         <section class="zone floor"><span class="zone-tag">③ 바닥 · 가변</span><div class="deck">더미<br />14</div><div class="groups"><div class="group">1월</div><div class="group">2월</div><div class="group">3월</div><div class="group">4월</div><div class="group">5월</div><div class="group ppeok">6월</div><div class="group">7월</div><div class="group">8월</div><div class="group">9월</div><div class="group">10월</div><div class="group">11월</div><div class="group">12월</div></div></section>
         <section class="zone action"><span class="zone-tag">④ 선택 · 행동</span><span class="normal-label">내 차례 · 손패를 선택하세요</span><span class="normal-note">선택 버튼과 손패 사이 빈 구역 유지</span><div class="prompt-content" hidden><div class="prompt-title">어느 패를 먹을까요?</div><div class="small">낸 패: 9월 피 · 바닥 후보 2장 강조</div><div class="prompt-line"><div class="prompt-button"><b>9월 국진</b> 먹기</div><div class="prompt-button"><b>9월 청단</b> 먹기</div></div><div class="prompt-note">배너·토스트는 선택 중 보류 · 후보/손패 가림 0</div></div></section>
         <section class="zone"><span class="zone-tag">⑤ 내 획득패·진행도</span><div class="piles"><div class="pile"><span class="mini">광</span>1</div><div class="pile"><span class="mini">열</span>3</div><div class="pile"><span class="mini">띠</span>3</div><div class="pile"><span class="mini">피</span>4</div></div><div class="progress-line">나 광 1/3 · 고도리 3/3 · 단 3/3 · 피 4/10</div></section>
@@ -72,6 +84,12 @@
       <div class="toast" hidden>피 1장 뺏기 · 선택 중 대기</div>
     </div>
     <script>
+      if (new URLSearchParams(location.search).has('long')) {
+        document.body.classList.add('long');
+        document.querySelectorAll('.hud-money').forEach(el => el.textContent = '9,007,199,254,740,991냥');
+        document.querySelector('.hud-name').textContent = '아주 긴 상대 이름';
+        document.querySelector('.prompt-title').textContent = '낸 9월 피 · 먹을 패 선택';
+      }
       if (new URLSearchParams(location.search).has('prompt')) {
         document.body.classList.add('prompt');
         document.querySelector('.normal-label').hidden = true;

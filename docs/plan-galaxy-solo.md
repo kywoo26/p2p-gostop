@@ -304,3 +304,15 @@ AC-04(Chromium 호스트+WebKit 게스트 20판)와 AC-05 자동 UI 회귀는 �
 | 문서 정합 | 최초 로컬 링크 13개·G01~G35·설정 1~24 검사와 `git diff --check` 통과. 리뷰 반영 재검증은 아래 참조. |
 
 리뷰 반영: main `9651364` merge 후 Docker 링크·앵커/표 검사와 `docker compose run --rm dev npm run lint`, `git diff --check` 재실행 통과. Galaxy/iPhone 실기기 결과는 만들지 않았다. 새 수용 테스트·새 device-test 절차의 작성은 각 구현 PR 범위다. 이 문서는 formatter 제외 대상(`.oxfmtrc.json`의 `docs/**`, `**/*.md`)이며 코드 포맷 변경은 없다.
+
+## 10. 플레이 보조 설정 추가 매핑 (PR #83 후속 조율)
+
+spec FR-46·49~50 / ui-spec §15.5. §3의 규칙 24행과 별개인 로컬 보조 설정이다. 기존 §3/.2-B 소유권은 유지하고 #62에 아래 매핑을 요청한다.
+
+| 추가 항목 → 제안 필드 | 기본값 / 적용 시점 | 구현 슬롯·인계 |
+|---|---|---|
+| 힌트 → `hintLevel: off/basic/detail` | **off**, 게임 중 메뉴→설정에서도 즉시. 저장 실패 시 현재 값 유지; 액션/RuleOptions/welcome 변경 없음 | v0.2.2 #62 저장 계약 → #80 UI/기본 표시, v0.2.3 #81→#87→#82 상세 연결 |
+| 솔로 AI 조언 → `soloAdvice: boolean` | **false**, 솔로+상세일 때만 켜기·요청 가능. P2P는 저장값과 무관하게 계산/전달 비활성 | v0.2.3 후반, #65 Worker·.3-C 저장 인계 뒤 [#90 조언 PR](https://github.com/kywoo26/p2p-gostop/issues/90); 미구현 때 비활성 |
+| 솔로 판별 사용 이력 → `hintUsage`, `aiAdviceUsed` | 선택적 표시 시 최고 단계/조언 여부 단조 기록, 옛 기록은 unknown/null | #63 기록 계약 → #80 기본 이력, #90에서 조언 사용 연결. 정산/원장 불변 |
+
+수용: Chromium/WebKit 설정→게임 끔/기본/상세→복귀/새로고침·저장 실패 E2E, 계산 중 끄기/오래된 결과, AI 켬→P2P 전환 차단, 사용 뒤 끄기→판 종료 기록 보존. #46/#47 레이아웃·#51 확대 접근성·#62의 규칙/금액 UI를 보조 이슈가 재구현하지 않는다.

@@ -1,0 +1,2 @@
+# OFL 원문은 sources.json의 hash와 byte 동일하게 보존한다(원본의 행 끝 공백 포함).
+*-OFL.txt whitespace=-blank-at-eol
