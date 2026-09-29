@@ -31,8 +31,27 @@ const HUDANG_TURNS = 5;
 
 const isBonus = (id: CardId): boolean => getCard(id).kind === 'bonus';
 
+/**
+ * 점수 분해가 같은지 (필드별 비교). 예전의 JSON.stringify 비교와 결과가 같고(두 값 모두 scoreCaptured가 같은 키로 만든다)
+ * 롤아웃에서 reduce 비용의 큰 몫이던 직렬화를 없앤다(ai-tuning.md §6-6).
+ */
 function sameScore(a: ScoreBreakdown, b: ScoreBreakdown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return (
+    a.total === b.total &&
+    a.gwang === b.gwang &&
+    a.yeol === b.yeol &&
+    a.godori === b.godori &&
+    a.tti === b.tti &&
+    a.hongdan === b.hongdan &&
+    a.cheongdan === b.cheongdan &&
+    a.chodan === b.chodan &&
+    a.pi === b.pi &&
+    a.gwangCount === b.gwangCount &&
+    a.yeolCount === b.yeolCount &&
+    a.ttiCount === b.ttiCount &&
+    a.piCount === b.piCount &&
+    a.gukjinAsPi === b.gukjinAsPi
+  );
 }
 
 /** SCORE: 두 좌석 점수를 다시 계산하고 바뀐 좌석마다 ScoreChanged를 낸다(차례인 좌석 먼저: 좌석 대칭). */
@@ -100,6 +119,20 @@ function removeFromHand(tx: Tx, seat: Seat, ids: readonly CardId[]): void {
     invariant(index !== -1, `손패에 없는 카드 ${id}`);
     state.hand.splice(index, 1);
   }
+  // 공개된 손패(revealed)는 "아직 손에 있는 것"만 둔다
+  if (state.revealed.length > 0) {
+    state.revealed = state.revealed.filter((id) => !ids.includes(id));
+  }
+}
+
+/** 규칙상 공개된 손패를 기록한다 (흔들기·총통 끝내기, SeatState.revealed) */
+function reveal(tx: Tx, seat: Seat, ids: readonly CardId[]): void {
+  const state = tx.s.seats[seat];
+  for (const id of ids) {
+    if (!state.revealed.includes(id)) {
+      state.revealed.push(id);
+    }
+  }
 }
 
 function drawTop(tx: Tx): CardId {
@@ -156,13 +189,9 @@ export function offerChongtong(
   resume: 'deal' | 'turn',
 ): void {
   if (!tx.s.rules.chongtongContinue) {
-    emit(tx, {
-      type: 'Chongtong',
-      seat,
-      cards: chongtongCards(tx, seat, months),
-      months,
-      choice: 'auto',
-    });
+    const cards = chongtongCards(tx, seat, months);
+    reveal(tx, seat, cards);
+    emit(tx, { type: 'Chongtong', seat, cards, months, choice: 'auto' });
     endRound(tx, 'chongtong', seat);
     return;
   }
@@ -185,13 +214,9 @@ export function actChongtong(tx: Tx, seat: Seat, choice: 'end' | 'continue'): vo
   const pending = tx.s.pending;
   invariant(pending?.kind === 'chongtong', '총통 프롬프트가 아닙니다');
   if (choice === 'end') {
-    emit(tx, {
-      type: 'Chongtong',
-      seat,
-      cards: chongtongCards(tx, seat, pending.months),
-      months: pending.months,
-      choice,
-    });
+    const cards = chongtongCards(tx, seat, pending.months);
+    reveal(tx, seat, cards);
+    emit(tx, { type: 'Chongtong', seat, cards, months: pending.months, choice });
     endRound(tx, 'chongtong', seat);
     return;
   }
@@ -209,6 +234,7 @@ export function actShake(tx: Tx, seat: Seat, accept: boolean): void {
   if (accept) {
     tx.s.seats[seat].shakes += 1;
     const shown = tx.s.seats[seat].hand.filter((id) => getCard(id).month === pending.month);
+    reveal(tx, seat, shown);
     emit(tx, { type: 'Shake', seat, cards: shown, month: pending.month, accepted: true });
   }
   playCard(tx, seat, pending.card);
@@ -542,4 +568,26 @@ export function actGo(tx: Tx, seat: Seat): void {
 export function actStop(tx: Tx, seat: Seat): void {
   emit(tx, { type: 'Stop', seat, cards: [], auto: false });
   endRound(tx, 'stop', seat);
+}
+
+/**
+ * 밀기 (rules-commercial §10.1 한게임 신맞고, 12.7 토글 push): 끝난 판의 승자가 이번 판 정산을 포기하고 다음 판을
+ * ×2^(연속 밀기 횟수)로 키운다. 즉시 정산은 이미 발생 시점에 원장에 들어갔으므로 그대로다.
+ * 포기한 정산(pushed)으로 Settled를 한 번 더 낸다: 호출자는 마지막 Settled(또는 settle(state))를 원장에 넣는다.
+ */
+export function actPush(tx: Tx, seat: Seat): void {
+  const result = tx.s.result;
+  invariant(result !== null && result.winner === seat, '밀기는 끝난 판의 승자만 할 수 있습니다');
+  tx.s.result = { ...result, pushed: true };
+  const settlement = settle(tx.s);
+  const pushes = settlement.nextPushes ?? 0;
+  emit(tx, {
+    type: 'Pushed',
+    seat,
+    cards: [],
+    pushes,
+    multiplier: 2 ** pushes,
+    forfeitedPoints: settlement.forfeitedPoints ?? 0,
+  });
+  emit(tx, { type: 'Settled', seat, cards: [], settlement });
 }

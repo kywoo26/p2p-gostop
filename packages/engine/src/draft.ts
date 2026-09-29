@@ -21,10 +21,13 @@ export interface DraftPile {
   pi: CardId[];
 }
 
-export interface DraftSeat extends Mut<Omit<SeatState, 'hand' | 'captured' | 'ppeokTurns'>> {
+export interface DraftSeat extends Mut<
+  Omit<SeatState, 'hand' | 'captured' | 'ppeokTurns' | 'revealed'>
+> {
   hand: CardId[];
   captured: DraftPile;
   ppeokTurns: number[];
+  revealed: CardId[];
 }
 
 export interface DraftGroup extends Mut<Omit<FloorGroup, 'cards'>> {
@@ -62,6 +65,7 @@ function cloneSeat(seat: SeatState): DraftSeat {
       pi: [...seat.captured.pi],
     },
     ppeokTurns: [...seat.ppeokTurns],
+    revealed: [...seat.revealed],
   };
 }
 

@@ -9,8 +9,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Insets
 import android.os.Bundle
+import android.os.CombinedVibration
+import android.os.VibrationEffect
+import android.os.VibratorManager
+import android.provider.Settings
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
@@ -39,7 +45,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Ktor와 같은 루프백 origin의 호스트 화면. 게임 로직은 웹 번들에만 있다. */
+/** HostBridge 계약의 정본은 plan.md §1.7. 게임 로직은 루프백 WebView 번들에만 있다. */
 // WEB_MESSAGE_LISTENER는 onCreate에서 검사한다. JS는 번들된 루프백 페이지만 실행한다.
 // onRenderProcessGone은 createWebView의 WebViewClient에서 구현한다.
 @SuppressLint("RequiresFeature", "SetJavaScriptEnabled", "MissingOnRenderProcessGone")
@@ -48,30 +54,44 @@ class GameActivity : Activity() {
     private lateinit var container: FrameLayout
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var replyProxy: JavaScriptReplyProxy? = null
-    private var gameActive = false
+    private var gameActive = true
+    private var pageLoaded = false
+    private var backRegistered = false
+    private var pendingHotspotStart = false
+    private var pendingHotspotId: Any? = null
+    private var awaitingHotspotSettings = false
     private var fallingBack = false
     private val backCallback = OnBackInvokedCallback {
-        if (gameActive) {
-            AlertDialog.Builder(this).setMessage("진행 중인 게임을 나가시겠습니까?")
-                .setPositiveButton("나가기") { _, _ -> finish() }
-                .setNegativeButton("계속하기", null).show()
-        } else finish()
+        AlertDialog.Builder(this).setMessage(R.string.exit_game_confirm)
+            .setPositiveButton(R.string.exit_game) { _, _ -> finish() }
+            .setNegativeButton(R.string.stay_game, null).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // 웹 브리지가 준비되기 전에도 호스트 화면이 잠기지 않게 한다(I-7).
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (!bundlePresent(this) || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-            fallback("웹 번들 또는 WebView 브리지 없음")
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+        if (!bundlePresent(this)) {
+            fallback(getString(R.string.web_bundle_missing))
+            return
+        }
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            fallback(getString(R.string.web_bridge_missing))
             return
         }
         container = FrameLayout(this)
+        container.setOnApplyWindowInsetsListener { view, insets ->
+            val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            WindowInsets.Builder(insets)
+                .setInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout(), Insets.NONE)
+                .build()
+        }
         setContentView(container)
-        onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback)
         if (!AppState.hotspot.value.serviceRunning) {
             // 솔로 모드: LOHS 권한 없이 서버만 시작하고 준비되면 루프백 WebView를 연다(I-10).
-            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_ADDRESS_ONLY))
+            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_SERVER_ONLY))
         }
         scope.launch {
             AppState.hotspot.collect { state ->
@@ -90,11 +110,21 @@ class GameActivity : Activity() {
             settings.allowContentAccess = false
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
+                    pageLoaded = false
+                    updateBackCallback()
+                }
+
+                override fun onPageFinished(view: WebView, url: String?) {
+                    pageLoaded = url?.startsWith(ORIGIN) == true
+                    updateBackCallback()
+                }
+
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
                     request.url.scheme != "http" || request.url.host != "127.0.0.1" || request.url.port != SERVER_PORT
 
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                    if (request.isForMainFrame) fallback("웹 페이지 오류: ${error.description}")
+                    if (request.isForMainFrame) fallback(getString(R.string.web_page_error, error.description))
                 }
 
                 override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
@@ -108,10 +138,14 @@ class GameActivity : Activity() {
         container.addView(web, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         WebViewCompat.addWebMessageListener(web, "HostBridge", setOf(ORIGIN)) { _, message, sourceOrigin, isMainFrame, proxy ->
             if (!isMainFrame || sourceOrigin.toString() != ORIGIN) return@addWebMessageListener
+            // 새 페이지의 첫 메시지에 현재 상태를 즉시 보낸다.
             if (replyProxy == null) proxy.postMessage(hotspotMessage(AppState.hotspot.value).toString())
             replyProxy = proxy
             val raw = message.data ?: return@addWebMessageListener
-            if (Utf8.length(raw) > 64 * 1024) return@addWebMessageListener
+            if (Utf8.length(raw) > 64 * 1024) {
+                proxy.postMessage(JSONObject().put("type", "error").put("message", "tooLarge").toString())
+                return@addWebMessageListener
+            }
             try {
                 handle(JSONObject(raw), proxy)
             } catch (e: Exception) {
@@ -119,10 +153,12 @@ class GameActivity : Activity() {
                 proxy.postMessage(JSONObject().put("type", "error").put("message", "invalid bridge message").toString())
             }
         }
-        web.loadUrl("$ORIGIN/?role=host&build=${BuildConfig.GIT_SHA}")
+        web.loadUrl("$ORIGIN/?build=${BuildConfig.GIT_SHA}")
     }
 
     private fun destroyWebView(view: WebView) {
+        pageLoaded = false
+        updateBackCallback()
         replyProxy = null
         WebViewCompat.removeWebMessageListener(view, "HostBridge")
         container.removeView(view)
@@ -136,45 +172,96 @@ class GameActivity : Activity() {
 
     private fun handle(msg: JSONObject, proxy: JavaScriptReplyProxy) {
         val id = msg.opt("id")
+        fun input(key: String, fallback: String = ""): String =
+            if (!msg.has(key) || msg.isNull(key)) fallback else msg.optString(key, fallback)
         fun response(type: String, build: JSONObject.() -> Unit = {}) {
             val result = JSONObject().put("type", type)
             if (id != null) result.put("id", id)
             result.build()
             proxy.postMessage(result.toString())
         }
-        when (msg.optString("type")) {
+        when (input("type")) {
             "getHotspot" -> proxy.postMessage(hotspotMessage(AppState.hotspot.value).apply { if (id != null) put("id", id) }.toString())
             "startHotspot" -> {
-                if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
+                if (pendingHotspotStart || awaitingHotspotSettings) {
+                    response("error") { put("message", "permissionPending") }
+                } else if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
                     startForegroundService(HotspotService.intent(this, HotspotService.ACTION_START))
                     proxy.postMessage(hotspotMessage(AppState.hotspot.value).apply { if (id != null) put("id", id) }.toString())
                 } else {
-                    openDiagnostics()
-                    response("error") { put("message", "NEARBY_WIFI_DEVICES permission required") }
+                    pendingHotspotStart = true
+                    pendingHotspotId = id
+                    AlertDialog.Builder(this).setTitle(R.string.permission_title).setMessage(R.string.permission_body)
+                        .setPositiveButton(R.string.permission_ok) { _, _ ->
+                            requestPermissions(Diagnostics.runtimePermissions, REQ_HOTSPOT_PERMISSION)
+                        }
+                        .setNegativeButton(R.string.cancel) { _, _ ->
+                            pendingHotspotStart = false
+                            pendingHotspotId = null
+                        }
+                        .show()
+                    response("error") { put("message", "permissionRequired") }
                 }
             }
             "stopHotspot" -> {
-                startService(HotspotService.intent(this, HotspotService.ACTION_STOP))
+                startService(HotspotService.intent(this, HotspotService.ACTION_ADDRESS_ONLY))
                 response("stopHotspot") { put("stopped", true) }
             }
+            "enableLan" -> {
+                if (!msg.has("bool") || msg.isNull("bool")) {
+                    response("error") { put("message", "invalid bridge message") }
+                } else {
+                    val enabled = msg.optBoolean("bool")
+                    AppState.update { state ->
+                        state.copy(lanEnabled = enabled, status = when {
+                            enabled && !state.hotspotActive -> HotspotStatus.ADDRESS_ONLY
+                            !enabled && state.status == HotspotStatus.ADDRESS_ONLY -> HotspotStatus.STOPPED
+                            else -> state.status
+                        })
+                    }
+                    response("lan") { put("enabled", enabled) }
+                }
+            }
             "share" -> {
-                val text = msg.optString("text")
-                val filename = msg.optString("filename").takeIf { it.isNotEmpty() }
-                response("share") { put("shared", share(text, filename, msg.optString("title", "맞고 공유"))) }
+                val text = input("text")
+                val filename = input("filename").takeIf { it.isNotEmpty() }
+                response("share") { put("shared", share(text, filename, input("title", getString(R.string.share_title)))) }
             }
             "log" -> {
                 val entries = msg.optJSONArray("entries")
-                if (entries != null) appendLogs(entries) else {
-                    val level = msg.optString("level", "info")
-                    AppState.log("web $level: ${msg.optString("message")}")
+                if (entries != null) appendLogs(entries, input("role", "host")) else {
+                    val level = input("level", "info")
+                    val line = "web $level: ${input("message")}"
+                    BridgeLogs.append(input("role"), line, AppState.webLogs, AppState.guestLogs)
                 }
                 response("log") { put("accepted", true) }
             }
             "keepScreenOn" -> {
-                gameActive = if (msg.has("bool")) msg.optBoolean("bool") else msg.optBoolean("enabled")
-                if (gameActive) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                val enabled = if (msg.has("bool")) msg.optBoolean("bool") else msg.optBoolean("enabled")
+                if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                response("keepScreenOn") { put("enabled", gameActive) }
+                response("keepScreenOn") { put("enabled", enabled) }
+            }
+            "gameActive" -> {
+                setGameActive(msg.optBoolean("bool"))
+                response("gameActive") { put("active", gameActive) }
+            }
+            "vibrate" -> {
+                val values = msg.optJSONArray("pattern")
+                val pattern = if (values == null || values.length() > VibrationPattern.MAX_SEGMENTS) null else (0 until values.length()).map { index ->
+                    values.opt(index).let {
+                        if (it is Number && it.toDouble().isFinite() && it.toDouble() >= 0 &&
+                            it.toDouble() == it.toDouble().toLong().toDouble()) it.toLong() else -1L
+                    }
+                }
+                val waveform = pattern?.let(VibrationPattern::waveform)
+                val accepted = if (waveform == null) false else runCatching {
+                    getSystemService(VibratorManager::class.java).vibrate(
+                        CombinedVibration.createParallel(VibrationEffect.createWaveform(waveform, -1)),
+                    )
+                    true
+                }.getOrDefault(false)
+                response("vibrate") { put("accepted", accepted) }
             }
             "openDiagnostics" -> {
                 openDiagnostics()
@@ -190,12 +277,71 @@ class GameActivity : Activity() {
         }
     }
 
-    private fun appendLogs(entries: JSONArray) {
+    private fun setGameActive(active: Boolean) {
+        gameActive = active
+        updateBackCallback()
+    }
+
+    private fun updateBackCallback() {
+        val confirm = pageLoaded && gameActive
+        if (confirm && !backRegistered) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback)
+            backRegistered = true
+        } else if (!confirm && backRegistered) {
+            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
+            backRegistered = false
+        }
+    }
+
+    private fun sendPermissionResult(message: JSONObject) {
+        pendingHotspotId?.let { message.put("id", it) }
+        send(message)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQ_HOTSPOT_PERMISSION || !pendingHotspotStart) return
+        pendingHotspotStart = false
+        if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
+            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_START))
+            sendPermissionResult(hotspotMessage(AppState.hotspot.value))
+            pendingHotspotId = null
+        } else if (!shouldShowRequestPermissionRationale(Manifest.permission.NEARBY_WIFI_DEVICES)) {
+            sendPermissionResult(JSONObject().put("type", "error").put("message", "permissionDenied"))
+            AlertDialog.Builder(this).setMessage(R.string.permission_denied)
+                .setPositiveButton(R.string.open_settings) { _, _ ->
+                    awaitingHotspotSettings = true
+                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse("package:$packageName")))
+                }.setNegativeButton(R.string.cancel) { _, _ -> pendingHotspotId = null }.show()
+        } else {
+            sendPermissionResult(JSONObject().put("type", "error").put("message", "permissionDenied"))
+            pendingHotspotId = null
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!awaitingHotspotSettings) return
+        awaitingHotspotSettings = false
+        if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
+            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_START))
+            sendPermissionResult(hotspotMessage(AppState.hotspot.value))
+        } else {
+            sendPermissionResult(JSONObject().put("type", "error").put("message", "permissionDenied"))
+        }
+        pendingHotspotId = null
+    }
+
+    private fun appendLogs(entries: JSONArray, defaultRole: String) {
         for (i in 0 until minOf(entries.length(), 2000)) {
             val item = entries.opt(i)
-            val role = if (item is JSONObject) item.optString("role", "host") else "host"
-            val line = if (item is JSONObject) item.optString("message") else item?.toString().orEmpty()
-            if (role == "guest") AppState.guestLogs.add(line) else AppState.log("web: $line")
+            val role = if (item is JSONObject && item.has("role") && !item.isNull("role"))
+                item.optString("role") else defaultRole
+            val line = if (item is JSONObject) {
+                if (item.has("message") && !item.isNull("message")) item.optString("message") else ""
+            } else if (item == JSONObject.NULL) "" else item?.toString().orEmpty()
+            BridgeLogs.append(role, line, AppState.webLogs, AppState.guestLogs)
         }
     }
 
@@ -210,7 +356,7 @@ class GameActivity : Activity() {
             AppState.log("공유 파일 쓰기 실패: ${e.message}")
             return false
         }
-        val body = if (uri == null) safeText else LogReport.clipTail("맞고 공유 파일: $name\n$safeText", maxBody)
+        val body = if (uri == null) safeText else LogReport.clipTail(getString(R.string.share_file_note, name) + "\n$safeText", maxBody)
         val intent = Intent(Intent.ACTION_SEND).setType(if (name?.endsWith(".json") == true) "application/json" else "text/plain")
             .putExtra(Intent.EXTRA_TEXT, body)
             .putExtra(Intent.EXTRA_SUBJECT, Utf8.head(title, 200))
@@ -220,7 +366,7 @@ class GameActivity : Activity() {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         return try {
-            startActivity(Intent.createChooser(intent, "맞고 공유"))
+            startActivity(Intent.createChooser(intent, getString(R.string.share_title)))
             true
         } catch (e: RuntimeException) {
             AppState.log("공유 실패: ${e.javaClass.simpleName} ${e.message}")
@@ -238,6 +384,24 @@ class GameActivity : Activity() {
         runOnUiThread { replyProxy?.postMessage(message.toString()) }
     }
 
+    private fun hotspotMessage(s: HotspotState): JSONObject = JSONObject()
+        .put("type", "hotspot")
+        .put("state", when (s.status) {
+            HotspotStatus.STARTING -> "starting"
+            HotspotStatus.RUNNING -> "on"
+            HotspotStatus.FAILED -> "failed"
+            HotspotStatus.ADDRESS_ONLY -> "addressOnly"
+            else -> "off"
+        })
+        .put("ssid", s.ssid ?: JSONObject.NULL)
+        .put("password", s.password ?: JSONObject.NULL)
+        .put("ip", s.ip ?: JSONObject.NULL)
+        .put("port", if (s.serverRunning) SERVER_PORT else JSONObject.NULL)
+        .put("error", s.lastError ?: s.serverError ?: JSONObject.NULL)
+        .put("lanEnabled", s.lanEnabled)
+        .put("warning", if (s.status == HotspotStatus.ADDRESS_ONLY && s.lanEnabled)
+            getString(R.string.status_address_only) else JSONObject.NULL)
+
     private fun fallback(reason: String) {
         if (fallingBack) return
         fallingBack = true
@@ -248,7 +412,7 @@ class GameActivity : Activity() {
 
     override fun onDestroy() {
         scope.cancel()
-        if (::container.isInitialized) onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
+        if (backRegistered) onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
         if (::web.isInitialized) {
             destroyWebView(web)
         }
@@ -256,25 +420,12 @@ class GameActivity : Activity() {
     }
 
     companion object {
+        private const val REQ_HOTSPOT_PERMISSION = 51
         const val ORIGIN = "http://127.0.0.1:17777"
 
         fun bundlePresent(context: Context): Boolean = try {
             context.assets.open("web/index.html").use { true }
         } catch (_: IOException) { false }
 
-        fun hotspotMessage(s: HotspotState): JSONObject = JSONObject()
-            .put("type", "hotspot")
-            .put("state", when (s.status) {
-                HotspotStatus.STARTING -> "starting"
-                HotspotStatus.RUNNING -> "on"
-                HotspotStatus.FAILED -> "failed"
-                HotspotStatus.ADDRESS_ONLY -> "addressOnly"
-                else -> "off"
-            })
-            .put("ssid", s.ssid ?: JSONObject.NULL)
-            .put("password", s.password ?: JSONObject.NULL)
-            .put("ip", s.ip ?: JSONObject.NULL)
-            .put("port", if (s.serverRunning) SERVER_PORT else JSONObject.NULL)
-            .put("error", s.lastError ?: s.serverError ?: JSONObject.NULL)
     }
 }

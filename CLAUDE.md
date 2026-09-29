@@ -1,6 +1,8 @@
 @AGENTS.md
 
-# Claude Code 전용 보충
-- 작업 전 `plan.md`의 현재 마일스톤과 `spec.md`의 관련 요구사항 ID를 확인하고, 커밋 메시지·PR에 ID를 적는다.
+<!-- 유지보수 메모(컨텍스트에서 제거됨): 규범은 AGENTS.md 한 곳(Codex 등 다른 도구도 읽음). 여기에는 Claude Code에만 해당하는 것만 둔다.
+     하네스(.claude/agents, skills, settings.json, .mcp.json) 설계 근거는 docs/reviews/harness-audit.md. -->
+
+# Claude Code 전용
 - 라이브러리 문서는 Context7(`resolve-library-id` → `query-docs`)로 조회한다.
-- 실기기 검증 항목(핫스팟, iPhone Safari)은 사람이 한다. `docs/device-test/`의 절차서를 갱신하고 결과 로그를 그곳에 남긴다.
+- Svelte는 Svelte MCP(`.mcp.json`의 `svelte`)를 쓴다: 문서는 `list-sections` → `get-documentation`, `.svelte` 컴포넌트를 쓰거나 고친 뒤에는 `svelte-autofixer`가 문제를 보고하지 않을 때까지 고친다.

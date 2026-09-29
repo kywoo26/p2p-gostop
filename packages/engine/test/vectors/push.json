@@ -1,0 +1,981 @@
+[
+  {
+    "id": "G10-push-forfeit",
+    "ruleId": "G10",
+    "case": "normal",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "밀기(§10.1 한게임 신맞고, 12.7): 이긴 좌석(좌석 0, 7점)이 밀면 이번 판 정산을 포기해 돈이 오가지 않고, 다음 판은 ×2(연속 밀기 1회), 선은 승자",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "dealer": 1
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "phase": "end",
+      "result": {
+        "reason": "stop",
+        "winner": 0,
+        "pushed": true
+      },
+      "settlement": {
+        "winner": 0,
+        "loser": 1,
+        "pushed": true,
+        "finalPoints": 0,
+        "basePoints": 0,
+        "multiplier": 1,
+        "forfeitedPoints": 7,
+        "nextPushes": 1,
+        "nextCarry": 1,
+        "nextDealer": 0,
+        "steps": []
+      },
+      "events": [
+        {
+          "type": "Stop",
+          "seat": 0
+        },
+        {
+          "type": "Settled",
+          "settlement": {
+            "finalPoints": 7,
+            "pushed": false
+          }
+        },
+        {
+          "type": "Pushed",
+          "seat": 0,
+          "pushes": 1,
+          "multiplier": 2,
+          "forfeitedPoints": 7
+        },
+        {
+          "type": "Settled",
+          "settlement": {
+            "finalPoints": 0,
+            "pushed": true
+          }
+        }
+      ],
+      "eventCounts": {
+        "Pushed": 1,
+        "Settled": 2
+      },
+      "ledger": {
+        "perPoint": 100,
+        "start": [10000, 10000],
+        "balances": [10000, 10000],
+        "amounts": []
+      }
+    }
+  },
+  {
+    "id": "G10-push-next-round",
+    "ruleId": "G10",
+    "case": "normal",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "한 번 민 다음 판에 점수가 나면 ×2: 7 × 2 = 14. 밀기 배수는 그 판에서 소진된다(다음 판 연속 밀기 0)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "pushes": 1
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 14,
+        "pushed": false,
+        "nextPushes": 0,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "jackpot",
+            "value": 2,
+            "origin": "push"
+          }
+        ]
+      },
+      "ledger": {
+        "perPoint": 100,
+        "start": [10000, 10000],
+        "balances": [11400, 8600],
+        "amounts": [1400]
+      }
+    }
+  },
+  {
+    "id": "G10-push-second",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "연속 두 번째 밀기: 이미 ×2인 판의 승리(14점)를 다시 밀면 다음 판은 ×4(§10.1 연속 2회까지)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "pushes": 1
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "pushed": true,
+        "finalPoints": 0,
+        "forfeitedPoints": 14,
+        "nextPushes": 2
+      },
+      "events": [
+        {
+          "type": "Pushed",
+          "seat": 0,
+          "pushes": 2,
+          "multiplier": 4,
+          "forfeitedPoints": 14
+        }
+      ]
+    }
+  },
+  {
+    "id": "G10-push-x4",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "두 번 민 판(×4)의 승리는 7 × 4 = 28이고, 이 판의 승자는 더 밀 수 없다(합법 수에 push 없음)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "pushes": 2
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 28,
+        "nextPushes": 0,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "jackpot",
+            "value": 4,
+            "origin": "push"
+          }
+        ]
+      },
+      "legal": {
+        "seat": 0,
+        "excludes": [
+          {
+            "type": "push",
+            "seat": 0
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-push-cap",
+    "ruleId": "G10",
+    "case": "counter",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "연속 3번째 밀기는 없다: 두 번 민 판의 승자가 밀려고 하면 거부(판 종료)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "pushes": 2
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "reject": {
+        "index": 2,
+        "reason": "roundOver"
+      }
+    }
+  },
+  {
+    "id": "G10-push-off",
+    "ruleId": "G10",
+    "case": "counter",
+    "toggle": "push=false",
+    "description": "밀기 끔(표준 기본값, 12.7 '끔'): 승자도 밀 수 없고 판 정산은 그대로다",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "reject": {
+        "index": 2,
+        "reason": "roundOver"
+      },
+      "legal": {
+        "seat": 0,
+        "excludes": [
+          {
+            "type": "push",
+            "seat": 0
+          }
+        ]
+      },
+      "settlement": {
+        "finalPoints": 7,
+        "pushed": false,
+        "nextPushes": 0
+      }
+    }
+  },
+  {
+    "id": "G10-push-loser",
+    "ruleId": "G10",
+    "case": "counter",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "밀기는 이긴 사람만 한다: 진 좌석(1)의 밀기는 거부",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 1
+      }
+    ],
+    "expect": {
+      "reject": {
+        "index": 2,
+        "reason": "roundOver"
+      },
+      "legal": {
+        "seat": 1,
+        "excludes": [
+          {
+            "type": "push",
+            "seat": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-push-instant-kept",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "밀어도 이미 받은 즉시 정산(첫뻑 7점)은 그대로다: 원장에는 첫뻑 700만 있고 판 정산(8점)은 없다",
+    "setup": {
+      "hands": [
+        ["5열", "7피a", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5초", "7피b", "8광"],
+      "deck": ["5피a", "11피a", "9피a"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 0
+        },
+        {}
+      ]
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "7피a"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "instantPayouts": [
+        {
+          "kind": "firstPpeok",
+          "to": 0,
+          "from": 1,
+          "points": 7
+        }
+      ],
+      "settlement": {
+        "pushed": true,
+        "forfeitedPoints": 8,
+        "finalPoints": 0
+      },
+      "ledger": {
+        "perPoint": 100,
+        "start": [10000, 10000],
+        "balances": [10700, 9300],
+        "amounts": [700]
+      }
+    }
+  },
+  {
+    "id": "G10-push-nagari-keeps",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "민 판(×2)이 나가리면 밀기 배수는 사라지지 않고 다음 판으로 이어지며 나가리 이월(×2)과 따로 곱한다(해석 30)",
+    "setup": {
+      "hands": [["5열"], ["10청"]],
+      "floor": ["8광"],
+      "deck": ["11피a", "12비띠"],
+      "dealer": 0,
+      "pushes": 1
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": "10청"
+      }
+    ],
+    "expect": {
+      "result": {
+        "reason": "exhausted",
+        "winner": null
+      },
+      "settlement": {
+        "winner": null,
+        "finalPoints": 0,
+        "nextCarry": 2,
+        "nextPushes": 1,
+        "pushed": false
+      },
+      "legal": {
+        "seat": 0,
+        "excludes": [
+          {
+            "type": "push",
+            "seat": 0
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-push-with-carry",
+    "ruleId": "G10",
+    "case": "normal",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "배수는 모두 곱한다: 나가리 이월 ×2 + 밀기 ×2 판의 7점 승리 = 28 (나가리 이월 → 밀기 순)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "carry": 2,
+      "pushes": 1
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 28,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "nagariCarry",
+            "value": 2
+          },
+          {
+            "kind": "jackpot",
+            "value": 2,
+            "origin": "push"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-push-carry-consumed",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "나가리 이월(×2) 판의 승리를 밀면 이월은 그 판(승자가 있는 판)에서 소진되고 다음 판은 밀기 ×2만 남는다(해석 30)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "carry": 2
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      },
+      {
+        "type": "push",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "pushed": true,
+        "forfeitedPoints": 14,
+        "nextCarry": 1,
+        "nextPushes": 1
+      }
+    }
+  },
+  {
+    "id": "G10-push-jackpot",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "preset": "arcade",
+    "description": "아케이드: 5번째 판(대박판 ×2)이 민 판(×2)이면 7 × 2 × 2 = 28 (밀기 → 대박판 순)",
+    "setup": {
+      "hands": [
+        ["5열", "12열"],
+        ["10청", "10피a"]
+      ],
+      "floor": ["5피a", "9청"],
+      "deck": ["7열"],
+      "captured": [
+        [
+          "11쌍피",
+          "12쌍피",
+          "1피a",
+          "1피b",
+          "2피a",
+          "2피b",
+          "3피a",
+          "3피b",
+          "4피a",
+          "4피b",
+          "6피a",
+          "B2b"
+        ],
+        []
+      ],
+      "seats": [
+        {
+          "turnsTaken": 3
+        },
+        {}
+      ],
+      "pushes": 1,
+      "roundNumber": 5
+    },
+    "actions": [
+      {
+        "type": "play",
+        "seat": 0,
+        "card": "5열"
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "finalPoints": 28,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 7
+          },
+          {
+            "kind": "jackpot",
+            "value": 2,
+            "origin": "push"
+          },
+          {
+            "kind": "jackpot",
+            "value": 2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "G10-push-fixed-win",
+    "ruleId": "G10",
+    "case": "boundary",
+    "toggle": "push=true",
+    "rulesPatch": {
+      "push": true
+    },
+    "description": "고정 점수 승리(총통 끝내기 10점)에도 밀기 배수는 판 밖의 배수로 곱한다: 10 × 2 = 20. 그 승리도 밀 수 있다",
+    "deal": {
+      "seed": 1,
+      "dealer": 0,
+      "pushes": 1,
+      "deck": [
+        "1광",
+        "1홍",
+        "1피a",
+        "1피b",
+        "2고",
+        "2홍",
+        "3광",
+        "3홍",
+        "4고",
+        "4초",
+        "6열",
+        "6청",
+        "7열",
+        "7초",
+        "8광",
+        "8고",
+        "9국진",
+        "9청",
+        "10열",
+        "10청",
+        "2피a",
+        "3피a",
+        "4피a",
+        "5열",
+        "6피a",
+        "7피a",
+        "11광",
+        "12비광"
+      ]
+    },
+    "actions": [
+      {
+        "type": "chongtong",
+        "seat": 0,
+        "choice": "end"
+      }
+    ],
+    "expect": {
+      "settlement": {
+        "reason": "chongtong",
+        "finalPoints": 20,
+        "steps": [
+          {
+            "kind": "base",
+            "value": 10
+          },
+          {
+            "kind": "jackpot",
+            "value": 2,
+            "origin": "push"
+          }
+        ]
+      },
+      "legal": {
+        "seat": 0,
+        "includes": [
+          {
+            "type": "push",
+            "seat": 0
+          }
+        ]
+      }
+    }
+  }
+]

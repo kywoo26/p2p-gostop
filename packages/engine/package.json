@@ -10,6 +10,7 @@
     "./testing": "./src/testing.ts"
   },
   "scripts": {
+    "bench": "node bench/apply.ts",
     "check": "node ../../node_modules/typescript-7/bin/tsc -p tsconfig.json",
     "coverage": "vitest run --config vitest.coverage.config.ts --coverage.enabled",
     "test:full": "ENGINE_FULL=1 vitest run --config vitest.coverage.config.ts --coverage.enabled"

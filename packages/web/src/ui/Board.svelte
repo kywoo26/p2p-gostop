@@ -5,9 +5,9 @@
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
   import { getCard, type Action, type CardId, type Month } from '@p2p-gostop/engine';
   import type { BoardExtras } from '../game/adapter.ts';
-  import { formatMoney } from '../lib/format.ts';
-  import type { BoardView, MoneyUnit } from '../lib/view-types.ts';
-  import type { Banner } from './banner.ts';
+  import { boardNotices } from '../game/display.ts';
+  import type { BoardView, MoneyUnit, SeatView } from '../lib/view-types.ts';
+  import { bannerActor, type Banner } from './banner.ts';
   import CapturedPile from './CapturedPile.svelte';
   import ChoicePrompt from './ChoicePrompt.svelte';
   import EventBanner from './EventBanner.svelte';
@@ -15,10 +15,16 @@
   import GoStopModal from './GoStopModal.svelte';
   import Hand from './Hand.svelte';
   import PickFirstPrompt from './PickFirstPrompt.svelte';
+  import SeatBar from './SeatBar.svelte';
+  import { seatStats, type SeatExtras } from './seat-stats.ts';
   import TargetModal from './TargetModal.svelte';
 
+  type BoardSeat = SeatView & SeatExtras;
+
   interface Props {
+    /** 좌석에 표시용 값(국진 위치·폭탄 횟수)이 있으면 쓰고, 없으면(프로토콜 뷰·픽스처) 진행도에서 읽는다 */
     view: BoardView & {
+      readonly seats: readonly [BoardSeat, BoardSeat];
       readonly staging?: readonly CardId[];
       readonly highlight?: readonly CardId[];
     };
@@ -34,6 +40,11 @@
     turnMs?: number | null;
     onaction?: ((action: Action, at: number) => void) | undefined;
     onskip?: (() => void) | undefined;
+    /**
+     * 짧게 알릴 문구 (국진 열끗↔쌍피 이동, 피 뺏기: M3 리뷰 S-2·I-4). 한 번만 부른다.
+     * 표시·지우기(토스트 타이머)는 부르는 쪽이 한다.
+     */
+    onnotice?: ((text: string) => void) | undefined;
     /** 보드 루트 요소 (애니메이션 측정·건너뛰기 범위) */
     root?: HTMLElement | null;
   }
@@ -49,12 +60,26 @@
     turnMs = null,
     onaction,
     onskip,
+    onnotice,
     root = $bindable(null),
   }: Props = $props();
 
   const seat = $derived(view.viewer);
   const me = $derived(view.seats[seat]);
   const opponent = $derived(view.seats[seat === 0 ? 1 : 0]);
+  const myStats = $derived(seatStats(me));
+  const opponentStats = $derived(seatStats(opponent));
+  const actor = $derived(banner ? bannerActor(banner, seat) : null);
+
+  /** 직전에 그린 판 (알림 비교용, 반응형일 필요 없음) */
+  let previous: Props['view'] | null = null;
+  $effect(() => {
+    const next = view;
+    const prev = previous;
+    previous = next;
+    if (prev === null || onnotice === undefined) return;
+    for (const text of boardNotices(prev, next)) onnotice(text);
+  });
   const pending = $derived(!busy && view.pending?.seat === seat ? view.pending : null);
   const pickFirst = $derived(busy ? null : (extras?.pickFirst ?? null));
   const playable = $derived(busy ? [] : view.playable);
@@ -122,33 +147,22 @@
   bind:this={root}
   onpointerdowncapture={skipIfBusy}
 >
-  <header class="seat-bar" data-anchor="opp-hand">
-    <h2 class="name">{opponent.name}</h2>
-    <dl class="stats">
-      <div>
-        <dt>점수</dt>
-        <dd>{opponent.score}</dd>
-      </div>
-      <div>
-        <dt>피</dt>
-        <dd>{opponent.progress.pi}</dd>
-      </div>
-      <div>
-        <dt>손패</dt>
-        <dd>{opponent.handCount}</dd>
-      </div>
-      {#if opponent.goCount > 0}<div>
-          <dt>고</dt>
-          <dd>{opponent.goCount}</dd>
-        </div>{/if}
-      <div class="balance">
-        <dt>잔액</dt>
-        <dd>{formatMoney(opponent.balance, unit)}</dd>
-      </div>
-    </dl>
-    {#if thinking}<p class="thinking" role="status">생각 중…</p>{/if}
-  </header>
-  <CapturedPile captured={opponent.captured} label="상대 획득패" />
+  <SeatBar
+    who="상대"
+    name={opponent.name}
+    stats={opponentStats}
+    score={opponent.score}
+    goCount={opponent.goCount}
+    shakes={opponent.shakes}
+    ppeokCount={opponent.ppeokCount}
+    bombs={opponent.bombs ?? null}
+    balance={opponent.balance}
+    {unit}
+    handCount={opponent.handCount}
+    {thinking}
+    anchor="opp-hand"
+  />
+  <CapturedPile stats={opponentStats} label="상대 획득패" highlight={view.highlight ?? []} />
 
   <div class="center">
     <Floor
@@ -157,10 +171,10 @@
       highlight={floorHighlight}
       staging={view.staging ?? []}
     />
-    <div class="banner-layer">
+    <div class={['banner-layer', actor === '상대' ? 'at-top' : actor === '나' ? 'at-bottom' : '']}>
       {#if banner}
         {#key banner.id ?? banner.text}
-          <EventBanner kind={banner.kind} text={banner.text} />
+          <EventBanner kind={banner.kind} text={banner.text} {actor} />
         {/key}
       {/if}
     </div>
@@ -171,34 +185,20 @@
     {/if}
   </div>
 
-  <CapturedPile captured={me.captured} label="내 획득패" />
-  <div class="seat-bar me">
-    <h2 class="name">{me.name}</h2>
-    <dl class="stats">
-      <div>
-        <dt>점수</dt>
-        <dd data-testid="my-score">{me.score}</dd>
-      </div>
-      {#if me.goCount > 0}<div>
-          <dt>고</dt>
-          <dd>{me.goCount}</dd>
-        </div>{/if}
-      <div>
-        <dt>배수</dt>
-        <dd>×{view.multiplier}</dd>
-      </div>
-      <div class="balance">
-        <dt>잔액</dt>
-        <dd>{formatMoney(me.balance, unit)}</dd>
-      </div>
-    </dl>
-    <ul class="progress" aria-label="족보 진행도">
-      <li>광 {me.progress.gwang}/3</li>
-      <li>고도리 {me.progress.godori}/3</li>
-      <li>단 {me.progress.dan}/3</li>
-      <li>피 {me.progress.pi}/10</li>
-    </ul>
-  </div>
+  <CapturedPile stats={myStats} label="내 획득패" highlight={view.highlight ?? []} />
+  <SeatBar
+    who="나"
+    name={me.name}
+    stats={myStats}
+    score={me.score}
+    goCount={me.goCount}
+    shakes={me.shakes}
+    ppeokCount={me.ppeokCount}
+    bombs={me.bombs ?? null}
+    balance={me.balance}
+    {unit}
+    multiplier={view.multiplier}
+  />
   <Hand
     cards={me.hand ?? []}
     {playable}
@@ -253,7 +253,7 @@
       stopAmount={pending.stopAmount}
       {unit}
       detail={extras?.goStop ?? null}
-      opponent={{ name: opponent.name, score: opponent.score, pi: opponent.progress.pi }}
+      opponent={{ name: opponent.name, score: opponent.score, pi: opponentStats.piCount }}
       ongo={() => act({ type: 'go', seat })}
       onstop={() => act({ type: 'stop', seat })}
     />
@@ -306,69 +306,6 @@
     overflow: hidden;
   }
 
-  .seat-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-1) var(--space-3);
-  }
-
-  .name {
-    margin: 0;
-    font-size: var(--font-size-m);
-    font-weight: 700;
-  }
-
-  .stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3);
-    margin: 0;
-    font-size: var(--font-size-s);
-  }
-
-  .stats div {
-    display: flex;
-    gap: 0.25em;
-  }
-
-  .stats dt {
-    color: var(--color-text-muted);
-  }
-
-  .stats dd {
-    margin: 0;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .balance {
-    margin-left: auto;
-  }
-
-  .thinking {
-    margin: 0;
-    font-size: var(--font-size-s);
-    color: var(--color-event-go);
-  }
-
-  .progress {
-    display: flex;
-    gap: var(--space-2);
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-size: var(--font-size-s);
-  }
-
-  .progress li {
-    padding: 0 var(--space-2);
-    border-radius: 999px;
-    background: oklch(20% 0.03 160 / 0.7);
-    font-variant-numeric: tabular-nums;
-  }
-
   .center {
     position: relative;
     display: grid;
@@ -382,6 +319,15 @@
     place-items: center;
     pointer-events: none;
     z-index: 3;
+  }
+
+  /* 배너는 한 사람의 쪽에 뜬다: 상대는 바닥 위쪽, 나는 아래쪽 (M3 리뷰 I-4) */
+  .banner-layer.at-top {
+    align-items: start;
+  }
+
+  .banner-layer.at-bottom {
+    align-items: end;
   }
 
   .toast {
