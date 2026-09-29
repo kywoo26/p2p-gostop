@@ -1,7 +1,7 @@
 # 상호작용 결정과 구현 인계
 
 2026-09-29 · 기준 main `ca66ce9` · 문서 전용, 구현 완료 아님.
-근거: [spec §6·FR-14~17·FR-46~50](../../spec.md), [plan M3·M6·D2](../../plan.md), [UI 규범](ui-spec.md), [플레이 보조 조사](../research/play-assist.md), [규칙 §12](../research/rules-commercial.md#12-권장-기본-규칙-세트), [Galaxy 계획](../plan-galaxy-solo.md), [이번 1차 출처 조사](../research/interaction-conventions.md).
+근거: [spec §6·FR-14~17·FR-46~50](../../spec.md), [plan M3·M6·D2](../../plan.md), [UI 규범](ui-spec.md), [플레이 보조 조사](../research/play-assist.md), [규칙 §12](../research/rules-commercial.md#12-권장-기본-규칙-세트), [Galaxy 계획](../../plan.md#현재-트랙), [이번 1차 출처 조사](../research/interaction-conventions.md).
 
 **확정**은 1·2차 인터뷰에서 사용자가 직접 선택한 결정, **기본 채택**은 2차 인터뷰에서 기존 권고안을 일괄 채택한 결정(사용자 거부 시 변경), **추가 권고**는 이번에 새로 제안한 시간 초과 정책·세부 구현 계약이다. **기존**은 현행 명세다. 상용의 ‘일반적/일부/없음/미확인’은 출처의 판정이고 제품 채택 상태와 다르다. 확정 항목은 다시 승인받지 않는다. 아래 대안은 비교 기록이지 확정 결정을 되돌리는 질문이 아니다.
 

@@ -19,12 +19,12 @@
 
 ## Docker 실행
 
-[목업 재현 원본 표](../mockups/README.md)의 8파일을 `/tmp/visual-research`에 준비한다. 호스트에 FontTools를 설치하지 않는다. 다음 명령은 선택 예시이며 폰트 채택을 의미하지 않는다. 출력은 임시 디렉터리를 사용하고 성공한 산출물만 검토 후 배포 폴더로 옮긴다. 실패했을 때 이전 산출물을 성공 결과로 사용하지 않는다.
+[`sources.json`](sources.json)의 고정 원본·라이선스 목록의 8파일을 `/tmp/visual-research`에 준비한다. 호스트에 FontTools를 설치하지 않는다. 다음 명령은 선택 예시이며 폰트 채택을 의미하지 않는다. 출력은 임시 디렉터리를 사용하고 성공한 산출물만 검토 후 배포 폴더로 옮긴다. 실패했을 때 이전 산출물을 성공 결과로 사용하지 않는다.
 
 ```sh
 docker run --rm -v "$PWD:/work" -v /tmp/visual-research:/inputs:ro \
   python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f \
-  sh -c 'pip install --quiet fonttools==4.61.1 brotli==1.2.0 && python /work/docs/design/fonts/subset_font.py --manifest /work/docs/design/fonts/sources.json --inputs /inputs --corpus /work/docs/design/mockups/fonts/corpus.txt --family VDPretendard --output /tmp/font-output && python /work/docs/design/fonts/test_subset.py'
+  sh -c 'pip install --quiet fonttools==4.61.1 brotli==1.2.0 && python /work/docs/design/fonts/subset_font.py --manifest /work/docs/design/fonts/sources.json --inputs /inputs --corpus /work/docs/design/fonts/app-corpus.txt --family VDPretendard --output /tmp/font-output && python /work/docs/design/fonts/test_subset.py'
 ```
 
 5개 검사: 4후보 roundtrip/결정적 출력·고지 보존, 원본 hash 변조 거부, 미지원 문자 거부, 예산 초과 시 쓰기 금지, tnum 제거 결과 거부. 문구가 바뀌면 코퍼스를 다시 생성하고 이 gate와 브라우저 렌더를 함께 돌린다.

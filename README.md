@@ -83,7 +83,7 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 
 - [의도](intend.md) → [명세](spec.md) → [구현 계획](plan.md): 목표·요구사항·현재 마일스톤과 결정.
 - [작업 규범](AGENTS.md): 작업 제약과 버전 표의 정본.
-- [Galaxy·솔로 계획](https://github.com/kywoo26/p2p-gostop/pull/76): 현재 증분·PR 소유권·완료 조건(미병합 PR #76의 docs/plan-galaxy-solo.md).
+- [Galaxy·솔로 계획](plan.md#현재-트랙): 현재 증분·PR 소유권·완료 조건.
 - [UI 규범·구현 지도](docs/design/ui-spec.md): UX-01~25, 화면·상태·이벤트·현재 격차; 구 docs/ui.md를 대체.
 - [프로토콜](docs/protocol.md): 메시지·전송·세션 계약.
 - [규칙 벡터](docs/rules-vectors.md): 규칙 ID와 테스트의 대응.
@@ -93,9 +93,4 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - [상용 규칙 조사](docs/research/rules-commercial.md): §12가 게임 규칙의 유일한 규범.
 - [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.
 - [플랫폼 조사](docs/research/tech-stack.md) / [도구 비교](docs/research/agent-era-stack.md): 제약·호환성·선택 근거, 설치 버전은 AGENTS.md.
-- [M0 리뷰](docs/reviews/M0-review.md): 초기 Android·배포·스모크 검토 이력.
-- [M1 리뷰](docs/reviews/M1-review.md): 엔진 규칙·보안·벡터 검토 이력.
-- [M3 리뷰](docs/reviews/M3-review.md): 솔로 표시·프롬프트·UX 사후 검토 이력.
-- [M4 프로토콜 리뷰](docs/reviews/M4-protocol-review.md): 공정성·재접속·전송·복원 검토 이력.
-- [하네스 감사](docs/reviews/harness-audit.md): 에이전트 설정·훅·권한 정리 이력.
-- [MVP 감사](docs/reviews/mvp-rush-audit.md): 알파 출시 당시 생략·결함 기록. 리뷰의 구경로·행 번호는 당시 커밋을 가리킨다.
+- [완료된 리뷰 인덱스](docs/reviews/README.md): M0·M1·M3·M4·MVP·하네스 감사의 PR/커밋과 남은 이슈.

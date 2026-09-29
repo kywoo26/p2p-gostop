@@ -1,6 +1,6 @@
 # 규칙 벡터 대응표 (M1)
 
-작성: 2026-09-28 · 갱신: 2026-09-28(M1 리뷰 `docs/reviews/M1-review.md` 반영, 결정 D1~D4), 2026-09-28(plan 3-2 트랙 E1: 공개 손패 `revealed`, 검증 생략 경로 `applyUnchecked`, 밀기, `matchPreview`, 피·국진 표적 벡터) · 근거: `docs/research/rules-commercial.md` 12장(규범), 13장(불일치 → 토글), §10.1(밀기) · 요구사항: spec AC-01, AC-02, FR-12, AI-03, plan M1·E1
+작성: 2026-09-28 · 갱신: 2026-09-28(M1 리뷰 `docs/reviews/README.md` 반영, 결정 D1~D4), 2026-09-28(plan 3-2 트랙 E1: 공개 손패 `revealed`, 검증 생략 경로 `applyUnchecked`, 밀기, `matchPreview`, 피·국진 표적 벡터) · 근거: `docs/research/rules-commercial.md` 12장(규범), 13장(불일치 → 토글), §10.1(밀기) · 요구사항: spec AC-01, AC-02, FR-12, AI-03, plan M1·E1
 
 - 벡터 파일: `packages/engine/test/vectors/*.json`(deal·bonus·score·events·gostop·settle, E1 트랙의 push(밀기)·view(공개 손패·미리보기)·pi(피 가치·국진 표적)), 실행기: `packages/engine/test/vector-harness.ts`, 테스트: `packages/engine/test/vectors.test.ts`. 실행기는 받아들여진 모든 액션을 `applyUnchecked`로도 적용해 `reduce`와 상태·이벤트가 같은지 확인한다.
 - 벡터 스키마: `id`, `ruleId`(R/B/S/E/G/M), `case`(normal 정상 / boundary 경계 / counter 반례), `toggle`(13장 토글 값, 선택), `description`(한국어), `preset`·`rulesPatch`, `setup`(손패·바닥·뻑 무더기·더미 순서·획득 패·좌석 카운터) 또는 `deal`(시드·선·고정 덱·선 고르기 후보), `actions[]`, `expect`(상태·이벤트 부분 일치, 정산 steps(밀기 단계는 `origin: "push"`), 원장, 합법 수, 스톱 미리보기, 거부 사유, 좌석의 공개 손패 `revealed`, 뷰의 공개 손패와 `unseenCards` 제외 `revealedView`, `matchPreview`).
