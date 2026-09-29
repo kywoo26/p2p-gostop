@@ -13,6 +13,8 @@ test('선택 중 배너·알림은 숨기고 해제 후 한 상태 메시지로 
   });
   expect(screen.container.querySelector('.banner')).toBeNull();
   await screen.rerender({ blocked: false, banner: null, toast: null });
-  await expect.element(screen.getByRole('status')).toHaveTextContent('내 차례 · 상대 뻑 · 피 1장 이동');
+  await expect
+    .element(screen.getByRole('status'))
+    .toHaveTextContent('내 차례 · 상대 뻑 · 피 1장 이동');
   expect(screen.container.querySelectorAll('[role="status"]')).toHaveLength(1);
 });
