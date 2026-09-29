@@ -29,7 +29,7 @@
   display: none;
 }
 :root .board .slot[data-hand-cue='matchable'] .art-window {
-  translate: 0 -2px;
+  translate: none;
   outline: 1px solid var(--color-hand-match);
   outline-offset: 1px;
   box-shadow:
@@ -37,7 +37,7 @@
     0 0 5px #dec29160;
 }
 :root .board .slot[data-hand-cue='secured'] .art-window {
-  translate: 0 -4px;
+  translate: none;
   outline: 3px double var(--color-hand-secured);
   outline-offset: 0;
   box-shadow:
@@ -148,7 +148,10 @@
   position: absolute;
   left: -3px;
   top: -6px;
-  width: calc(var(--action-count) * var(--card-w-l) + (var(--action-count) - 1) * 8px + 6px);
+  width: calc(
+    var(--card-w-l) + (var(--action-count) - 1) *
+      ((100cqw - var(--card-w-l)) / max(1, var(--fan-count) - 1)) + 6px
+  );
   height: calc(var(--card-h-l) + 10px);
   box-sizing: border-box;
   border: 2px solid var(--action-color);
@@ -157,7 +160,7 @@
   pointer-events: none;
   z-index: -1;
 }
-/* 해당 카드 안의 전문 일러스트. 월 배지 반대쪽 상단 모서리에 배치. */
+/* 해당 카드 안의 전문 일러스트. 별도 월 색인이 없는 손패의 오른쪽 위에 배치. */
 :root .board .hand.compact .art-window {
   position: relative;
 }
@@ -176,13 +179,6 @@
 }
 :root .board .slot[data-hand-action='shake'] .art-window::after {
   background-image: url('/skin/bell-illustrated.webp');
-}
-:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='shake']) .mark {
-  padding-inline: 1px;
-}
-:root .board .slot .art-window:has(.mark-top.mark-right)::after {
-  right: auto;
-  left: 2px;
 }
 :root .board .slot .art-window:has(.card[style*='will-change'])::after {
   display: none;
@@ -212,7 +208,7 @@
 }
 /* #114/#115 표시 계약만 소비. 월/카드 수/합법성을 CSS에서 판정하지 않는다. */
 :root .board .slot:is([data-hand-action='bomb'], [data-hand-action='chongtong']) .art-window {
-  translate: 0 -5px;
+  translate: none;
   outline: 2px solid var(--color-hand-match);
   outline-offset: 0;
   box-shadow:

@@ -1,6 +1,6 @@
 <script lang="ts">
-  // FR-40 / UX-H01: 점수와 잔액은 같은 열에서 비교한다. 진행도는 SeatProgress 소유.
-  import { formatMoney } from '../lib/format.ts';
+  // FR-40 / UX-11: 진영별 잔액·변동·점수. 정확한 금액과 고/배수는 접근성 이름과 판 정보에 유지한다.
+  import { formatCompactMoney, formatMoney, formatSignedCompactMoney } from '../lib/format.ts';
   import type { MoneyUnit } from '../lib/view-types.ts';
 
   interface Props {
@@ -14,8 +14,11 @@
     stopPreview?: boolean;
     expanded?: boolean;
     timerText?: string | null;
-    /** 공개 뷰가 제공한 스톱 예상액만 표시. 미제공은 대시. */
     estimatedAmount?: number | null;
+    shakes?: number;
+    ppeokCount?: number;
+    dealer?: boolean;
+    delta?: number;
   }
 
   let {
@@ -30,143 +33,217 @@
     expanded = false,
     timerText = null,
     estimatedAmount = null,
+    shakes = 0,
+    ppeokCount = 0,
+    dealer = false,
+    delta = 0,
   }: Props = $props();
-  const multiplierLabel = $derived(stopPreview ? '스톱 배수' : '누적 배수, 박 제외');
 </script>
 
 <div
   class={['seat-bar', { me: who === '나', expanded }]}
-  aria-label={`${name === who ? who : `${name} (${who})`} 점수판`}
+  aria-label={`${who} ${name === who ? '' : name + ' '}점수판`}
 >
-  <h2 class="identity" title={name}>
-    <span class="who">{who}</span><span class="name">{name === who ? '' : name}</span>
-  </h2>
-  {#if timerText}<span class="timer" data-testid="decision-timer" title={timerText}
-      >{timerText}</span
-    >{/if}
-  <span class="score" aria-label={`${who} 현재 족보 점수 ${score}점`}>
-    <b data-testid={who === '나' ? 'my-score' : 'opponent-score'}>{score}</b><span>점</span>
-  </span>
-  <span class="go" aria-label={`${who} 고 ${goCount}회`}>{goCount}고</span>
-  <span
-    class="multiplier"
-    aria-label={multiplier === null
-      ? `${who} 배수 미제공`
-      : `${who} ${multiplierLabel} ×${multiplier}`}
-    title={multiplierLabel}
-  >
-    {#if multiplier === null}미정{:else}×{multiplier}{/if}
-  </span>
-  <div class="money">
-    <span
-      class="estimate"
-      aria-label={`${who} 스톱 예상액 ${estimatedAmount === null ? '미제공' : formatMoney(estimatedAmount, unit)}`}
-      >스톱 {estimatedAmount === null ? '미정' : formatMoney(estimatedAmount, unit)}</span
-    >
-    <span class="balance" aria-label={`${who} 잔액 ${formatMoney(balance, unit)}`} title="잔액"
-      >{formatMoney(balance, unit)}</span
-    >
+  <div class="seat-main">
+    <h2 class="identity" title={name}>
+      {#if who === '나' && dealer}<span class="dealer" aria-label="선">선</span>{/if}
+      <span class="who">{who}</span>
+      {#if name !== who}<span class="name">{name}</span>{/if}
+      {#if who === '나'}
+        <span class="counters" aria-label={`뻑 ${ppeokCount}회, 흔들기 ${shakes}회`}>
+          <span class="counter" aria-hidden="true" title={`뻑 ${ppeokCount}회`}>
+            <svg viewBox="0 0 20 20" width="16" height="16"
+              ><path
+                d="M5 17C1 17 1 12 5 12C2 10 5 7 7 8C5 5 11 5 10 2C15 5 15 8 13 9C18 8 19 12 16 13C20 14 18 17 15 17Z"
+                fill="currentColor"
+              /></svg
+            >{ppeokCount}
+          </span>
+          <span class="counter" aria-hidden="true" title={`흔들기 ${shakes}회`}
+            ><img src="/skin/bell-illustrated.webp" width="16" height="16" alt="" />{shakes}</span
+          >
+        </span>
+      {/if}
+      {#if timerText}<span class="timer" data-testid="decision-timer" title={timerText}
+          >{timerText}</span
+        >{/if}
+    </h2>
+    <div class="amounts">
+      <span class="balance" aria-label={`${who} 잔액 ${formatMoney(balance, unit)}`}
+        >{formatCompactMoney(balance, unit)}</span
+      >
+      <span
+        class="delta"
+        class:positive={delta > 0}
+        class:negative={delta < 0}
+        aria-label={`${who} 최근 정산 변동 ${formatMoney(delta, unit)}`}
+        >{formatSignedCompactMoney(delta, unit)}</span
+      >
+    </div>
   </div>
+  <div class="score-area">
+    <span class="score" aria-label={`${who} 현재 족보 점수 ${score}점`}>
+      <b data-testid={who === '나' ? 'my-score' : 'opponent-score'}>{score}</b><span>점</span>
+    </span>
+    <span class="score-meta">
+      <span class="go" aria-label={`${who} 고 ${goCount}회`}>{goCount}고</span>
+      {#if multiplier !== null}<span
+          class="multiplier"
+          aria-label={`${who} ${stopPreview ? '스톱 배수' : '누적 배수, 박 제외'} ${multiplier}배`}
+        >
+          · ×{multiplier}</span
+        >{/if}
+    </span>
+  </div>
+  <span class="sr-only"
+    >{goCount}고, {multiplier === null ? '배수 미정' : `배수 ${multiplier}`}, {stopPreview
+      ? '스톱 선택 중, '
+      : ''}스톱 예상액 {estimatedAmount === null
+      ? '미제공'
+      : formatMoney(estimatedAmount, unit)}</span
+  >
 </div>
 
 <style>
   .seat-bar {
-    position: relative;
-    display: grid;
-    grid-template-columns: subgrid;
-    grid-column: 1 / -1;
+    display: flex;
     align-items: center;
-    column-gap: 8px;
-    row-gap: 0;
-    min-height: 0;
-    padding: 0 8px;
+    gap: 8px;
+    min-width: 0;
+    height: 100%;
     color: var(--color-hud-text);
-    background: var(--color-hud);
-    font-size: var(--hud-font-size);
-    line-height: var(--hud-line-height);
     font-variant-numeric: tabular-nums;
   }
-
-  .me {
-    background: var(--color-hud-my-surface);
-    box-shadow: inset 3px 0 var(--color-hud-mine);
+  .seat-main {
+    flex: 1;
+    min-width: 0;
   }
   .identity {
     display: flex;
-    gap: 4px;
+    align-items: center;
+    gap: 5px;
     min-width: 0;
+    height: 18px;
     margin: 0;
-    font: inherit;
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: 400;
+    white-space: nowrap;
   }
   .who {
-    color: var(--color-hud-text);
-    font-weight: 750;
-    flex-shrink: 0;
+    flex: none;
+    color: var(--skin-paper);
+    font-weight: 600;
   }
   .name {
     min-width: 0;
-    flex: 1;
     overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
     color: var(--color-hud-muted);
   }
-  .timer {
-    position: absolute;
-    left: 8px;
-    bottom: 2px;
-    overflow: hidden;
-    white-space: nowrap;
+  .dealer {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--skin-brass);
+    color: var(--skin-ink);
+    font-weight: 600;
+  }
+  .counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .counter svg {
+    color: var(--skin-brass);
+  }
+  .counters {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-size: 12px;
-    line-height: 14px;
-    font-variant-numeric: tabular-nums;
+    flex: none;
+    color: var(--color-hud-muted);
   }
-  .seat-bar:has(.timer) .identity {
-    align-self: start;
-    max-height: 14px;
+  .timer {
+    flex: none;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--skin-paper);
+  }
+  .amounts {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .balance {
+    display: block;
+    min-width: 0;
     overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--skin-paper);
+    font-size: 24px;
+    line-height: 30px;
+    font-weight: 600;
+    letter-spacing: 0;
   }
-  .expanded .timer {
-    bottom: 19px;
+  .delta {
+    flex: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-hud-muted);
   }
-  .me .who,
-  .me .score {
+  .delta.positive {
     color: var(--color-hud-mine);
+  }
+  .delta.negative {
+    color: var(--color-event-ppeok-text);
   }
   .score {
     display: flex;
-    align-items: center;
-    height: 24px;
-    gap: 2px;
+    align-items: baseline;
+    justify-content: flex-end;
+    flex: none;
+    min-width: 52px;
+    height: 32px;
+    padding: 0 6px;
+    border-radius: 5px;
+    background: oklch(14% 0.02 160 / 0.8);
+    color: var(--skin-paper);
     white-space: nowrap;
-  }
-  .score > span {
-    font-size: 12px;
-    color: var(--color-hud-muted);
   }
   .score b {
-    font-size: var(--hud-score-font-size);
-    line-height: var(--hud-score-line-height);
-    font-weight: var(--hud-score-font-weight);
+    font-size: 24px;
+    line-height: 30px;
   }
-  .go,
-  .multiplier {
+  .score span {
+    font-size: 12px;
+    line-height: 30px;
+  }
+  .score-area {
+    flex: none;
+    display: grid;
+    justify-items: stretch;
+    gap: 2px;
+  }
+  .score-meta {
+    text-align: center;
+    line-height: 14px;
+    font-size: 12px;
+    white-space: nowrap;
     color: var(--color-hud-muted);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
     white-space: nowrap;
-  }
-  .multiplier {
-    min-width: 2ch;
-  }
-  .balance {
-    text-align: right;
-    white-space: nowrap;
-    font-weight: 600;
-  }
-  .expanded {
-    grid-template-rows: var(--hud-score-line-height) var(--hud-money-line-height);
-  }
-  .expanded .balance {
-    grid-column: 1 / -1;
-    line-height: var(--hud-money-line-height);
   }
 </style>

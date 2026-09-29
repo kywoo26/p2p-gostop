@@ -1,14 +1,13 @@
 <script lang="ts">
-  // 내 손패 부채꼴 (spec 6.2: 최대 10장, 겹침 스크롤 없음 / 6.3: 탭 한 번으로 내기, 내 차례가 아니면 흐리게,
+  // 내 손패 (spec 6.2: 최대 10장, 겹침 스크롤 없음 / 6.3: 탭 한 번으로 내기, 내 차례가 아니면 흐리게,
   // 누르고 있으면 먹게 될 바닥 카드 강조 / FR-12: 낼 수 있는 카드와 먹을 수 있는 카드 예고).
-  // 5장까지 한 줄, 6장 이상은 두 줄로 나눠 카드마다 48px 이상의 터치 영역을 지키고 390px 화면에서 잘리지 않게 한다
-  // (spec 6.1, M3 리뷰 L-3: 6장 한 줄은 392px). 손패는 월·종류 순으로 정렬해 보인다(M3 리뷰 I-2).
+  // 6장까지 한 줄, 7~10장은 비겹침 두 줄. 누름·스크럽·놓음으로 한 번 실행한다(UX-06).
   // 일반 카드의 길게 누르기(400ms 이상)는 미리보기만 닫는다. 폭탄 가능 카드는 한 장 내기다.
   // 탭 한 번 = 누르기 시작할 때 이미 낼 수 있던 카드만 낸다(M3 리뷰 I-3): 재생 중에 판을 눌러 애니메이션을 건너뛰면
   // 손가락을 떼기 전에 재생이 끝나 버튼이 풀릴 수 있다. 그 click은 건너뛰기용이었으므로 카드를 내지 않는다.
   import type { CardId } from '../lib/view-types.ts';
   import Card from './Card.svelte';
-  import { cardLabel } from './cards.ts';
+  import { cardLabel, sortHand } from './cards.ts';
   import { handRows } from './hand-layout.ts';
   import { getCard } from '@p2p-gostop/engine';
   import { HAND_CUES, type HandVisualGroup } from './hand-visual.ts';
@@ -52,8 +51,9 @@
   }: Props = $props();
 
   const LONG_PRESS_MS = 400;
-  const rows = $derived(handRows(cards));
+  const rows = $derived(compact && cards.length <= 6 ? [sortHand(cards)] : handRows(cards));
   const myTurn = $derived(playable.length > 0);
+  let selectedCard = $state<CardId | null>(null);
 
   /** 누르기 시작한 카드·시각, 그때 낼 수 있었는지 (반응형일 필요 없음) */
   let pressed: {
@@ -61,9 +61,8 @@
     pointerId: number;
     at: number;
     armed: boolean;
-    released: boolean;
+    scrubbed: boolean;
   } | null = null;
-  let suppressClick = false;
   let previousRevision: object | undefined;
   let handRoot: HTMLElement;
 
@@ -80,7 +79,10 @@
   // 낼 수 있는 카드가 없어지면(재생 중·상대 차례) 진행 중이던 누르기는 무효다: 재생이 끝난 뒤 오는 click은
   // 새 누르기가 있어야 카드를 낸다(비활성 버튼에 pointerdown이 오지 않는 브라우저에서도 안전하게).
   $effect(() => {
-    if (playable.length === 0) pressed = null;
+    if (playable.length === 0) {
+      pressed = null;
+      selectedCard = null;
+    }
   });
   $effect(() => {
     // 손패 보충·재정렬·뷰 교체 시 이전 포인터의 후속 click을 무효화한다.
@@ -97,13 +99,15 @@
       oninvalidate?.();
     };
   });
+  $effect(() => {
+    if (selectedCard !== null && !cards.includes(selectedCard)) selectedCard = null;
+  });
 
   /**
    * 손패 안의 모든 pointerdown(비활성 버튼 포함)을 캡처 단계에서 받는다: 비활성 버튼의 이벤트는 위임 핸들러가
    * 건너뛸 수 있으므로 버튼이 아니라 손패 영역에서 누른 카드를 기록한다.
    */
   function press(event: PointerEvent) {
-    suppressClick = false;
     if (moving()) {
       pressed = null;
       return;
@@ -113,62 +117,83 @@
     const id = slot === null ? null : Number(slot.dataset['slot']);
     if (id === null) {
       pressed = null;
+      selectedCard = null;
+      onpreview?.(null);
       return;
     }
     const armed = playable.includes(id);
-    pressed = { id, pointerId: event.pointerId, at: performance.now(), armed, released: false };
-    if (armed) onpreview?.(id);
+    pressed = { id, pointerId: event.pointerId, at: performance.now(), armed, scrubbed: false };
+    if (armed) {
+      selectedCard = id;
+      if (event.isTrusted) handRoot.setPointerCapture(event.pointerId);
+      onpreview?.(id);
+    }
   }
 
   function release() {
     onpreview?.(null);
   }
 
-  function lift(id: CardId, event: PointerEvent) {
-    const current = pressed;
-    if (current?.pointerId !== event.pointerId || current.id !== id) return;
-    if (performance.now() - current.at < LONG_PRESS_MS) {
-      current.released = true;
-      release();
+  function scrub(event: PointerEvent) {
+    if (!pressed?.armed || pressed.pointerId !== event.pointerId) return;
+    // 선택 카드의 z-index에 영향을 받지 않게 정렬된 슬롯의 시작점을 사용한다.
+    const slots = [...handRoot.querySelectorAll<HTMLButtonElement>('[data-slot]')];
+    const bounds = handRoot.getBoundingClientRect();
+    if (event.clientY < bounds.top - 32 || event.clientY > bounds.bottom + 32) {
+      selectedCard = null;
+      onpreview?.(null);
       return;
     }
-    pressed = null;
-    suppressClick = true;
-    release();
-    if (current.armed && playable.includes(id) && bombCards.includes(id) && !moving()) {
-      onplay?.(id, current.at, true);
+    const candidate = slots.reduce<HTMLButtonElement | undefined>((best, slot) => {
+      const r = slot.getBoundingClientRect();
+      const distance = Math.hypot(
+        event.clientX - (r.left + r.width / 2),
+        event.clientY - (r.top + r.height / 2),
+      );
+      if (!best) return slot;
+      const previous = best.getBoundingClientRect();
+      return distance <
+        Math.hypot(
+          event.clientX - (previous.left + previous.width / 2),
+          event.clientY - (previous.top + previous.height / 2),
+        )
+        ? slot
+        : best;
+    }, undefined);
+    const id = Number(candidate?.dataset['slot']);
+    if (playable.includes(id)) {
+      pressed.scrubbed ||= id !== pressed.id;
+      pressed.id = id;
+      selectedCard = id;
+      onpreview?.(id);
     }
   }
 
-  /**
-   * 누르기가 취소되면(스크롤 등) 그 누르기로는 내지 않는다. pointerleave는 터치에서 손을 뗄 때 click보다 먼저 오므로
-   * 미리보기만 끈다(release).
-   */
+  function lift(event: PointerEvent) {
+    const current = pressed;
+    if (current?.pointerId !== event.pointerId) return;
+    pressed = null;
+    const id = selectedCard;
+    selectedCard = null;
+    release();
+    if (handRoot.hasPointerCapture(event.pointerId))
+      handRoot.releasePointerCapture(event.pointerId);
+    if (!current.armed || id === null || !playable.includes(id) || moving()) return;
+    const held = !current.scrubbed && performance.now() - current.at >= LONG_PRESS_MS;
+    if (held && !bombCards.includes(id)) return;
+    onplay?.(id, current.at, held);
+  }
+
   function abandon() {
     pressed = null;
-    suppressClick = true;
+    selectedCard = null;
     release();
   }
 
   function activate(id: CardId, event: MouseEvent) {
-    const press = pressed;
-    pressed = null;
-    onpreview?.(null);
-    if (moving()) return;
-    // 취소된 포인터의 합성 click만 막는다. 뒤따르는 click 없이 키보드가 눌리면 첫 입력부터 수락한다.
-    if (suppressClick && event.detail !== 0) {
-      suppressClick = false;
-      return;
-    }
-    suppressClick = false;
-    if (!playable.includes(id)) return;
-    // 키보드(Enter·Space)와 스크립트 click은 누르기 없이 온다(detail 0): 그대로 낸다
-    if (event.detail !== 0) {
-      // 포인터 탭: 같은 카드를 낼 수 있을 때 눌렀어야 한다(건너뛰기 탭 방지).
-      if (press === null || press.id !== id || !press.armed || !press.released) return;
-      if (performance.now() - press.at >= LONG_PRESS_MS) return;
-    }
-    onplay?.(id, event.detail !== 0 && press ? press.at : performance.now(), false);
+    // pointerup에서 이미 실행한다. 키보드·보조기기의 detail 0 click만 별도로 실행한다.
+    if (event.detail !== 0 || moving()) return;
+    if (playable.includes(id)) onplay?.(id, performance.now(), false);
   }
 
   function keydown(id: CardId, event: KeyboardEvent) {
@@ -184,9 +209,14 @@
   role="group"
   aria-label="내 손패"
   onpointerdowncapture={press}
+  onpointermove={scrub}
+  onpointerup={lift}
+  onpointercancel={abandon}
+  data-count={cards.length}
+  style:--fan-count={cards.length}
 >
   {#each rows as row, r (r)}
-    <div class="row">
+    <div class="row" style:--fan-count={row.length}>
       {#each row as id, i (id)}
         {@const canPlay = playable.includes(id)}
         {@const canMatch = cuesEnabled && canPlay && matchable.includes(id)}
@@ -207,10 +237,13 @@
             'slot',
             {
               playable: canPlay,
+              selected: compact && selectedCard === id,
               'group-selected': group && group.id === selectedGroup,
             },
           ]}
           style:transform={compact ? 'none' : fan(i, row.length)}
+          style:--fan-progress={i / Math.max(1, row.length - 1)}
+          style:--fan-index={i + 1}
           aria-label={[
             cardLabel(id),
             secured ? '확정 획득 짝' : canMatch ? '먹을 수 있음' : null,
@@ -232,26 +265,20 @@
                 : undefined
             : undefined}
           data-hand-action={group?.kind}
-          onpointerup={(e) => lift(id, e)}
-          onpointercancel={abandon}
-          onpointerleave={(e) => {
-            if (pressed && !pressed.released && pressed.pointerId === e.pointerId) abandon();
-            else release();
-          }}
           onkeydown={(e) => keydown(id, e)}
-          onfocus={() => onpreview?.(id)}
-          onblur={release}
+          onfocus={() => {
+            selectedCard = id;
+            onpreview?.(id);
+          }}
+          onblur={() => {
+            if (!pressed) selectedCard = null;
+            release();
+          }}
           oncontextmenu={(e) => e.preventDefault()}
           onclick={(e) => activate(id, e)}
         >
           <span class="art-window">
-            <Card
-              {id}
-              size="l"
-              dimmed={!canPlay}
-              flippable
-              markAt={rows.length > 1 && r === 0 ? 'top' : 'bottom'}
-            />
+            <Card {id} size="l" dimmed={!canPlay} flippable marks={false} />
           </span>
         </button>
       {/each}
@@ -273,8 +300,7 @@
     gap: var(--space-1);
   }
 
-  /* 두 번째 줄은 첫 줄 아래쪽 절반을 덮는다: 윗줄은 위쪽 55px(표식 포함)만 보인다.
-     55px 노출 영역 안에 16px 월 표식과 최소 48px 입력 영역을 유지한다 (plan.md D1) */
+  /* 두 번째 줄은 첫 줄 아래쪽 절반을 덮는다. 카드 그림과 최소 48px 입력 영역을 유지한다 (UX-06). */
   .row + .row {
     margin-top: calc(55px - var(--card-h-l));
   }

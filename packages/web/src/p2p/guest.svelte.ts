@@ -27,6 +27,7 @@ import {
 } from '@p2p-gostop/protocol';
 import {
   AutoChoice,
+  latestBalanceChanges,
   type GameController,
   type GameStats,
   type PushDecision,
@@ -82,6 +83,12 @@ const CHECK_LABEL: Readonly<Record<RoundCheck['result'], string>> = {
 };
 
 export class GuestGame implements GameController {
+  get balanceChanges(): readonly [number, number] {
+    return latestBalanceChanges(this.lobby?.ledger.recent ?? []);
+  }
+  get perPoint(): number | undefined {
+    return this.lobby?.ledger.perPoint;
+  }
   readonly mode = 'guest' as const;
   link = $state<LinkState>('connecting');
   /** 중계 알림으로 본 호스트 소켓 (알림이 없는 중계면 null) */

@@ -1,4 +1,4 @@
-// 카드 그림 경로와 한국어 이름·표식 (spec 6.6: 카드 위 표식은 런타임 오버레이, NF-08: 색만으로 구분하지 않음).
+// 카드 그림 경로와 한국어 이름 (NF-08: 손패·바닥은 카드 도상·aria-label).
 import { getCard } from '@p2p-gostop/engine';
 import type { CardId } from '../lib/view-types.ts';
 
@@ -35,7 +35,7 @@ export function cardLabel(id: CardId): string {
   }
 }
 
-/** 모서리 표식의 종류 기호 (NF-08: 색이 아니라 모양으로 구분). 일반 피는 기호 없이 월 숫자만 */
+/** 바닥 카드 모서리 표식의 종류 기호. 일반 피는 기호 없이 월 숫자만 */
 export type MarkKind = 'gwang' | 'yeol' | 'tti' | 'pi' | 'ssangpi';
 
 export interface CardIndex {

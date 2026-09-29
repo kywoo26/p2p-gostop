@@ -38,9 +38,13 @@
             >국진 쌍피</small
           >{/if}</span
       >
-      <span class="stack" style:--pile-count={pile.cards.length}>
-        {#each pile.cards as id (id)}
-          <Card {id} size="s" highlight={highlight.includes(id)} />
+      <span
+        class="stack"
+        style:--pile-count={Math.min(4, pile.cards.length)}
+        data-count={pile.cards.length}
+      >
+        {#each pile.cards.slice(-4) as id (id)}
+          <Card {id} size="s" marks={false} highlight={highlight.includes(id)} />
         {/each}
       </span>
     </li>

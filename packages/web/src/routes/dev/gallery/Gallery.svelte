@@ -11,6 +11,7 @@
     feedbackFixture,
     feedbackExtras,
     feedbackGroups,
+    fanFixture,
   } from '../../../lib/layout-fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
   import { proEnabled } from '../../../pro-assets/runtime.ts';
@@ -141,6 +142,12 @@
     view={layoutFixture(page.endsWith('target') ? 'target' : 'play')}
     banner={{ kind: 'ppeok', text: '뻑 · 상대가 같은 월 세 장을 남겼습니다', seat: 1 }}
     toast={{ id: 1, text: '피 1장 이동' }}
+  />
+{:else if page.startsWith('fan-')}
+  <Board
+    roundChanges={[70_000, -70_000]}
+    view={fanFixture(page.slice(4) as Parameters<typeof fanFixture>[0])}
+    extras={layoutExtras(page === 'fan-play' ? 'play' : 'gostop')}
   />
 {:else if page.startsWith('layout-')}
   <Board

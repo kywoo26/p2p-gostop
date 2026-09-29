@@ -18,7 +18,7 @@
   import { handAssist, handAssistPlayer, hintLevelOf } from '../game/assist.ts';
   import type { HintLevel } from '../game/assist.ts';
   import { boardNotices } from '../game/display.ts';
-  import { formatMoney } from '../lib/format.ts';
+  import { formatCompactMoney, formatMoney } from '../lib/format.ts';
   import type { BoardView, MoneyUnit, SeatView } from '../lib/view-types.ts';
   import { settings } from '../settings/settings.svelte.ts';
   import { bannerActor, type Banner } from './banner.ts';
@@ -35,7 +35,6 @@
   import SeatBar from './SeatBar.svelte';
   import SeatProgress from './SeatProgress.svelte';
   import { seatStats, type SeatExtras } from './seat-stats.ts';
-  import TargetModal from './TargetModal.svelte';
 
   type BoardSeat = SeatView & SeatExtras;
 
@@ -53,6 +52,8 @@
     /** 솔로 판 기록은 실제 보조 표식이 화면에 올라온 뒤 이 경로로 갱신한다. */
     onhintdisplayed?: ((level: HintLevel) => void) | undefined;
     unit?: MoneyUnit;
+    perPoint?: number;
+    roundChanges?: readonly [number, number];
     confirmDelay?: boolean;
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
@@ -80,11 +81,13 @@
 
   let {
     view,
+    roundChanges = [0, 0],
     soloPlayerView,
     extras = null,
     handVisualGroups = [],
     onhintdisplayed,
     unit = '냥',
+    perPoint = settings.value.perPoint,
     confirmDelay = false,
     banner = null,
     toast = null,
@@ -333,9 +336,11 @@
       selecting,
       'two-hands': (me.hand?.length ?? 0) > 5,
       'first-pick': pickFirst !== null,
+      'go-stop': pending?.kind === 'goStop',
     },
   ]}
   aria-label="게임판"
+  tabindex="-1"
   aria-busy={busy}
   data-testid="board"
   data-awaiting={awaiting || (!busy && playable.length > 0) ? 'me' : 'other'}
@@ -348,6 +353,18 @@
 >
   <Scene scene="table" />
   <div class="hud" inert={landscape} data-testid="hud">
+    <div class="table-heading">
+      <span>{view.round}판 · 점당 {formatCompactMoney(perPoint, unit)}</span>
+      <strong title={opponent.name}
+        >{pending?.kind === 'target' ? '먹을 바닥패를 선택하세요' : opponent.name}</strong
+      >
+    </div>
+    <div class="menu-reserved" data-testid="menu-reserved" aria-hidden="true">메뉴</div>
+  </div>
+  <div class="captured-zone" data-anchor="opp-hand">
+    <CapturedPile stats={opponentStats} label="상대 획득패" highlight={view.highlight ?? []} />
+  </div>
+  <div class="opponent-hud">
     <div class="scoreboard" class:expanded={expandedHud} aria-label="상대 점수판">
       <SeatBar
         who="상대"
@@ -356,40 +373,32 @@
         score={opponent.score}
         goCount={opponent.goCount}
         balance={opponent.balance}
+        delta={roundChanges[seat === 0 ? 1 : 0]}
         {unit}
         expanded={expandedHud}
       />
     </div>
-    <div class="menu-reserved" data-testid="menu-reserved" aria-hidden="true"></div>
-  </div>
-  <div class="captured-zone">
-    <CapturedPile stats={opponentStats} label="상대 획득패" highlight={view.highlight ?? []} />
-    <SeatProgress
-      who="상대"
-      stats={opponentStats}
-      shakes={opponent.shakes}
-      ppeokCount={opponent.ppeokCount}
-      bombs={opponent.bombs ?? null}
-      handCount={opponent.handCount}
-      anchor="opp-hand"
-    />
   </div>
 
   <div class="center">
     <Floor
       compact
       groups={view.floor}
+      options={pending?.kind === 'target' ? pending.options : []}
+      onchoose={(card) => act({ type: 'chooseTarget', seat, card })}
       {handLinks}
       deckCount={view.deckCount}
       highlight={floorHighlight}
       staging={view.staging ?? []}
     />
   </div>
-
-  <div class="decision-area" class:idle-slot={!selecting && !view.canFlipOnly} inert={landscape}>
+  <div
+    class="decision-area"
+    class:idle-slot={(!selecting || pending?.kind === 'target') && !view.canFlipOnly}
+    inert={landscape}
+  >
     <div class="decision-content">
       {#if timeoutText && timerText}<p class="timer-prompt">{timerText} · {timeoutText}</p>{/if}
-      <span class="table-meta">{view.round}판</span>
       <EventRail
         {banner}
         {toast}
@@ -428,13 +437,6 @@
           poolSize={pickFirst.poolSize}
           taken={pickFirst.taken}
           onpick={(index) => act({ type: 'pickFirst', seat, index })}
-        />
-      {:else if pending?.kind === 'target'}
-        <TargetModal
-          card={pending.card}
-          source={pending.source}
-          options={pending.options}
-          onchoose={(card) => act({ type: 'chooseTarget', seat, card })}
         />
       {:else if pending?.kind === 'goStop'}
         <GoStopModal
@@ -482,13 +484,6 @@
         />
       {/if}
     </div>
-    <button
-      class="info-button"
-      type="button"
-      onclick={() => {
-        infoDialog.showModal();
-      }}>판 정보</button
-    >
   </div>
   <div class="mine-hud" inert={landscape}>
     <div class="scoreboard" class:expanded={expandedHud} aria-label="내 점수판">
@@ -499,23 +494,20 @@
         score={me.score}
         goCount={me.goCount}
         balance={me.balance}
+        delta={roundChanges[seat]}
         {unit}
         expanded={expandedHud}
         multiplier={view.multiplier}
         estimatedAmount={pending?.kind === 'goStop' ? pending.stopAmount : null}
         stopPreview={view.pending?.kind === 'goStop' && view.pending.seat === seat}
+        shakes={me.shakes}
+        ppeokCount={me.ppeokCount}
+        dealer={view.dealer === seat}
       />
     </div>
   </div>
   <div class="captured-zone mine">
     <CapturedPile stats={myStats} label="내 획득패" highlight={view.highlight ?? []} />
-    <SeatProgress
-      who="내"
-      stats={myStats}
-      shakes={me.shakes}
-      ppeokCount={me.ppeokCount}
-      bombs={me.bombs ?? null}
-    />
   </div>
   <div class="hand-zone" inert={landscape}>
     <Hand
@@ -567,6 +559,22 @@
         {#if extras.goStop.capped}<p>상대 잔액까지</p>{/if}
       {/if}
     {/if}
+    <h3>족보 진행</h3>
+    <SeatProgress
+      who="상대"
+      stats={opponentStats}
+      shakes={opponent.shakes}
+      ppeokCount={opponent.ppeokCount}
+      bombs={opponent.bombs ?? null}
+      handCount={opponent.handCount}
+    />
+    <SeatProgress
+      who="내"
+      stats={myStats}
+      shakes={me.shakes}
+      ppeokCount={me.ppeokCount}
+      bombs={me.bombs ?? null}
+    />
     {#each [{ who: '상대', stats: opponentStats }, { who: '내', stats: myStats }] as entry (entry.who)}
       <h3>{entry.who} 획득패</h3>
       {#each entry.stats.piles as pile (pile.key)}
@@ -726,17 +734,12 @@
     border-radius: 12px;
     background: color-mix(in oklch, var(--color-hud) 25%, transparent);
   }
-  .idle-slot .info-button {
-    padding: 0 12px;
-    white-space: nowrap;
-  }
   .decision-content {
     min-height: 0;
     height: 100%;
     display: grid;
     align-items: center;
   }
-  .info-button,
   .flip-only {
     min-width: 48px;
     min-height: 48px;

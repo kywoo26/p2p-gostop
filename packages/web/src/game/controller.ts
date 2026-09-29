@@ -6,6 +6,7 @@ import {
   uniqueLegalAction,
   type Action,
   type PlayerView,
+  type LedgerEntry,
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
 import type { DecisionClock, TimeoutResult } from '@p2p-gostop/protocol';
@@ -36,6 +37,9 @@ export interface PushDecision {
 }
 
 export interface GameController {
+  /** 이 세션에 실제로 적용되는 점당 금액. */
+  readonly perPoint?: number | undefined;
+  readonly balanceChanges?: readonly [number, number];
   /** 솔로는 엔진의 자기 공개 PlayerView에서 힌트를 계산한다. */
   readonly hintPlayerView?: PlayerView;
   /** 실제 표시된 로컬 보조의 판별 사용 기록 경로 (솔로만 구현). */
@@ -144,4 +148,13 @@ export class AutoChoice {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
   }
+}
+
+/** 최근 확정 원장 이동만 표시한다. 재충전이나 스톱 예상액은 승패 변동으로 쓰지 않는다. */
+export function latestBalanceChanges(
+  entries: readonly (LedgerEntry | { readonly kind: 'recharge' })[],
+): readonly [number, number] {
+  const entry = entries.findLast((entry): entry is LedgerEntry => entry.kind !== 'recharge');
+  if (!entry) return [0, 0];
+  return entry.to === 0 ? [entry.amount, -entry.amount] : [-entry.amount, entry.amount];
 }

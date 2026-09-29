@@ -19,11 +19,15 @@ for (const kind of ['target', 'gostop', 'gukjin', 'shake', 'chongtong', 'first']
     const opener = screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!;
     opener.focus();
     await screen.rerender({ view: layoutFixture(kind), extras: layoutExtras(kind) });
-    const dialog = screen.container.querySelector<HTMLDialogElement>('.prompt')!;
+    const dialog = screen.container.querySelector<HTMLElement>('.prompt, .table.choosing')!;
     const buttons = [...dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
     expect(dialog.getAttribute('aria-modal')).toBe('true');
-    await vi.waitFor(() => expect(document.activeElement).toBe(dialog.querySelector('h2')));
-    for (const selector of ['.hud', '.hand-zone', '.center', '.info-button']) {
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(dialog.querySelector('h2') ?? dialog),
+    );
+    for (const selector of kind === 'target'
+      ? ['.hud', '.hand-zone']
+      : ['.hud', '.hand-zone', '.center']) {
       expect(screen.container.querySelector(selector)!.closest('[inert]')).not.toBeNull();
     }
     // 글꼴 배치와 ResizeObserver의 스크롤 영역 tabindex 결정 뒤 순환을 검증한다.
@@ -48,13 +52,22 @@ for (const kind of ['target', 'gostop', 'gukjin', 'shake', 'chongtong', 'first']
     expect(document.activeElement).toBe(buttons.at(-1));
     await userEvent.keyboard('{Tab}');
     await userEvent.keyboard('{Escape}');
-    expect(dialog.open).toBe(true);
+    expect(
+      dialog.matches('dialog')
+        ? dialog.hasAttribute('open')
+        : dialog.classList.contains('choosing'),
+    ).toBe(true);
     opener.focus(); // inert 속성은 프로그램 focus도 막는다.
     expect(document.activeElement).toBe(firstTab);
     await screen.rerender({ view: layoutFixture('play'), extras: layoutExtras('play') });
     if (kind === 'first') {
       // 선 고르기에는 손패가 없으므로 제거된 opener 대신 유효 제어로 돌아간다.
-      await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('판 정보'));
+      await vi.waitFor(() =>
+        expect(
+          document.activeElement === screen.container.querySelector('.board') ||
+            document.activeElement?.matches('.hand button'),
+        ).toBe(true),
+      );
     } else {
       await vi.waitFor(() => expect(document.activeElement?.getAttribute('data-slot')).toBe('6'));
     }
@@ -193,9 +206,14 @@ test('선택 연쇄와 선택 후 busy: 초점은 다음 창, 이후 유효 판 
   screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!.focus();
   await screen.rerender({ view: layoutFixture('target') });
   await screen.rerender({ view: layoutFixture('gostop') });
-  await vi.waitFor(() => expect(document.activeElement?.textContent).toContain('고? 스톱?'));
+  await vi.waitFor(() => expect(document.activeElement?.textContent).toContain('고 하시겠습니까?'));
   await screen.rerender({ view: layoutFixture('play'), busy: true });
-  await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('판 정보'));
+  await vi.waitFor(() =>
+    expect(
+      document.activeElement === screen.container.querySelector('.board') ||
+        document.activeElement?.matches('.hand button'),
+    ).toBe(true),
+  );
   expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).toBeNull();
 });
 
@@ -215,7 +233,7 @@ test('스킵은 빈 바닥 pointerup만: HUD·손패·카드·선택 행·정보
     '.floor .card',
     '.deck',
     '.decision-area',
-    '.info-button',
+    '.mine-hud',
   ]) {
     const node = screen.container.querySelector(selector)!;
     pointer(node, 'pointerdown');
@@ -223,9 +241,6 @@ test('스킵은 빈 바닥 pointerup만: HUD·손패·카드·선택 행·정보
     pointer(node, 'pointerup');
     expect(onskip).not.toHaveBeenCalled();
   }
-  await userEvent.click(screen.getByRole('button', { name: '판 정보' }));
-  expect(onskip).not.toHaveBeenCalled();
-  await userEvent.keyboard('{Escape}');
   const empty = screen.container.querySelector('.center')!;
   pointer(empty, 'pointerdown');
   expect(onskip).not.toHaveBeenCalled();
@@ -259,7 +274,9 @@ test('등장/사라짐을 빠르게 되돌려도 재등장한 선택 창의 잠�
   await screen.rerender({ busy: true });
   await screen.rerender({ busy: false });
   await vi.waitFor(() => {
-    const dialog = screen.container.querySelector('.prompt:not([inert])')!;
+    const dialog = screen.container.querySelector(
+      '.prompt:not([inert]), .table.choosing:not([inert])',
+    )!;
     expect(dialog).not.toBeNull();
     expect(dialog.contains(document.activeElement)).toBe(true);
     expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).not.toBeNull();

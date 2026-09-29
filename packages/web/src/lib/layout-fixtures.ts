@@ -120,6 +120,70 @@ export function layoutExtras(kind: string): BoardExtras {
   };
 }
 
+/** 새 한 줄 손패·양 진영 획득패·중앙 더미의 고밀도 경계. 실제 규칙 판정의 기대값은 아니다. */
+export function fanFixture(
+  state: 'waiting' | 'play' | 'target' | 'gostop' | 'pre-settlement' | 'overflow' | 'empty',
+): BoardView {
+  const view = layoutFixture(
+    ['play', 'overflow', 'empty'].includes(state)
+      ? 'play'
+      : state === 'target'
+        ? 'target'
+        : 'gostop',
+  );
+  return {
+    ...view,
+    round: 5,
+    floor:
+      state === 'overflow'
+        ? layoutFixture('play').floor
+        : state === 'empty'
+          ? []
+          : [
+              { month: 1, kind: 'loose', owner: null, cards: [0] },
+              { month: 2, kind: 'loose', owner: null, cards: [4] },
+              { month: 3, kind: 'loose', owner: null, cards: [8] },
+              { month: 4, kind: 'loose', owner: null, cards: [12, 13] },
+              { month: 9, kind: 'loose', owner: null, cards: [32, 33] },
+              { month: 10, kind: 'loose', owner: null, cards: [36] },
+            ],
+    pending:
+      state === 'waiting'
+        ? { kind: 'play', seat: 1 }
+        : state === 'pre-settlement'
+          ? null
+          : state === 'gostop'
+            ? { kind: 'goStop', seat: 0, score: 7, goCount: 1, stopAmount: 70_000 }
+            : view.pending,
+    playable: state === 'waiting' || state === 'pre-settlement' ? [] : view.playable,
+    multiplier: 2,
+    seats: [
+      {
+        ...view.seats[0],
+        name: '나',
+        balance: 156_690_000,
+        score: 7,
+        goCount: 1,
+        shakes: 1,
+        captured: {
+          gwang: [28, 40],
+          yeol: [24, 29],
+          tti: [17, 21],
+          pi: [3, 7, 11, 15, 19, 23, 27, 31],
+        },
+      },
+      {
+        ...view.seats[1],
+        name: '상대',
+        balance: 12_810_000,
+        score: 0,
+        goCount: 0,
+        captured: { gwang: [44], yeol: [16, 20], tti: [1, 5], pi: [35, 39, 43, 47] },
+      },
+    ],
+  };
+}
+
 /** 위험 요약의 제공/미제공 비교용이며 정산 규칙의 기대값이 아니다. */
 export function feedbackExtras(stop: boolean): BoardExtras {
   return {

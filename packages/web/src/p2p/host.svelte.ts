@@ -32,6 +32,7 @@ import { getBridge } from '../bridge/bridge.ts';
 import { pushOffer, toRecordRow } from '../game/adapter.ts';
 import {
   AutoChoice,
+  latestBalanceChanges,
   type GameController,
   type GameStats,
   type PushDecision,
@@ -72,6 +73,12 @@ export interface HostOptions {
 }
 
 export class HostGame implements GameController {
+  get balanceChanges(): readonly [number, number] {
+    return latestBalanceChanges(this.session?.ledger.entries ?? []);
+  }
+  get perPoint(): number {
+    return this.session?.ledger.perPoint ?? this.config.perPoint;
+  }
   readonly mode = 'host' as const;
   link = $state<LinkState>('connecting');
   /** 게스트가 hello에 적은 이름 */

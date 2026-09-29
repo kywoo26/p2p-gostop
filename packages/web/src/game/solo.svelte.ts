@@ -25,6 +25,7 @@ import { displayedHintLevel, type HintLevel } from './assist.ts';
 import type { AiClient } from './ai-client.ts';
 import {
   AutoChoice,
+  latestBalanceChanges,
   type GameController,
   type GameStats,
   type PushDecision,
@@ -69,6 +70,12 @@ function decisionSeed(session: SessionState): number {
 }
 
 export class SoloSession implements GameController {
+  get balanceChanges(): readonly [number, number] {
+    return latestBalanceChanges(this.state.ledger.entries);
+  }
+  get perPoint(): number {
+    return this.state.config.perPoint;
+  }
   readonly mode = 'solo' as const;
   state: SessionState;
   /** CPU가 생각 중 */
