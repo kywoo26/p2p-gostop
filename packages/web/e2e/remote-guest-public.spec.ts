@@ -50,7 +50,11 @@ async function startPublicRelay(): Promise<{
   };
 }
 
-async function serveGuest(page: Page, base: string): Promise<void> {
+async function serveGuest(
+  page: Page,
+  base: string,
+  onServerClose: (code: number) => void,
+): Promise<void> {
   await page.route(`${origin}${prefix}**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     const file = resolve(dist, pathname.slice(prefix.length) || 'index.html');
@@ -77,7 +81,10 @@ async function serveGuest(page: Page, base: string): Promise<void> {
       for (const value of queued) server.send(value);
     });
     server.on('message', (message) => browser.send(message.toString()));
-    server.on('close', (code) => browser.close({ code }));
+    server.on('close', (code) => {
+      onServerClose(code);
+      browser.close({ code });
+    });
     server.on('error', () => browser.close({ code: 1011 }));
   });
 }
@@ -100,11 +107,14 @@ async function enterCode(page: Page, code: string): Promise<void> {
   await expect(page.getByText(/호스트 승인 대기/)).toBeVisible();
 }
 
-test('공개 중계 결과를 거절·만료·불가 안내로 구분한다 (FR-RP-02/05)', async ({ page }) => {
+test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 구분한다 (FR-RP-02/05)', async ({
+  page,
+}) => {
   const relay = await startPublicRelay();
   const hostSockets: WebSocket[] = [];
+  const serverCloseCodes: number[] = [];
   try {
-    await serveGuest(page, relay.base);
+    await serveGuest(page, relay.base, (code) => serverCloseCodes.push(code));
 
     await enterCode(page, 'ABCD-EFGH-JKMN');
     await relay.advance(60_001);
@@ -146,11 +156,25 @@ test('공개 중계 결과를 거절·만료·불가 안내로 구분한다 (FR-
     });
     expect(registered.status).toBe(201);
     await relay.advance(1_001);
+    const beforeExpired = serverCloseCodes.length;
     await page.goto(`${origin}${prefix}#/join?room=${expiredRoom.roomId}&t=${token}`);
     await page.reload();
     await page.getByRole('textbox', { name: '이름' }).fill('동료');
     await page.getByRole('button', { name: '참여하기' }).click();
     await expect(page.getByRole('alert')).toContainText('초대가 만료되었습니다');
+    expect(serverCloseCodes.slice(beforeExpired)).toContain(4003);
+
+    const invalidRoom = await createRoom(relay.base, relay.secret);
+    const forgedToken = randomBytes(32).toString('base64url');
+    const beforeInvalid = serverCloseCodes.length;
+    await page.goto(`${origin}${prefix}#/join?room=${invalidRoom.roomId}&t=${forgedToken}`);
+    await page.reload();
+    await page.getByRole('textbox', { name: '이름' }).fill('동료');
+    await page.getByRole('button', { name: '참여하기' }).click();
+    await expect(page.getByRole('alert')).toContainText(
+      '이 초대로 참여할 수 없습니다. 호스트에게 새 초대 링크를 요청하세요.',
+    );
+    expect(serverCloseCodes.slice(beforeInvalid)).toContain(1008);
   } finally {
     for (const socket of hostSockets) socket.terminate();
     await relay.close();
