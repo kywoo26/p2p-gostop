@@ -7,17 +7,19 @@ import type { Weights } from './weights.ts';
 
 export interface PolicyOptions {
   readonly weights?: Weights;
+  readonly debugReduce?: boolean;
   /** 상용급 탐색 옵션 */
   readonly ismcts?: IsmctsOptions;
 }
 
 export function createPolicy(difficulty: Difficulty, options: PolicyOptions = {}): Policy {
   const weights = options.weights === undefined ? {} : { weights: options.weights };
+  const debug = options.debugReduce === undefined ? {} : { debugReduce: options.debugReduce };
   if (difficulty === 'easy') {
     return new EasyPolicy();
   }
   if (difficulty === 'normal') {
-    return new GreedyPolicy(weights);
+    return new GreedyPolicy({ ...weights, ...debug });
   }
-  return new IsmctsPolicy({ ...weights, ...options.ismcts });
+  return new IsmctsPolicy({ ...weights, ...debug, ...options.ismcts });
 }

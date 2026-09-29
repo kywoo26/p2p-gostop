@@ -1,6 +1,6 @@
 # D1 카드 아트 마무리
 
-기준: plan.md §3-2 D1(2026-09-29), spec.md §6.6·FR-12·NF-01/03/07/08·AC-05,
+기준: plan.md §9 D1(2026-09-29), spec.md §6.6·FR-12·NF-01/03/07/08·AC-05,
 ui-spec.md UX-06/12/13/14/23. 의뢰에 언급된 FR-25~28은 현재 spec.md에 없으므로 새 ID를 만들지 않는다.
 시안 A/B·클래식 리마스터는 사용하지 않는다. Commons 0~47 SVG와 원본 SHA-1 매핑은 그대로 유지한다.
 
@@ -78,11 +78,12 @@ Commons 캐시가 필요 없고 0~47 파일을 쓰지 않는다. 최적화 후 �
   크기·대비·가로 넘침·외부 요청, 실제 게임판의 태그/카드 무가림·손패 월 표식 노출.
 - 유실된 `scripts/card-preview.config.mjs`, `scripts/card-preview.spec.mjs`는 참조가 없어 복원하지 않는다.
   미리보기·PNG 출력을 위 E2E와 `#/dev/gallery/card-sizes`에 통합해 표준 `./dev.sh e2e`에서 실행한다.
-- 새 PNG는 gitignore된 `test-results/`, `playwright-report/`에만 남긴다. 변경된 갤러리 8개 화면(브라우저당)은
-  텍스트 접근성 트리 기준값 + axe + 카드 기하/대비로 검증하며, 변경 없는 화면의 기존 픽셀 비교는 유지한다.
-  텍스트 기준값은 픽셀 비교를 대신하는 전체 시각 판정이 아니므로 아트는 실행 PNG도 직접 검토한다.
+- 기존 갤러리 15개 화면(브라우저당)은 `toHaveScreenshot` 픽셀 비교를 유지한다. D1 변경 화면 7개의
+  기존 PNG 기준값만 Chromium/WebKit에서 갱신하며 파일별 사유는 PR 본문에 기록한다.
+  신규 `card-sizes` 화면은 기준 PNG를 추가하지 않고 접근성 트리·axe·기하/대비와 실행 PNG로 보조 검증한다.
+  접근성 트리는 기존 픽셀 비교에 추가하는 검사다. 새 실행 PNG는 gitignore된 `test-results/`, `playwright-report/`에만 남긴다.
 - 실기기 결과는 만들지 않는다. S25 Ultra와 iPhone에서의 밝기·글꼴·실제 패널 확인은
-  `docs/device-test/ui-spec.md` D-CARD-01~03 절차에 따라 사람이 수행한다.
+  [통합 실기기 절차](../device-test/procedure.md) §7.1 D-CARD-01~03 절차에 따라 사람이 수행한다.
 
 ## WebKit 렌더링 비용 확인
 

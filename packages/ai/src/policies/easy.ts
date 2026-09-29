@@ -3,6 +3,7 @@
 // 대상 선택은 광·띠·열끗·피 순의 단순 선호, 고/스톱은 동전 던지기에 가깝다. 사람이 이기기 쉬운 상대가 목표.
 import { getCard, type Action, type PlayerView } from '@p2p-gostop/engine';
 import type { DecisionContext, Policy } from '../types.ts';
+import { easyPush } from '../push.ts';
 import { firstOf, onlyAction } from './common.ts';
 
 export interface EasyOptions {
@@ -26,6 +27,10 @@ export class EasyPolicy implements Policy {
     this.captureWeight = options.captureWeight ?? 2;
     this.goRate = options.goRate ?? 0.5;
     this.shakeRate = options.shakeRate ?? 0.5;
+  }
+
+  decidePush(view: PlayerView, ctx: DecisionContext): boolean {
+    return easyPush(view, ctx.balancePoints);
   }
 
   decide(view: PlayerView, legal: readonly Action[], ctx: DecisionContext): Action {

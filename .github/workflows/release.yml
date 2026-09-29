@@ -183,6 +183,6 @@ jobs:
             3. 같은 서명 키로 만든 APK라 이전 버전 위에 덮어쓰기 설치됩니다.
 
             ## 실기기 테스트 절차
-            - MVP 실기기 테스트: [docs/device-test/MVP.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/docs/device-test/MVP.md)
+            - 통합 실기기 테스트: [docs/device-test/procedure.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/docs/device-test/procedure.md)
 
             빌드 커밋: `${{ github.sha }}` · 서명 인증서 SHA-256: `${{ env.EXPECTED_CERT_SHA256 }}` · 체크섬: `${{ env.APK_NAME }}.sha256`

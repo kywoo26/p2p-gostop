@@ -1,6 +1,7 @@
 // 빠른 휴리스틱 정책과 롤아웃 (ISMCTS의 상대 모델·롤아웃, 쉬움·보통의 보조).
 // 결정화 상태(GameState) 위에서 돈다. 자기 손패와 공개 정보, 상대 손패 "장수"만 읽고 상대 손패 내용·더미 순서는 보지 않는다.
 import {
+  applyUnchecked,
   getCard,
   legalActions,
   reduce,
@@ -22,7 +23,10 @@ import type { Rng } from './rng.ts';
 import type { Weights } from './weights.ts';
 
 /** 합법 수를 적용한다. 합법 수만 넣으므로 거부는 버그다. */
-export function step(state: GameState, action: Action): GameState {
+export function step(state: GameState, action: Action, debugReduce = false): GameState {
+  if (!debugReduce) {
+    return applyUnchecked(state, action).state;
+  }
   const result = reduce(state, action);
   if (!result.ok) {
     throw new Error(`AI가 합법 수를 적용하지 못함: ${result.message}`);
@@ -219,7 +223,7 @@ export function heuristicAction(
 const MAX_STEPS = 400;
 
 /** 판 끝까지 양측 모두 휴리스틱으로 둔다. */
-export function rollout(state: GameState, rng: Rng, w: Weights): GameState {
+export function rollout(state: GameState, rng: Rng, w: Weights, debugReduce = false): GameState {
   let s = state;
   for (let i = 0; s.phase !== 'end'; i++) {
     if (i > MAX_STEPS) {
@@ -230,7 +234,7 @@ export function rollout(state: GameState, rng: Rng, w: Weights): GameState {
       throw new Error('입력할 좌석이 없습니다');
     }
     const legal = legalActions(s, seat);
-    s = step(s, heuristicAction(s, seat, legal, rng, w));
+    s = step(s, heuristicAction(s, seat, legal, rng, w), debugReduce);
   }
   return s;
 }

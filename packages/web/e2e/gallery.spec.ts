@@ -1,5 +1,5 @@
-// 갤러리 회귀(spec AC-05) + axe. D1 변경 화면은 접근성 트리 기준값과 cards.spec.ts 기하/대비로 검증한다.
-// 새 PNG는 test-results 첨부에만 둔다. 변경 없는 화면은 기존 픽셀 회귀를 유지한다.
+// 갤러리 픽셀 회귀(spec AC-05) + axe. 접근성 트리·cards.spec.ts 기하/대비는 보조 검사다.
+// 기존 PNG 기준값만 갱신한다. 신규 card-sizes 화면의 PNG는 test-results 첨부에만 둔다.
 // 기준 이미지: e2e/__screenshots__/gallery.spec.ts/<이름>-<chromium|webkit>.png
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
@@ -71,7 +71,10 @@ for (const { name, hash, viewports = [PORTRAIT], mask = [] } of PAGES) {
           body: await page.screenshot({ fullPage: true }),
           contentType: 'image/png',
         });
-      } else {
+      }
+
+      // card-sizes는 새 기준 PNG를 추가하지 않는 신규 보조 화면이다. 기존 cards/board 픽셀 검사는 필수다.
+      if (name !== 'card-sizes') {
         await expect(page).toHaveScreenshot(`${id}.png`, {
           fullPage: true,
           mask: mask.map((selector) => page.locator(selector)),
