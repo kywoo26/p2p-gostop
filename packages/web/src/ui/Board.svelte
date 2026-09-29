@@ -107,7 +107,8 @@
   let landscape = $state(false);
   let infoDialog: HTMLDialogElement;
   $effect(() => {
-    const media = window.matchMedia('(orientation: landscape)');
+    // 손에 든 기기의 가로 회전만 안내한다. Mac 창은 방향·크기와 무관하게 같은 판을 쓴다.
+    const media = window.matchMedia('(orientation: landscape) and (pointer: coarse) and (max-width: 1023px)');
     const update = () => {
       landscape = media.matches;
     };
