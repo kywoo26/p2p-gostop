@@ -1,6 +1,7 @@
 <script lang="ts" module>
   import type { PresetId } from '@p2p-gostop/engine';
   import type { MoneyUnit } from '../lib/view-types.ts';
+  import type { TimerSettings } from '@p2p-gostop/protocol';
 
   export type GuestConnection =
     'idle' | 'connecting' | 'open' | 'closed' | 'replaced' | 'stopped' | 'rejected';
@@ -11,6 +12,7 @@
     readonly pointValue: number;
     readonly startBalance: number;
     readonly unit: MoneyUnit;
+    readonly timerSettings: TimerSettings;
   }
 </script>
 
@@ -128,7 +130,17 @@
         <dd>{formatMoney(lobby.pointValue, lobby.unit)}</dd>
         <dt>시작 잔액</dt>
         <dd>{formatMoney(lobby.startBalance, lobby.unit)}</dd>
+        <dt>생각 시간</dt>
+        <dd>
+          {lobby.timerSettings.decisionMs === null
+            ? '끄기'
+            : `${lobby.timerSettings.decisionMs / 1000}초 · 결정마다 적용`}
+        </dd>
       </dl>
+      <p class="hint">
+        시간 초과 시 정해진 합법 행동으로 진행합니다. 선 고르기·밀기/받기·다음 판·재충전은 직접
+        선택합니다.
+      </p>
       <p class="hint" role="status">호스트가 시작하기를 기다리는 중…</p>
     </section>
   {/if}

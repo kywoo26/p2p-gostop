@@ -1,9 +1,8 @@
 import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import Hand from './Hand.svelte';
-import { flipMove } from '../anim/flip.ts';
 
-test('폭탄 시각 묶음은 3장에만 적용하고 액션 판정을 대신하지 않는다 (FR-46~50)', async () => {
+test('폭탄 묶음의 모든 멤버에 공개 상태만 붙이고 액션 판정을 대신하지 않는다 (FR-46~50)', async () => {
   const onplay = vi.fn();
   const screen = await render(Hand, {
     compact: true,
@@ -19,42 +18,46 @@ test('폭탄 시각 묶음은 3장에만 적용하고 액션 판정을 대신하
   });
   expect(screen.container.querySelectorAll('.group-selected')).toHaveLength(3);
   expect(screen.container.querySelectorAll('.mark')).toHaveLength(4);
-  expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('data-hand-cue')).toBe(
-    'secured',
+  expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('data-hand-group')).toBe(
+    '1',
   );
   expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('data-hand-action')).toBe(
     'bomb',
   );
-  await screen.getByRole('button', { name: '1월 광 (확정 획득 짝) (폭탄 가능) 내기' }).click();
+  expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('data-hand-cue')).toBe(
+    'secured',
+  );
+  expect(screen.container.querySelectorAll('[data-hand-action="bomb"]')).toHaveLength(3);
+  expect(screen.container.textContent).not.toContain('폭탄');
+  await screen.getByRole('button', { name: '1월 광, 확정 획득 짝, 폭탄 가능, 내기' }).click();
   expect(onplay).toHaveBeenCalledTimes(1);
   expect(onplay.mock.calls[0]?.[0]).toBe(0);
   await screen.rerender({ visualGroups: [{ id: 'bomb-1', kind: 'bomb', cards: [0, 1] }] });
-  expect(screen.container.querySelectorAll('.group-word')).toHaveLength(1);
-  expect(screen.container.querySelector('.group-word')?.textContent).toContain('폭탄');
+  expect(screen.container.querySelectorAll('.action-mark, .hand-label')).toHaveLength(0);
   expect(screen.container.textContent).not.toContain('대기');
   await screen.rerender({ selectedGroup: null, visualGroups: [] });
   expect(screen.container.querySelectorAll('.group-selected')).toHaveLength(0);
   expect(screen.container.querySelector('[data-hand-cue="secured"]')).toBeNull();
+  await screen.rerender({
+    cuesEnabled: false,
+    visualGroups: [{ id: 'bomb-1', kind: 'bomb', cards: [0, 1, 2] }],
+  });
+  expect(
+    screen.container.querySelectorAll('[data-hand-cue], [data-hand-action], [data-hand-group]'),
+  ).toHaveLength(0);
+  expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('aria-label')).toBe(
+    '1월 광, 내기',
+  );
 });
 
-test('compact 그림 창은 FLIP 이동을 자르지 않고 취소 뒤 표식을 복구한다 (UX-15)', async () => {
-  const screen = await render(Hand, { compact: true, cards: [0], playable: [0] });
-  screen.container.style.paddingTop = '120px';
+test('재정렬 이동 중 탭은 카드를 내지 않고 완료 후 새 탭만 받는다 (U22)', async () => {
+  const onplay = vi.fn();
+  const screen = await render(Hand, { compact: true, cards: [0], playable: [0], onplay });
   const card = screen.container.querySelector<HTMLElement>('.card')!;
-  card.style.setProperty('--dur-scale', '1');
-  const frame = screen.container.querySelector('.art-window')!;
-  const label = screen.container.querySelector('.hand-label')!;
-  const to = card.getBoundingClientRect();
-  const animation = flipMove(card, new DOMRect(to.x, to.y - 80, to.width, to.height), to, {
-    duration: 1000,
-  });
-  animation.pause();
-  animation.currentTime = 0;
-  expect(getComputedStyle(frame).overflow).toBe('visible');
-  expect(getComputedStyle(label).visibility).toBe('hidden');
-  const flying = card.getBoundingClientRect();
-  expect(card.contains(document.elementFromPoint(flying.x + 24, flying.y + 24))).toBe(true);
-  animation.cancel();
-  await expect.poll(() => getComputedStyle(frame).overflow).toBe('hidden');
-  expect(getComputedStyle(label).visibility).toBe('visible');
+  card.style.willChange = 'transform';
+  await screen.getByRole('button').click();
+  expect(onplay).not.toHaveBeenCalled();
+  card.style.willChange = '';
+  await screen.getByRole('button').click();
+  expect(onplay).toHaveBeenCalledOnce();
 });

@@ -17,6 +17,7 @@
   import { bannerFor, type BannerKind } from '../../../ui/banner.ts';
   import Board from '../../../ui/Board.svelte';
   import Card from '../../../ui/Card.svelte';
+  import Hand from '../../../ui/Hand.svelte';
   import type { CardSize } from '../../../ui/cards.ts';
   import EventBanner from '../../../ui/EventBanner.svelte';
   import Diagnostics from '../../Diagnostics.svelte';
@@ -118,7 +119,15 @@
   });
 </script>
 
-{#if page === 'feedback-play' || page === 'feedback-stop'}
+{#if page === 'hand-layout-groups' || page === 'hand-layout-bonus'}
+  {@const handCards =
+    page === 'hand-layout-groups'
+      ? [0, 1, 2, 4, 5, 6, 7, 8, 9, 10]
+      : [0, 1, 2, 3, 4, 5, 6, 8, 48, 49]}
+  <main>
+    <Hand compact cards={handCards} playable={handCards} />
+  </main>
+{:else if page === 'feedback-play' || page === 'feedback-stop'}
   <main>
     <h1 class="fixture-title">게임판 시각 검토</h1>
     <Board
@@ -170,9 +179,11 @@
     guest={fixtures.hostRoom.guest}
     rules={{
       preset: 'standard',
+      custom: false,
       perPoint: fixtures.hostRoom.rules.pointValue,
       startBalance: 150_000,
       hostName: '호스트',
+      timerDecisionMs: 10_000,
       unit: fixtures.hostRoom.rules.unit,
     }}
   />
@@ -188,6 +199,7 @@
           preset: 'standard',
           pointValue: 100,
           startBalance: 150_000,
+          timerSettings: { decisionMs: 10_000, policy: 'fixed-v1' },
           unit: '냥',
         }
       : null}

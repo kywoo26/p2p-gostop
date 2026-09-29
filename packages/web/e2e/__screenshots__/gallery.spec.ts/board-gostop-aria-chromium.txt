@@ -76,11 +76,11 @@
     - listitem: 뻑 0
     - listitem: 흔들 1
   - group "내 손패":
-    - button "8월 피 내기" [disabled]:
+    - button "8월 피, 내기" [disabled]:
       - img "8월 피"
-    - button "10월 열끗 내기" [disabled]:
+    - button "10월 열끗, 내기" [disabled]:
       - img "10월 열끗"
-    - button "11월 피 내기" [disabled]:
+    - button "11월 피, 내기" [disabled]:
       - img "11월 피"
-    - button "12월 쌍피 내기" [disabled]:
+    - button "12월 쌍피, 내기" [disabled]:
       - img "12월 쌍피"
