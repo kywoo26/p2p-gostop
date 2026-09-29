@@ -1,20 +1,25 @@
-// E2E: Playwright Chromium(Android WebView 대역) + WebKit(iPhone Safari 대역). 도커 e2e 컨테이너에서만 실행.
+// E2E: Playwright Chromium(Android WebView 대역) + WebKit(iPhone Safari 대역). 호스트·CI 모두 네이티브 실행(AGENTS.md §5).
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
 const baseURL = `http://127.0.0.1:${PORT}`;
+// 스크린샷의 시스템 글꼴 집합을 install-deps 글꼴로 고정한다(e2e/fonts.conf). 브라우저는 이 환경 변수를 물려받는다.
+process.env['FONTCONFIG_FILE'] = new URL('./e2e/fonts.conf', import.meta.url).pathname;
 
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
+  // 공유 머신 부하 규칙(AGENTS.md §5): 로컬은 4 workers. CI는 --workers=2를 준다.
+  ...(process.env['CI'] ? {} : { workers: 4 }),
   reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
     trace: 'retain-on-failure',
   },
-  // 스크린샷 기준 이미지는 개발 이미지 안에서만 만든다(글꼴·렌더러 고정): docker compose run --rm dev npm run e2e -w packages/web -- --update-snapshots
+  // 스크린샷 기준 이미지는 Ubuntu 24.04 + playwright install --with-deps + e2e/fonts.conf(호스트 tools/setup-host.sh·CI 공통)에서 만든다:
+  // npm run e2e -w packages/web -- --update-snapshots
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
   expect: {
     toHaveScreenshot: {

@@ -10,5 +10,5 @@ disallowedTools: Agent
 
 - 툴체인 경계를 지킨다: 순수 TS 패키지는 oxlint·oxfmt, `packages/web`은 ESLint·Prettier.
 - 지시에 없는 판단(요구사항 해석, 설계 변경, 테스트 기대값 수정)이 필요해 보이면 고치지 말고 그 지점을 보고한다.
-- 검증은 AGENTS.md 5장의 해당 명령(`docker compose run --rm dev …`)으로 한다. 커밋은 지시받았을 때만 한다.
+- 검증은 AGENTS.md 5장의 해당 명령(호스트 `npm …`·`android/gradlew …`)으로 한다. 커밋은 지시받았을 때만 한다.
 - 최종 보고: 바꾼 파일 목록, 실행한 명령과 결과, 보류한 항목.

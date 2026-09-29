@@ -65,7 +65,7 @@ ID 48/49는 2피, ID 50은 3피(R1/S4). 흰 바탕·먹선·주홍 테와 세트
 뒷면은 주홍 격자·매화 원문과 한지색 외곽이다. Commons의 도상 경로를 복사하지 않은 자체 도형이며 CC0로 제공한다.
 
 사람이 편집하는 원본은 `packages/web/cards-src/`, 배포본은 `public/cards/`이다.
-`docker compose run --rm dev npm exec -w packages/web -- node scripts/build-cards.mjs --originals-only`로 4장과 저작자 문서를 재생성한다.
+`npm exec -w packages/web -- node scripts/build-cards.mjs --originals-only`로 4장과 저작자 문서를 재생성한다.
 Commons 캐시가 필요 없고 0~47 파일을 쓰지 않는다. 최적화 후 파일당 8 KiB 이하, 외부 리소스·텍스트·래스터·필터 없음.
 현재 4장 합계 **8,225 B**, Commons **612,763 B**, 카드 합계 **620,988 B**다.
 라이선스 화면과 ATTRIBUTION/LICENSE는 단일 저작자 원본에서 CC BY-SA 4.0/CC0/MIT 범위를 구분한다.
@@ -77,7 +77,7 @@ Commons 캐시가 필요 없고 0~47 파일을 쓰지 않는다. 최적화 후 �
 - `e2e/cards.spec.ts` 재작성: 51개 ID와 엔진 메타데이터·파일 존재·중복 없음, SVGO 재현, 412×915와 DPR 2/3/3.5,
   크기·대비·가로 넘침·외부 요청, 실제 게임판의 태그/카드 무가림·손패 월 표식 노출.
 - 유실된 `scripts/card-preview.config.mjs`, `scripts/card-preview.spec.mjs`는 참조가 없어 복원하지 않는다.
-  미리보기·PNG 출력을 위 E2E와 `#/dev/gallery/card-sizes`에 통합해 표준 `docker compose run --rm dev npm run e2e -w packages/web`에서 실행한다.
+  미리보기·PNG 출력을 위 E2E와 `#/dev/gallery/card-sizes`에 통합해 표준 `npm run e2e -w packages/web`에서 실행한다.
 - 기존 갤러리 15개 화면(브라우저당)은 `toHaveScreenshot` 픽셀 비교를 유지한다. D1 변경 화면 7개의
   기존 PNG 기준값만 Chromium/WebKit에서 갱신하며 파일별 사유는 PR 본문에 기록한다.
   신규 `card-sizes` 화면은 기준 PNG를 추가하지 않고 접근성 트리·axe·기하/대비와 실행 PNG로 보조 검증한다.

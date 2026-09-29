@@ -4,7 +4,7 @@
     "variants": [
       {
         "url": "/pro/ppeok-1x.webp",
-        "bytes": 238280,
+        "bytes": 236926,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -20,7 +20,7 @@
       },
       {
         "url": "/pro/ppeok-2x.webp",
-        "bytes": 588518,
+        "bytes": 585248,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -36,7 +36,7 @@
       },
       {
         "url": "/pro/ppeok-3x.webp",
-        "bytes": 588518,
+        "bytes": 585248,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -59,7 +59,7 @@
     "variants": [
       {
         "url": "/pro/jjok-1x.webp",
-        "bytes": 139540,
+        "bytes": 139680,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -75,7 +75,7 @@
       },
       {
         "url": "/pro/jjok-2x.webp",
-        "bytes": 350754,
+        "bytes": 351006,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -91,7 +91,7 @@
       },
       {
         "url": "/pro/jjok-3x.webp",
-        "bytes": 350754,
+        "bytes": 351006,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -114,7 +114,7 @@
     "variants": [
       {
         "url": "/pro/ttadak-1x.webp",
-        "bytes": 198290,
+        "bytes": 197866,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -130,7 +130,7 @@
       },
       {
         "url": "/pro/ttadak-2x.webp",
-        "bytes": 425680,
+        "bytes": 426148,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -146,7 +146,7 @@
       },
       {
         "url": "/pro/ttadak-3x.webp",
-        "bytes": 425680,
+        "bytes": 426148,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -169,7 +169,7 @@
     "variants": [
       {
         "url": "/pro/bomb-1x.webp",
-        "bytes": 211582,
+        "bytes": 210946,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -185,7 +185,7 @@
       },
       {
         "url": "/pro/bomb-2x.webp",
-        "bytes": 487806,
+        "bytes": 488492,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -201,7 +201,7 @@
       },
       {
         "url": "/pro/bomb-3x.webp",
-        "bytes": 487806,
+        "bytes": 488492,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -224,7 +224,7 @@
     "variants": [
       {
         "url": "/pro/smoke-1x.webp",
-        "bytes": 107228,
+        "bytes": 106940,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -240,7 +240,7 @@
       },
       {
         "url": "/pro/smoke-2x.webp",
-        "bytes": 216190,
+        "bytes": 216074,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -256,7 +256,7 @@
       },
       {
         "url": "/pro/smoke-3x.webp",
-        "bytes": 216190,
+        "bytes": 216074,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -295,7 +295,7 @@
       },
       {
         "url": "/pro/glow-2x.webp",
-        "bytes": 14928,
+        "bytes": 14938,
         "format": "webp",
         "scale": 2,
         "width": 256,
@@ -311,7 +311,7 @@
       },
       {
         "url": "/pro/glow-3x.webp",
-        "bytes": 33416,
+        "bytes": 33218,
         "format": "webp",
         "scale": 3,
         "width": 384,
@@ -332,7 +332,7 @@
     "variants": [
       {
         "url": "/pro/spark-1x.webp",
-        "bytes": 6578,
+        "bytes": 6576,
         "format": "webp",
         "scale": 1,
         "width": 128,
@@ -348,7 +348,7 @@
       },
       {
         "url": "/pro/spark-2x.webp",
-        "bytes": 19116,
+        "bytes": 19098,
         "format": "webp",
         "scale": 2,
         "width": 256,
@@ -364,7 +364,7 @@
       },
       {
         "url": "/pro/spark-3x.webp",
-        "bytes": 38986,
+        "bytes": 38910,
         "format": "webp",
         "scale": 3,
         "width": 384,
@@ -840,7 +840,7 @@
       },
       {
         "url": "/pro/avatar-01-3x.webp",
-        "bytes": 8476,
+        "bytes": 8466,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -893,7 +893,7 @@
       },
       {
         "url": "/pro/avatar-02-3x.webp",
-        "bytes": 9946,
+        "bytes": 9936,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -946,7 +946,7 @@
       },
       {
         "url": "/pro/avatar-03-3x.webp",
-        "bytes": 14146,
+        "bytes": 14136,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -999,7 +999,7 @@
       },
       {
         "url": "/pro/avatar-04-3x.webp",
-        "bytes": 13046,
+        "bytes": 13036,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1052,7 +1052,7 @@
       },
       {
         "url": "/pro/avatar-05-3x.webp",
-        "bytes": 9032,
+        "bytes": 9022,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1105,7 +1105,7 @@
       },
       {
         "url": "/pro/avatar-06-3x.webp",
-        "bytes": 11234,
+        "bytes": 11224,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1158,7 +1158,7 @@
       },
       {
         "url": "/pro/avatar-07-3x.webp",
-        "bytes": 11506,
+        "bytes": 11496,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1211,7 +1211,7 @@
       },
       {
         "url": "/pro/avatar-08-3x.webp",
-        "bytes": 8594,
+        "bytes": 8584,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1264,7 +1264,7 @@
       },
       {
         "url": "/pro/avatar-09-3x.webp",
-        "bytes": 9530,
+        "bytes": 9520,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1317,7 +1317,7 @@
       },
       {
         "url": "/pro/avatar-10-3x.webp",
-        "bytes": 10292,
+        "bytes": 10282,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1370,7 +1370,7 @@
       },
       {
         "url": "/pro/avatar-11-3x.webp",
-        "bytes": 6996,
+        "bytes": 6986,
         "format": "webp",
         "scale": 3,
         "width": 192,
@@ -1423,7 +1423,7 @@
       },
       {
         "url": "/pro/avatar-12-3x.webp",
-        "bytes": 11234,
+        "bytes": 11224,
         "format": "webp",
         "scale": 3,
         "width": 192,
