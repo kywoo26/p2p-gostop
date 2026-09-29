@@ -72,6 +72,22 @@ class MainActivity : Activity() {
     private var shownLogVersion = -1L
     private var lastKeepOn: Boolean? = null
     private var pendingAction: String? = null
+    private val entry by lazy {
+        MainEntry(remoteMode, object : MainEntryEffects {
+            override fun launchGame(remote: Boolean) {
+                startActivity(Intent(this@MainActivity, GameActivity::class.java)
+                    .putExtra(GameActivity.EXTRA_REMOTE_MODE, remote))
+            }
+            override fun startServer(action: String, foreground: Boolean) {
+                startForegroundService(HotspotService.intent(this@MainActivity, action))
+            }
+            override fun stopRemoteServer() = Unit
+            override fun requestHotspotPermission() {
+                requestPermissions(Diagnostics.runtimePermissions, REQ_PERMISSIONS)
+            }
+            override fun setLanEnabled(enabled: Boolean) = Unit
+        })
+    }
 
     /** 서비스가 꺼져 있을 때 보여 줄 인터페이스 목록. 메인 스레드 밖에서 5초마다 갱신한다(M0 리뷰 M-3). */
     private val bg: ExecutorService = Executors.newSingleThreadExecutor()
@@ -104,8 +120,7 @@ class MainActivity : Activity() {
         status = findViewById(R.id.status)
         btnToggle = findViewById(R.id.btnToggle)
         findViewById<Button>(R.id.btnGame).setOnClickListener {
-            if (fromGame) finish() else startActivity(Intent(this, GameActivity::class.java)
-                .putExtra(GameActivity.EXTRA_REMOTE_MODE, remoteMode))
+            if (fromGame) finish() else entry.launchGame()
         }
         btnAddressOnly = findViewById(R.id.btnAddressOnly)
         btnPermissions = findViewById(R.id.btnPermissions)
@@ -142,7 +157,7 @@ class MainActivity : Activity() {
             AppState.log("버튼: 주소만 표시")
             startHotspotService(HotspotService.ACTION_ADDRESS_ONLY)
         }
-        btnPermissions.setOnClickListener { explainAndRequest(null) }
+        btnPermissions.setOnClickListener { if (!remoteMode) explainAndRequest(null) }
         if (remoteMode) {
             btnToggle.isEnabled = false
             btnAddressOnly.isEnabled = false
@@ -188,12 +203,13 @@ class MainActivity : Activity() {
     }
 
     private fun explainAndRequest(action: String?) {
+        if (remoteMode) return
         pendingAction = action
         AlertDialog.Builder(this)
             .setTitle(R.string.permission_title)
             .setMessage(R.string.permission_body)
             .setPositiveButton(R.string.permission_ok) { _, _ ->
-                requestPermissions(Diagnostics.runtimePermissions, REQ_PERMISSIONS)
+                entry.requestHotspotPermission()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
@@ -202,6 +218,10 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQ_PERMISSIONS) return
+        if (remoteMode) {
+            pendingAction = null
+            return
+        }
         val summary = permissions.indices.joinToString { "${permissions[it].substringAfterLast('.')}=${grantResults.getOrNull(it) == 0}" }
         AppState.log("권한 결과: $summary")
         val action = pendingAction
@@ -224,7 +244,7 @@ class MainActivity : Activity() {
     private fun startHotspotService(action: String) {
         if (remoteMode) return
         // LOHS는 앱이 포그라운드일 때만 시작된다. 버튼을 누른 지금이 포그라운드다.
-        startForegroundService(HotspotService.intent(this, action))
+        entry.startHotspot(action)
     }
 
     // ---- 화면 갱신 ----
@@ -235,8 +255,7 @@ class MainActivity : Activity() {
             if (webBundlePresent) View.VISIBLE else View.GONE
         if (!diagnosticsOnly && !gameLaunched && webBundlePresent) {
             gameLaunched = true
-            startActivity(Intent(this, GameActivity::class.java)
-                .putExtra(GameActivity.EXTRA_REMOTE_MODE, remoteMode))
+            entry.launchGame()
         }
         // 서비스(서버)가 도는 동안 화면을 켜 둔다. LOHS 실패 후에도 폴백용 서버는 살아 있다.
         val keepOn = s.keepScreenOn

@@ -60,67 +60,55 @@ class HotspotService : Service() {
 
     /** 이 인스턴스가 [stopAll]을 끝냈는가. 두 번째 정지와 정지 뒤 알림 갱신을 막는다(S-6). */
     @Volatile private var stopped = false
+    private val commands by lazy { HotspotCommands(serviceEffects, remoteMode) }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_STOP -> {
-                stopAll("사용자 중지")
-                remoteMode = false
-                return START_NOT_STICKY
+    private val serviceEffects = object : ServiceEffects {
+        override fun stop() = stopAll("사용자 중지")
+        override fun cancelHotspot() { session.cancel() }
+        override fun closeLan() {
+            AppState.update {
+                it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null,
+                    securityType = null, lastError = null, apiVariant = null,
+                    ip = null, candidates = emptyList(), lanEnabled = false)
             }
-            ACTION_ADDRESS_ONLY -> {
-                if (remoteMode) return START_NOT_STICKY
-                setRemoteMode(false)
-                goForeground()
-                // LOHS 요청·예약을 버린다. 늦게 오는 onStarted는 세대가 달라 곧바로 닫힌다.
-                session.cancel()
+            ipJob?.cancel()
+            ipJob = null
+        }
+        override fun switchMode(remote: Boolean) = setRemoteMode(remote)
+        override fun startLocalForeground() = goForeground()
+        override fun startVisibleRemoteServer() {
+            stopped = false
+            // 원격은 GameActivity가 보이는 동안만 일반 Service로 루프백 서버를 유지한다.
+            notifJob?.cancel()
+            notifJob = null
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            AppState.update { it.copy(serviceRunning = true) }
+        }
+        override fun ensureServer() = serverSlot.ensure()
+        override fun openLocalLan(action: String) {
+            if (action == ACTION_ADDRESS_ONLY) {
                 AppState.update {
-                    it.copy(
-                        status = HotspotStatus.ADDRESS_ONLY, ssid = null, password = null, securityType = null,
-                        lastError = null, apiVariant = null, lanEnabled = true,
-                    )
+                    it.copy(status = HotspotStatus.ADDRESS_ONLY, ssid = null, password = null,
+                        securityType = null, lastError = null, apiVariant = null, lanEnabled = true)
                 }
                 AppState.log("주소만 표시 모드 시작(LOHS 없이 서버만)")
-                serverSlot.ensure()
-                startIpWatch()
-            }
-            ACTION_SERVER_ONLY -> {
-                if (remoteMode) return START_NOT_STICKY
-                setRemoteMode(false)
-                goForeground()
-                session.cancel()
+            } else {
                 AppState.update {
                     it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null,
                         securityType = null, lastError = null, apiVariant = null, lanEnabled = false)
                 }
-                serverSlot.ensure()
-                startIpWatch()
             }
-            ACTION_REMOTE_SERVER_ONLY -> {
-                // FR-RP-08: 기존 LAN 세션에서 전환해도 예약·게이트를 먼저 닫는다.
-                session.cancel()
-                AppState.update {
-                    it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null,
-                        securityType = null, lastError = null, apiVariant = null,
-                        ip = null, candidates = emptyList(), lanEnabled = false)
-                }
-                ipJob?.cancel()
-                ipJob = null
-                setRemoteMode(true)
-                goForeground()
-                serverSlot.ensure()
-            }
-            ACTION_START -> {
-                if (remoteMode) return START_NOT_STICKY
-                setRemoteMode(false)
-                goForeground()
-                serverSlot.ensure()
-                startHotspotForAction(intent.action, remoteMode, ::startHotspot)
-            }
-            else -> AppState.log("알 수 없는 서비스 명령 무시")
+            startIpWatch()
         }
+        override fun startHotspot() = this@HotspotService.startHotspot()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        commands.dispatch(intent?.action)
+        if (intent?.action !in setOf(ACTION_STOP, ACTION_ADDRESS_ONLY, ACTION_SERVER_ONLY,
+                ACTION_REMOTE_SERVER_ONLY, ACTION_START)) AppState.log("알 수 없는 서비스 명령 무시")
         return START_NOT_STICKY
     }
 
@@ -344,6 +332,7 @@ class HotspotService : Service() {
             )
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
+        remoteMode = false
         stopSelf()
     }
 
@@ -424,11 +413,6 @@ class HotspotService : Service() {
             else -> pass.take(3) + "*".repeat(pass.length - 3)
         }
     }
-}
-
-/** 명시적 LAN 명령만 LOHS 호출에 도달한다. 원격 서비스 명령은 항상 0회다. */
-internal fun startHotspotForAction(action: String?, remoteMode: Boolean, start: () -> Unit) {
-    if (action == HotspotService.ACTION_START && !remoteMode) start()
 }
 
 internal fun bindHostForMode(remoteMode: Boolean): String = if (remoteMode) "127.0.0.1" else "0.0.0.0"

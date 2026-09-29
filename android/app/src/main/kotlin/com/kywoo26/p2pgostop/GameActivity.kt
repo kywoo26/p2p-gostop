@@ -61,6 +61,29 @@ class GameActivity : ComponentActivity() {
     private var awaitingHotspotSettings = false
     private var fallingBack = false
     private lateinit var backCallback: OnBackPressedCallback
+    private val entry by lazy {
+        GameEntry(remoteMode, object : EntryEffects {
+            override fun startServer(action: String, foreground: Boolean) {
+                val intent = HotspotService.intent(this@GameActivity, action)
+                if (foreground) startForegroundService(intent) else startService(intent)
+            }
+            override fun stopRemoteServer() {
+                stopService(HotspotService.intent(this@GameActivity, HotspotService.ACTION_REMOTE_SERVER_ONLY))
+            }
+            override fun requestHotspotPermission() {
+                requestPermissions(Diagnostics.runtimePermissions, REQ_HOTSPOT_PERMISSION)
+            }
+            override fun setLanEnabled(enabled: Boolean) {
+                AppState.update { state ->
+                    state.copy(lanEnabled = enabled, status = when {
+                        enabled && !state.hotspotActive -> HotspotStatus.ADDRESS_ONLY
+                        !enabled && state.status == HotspotStatus.ADDRESS_ONLY -> HotspotStatus.STOPPED
+                        else -> state.status
+                    })
+                }
+            }
+        })
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,23 +120,29 @@ class GameActivity : ComponentActivity() {
                 .build()
         }
         setContentView(container)
-        val serviceRunning = AppState.hotspot.value.serviceRunning
-        val serviceRemote = HotspotService.remoteModeActive
-        val action = gameServerAction(remoteMode, serviceRunning, serviceRemote)
-        if (action == HotspotService.ACTION_REMOTE_SERVER_ONLY && serviceRunning && !serviceRemote) {
-            // 이전 LAN 서버의 running=true로 WebView를 너무 일찍 열지 않는다.
-            AppState.update { it.copy(serverRunning = false) }
-        }
-        action?.let {
-            // 원격은 기존 LAN 서비스가 돌고 있어도 LOHS를 종료하고 loopback 서버로 다시 연다.
-            startForegroundService(HotspotService.intent(this, it))
-        }
         scope.launch {
             AppState.hotspot.collect { state ->
                 if (state.serverRunning && !::web.isInitialized) createWebView()
                 send(hotspotMessage(state))
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (fallingBack) return
+        val serviceRunning = AppState.hotspot.value.serviceRunning
+        val serviceRemote = HotspotService.remoteModeActive
+        if (remoteMode && serviceRunning && !serviceRemote) {
+            // 이전 LAN 서버의 running=true로 WebView를 너무 일찍 열지 않는다.
+            AppState.update { it.copy(serverRunning = false) }
+        }
+        entry.onStart(serviceRunning)
+    }
+
+    override fun onStop() {
+        entry.onStop()
+        super.onStop()
     }
 
     private fun createWebView() {
@@ -203,14 +232,14 @@ class GameActivity : ComponentActivity() {
                 if (pendingHotspotStart || awaitingHotspotSettings) {
                     response("error") { put("message", "permissionPending") }
                 } else if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
-                    startForegroundService(HotspotService.intent(this, HotspotService.ACTION_START))
+                    entry.startHotspot()
                     proxy.postMessage(hotspotMessage(AppState.hotspot.value).apply { if (id != null) put("id", id) }.toString())
                 } else {
                     pendingHotspotStart = true
                     pendingHotspotId = id
                     AlertDialog.Builder(this).setTitle(R.string.permission_title).setMessage(R.string.permission_body)
                         .setPositiveButton(R.string.permission_ok) { _, _ ->
-                            requestPermissions(Diagnostics.runtimePermissions, REQ_HOTSPOT_PERMISSION)
+                            entry.requestHotspotPermission()
                         }
                         .setNegativeButton(R.string.cancel) { _, _ ->
                             pendingHotspotStart = false
@@ -225,7 +254,7 @@ class GameActivity : ComponentActivity() {
                     response("error") { put("message", "unavailableInRemoteMode") }
                     return
                 }
-                startService(HotspotService.intent(this, HotspotService.ACTION_ADDRESS_ONLY))
+                entry.startAddressOnly()
                 response("stopHotspot") { put("stopped", true) }
             }
             "enableLan" -> {
@@ -237,13 +266,7 @@ class GameActivity : ComponentActivity() {
                     response("error") { put("message", "invalid bridge message") }
                 } else {
                     val enabled = msg.optBoolean("bool")
-                    AppState.update { state ->
-                        state.copy(lanEnabled = enabled, status = when {
-                            enabled && !state.hotspotActive -> HotspotStatus.ADDRESS_ONLY
-                            !enabled && state.status == HotspotStatus.ADDRESS_ONLY -> HotspotStatus.STOPPED
-                            else -> state.status
-                        })
-                    }
+                    entry.setLanEnabled(enabled)
                     response("lan") { put("enabled", enabled) }
                 }
             }
@@ -321,7 +344,7 @@ class GameActivity : ComponentActivity() {
         if (requestCode != REQ_HOTSPOT_PERMISSION || !pendingHotspotStart) return
         pendingHotspotStart = false
         if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
-            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_START))
+            entry.startHotspot()
             sendPermissionResult(hotspotMessage(AppState.hotspot.value))
             pendingHotspotId = null
         } else if (!shouldShowRequestPermissionRationale(Manifest.permission.NEARBY_WIFI_DEVICES)) {
@@ -348,7 +371,7 @@ class GameActivity : ComponentActivity() {
         if (!awaitingHotspotSettings) return
         awaitingHotspotSettings = false
         if (Diagnostics.granted(this, Manifest.permission.NEARBY_WIFI_DEVICES)) {
-            startForegroundService(HotspotService.intent(this, HotspotService.ACTION_START))
+            entry.startHotspot()
             sendPermissionResult(hotspotMessage(AppState.hotspot.value))
         } else {
             sendPermissionResult(JSONObject().put("type", "error").put("message", "permissionDenied"))
@@ -456,9 +479,8 @@ class GameActivity : ComponentActivity() {
 }
 
 /** FR-RP-08: 원격 진입·복귀는 기존 서비스 상태와 무관하게 서버 전용 명령을 보낸다. */
-internal fun gameServerAction(remoteMode: Boolean, serviceRunning: Boolean, serviceRemote: Boolean): String? = when {
-    remoteMode && (!serviceRunning || !serviceRemote) -> HotspotService.ACTION_REMOTE_SERVER_ONLY
-    remoteMode -> null
+internal fun gameServerAction(remoteMode: Boolean, serviceRunning: Boolean): String? = when {
+    remoteMode -> HotspotService.ACTION_REMOTE_SERVER_ONLY
     !serviceRunning -> HotspotService.ACTION_SERVER_ONLY
     else -> null
 }

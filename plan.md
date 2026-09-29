@@ -157,7 +157,7 @@ p2p-gostop/
 |---|---|
 | 같은 웹·프로토콜 | 한 release에서 만든 동일 dist를 APK와 PC/Pages에 복사. 모드 선택은 세션 생성 전에, endpoint와 인증 어댑터만 교체. 원격 주소를 임의 링크 query로 주입받지 않고 사용자 등록/배포 허용 목록과 비교. 기존 WsTransport send/onMessage/onClose/reconnect·세션 hello/snapshot 재사용 |
 | Android 아웃바운드 | Ktor는 APK 웹을 루프백에 서빙, WebView가 지정 공개 WSS에 직접 접속. 원격 진입 전에 LOHS 종료·LAN gate 명시적 false, 기존 `stopHotspot`의 addressOnly 전환만으로 끝내지 않음. HostBridge 허용 origin/메인 프레임·Network Security Config 127.0.0.1 예외 유지, remote 웹에 HostBridge 제공 금지 |
-| 호스트 실행 수명 | 엔진은 계속 WebView에 있으므로 백그라운드 실행 보장 없음. 화면 유지·복귀 재인증, 호스트 실행 정지 동안 입력/타이머 중단. LOHS 없는 원격 모드에서 connectedDevice FGS 사용 적합성은 Android 공식 문서 확인 후 결정; 서버 연결만으로 게임 실행을 보장한다고 쓰지 않음 |
+| 호스트 실행 수명 | **결정(RP-04A):** 원격 루프백 정적 서버와 WebView의 아웃바운드 WS는 `connectedDevice` FGS로 올리지 않는다. [Android FGS 유형](https://developer.android.com/develop/background-work/services/fgs/service-types)의 `connectedDevice`는 외부 기기와의 상호작용을 위한 유형이며, 로컬 정적 서빙만으로 그 유형을 적용하지 않는다. 원격 `GameActivity.onStart`에서 일반 `startService`로 loopback 서버를 열고 `onStop`에서 `stopService`로 닫는다([Activity lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle), [FGS 중지](https://developer.android.com/develop/background-work/services/fgs/stop-fgs)). 이전 LAN FGS에서 전환하면 LOHS 예약·LAN gate를 닫고 `stopForeground(STOP_FOREGROUND_REMOVE)`로 승격을 해제한다. LAN 모드의 LOHS용 `connectedDevice` FGS는 유지한다. WebView 엔진은 Activity에 있으므로 화면 이탈·백그라운드 중 진행 보장 없음. 복귀 시 루프백 재시작, 연결/원장 복구는 RP-04B가 맡는다. JVM 경로 테스트 통과; 실제 기기 수명·알림·재접속은 사람 검증 대기. |
 | PC 서버 | `packages/relay-dev`에 명시적 public 설정·방 API·정적 dist 서빙 추가, default loopback 개발 동작 유지. role별 소켓을 방별 map으로 분리, **공개 모드는 loopback 우회 없이 항상 토큰 검증**. 공용 자격 증명을 번들에 넣지 않고 운영자 생성 키를 Galaxy에 1회 등록. 게임 프레임은 내용 해석 없이 제한/중계, 방/인증 제어만 파싱 |
 | PC 인프라 | 같은 모노레포에 향후 `docker/relay/`와 전용 Compose 파일·운영 README. production artifact만 넣는 비root 컨테이너, 루프백 publish·read-only 파일 시스템·메모리/CPU 제한·수동 세션 기동/종료(부팅 자동 시작 없음). 기존 개발 이미지/Compose는 빌드·테스트용으로 유지. Docker socket/관리 API/진단 경로 공개 금지 |
 | Funnel 설정 | 기존 PC Tailscale의 MagicDNS·HTTPS·funnel 노드 속성 확인 후 `tailscale funnel --bg --https=443 <target>`(예: `http://127.0.0.1:17778`). 정책은 해당 PC만 허용. WSL2이면 Tailscale 실행 위치와 Docker 루프백 가시성·Windows 재부팅 뒤 자동 공개되지 않는지·수동 시작 후 가동을 확인. 별도 cloud 계정·배포 파이프라인 없이 기존 CI artifact를 PC에 설치/이전 artifact로 롤백 |
@@ -189,7 +189,7 @@ p2p-gostop/
 | health 경계 | NP-RP-08. 원격 화면 진입/수동 재시도에서만 유한 요청, 상시 폴링 없음. redirect로 임의 origin을 따라가지 않음. PC 로컬 진단 정보는 공개 health에 포함하지 않음. 정적 서빙 02C가 응답 계약, net 04A가 확인·취소, UI 05C가 표시를 소유 |
 | 현재 앱 실행 감사 | 문서 작업 기준 `6b63bed`: Manifest의 launcher는 `MainActivity`. `MainActivity.render()`가 웹 번들이 있으면 GameActivity로 자동 이동. `GameActivity.onCreate()`는 serviceRunning=false일 때 **ACTION_SERVER_ONLY로 FGS 시작**. `HotspotService` 해당 분기는 goForeground→LOHS 예약 취소·LAN false→로컬 서버 시작. 따라서 웹 진입은 FGS를 시작하지만 **LOHS 자동 시작은 아님** |
 | 현재 친구와 대전 감사 | `web/src/routes/Home.svelte`의 #/versus→`Versus.svelte`는 openRoom·hotspot.watch만 호출. `p2p/hotspot.svelte.ts`의 watch는 구독/getHotspot이고 start가 아님. LOHS 시작은 명시적 onhotspot→hotspot.start→브리지 startHotspot→ACTION_START 경로. 코드 열람 결과이며 실기기 재검증 결과가 아님 |
-| RP-04A 회귀 gate | 위 경로를 선행 병합본에서 다시 대조하고 `MainActivity/GameActivity/HotspotService` 및 `Versus`·p2p 소유자와 인계. 원격 선택/복귀/health 재시도에서 ACTION_START·LOHS 권한 요청0·LAN 열림0. 로컬 웹 서버용 FGS 수명/유형의 적합성은 공식 문서 검토와 JVM/기기 검사로 확정하며, 핫스팟과 FGS를 같은 것으로 취급하지 않음 |
+| RP-04A 회귀 gate | `MainActivity`/`GameActivity`의 실제 시작·복귀·권한 콜백과 `HotspotService.onStartCommand`는 `EntryEffects`/`ServiceEffects` 포트를 거친다. JVM 가짜 포트로 원격 선택·복귀·재시도·이전 LAN 상태에서 ACTION_START/LOHS 요청0·권한 요청0·LAN 열림0, loopback 일반 Service·기존 LAN 닫힘을 확인한다. 원격 health 재시도 **UI 경로는 RP-05C 전까지 미구현·미검증으로 인계**한다. 기기에서 `onStop`→서비스 종료와 `onStart`→재시작·WebView 복구, FGS 제거를 사람이 검사한다. `Versus`·p2p 연결은 RP-04B/05 소유이며 이 gate의 실기기 완료로 간주하지 않는다. |
 
 #### 두 안의 공통 전송 경계
 
@@ -474,10 +474,10 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 | 요구사항 ID | 상태 | RP-04A 근거 | 남은 검증·담당 |
 |---|---|---|---|
-| FR-RP-01·FR-RP-08 | 부분 | `GameActivity` 원격 모드 진입/복귀, `HotspotService` LOHS 취소·LAN gate 닫힘·loopback CIO 재바인딩, `RemoteModePolicyTest`의 startHotspot 0회 | RP-05 모드 UI, Galaxy 실제 권한/FGS·핫스팟 경로 확인 |
+| FR-RP-01·FR-RP-08 | 부분 | `GameActivity` 원격 모드 진입/복귀, `HotspotService` LOHS 취소·LAN gate 닫힘·loopback CIO 재바인딩, Activity·Service가 사용하는 부수효과 포트의 순수 JVM 회귀 gate. 원격은 Activity 가시 수명 일반 Service, LAN만 `connectedDevice` FGS | RP-05 모드/health 재시도 UI 경로 미검증·인계, Galaxy 실제 권한/서비스 수명·핫스팟 경로 사람 확인 |
 | NP-RP-01 | 부분 | `web/src/net` WSS/room/역할 URL·첫 `relay-auth`/재인증/4001 정책, `relay-*` 제어 콜백, 게임 프레임 무변경, `RELAY_PUBLIC=1` 실중계 `test:net` | RP-04B/05 수락·재접속 UI 연결 |
 | NP-RP-02 | 부분 | 생성 자격을 번들에 넣지 않고 호스트 설정 저장소에 주입하는 net API, room·역할 토큰은 URL에서 제외 | RP-02 방/역할 토큰 발급·검증, RP-05 설정 UI·비밀 취급 기기 확인 |
-| NP-RP-08 | 부분 | 설정 HTTPS origin의 유한 `/health` 확인·취소·redirect 거절·wire 버전 대조·CORS/연결 실패 안내 코드, `check-bundle.mjs`의 정적 HTTP/WS URL gate, 공개 중계 health 실응답 `test:net` | RP-02 허용 Origin CORS 응답, RP-05C 화면 종료 취소·기내 요청0 E2E |
+| NP-RP-08 | 부분 | 설정 HTTPS origin의 유한 `/health` 확인·취소·redirect 거절·wire 버전 대조·CORS/연결 실패 안내 코드, `check-bundle.mjs`의 정적 HTTP/WS URL gate, 공개 중계 health 실응답 `test:net` | RP-02 허용 Origin CORS 응답, RP-05C health UI 진입/재시도·화면 종료 취소·기내 요청0 E2E **미검증·인계** |
 
 ### 이슈 정리 결과 (초기 정리와 리뷰 반영 시점 구분)
 

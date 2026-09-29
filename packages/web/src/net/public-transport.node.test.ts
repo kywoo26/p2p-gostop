@@ -9,6 +9,7 @@ import {
   publicWsUrl,
   saveRemoteHostSettings,
 } from './index.ts';
+import { parseRelayControl } from './ws-transport.ts';
 
 const token = 't'.repeat(43);
 const resumeToken = 'u'.repeat(43);
@@ -56,6 +57,14 @@ afterEach(() => {
 });
 
 describe('NP-RP-01 공개 transport', () => {
+  it('파싱한 최상위 t만 제어 프레임으로 분류한다', () => {
+    expect(parseRelayControl(' {"t":"relay-claim-pending"} ').value?.t).toBe('relay-claim-pending');
+    expect(parseRelayControl('{"t":"relay-unknown"}').isControl).toBe(true);
+    expect(parseRelayControl('{"nested":{"t":"relay-claim-pending"}}').isControl).toBe(false);
+    expect(parseRelayControl('{"message":"relay-claim-pending","t":"hello"}').isControl).toBe(
+      false,
+    );
+  });
   it('설정 origin만 WSS에 사용하고 토큰을 URL·로그에서 제외한다', () => {
     expect(publicWsUrl(endpoint)).toBe(`wss://relay.example.test/ws?role=host&room=${room}`);
     for (const bad of [
@@ -93,6 +102,7 @@ describe('NP-RP-01 공개 transport', () => {
     sockets[0]!.receive(JSON.stringify({ t: 'relay-accepted', token: resumeToken }));
     sockets[0]!.receive('{"t":"relay","peer":"present"}');
     expect(transport.state).toBe('open');
+    expect(sockets).toHaveLength(1); // invite 수락 뒤 같은 소켓에서 게임 프레임 시작
     expect(sockets[0]!.sent[1]).toBe(JSON.stringify({ t: 'log', entries: ['before-auth'] }));
     sockets[0]!.receive('{"t":"pong"}');
     expect(messages).toEqual(['{"t":"pong"}']);
