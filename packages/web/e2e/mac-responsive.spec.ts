@@ -43,3 +43,29 @@ for (const [width, height] of [
     });
   }
 }
+
+for (const [width, height] of [
+  [1440, 900],
+  [1024, 450],
+  [720, 450],
+] as const) {
+  test(`${width}×${height}: 가로 영역 간격 0 반례 @mac`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('./#/dev/gallery/fan-play');
+    await page.evaluate(() => document.fonts.ready);
+    expect((await page.evaluate(auditLayout)).issues).toEqual([]);
+    await page.locator('.board').evaluate((board) => {
+      board.style.columnGap = '0px';
+    });
+    expect((await page.evaluate(auditLayout)).issues).toContainEqual(
+      expect.stringContaining('wide region gap: opponent hud/center'),
+    );
+    await page.locator('.board').evaluate((board) => {
+      board.style.removeProperty('column-gap');
+      board.style.rowGap = '0px';
+    });
+    expect((await page.evaluate(auditLayout)).issues).toContainEqual(
+      expect.stringContaining('wide region gap: center/hand'),
+    );
+  });
+}

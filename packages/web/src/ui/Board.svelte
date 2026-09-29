@@ -974,7 +974,7 @@
       --fan-seat: 40px;
       --fan-capture: 68px;
       --fan-hand: 100px;
-      --fan-gap: 4px;
+      --fan-gap: 8px;
       grid-template-columns: 190px minmax(300px, 1fr) 190px;
       column-gap: 8px;
       padding-block: 4px;
@@ -983,7 +983,7 @@
       --fan-hand: 160px;
     }
     .board.board.board .captured-zone {
-      margin-top: calc(var(--fan-seat) + 4px);
+      margin-top: calc(var(--fan-seat) + 8px);
     }
     .board.board.board .captured-zone :global(.stack) {
       width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 1px);
