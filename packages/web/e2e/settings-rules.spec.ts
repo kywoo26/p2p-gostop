@@ -25,6 +25,17 @@ async function relay(): Promise<{ port: number; proc: ChildProcess }> {
   return { port, proc };
 }
 
+test('앱 루트 효과 강도는 기본값과 설정 변경을 즉시 반영한다 (FR-21)', async ({ page }) => {
+  await page.goto('./#/settings');
+  const root = page.locator('#app > [data-effect-intensity]');
+  const effect = page.getByRole('combobox', { name: '효과 강도' });
+  await expect(root).toHaveAttribute('data-effect-intensity', 'strong');
+  for (const value of ['off', 'subtle', 'strong']) {
+    await effect.selectOption(value);
+    await expect(root).toHaveAttribute('data-effect-intensity', value);
+  }
+});
+
 test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정되고 로컬 힌트는 즉시 복원된다', async ({
   page,
 }) => {
