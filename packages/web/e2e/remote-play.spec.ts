@@ -24,6 +24,9 @@ const release = 'v0.0.1';
 const relayCli = resolve('../relay-dev/src/cli.ts');
 const dist = resolve('dist');
 
+// 공개 relay 자격·초대 fragment·Bearer 토큰은 실패 trace와 CI artifact에 남겨서는 안 된다.
+test.use({ trace: 'off', screenshot: 'off', video: 'off' });
+
 interface RelayProcess {
   child: ChildProcessWithoutNullStreams;
   port: number;
@@ -377,7 +380,7 @@ test('AC-RP-02 @smoke @paired 코드 거절·승인과 위조 토큰은 기존 �
   }
 });
 
-test('AC-RP-01/02 @smoke @paired 진행 중 게스트 reload·resume 뒤 snapshot과 잔액 일치', async ({
+test('AC-RP-01/02 @full @paired 진행 중 게스트 reload·resume 뒤 snapshot과 잔액 일치', async ({
   browser,
 }, info) => {
   test.skip(info.project.name !== 'chromium');
