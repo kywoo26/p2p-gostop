@@ -59,7 +59,23 @@ for (const { name, hash, viewports = [PORTRAIT], mask = [] } of PAGES) {
   for (const viewport of viewports) {
     const id = viewports.length > 1 ? `${name}-${viewport.width}x${viewport.height}` : name;
 
-    test(`갤러리 ${id}: 스크린샷·axe`, async ({ page }, info) => {
+    const tags = [
+      '@visual',
+      ...(name === 'guest' ? ['@guest'] : []),
+      ...([
+        'cards',
+        'card-sizes',
+        'board',
+        'board-target',
+        'board-gostop',
+        'banners',
+        'settlement',
+      ].includes(name)
+        ? ['@layout']
+        : []),
+    ].join(' ');
+
+    test(`갤러리 ${id}: 스크린샷·axe ${tags}`, async ({ page }, info) => {
       await page.setViewportSize(viewport);
       await page.goto(`./${hash}`);
       await expect(page.getByRole('heading').first()).toBeVisible();

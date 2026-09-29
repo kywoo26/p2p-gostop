@@ -326,7 +326,7 @@ test.describe('턴 시간 계측 (@timing)', () => {
 
   test(
     '혼자 연습: 고정 3경로 보통 · 대표 매칭+획득 p50 1.4~2.4초 (UX-15, AC-06)',
-    { tag: '@timing' },
+    { tag: ['@timing', '@full'] },
     async ({ page, browserName }) => {
       test.setTimeout(5 * 60_000);
       const assertWall = !(process.env['CI'] && browserName === 'webkit');

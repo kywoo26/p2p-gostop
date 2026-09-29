@@ -2,8 +2,9 @@
   import Scene from '../pro-assets/Scene.svelte';
   import { proEnabled } from '../pro-assets/runtime.ts';
   import { cardSrc } from '../ui/cards.ts';
-  // 홈 화면 (spec 6.2): 친구와 대전(방 열기) / 혼자 연습 / 기록 / 설정 / 진단. 진행 중인 대전·연습이 있으면 맨 위에 이어하기.
+  // 홈 화면 (FR-RP-01): 핫스팟·원격 대전 / 혼자 연습 / 기록 / 설정 / 진단. 진행 중인 대전·연습이 있으면 맨 위에 이어하기.
   import { BUILD_ID, BUILD_TIME } from '../lib/build-info.ts';
+  import { loadRemoteHostSettings } from '../net/index.ts';
 
   interface Props {
     /** 이어할 수 있는 혼자 연습 세션 (MN-05). 있으면 맨 위에 "이어하기" */
@@ -12,12 +13,20 @@
     /** 진행 중인 친구와 대전 (호스트). 있으면 맨 위에 "대전으로 돌아가기" */
     match?: { readonly round: number; readonly guest: string } | null;
     onmatch?: (() => void) | undefined;
+    remoteReady?: boolean | undefined;
+    activeMode?: 'hotspot' | 'remote' | undefined;
   }
 
-  let { resume = null, onresume, match = null, onmatch }: Props = $props();
+  let { resume = null, onresume, match = null, onmatch, remoteReady, activeMode }: Props = $props();
+
+  const configured = $derived(
+    remoteReady ??
+      (typeof localStorage !== 'undefined' && loadRemoteHostSettings(localStorage) !== null),
+  );
 
   const menu = [
-    { id: 'versus', label: '친구와 대전', primary: true, href: '#/versus' },
+    { id: 'versus', label: '핫스팟 대전', primary: true, href: '#/versus' },
+    { id: 'remote', label: '친구와 원격 대전', primary: true, href: '#/remote' },
     { id: 'solo', label: '혼자 연습', primary: true, href: '#/solo' },
     { id: 'records', label: '기록', primary: false, href: '#/records' },
     { id: 'settings', label: '설정', primary: false, href: '#/settings' },
@@ -52,11 +61,20 @@
       <button
         type="button"
         class={['menu-button', item.primary && 'primary', item.id === 'versus' && 'versus']}
-        onclick={() => (location.hash = item.href)}
+        disabled={(item.id === 'remote' && activeMode === 'hotspot') ||
+          (item.id === 'versus' && activeMode === 'remote')}
+        onclick={() =>
+          (location.hash = item.id === 'remote' && !configured ? '#/settings' : item.href)}
       >
         {item.label}<span aria-hidden="true">↗</span>
       </button>
     {/each}
+    {#if !configured}<p class="remote-hint">
+        원격 대전은 설정에서 중계 주소와 생성 자격을 먼저 저장하세요.
+      </p>{/if}
+    {#if activeMode}<p class="remote-hint">
+        진행 중인 대전을 끝내면 다른 모드를 선택할 수 있습니다.
+      </p>{/if}
   </nav>
   <footer>
     <span data-testid="build-id">빌드 {BUILD_ID}</span>
@@ -124,6 +142,12 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-3);
   }
+  .remote-hint {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
+  }
 
   .menu-button {
     display: flex;
@@ -168,6 +192,9 @@
 
   .menu-button:active {
     background: var(--color-surface-raised);
+  }
+  .menu-button:disabled {
+    opacity: 0.5;
   }
 
   .menu-button.primary:active {

@@ -61,7 +61,7 @@
 ## 5. 검증 명령
 - 처음 한 번(그리고 `.nvmrc`·`@playwright/test`·Android 설정이 바뀐 뒤) 저장소 루트에서 `tools/setup-host.sh`. 여러 번 실행해도 되고, 설치하는 것을 단계별로 출력한다. 비대화형으로 실행하면 sudo 단계(와 설치에 실패한 SDK 패키지)를 보류로 남기고 실패하며, 스스로 재실행하지 않는다. 에이전트는 그 출력(보류 목록과 오류 원문)을 오케스트레이터에 보고하고 나머지 작업을 계속한다.
 - 셸마다 `nvm use`(`.nvmrc`). 새 체크아웃·워크트리는 먼저 `npm ci`.
-- PR 필수 명령(CI의 `ci.yml`도 같은 명령을 돈다):
+- PR 필수 명령(PR은 `npm run e2e:smoke -w packages/web`, main 푸시·릴리스 전은 `npm run e2e -w packages/web`(full)):
 ```sh
 npm ci                                   # 처음, 그리고 package-lock.json이 바뀐 뒤
 npm run lint
@@ -69,10 +69,10 @@ npm run check
 npm test
 npm run test:browser
 npm run build -w packages/web
-npm run e2e -w packages/web
+npm run e2e:smoke -w packages/web
 android/gradlew -p android assembleDebug testDebugUnitTest lint
 ```
-  `npm run verify`가 위 명령(npm ci 제외)을 차례로 돈다.
+  `npm run verify`는 npm ci 제외, E2E는 full로 위 검증을 차례로 돈다.
 - 그 밖: `npm run dev -w packages/web`(Vite, 5173), `npm run start -w packages/relay-dev`(중계, 17777), `npm run sim -- --workers 4 …`, 스크린샷 기준 갱신 `npm run e2e -w packages/web -- --update-snapshots`, 자산 변환 `uv run packages/web/scripts/build-pro-assets.py`(파이썬 스크립트는 모두 `uv run`, 의존성은 스크립트의 PEP 723 메타데이터).
 - 공유 머신 부하: 여러 에이전트가 한 호스트를 쓴다. E2E는 설정 기본값(로컬 4 workers)을 넘기지 않고, `sim`은 `--workers 4` 이하(기본값은 CPU 수), Gradle은 `--max-workers=4` 이하, `@timing`(AC-06)은 설정대로 직렬로 둔다.
 - 호스트와 CI 결과가 다르면 버전 핀(위 1장 목록)과 `tools/setup-host.sh` 출력부터 대조한다. 문서에 남은 옛 표기 `docker compose run --rm dev <명령>`은 호스트 `<명령>`과 같다(개발 이미지는 2026-09-30 삭제).

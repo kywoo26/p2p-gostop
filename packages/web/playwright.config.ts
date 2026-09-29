@@ -1,6 +1,8 @@
 // E2E: Playwright Chromium(Android WebView 대역) + WebKit(iPhone Safari 대역). 호스트·CI 모두 네이티브 실행(AGENTS.md §5).
 import { defineConfig, devices } from '@playwright/test';
 
+// PR은 기능 전체(C) + 게스트/레이아웃/폰트(W), main은 전체 행렬이다.
+const smoke = process.env['E2E_SUITE'] === 'smoke';
 // 동시 워크트리 검증에서 다른 브랜치 미리보기를 재사용하지 않도록 포트를 지정할 수 있다.
 const PORT = Number(process.env['PLAYWRIGHT_PORT'] ?? 4173);
 const baseURL = `http://127.0.0.1:${PORT}`;
@@ -33,22 +35,38 @@ export default defineConfig({
   // timing-chromium 뒤), 프로젝트당 워커 1개로(--repeat-each 반복도 겹치지 않게) 혼자 돌린다.
   // 다른 테스트가 실패하면 의존 관계 때문에 계측은 건너뛴다. --repeat-each는 의존 대상 프로젝트에는 적용되지 않는다.
   projects: [
-    { name: 'chromium', use: { ...devices['Pixel 7'] }, grepInvert: /@timing/ },
-    { name: 'webkit', use: { ...devices['iPhone 15'] }, grepInvert: /@timing/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Pixel 7'] },
+      grepInvert: smoke ? /@timing|@full/ : /@timing/,
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['iPhone 15'] },
+      ...(smoke ? { grep: /@guest|@layout|@fonts/ } : {}),
+      grepInvert: smoke ? /@timing|@full|@paired/ : /@timing/,
+    },
     {
       name: 'timing-chromium',
       use: { ...devices['Pixel 7'] },
       grep: /@timing/,
+      // PR에서도 AC-06 Chromium 빠름·NP-03 혼합 브라우저 재접속을 직렬 계측한다.
+      ...(smoke ? { grepInvert: /@full/ } : {}),
       workers: 1,
       dependencies: ['chromium', 'webkit'],
     },
-    {
-      name: 'timing-webkit',
-      use: { ...devices['iPhone 15'] },
-      grep: /@timing/,
-      workers: 1,
-      dependencies: ['timing-chromium'],
-    },
+    // #145의 AC-06 표본·임계값·hosted WebKit 기록 정책은 full에서 그대로 유지한다.
+    ...(smoke
+      ? []
+      : [
+          {
+            name: 'timing-webkit',
+            use: { ...devices['iPhone 15'] },
+            grep: /@timing/,
+            workers: 1,
+            dependencies: ['timing-chromium'],
+          },
+        ]),
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort --host 127.0.0.1`,

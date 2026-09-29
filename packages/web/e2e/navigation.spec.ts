@@ -198,7 +198,7 @@ test('P2P 호스트 Back → 메뉴 → 설정 → 뒤로에서 과거 Back을 �
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
     await page.goto(`${base}/${query}&role=host#/`);
-    await page.getByRole('button', { name: '친구와 대전' }).click();
+    await page.getByRole('button', { name: '핫스팟 대전' }).click();
     await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
     const guest = await guestContext.newPage();
     await guest.goto(`${base}/${query}&role=guest`);

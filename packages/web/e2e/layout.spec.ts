@@ -20,7 +20,9 @@ for (const [width, height] of [
     'overflow',
     'empty',
   ]) {
-    test(`${width}×${height} ${state}: 전체 앞면·획득4종·겹침 게이트`, async ({ page }, info) => {
+    test(`${width}×${height} ${state}: 전체 앞면·획득4종·겹침 게이트 @layout`, async ({
+      page,
+    }, info) => {
       await page.setViewportSize({ width, height });
       await page.goto(`./#/dev/gallery/fan-${state}`);
       await page.evaluate(() => document.fonts.ready);
@@ -58,7 +60,7 @@ for (const [width, height] of [
     });
   }
   for (const scene of ['home', 'settlement', 'settings', 'guest', 'license', 'game-menu']) {
-    test(`${width}×${height} ${scene}: 전체 화면 겹침·입력·텍스트 게이트`, async ({
+    test(`${width}×${height} ${scene}: 전체 화면 겹침·입력·텍스트 게이트 @layout`, async ({
       page,
     }, info) => {
       await page.setViewportSize({ width, height });
@@ -85,7 +87,7 @@ for (const [width, height] of [
   }
 }
 for (const state of ['gukjin', 'shake', 'chongtong', 'first', 'flip', 'event', 'event-target']) {
-  test(`추가 ${state}: 필수 제어가 화면 안에 남는다`, async ({ page }) => {
+  test(`추가 ${state}: 필수 제어가 화면 안에 남는다 @layout`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     await page.goto(`./#/dev/gallery/layout-${state}`);
     await page.evaluate(() => document.fonts.ready);
@@ -102,7 +104,7 @@ for (const state of ['gukjin', 'shake', 'chongtong', 'first', 'flip', 'event', '
     expect(issues).toEqual([]);
   });
 }
-test('판 정보는 메뉴에서 열고 문턱·획득 내역·닫기를 제공', async ({ page }) => {
+test('판 정보는 메뉴에서 열고 문턱·획득 내역·닫기를 제공 @layout', async ({ page }) => {
   await page.addInitScript(
     (save) => localStorage.setItem('gostop.solo.v1', JSON.stringify(save)),
     timingSave(TIMING_FIXTURES[0]!),
@@ -117,7 +119,7 @@ test('판 정보는 메뉴에서 열고 문턱·획득 내역·닫기를 제공'
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
 });
-test('가로 방향 입력 잠금·세로 복귀', async ({ page }) => {
+test('가로 방향 입력 잠금·세로 복귀 @layout', async ({ page }) => {
   await page.setViewportSize({ width: 780, height: 360 });
   await page.goto('./#/dev/gallery/layout-play');
   await expect(page.getByRole('alert')).toHaveText('세로로 돌려 게임을 계속하세요');
@@ -128,7 +130,7 @@ test('가로 방향 입력 잠금·세로 복귀', async ({ page }) => {
 });
 
 for (const state of ['play', 'target', 'gostop']) {
-  test(`412×840 시스템 inset ${state}: 카드·입력 안전영역`, async ({ page }) => {
+  test(`412×840 시스템 inset ${state}: 카드·입력 안전영역 @layout`, async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 840 });
     await page.goto(`./#/dev/gallery/fan-${state}`);
     const board = page.locator('.board');
@@ -149,7 +151,7 @@ for (const state of ['play', 'target', 'gostop']) {
 }
 
 // 리뷰 P2: 접근성 트리에서 숨긴 카운터도 실제 화면의 교차 감사에는 포함한다.
-test('감사 반례: aria-hidden 카운터가 잔액 위를 덮으면 실패한다', async ({ page }) => {
+test('감사 반례: aria-hidden 카운터가 잔액 위를 덮으면 실패한다 @layout', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await page.goto('./#/dev/gallery/fan-play');
   await expect(page.locator('.table')).toHaveAttribute('data-floor-fits', 'true');
@@ -169,7 +171,7 @@ test('감사 반례: aria-hidden 카운터가 잔액 위를 덮으면 실패한�
   ).toBe(true);
 });
 
-test('감사 반례: aria-hidden 텍스트 교차 검출, display none이면 제외', async ({ page }) => {
+test('감사 반례: aria-hidden 텍스트 교차 검출, display none이면 제외 @layout', async ({ page }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await page.goto('./#/dev/gallery/fan-play');
   await expect(page.locator('.table')).toHaveAttribute('data-floor-fits', 'true');

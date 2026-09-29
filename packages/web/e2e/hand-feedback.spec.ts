@@ -10,7 +10,9 @@ for (const [width, height] of [
   [412, 915],
 ] as const) {
   for (const state of ['play', 'stop']) {
-    test(`${width}x${height} ${state}: 점수 위계·카드 상태·손패10`, async ({ page }, info) => {
+    test(`${width}x${height} ${state}: 점수 위계·카드 상태·손패10 @layout`, async ({
+      page,
+    }, info) => {
       test.setTimeout(90_000);
       await page.setViewportSize({ width, height });
       await page.goto(`./#/dev/gallery/feedback-${state}`);
@@ -253,7 +255,7 @@ for (const [width, height] of [
 
 for (const width of [360, 390, 412, 430]) {
   for (const fixture of ['groups', 'bonus']) {
-    test(`${width}px ${fixture}: 월 묶음과 48px 노출`, async ({ page }, info) => {
+    test(`${width}px ${fixture}: 월 묶음과 48px 노출 @layout`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 780 });
       await page.goto(`./#/dev/gallery/hand-layout-${fixture}`);
       const rows = await page.locator('.hand .row').evaluateAll((elements) =>

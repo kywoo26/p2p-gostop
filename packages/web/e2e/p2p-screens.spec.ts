@@ -15,7 +15,7 @@ async function asHotspotOrigin(page: Page, baseURL: string): Promise<void> {
   });
 }
 
-test('비루프백 origin의 `/`는 조작 없이 게스트 참가 화면 (iPhone QR, 이슈 #19)', async ({
+test('비루프백 origin의 `/`는 조작 없이 게스트 참가 화면 (iPhone QR, 이슈 #19) @smoke @guest', async ({
   page,
   baseURL,
 }) => {
@@ -26,7 +26,7 @@ test('비루프백 origin의 `/`는 조작 없이 게스트 참가 화면 (iPhon
   await expect(page.getByRole('button', { name: '혼자 연습' })).toHaveCount(0);
 });
 
-test('비루프백의 ?role=host는 게스트로 열리고, 이전 /p2p/index.html 북마크는 루트로 이동한다', async ({
+test('비루프백의 ?role=host는 게스트로 열리고, 이전 /p2p/index.html 북마크는 루트로 이동한다 @smoke @guest', async ({
   page,
   baseURL,
 }) => {
@@ -38,21 +38,21 @@ test('비루프백의 ?role=host는 게스트로 열리고, 이전 /p2p/index.ht
   await expect(page.getByRole('heading', { name: '맞고 P2P' })).toBeVisible();
 });
 
-test('루프백 `/`와 `/?role=host`는 호스트 앱 홈 (Android WebView), `?role=guest`는 게스트', async ({
+test('루프백 `/`와 `/?role=host`는 호스트 앱 홈 (Android WebView), `?role=guest`는 게스트 @smoke', async ({
   page,
 }) => {
   await page.goto('./');
-  await expect(page.getByRole('button', { name: '친구와 대전' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '핫스팟 대전' })).toBeVisible();
   await expect(page.getByRole('button', { name: '혼자 연습' })).toBeVisible();
   await page.goto('./?role=host&build=abc1234');
   await expect(page.getByRole('heading', { name: '맞고 P2P' })).toBeVisible();
-  await page.getByRole('button', { name: '친구와 대전' }).click();
+  await page.getByRole('button', { name: '핫스팟 대전' }).click();
   await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
   await page.goto('./?role=guest');
   await expect(page.getByRole('heading', { name: '게임 참가' })).toBeVisible();
 });
 
-test('게스트 대기실 스크린샷·axe (FR-05)', async ({ page }) => {
+test('게스트 대기실 스크린샷·axe (FR-05) @smoke @guest @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('./#/dev/gallery/guest-lobby');
   await expect(page.getByTestId('lobby')).toBeVisible();
