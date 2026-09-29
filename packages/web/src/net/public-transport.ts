@@ -192,12 +192,11 @@ export type RelayHealthErrorCode =
   'cancelled' | 'timeout' | 'cors' | 'network' | 'http' | 'invalidResponse' | 'incompatible';
 
 export class RelayHealthError extends Error {
-  constructor(
-    readonly code: RelayHealthErrorCode,
-    options?: ErrorOptions,
-  ) {
+  readonly code: RelayHealthErrorCode;
+  constructor(code: RelayHealthErrorCode, options?: ErrorOptions) {
     super(`relay health ${code}`, options);
     this.name = 'RelayHealthError';
+    this.code = code;
   }
 }
 
