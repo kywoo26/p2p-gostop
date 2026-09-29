@@ -295,7 +295,7 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 |---|---|
 | `RELAY_PUBLIC=1` 또는 `--public` | 공개 모드 활성화. 기본은 LAN 모드 |
 | `RELAY_CREATION_SECRET` 또는 `RELAY_CREATION_SECRET_FILE` | 256비트 생성 자격 증명(base64url 43자). 파일 변수는 UTF-8 내용을 읽는다. 코드·웹·APK에 내장하지 않는다 |
-| `RELAY_ALLOWED_ORIGINS` | 쉼표로 구분한 허용 Origin. HTTPS Origin과 명시된 로컬 WebView Origin만 허용한다. Origin은 인증 자격이 아니다 |
+| `RELAY_ALLOWED_ORIGINS` | 쉼표로 구분한 허용 Origin. 비어 있으면 Galaxy WebView의 로컬 페이지 Origin `http://127.0.0.1:17777` 하나를 기본 허용한다(원격 HTTPS health/방 API를 읽고 Authorization preflight를 통과시키기 위함). Funnel 게스트의 HTTPS Origin은 RP-03 실행 설정에서 로컬 Origin과 함께 `http://127.0.0.1:17777,https://<funnel-host>` 형태로 명시한다(목록을 설정하면 기본값을 대체한다). HTTP CORS와 WS 업그레이드는 같은 목록을 검사한다. Origin은 인증 자격이 아니다 |
 | `RELAY_RELEASE`, `RELAY_DIST_DIR` | 현행 release ID(`vN.N.N`)와 해당 `packages/web/dist` artifact 디렉터리. 공개 CLI에서 release ID 필수, dist 기본 경로는 `packages/web/dist` |
 | `RELAY_PREVIOUS_RELEASE`, `RELAY_PREVIOUS_DIST_DIR` | 직전 호환 release ID와 별도 dist artifact. 이전 release를 지정하면 디렉터리도 필수 |
 | `PORT`, `HOST` 또는 `--port` | 내부 HTTP/WS 포트·바인드 주소. 외부 공개는 앞단 HTTPS/WSS 설정으로 수행 |
@@ -311,6 +311,8 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 | `POST /api/rooms` | `Authorization: Bearer <생성 자격>` → 201 `{roomId,hostToken,code,expiresAt}`. `roomId`는 128비트, host 토큰은 256비트. `code`는 60비트 Base32의 `XXXX-XXXX-XXXX` 표시 |
 | `POST /api/rooms/:id/credentials` | `Authorization: Bearer <hostToken>`, JSON `{token,permission,expiresAt}`. `permission`은 `invite` 또는 `resume`, 토큰은 호스트가 생성한 256비트 base64url. 성공 201 `{"ok":true}`. 중계는 해시·권한·만료만 보관 |
 | `DELETE /api/rooms/:id` | host Bearer로 방 즉시 폐기, 성공 204 |
+
+공개 HTTP CORS는 `/health`, `/version`, `/api/rooms*`에 한정한다. 요청 `Origin`이 허용 목록과 정확히 일치할 때만 `Access-Control-Allow-Origin: <요청 Origin>`과 `Vary: Origin`을 보낸다. 와일드카드·쿠키용 `Access-Control-Allow-Credentials`는 쓰지 않으며 목록 밖 Origin에는 CORS 허용 헤더를 보내지 않는다. 허용 Origin의 `OPTIONS` preflight는 204와 `Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS`, `Access-Control-Allow-Headers: Authorization, Content-Type`, `Access-Control-Max-Age: 600`을 반환한다. 정적 자산에는 CORS를 열지 않는다. Bearer 토큰만 생성·방 관리 권한이며 Origin은 인증이 아니다.
 
 방 목록·코드 조회 API는 없다. 공개 HTTP API에 게임 내용·이름을 전송하지 않는다. 초대 링크를 만들 때 토큰은 URL **fragment**에만 넣고 로드 직후 메모리로 옮겨 주소에서 제거한다. 단순 링크 preview GET은 초대를 claim하지 않는다.
 
