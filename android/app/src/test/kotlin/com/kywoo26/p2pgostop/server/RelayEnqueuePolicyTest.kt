@@ -6,20 +6,20 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RelayEnqueuePolicyTest {
-    @Test fun `64개 큐의 65번째 메시지는 1008을 예약하고 열린 상대에게 알린 뒤 역할을 해제한다`() {
+    @Test fun `64개 큐의 65번째 메시지는 1008을 예약하고 left로 역할을 해제한다`() {
         val queue = ArrayDeque<Int>()
         val events = mutableListOf<String>()
         val policy = RelayEnqueuePolicy<String>(
             close = { target, code, reason -> events.add("close:$target:$code:$reason") },
             detach = { target -> events.add("left:$target") },
         )
-        fun send(n: Int) = policy.offer("guest", {
+        fun send(n: Int) = policy.offer("guest") {
             if (queue.size == MAX_OUTGOING_FRAMES) false else { queue.addLast(n); true }
-        }) { events.add("absent:host") }
+        }
         repeat(MAX_OUTGOING_FRAMES) { assertTrue(send(it)) }
         assertFalse(send(65))
         assertFalse(send(66))
-        assertEquals(listOf("close:guest:1008:slow peer", "absent:host", "left:guest"), events)
+        assertEquals(listOf("close:guest:1008:slow-peer", "left:guest"), events)
         assertEquals(MAX_OUTGOING_FRAMES, queue.size)
         policy.forget("guest")
         queue.removeFirst()
@@ -33,10 +33,10 @@ class RelayEnqueuePolicyTest {
             close = { _, code, _ -> events.add("close:$code") },
             detach = { events.add("left") },
         )
-        fun send() = policy.offer("guest", { attempts++; false }) { events.add("absent") }
+        fun send() = policy.offer("guest") { attempts++; false }
         assertFalse(send())
         assertFalse(send())
         assertEquals(1, attempts, "종료 예약 후에는 송신 대상에 다시 쓰지 않는다")
-        assertEquals(listOf("close:1008", "absent", "left"), events)
+        assertEquals(listOf("close:1008", "left"), events)
     }
 }

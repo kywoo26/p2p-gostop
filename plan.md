@@ -120,6 +120,7 @@ p2p-gostop/
 | 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, 프로젝트 `.claude/`(서브에이전트 3종·스킬 3종·권한 규칙, 편집 훅 없음: 포맷은 `lint:fix`·CI `lint`로 강제, 근거 `docs/reviews/harness-audit.md`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 | Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
+| Android 중계 벡터 JSON | `org.json:json` 20260719 (테스트 전용) | Android JVM 단위 테스트의 `android.jar` JSON 스텁은 메서드를 실행하지 않으므로, 저장소 공유 시나리오 파일을 실행 시 읽는 데 실제 구현이 필요하다 (#36). APK 런타임에는 포함하지 않는다 |
 | Android 런타임 의존성 | `kotlinx-coroutines-android` (Ktor 3.6.0이 요구하는 코루틴 버전과 일치하도록 명시 선언) | 전이 의존에 기대지 않는다 (M0 리뷰) |
 
 ### 1.7 Android 앱 설계
@@ -217,7 +218,7 @@ p2p-gostop/
 | Sol이 막히는 어려운 문제 | Codex GPT-6 Astra(max) 예비 | 비용·한도 큼 |
 | 저위험 잡무(문서 동기화, 정리) | Codex GPT-6 Luna | 저렴 |
 
-규칙: 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
+규칙(2026-09-29 갱신): 위임은 기본적으로 **Codex(Paseo) 에이전트**로 한다 — Astra(high) 판단·설계·리뷰, Sol(high) 구현·계약형, Luna 잡무. Claude 서브에이전트는 사용자가 명시할 때만 쓴다(Claude 세션 한도 관리). 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
 
 2026-09-28 결과: PR #1(Android 셸)·#2(M3 솔로)·#3(프로토콜) 모두 main 병합. MVP 릴리스 `v0.1.0-alpha`→`v0.1.2-alpha`(P2P 최소 페이지 `tools/p2p-mini` + 솔로 모드 + Android 수정). 남은 통합(M4 마무리): 게스트/호스트 화면을 `tools/p2p-mini` 대신 정식 UI(M3 Board + protocol HostSession/GuestSession + `src/net` WsTransport + `bridge.ts`↔HostBridge)로 교체, 로비 화면, 2브라우저 E2E, 호스트 원장 저장·복원, 60초 연결 상태 시계. 그 뒤 M5 실기기 회차·M6.
 
