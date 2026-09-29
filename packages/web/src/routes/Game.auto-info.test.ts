@@ -73,7 +73,8 @@ test.each(['solo', 'host', 'guest'] as const)(
     const root = screen.getByTestId('board').element();
     // #104 통합 후 실제 버튼/대화상자로 자동 진행 보류 연결을 검사한다.
     const dialog = root.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')!;
-    await userEvent.click(screen.getByRole('button', { name: '판 정보' }));
+    await userEvent.click(screen.getByTestId('game-menu'));
+    await userEvent.click(screen.getByRole('button', { name: '판 정보 · 족보 진행' }));
     await vi.waitFor(() =>
       expect(screen.container.firstElementChild?.getAttribute('data-auto-held')).toBe('true'),
     );

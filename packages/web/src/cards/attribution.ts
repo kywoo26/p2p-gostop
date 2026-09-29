@@ -5,7 +5,7 @@
 
 /** 저작자 표시 문장 (CC BY-SA 4.0 3(a)(1)). 세 사람을 모두 적는다. */
 export const CARD_ART_CREDIT =
-  'Hwatu card art by Spenĉjo and Marcus Richert, based on Hanafuda graphics by Louie Mantia, Jr. — Wikimedia Commons, CC BY-SA 4.0';
+  'Hwatu card art by Spenĉjo and Marcus Richert, based on Hanafuda graphics by Louie Mantia, Jr. · Wikimedia Commons, CC BY-SA 4.0';
 
 export const CARD_ART_AUTHORS = [
   { name: 'Spenĉjo', role: '카드별 SVG 추출·최적화 (2024-12)' },

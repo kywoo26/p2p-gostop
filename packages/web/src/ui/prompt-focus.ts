@@ -1,7 +1,7 @@
 // UX-07/24: 예약 행의 인라인 dialog를 유지하며 배경 잠금·초점 순환/복귀를 제공한다.
 // 전환 중 두 선택 창이 잠시 공존해도 먼저 닫힌 창이 다른 창의 잠금을 풀지 않는다.
 const locks = new WeakMap<HTMLElement, { count: number; previous: boolean }>();
-const panels = new Set<HTMLDialogElement>();
+const panels = new Set<HTMLElement>();
 const controls =
   'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]';
 
@@ -18,7 +18,7 @@ function focusable(panel: HTMLElement): HTMLElement[] {
   return [...panel.querySelectorAll<HTMLElement>(controls)].filter(available);
 }
 
-export function promptFocus(panel: HTMLDialogElement) {
+export function promptFocus(panel: HTMLElement) {
   const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const board = panel.closest('.board');
   const menu = board
@@ -102,10 +102,10 @@ export function promptFocus(panel: HTMLDialogElement) {
         previous.focus({ preventScroll: true });
       } else {
         // 낸 패가 사라지거나 busy로 비활성화되면 남은 손패/판 정보로 복귀한다.
-        const fallback = board?.querySelectorAll<HTMLElement>(
-          '.hand button:not(:disabled), .info-button',
-        );
-        [...(fallback ?? [])].find(available)?.focus({ preventScroll: true });
+        const fallback = board?.querySelectorAll<HTMLElement>('.hand button:not(:disabled)');
+        const target =
+          [...(fallback ?? [])].find(available) ?? (menu && available(menu) ? menu : board);
+        if (target instanceof HTMLElement) target.focus({ preventScroll: true });
       }
     });
   }

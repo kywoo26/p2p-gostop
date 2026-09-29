@@ -1,4 +1,7 @@
 @import './fonts/GostopSans.css';
+@import './skin.css';
+@import './skin-marks.css';
+@import './skin-fan.css';
 
 /*
  * 디자인 토큰 (plan.md 1.6). 다크 배경, OKLCH 팔레트, 애니메이션 시간 예산(spec 6.4).
@@ -84,7 +87,7 @@
   --radius-s: 0.375rem;
   --radius-m: 0.75rem;
   --touch-min: 48px; /* spec 6.1 최소 터치 영역 48×48dp */
-  /* 카드 폭 (비율 103.2:168.2). s 획득패, m 바닥, l 손패 — 손패 폭은 터치 영역 48px 이상 */
+  /* 카드 폭 (비율 103.2:168.2). s 획득패, m 바닥, l 손패 · 손패 폭은 터치 영역 48px 이상 */
   --card-w-s: 26px;
   --card-w-m: 44px;
   --card-w-l: 62px;

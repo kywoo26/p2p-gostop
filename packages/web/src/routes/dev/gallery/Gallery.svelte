@@ -11,6 +11,7 @@
     feedbackFixture,
     feedbackExtras,
     feedbackGroups,
+    fanFixture,
   } from '../../../lib/layout-fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
   import { proEnabled } from '../../../pro-assets/runtime.ts';
@@ -142,6 +143,29 @@
     banner={{ kind: 'ppeok', text: '뻑 · 상대가 같은 월 세 장을 남겼습니다', seat: 1 }}
     toast={{ id: 1, text: '피 1장 이동' }}
   />
+{:else if page.startsWith('fan-')}
+  <main>
+    <h1 class="fixture-title">게임판 시각 검토</h1>
+    <Board
+      perPoint={10_000}
+      roundChanges={[70_000, -70_000]}
+      view={fanFixture(page.slice(4) as Parameters<typeof fanFixture>[0])}
+      extras={{
+        ...layoutExtras('play'),
+        dealer: 0,
+        goStop:
+          page === 'fan-gostop'
+            ? {
+                points: 7,
+                multiplier: 1,
+                money: 70_000,
+                capped: false,
+                steps: [{ kind: 'base', op: 'add', value: 7, total: 7 }],
+              }
+            : null,
+      }}
+    />
+  </main>
 {:else if page.startsWith('layout-')}
   <Board
     view={layoutFixture(page.split('-')[1] ?? 'target', page.endsWith('-expanded'))}

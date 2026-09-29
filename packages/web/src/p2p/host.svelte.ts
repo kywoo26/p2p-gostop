@@ -32,6 +32,7 @@ import { getBridge } from '../bridge/bridge.ts';
 import { pushOffer, toRecordRow } from '../game/adapter.ts';
 import {
   AutoChoice,
+  latestBalanceChanges,
   type GameController,
   type GameStats,
   type PushDecision,
@@ -73,6 +74,12 @@ export interface HostOptions {
 }
 
 export class HostGame implements GameController {
+  get balanceChanges(): readonly [number, number] {
+    return latestBalanceChanges(this.session?.ledger.entries ?? []);
+  }
+  get perPoint(): number {
+    return this.session?.ledger.perPoint ?? this.config.perPoint;
+  }
   readonly mode = 'host' as const;
   link = $state<LinkState>('connecting');
   /** 게스트가 hello에 적은 이름 */
@@ -277,7 +284,7 @@ export class HostGame implements GameController {
       const name = this.guestName ?? '상대';
       const since = this.offlineSince;
       const minutes = since === null ? 0 : Math.floor((Date.now() - since) / 60_000);
-      return `${name} 연결 끊김 — 돌아오기를 기다리는 중${minutes > 0 ? ` (${minutes}분)` : ''}`;
+      return `${name} 연결 끊김 · 돌아오기를 기다리는 중${minutes > 0 ? ` (${minutes}분)` : ''}`;
     }
     if (this.session?.decisionClock?.state === 'paused')
       return this.session.decisionClock.pauseReason === 'clockUnknown'

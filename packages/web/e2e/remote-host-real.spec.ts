@@ -15,7 +15,8 @@ import type { SettingsStore } from '../src/net/index.ts';
 
 test.use({ ignoreHTTPSErrors: true });
 
-const appOrigin = 'http://127.0.0.1:4173';
+// 공유 워크트리는 전용 Playwright 포트를 사용하며 relay의 Origin 허용값도 같아야 한다.
+const appOrigin = `http://127.0.0.1:${Number(process.env['PLAYWRIGHT_PORT'] ?? 4173)}`;
 
 function memory(): SettingsStore {
   const data = new Map<string, string>();

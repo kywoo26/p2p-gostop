@@ -56,7 +56,7 @@ function autoStep(target: number): string | false {
   }
   const board = document.querySelector('[data-testid="board"][data-awaiting="me"]');
   if (board === null) return false;
-  const choices = [...board.querySelectorAll<HTMLButtonElement>('dialog [data-choice]')].filter(
+  const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]')].filter(
     (b) => !b.disabled,
   );
   if (choices.length > 0) {
