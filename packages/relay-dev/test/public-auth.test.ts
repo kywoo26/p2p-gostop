@@ -24,7 +24,16 @@ function connect(port: number, role: string, room: string): Promise<WebSocket> {
 }
 function next(ws: WebSocket): Promise<string> {
   return new Promise((resolve) =>
-    ws.once('message', (data: RawData) => resolve((Array.isArray(data) ? Buffer.concat(data) : data instanceof ArrayBuffer ? Buffer.from(data) : data).toString('utf8'))),
+    ws.once('message', (data: RawData) =>
+      resolve(
+        (Array.isArray(data)
+          ? Buffer.concat(data)
+          : data instanceof ArrayBuffer
+            ? Buffer.from(data)
+            : data
+        ).toString('utf8'),
+      ),
+    ),
   );
 }
 function closed(ws: WebSocket): Promise<number> {
