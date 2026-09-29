@@ -5,6 +5,9 @@ $ErrorActionPreference = 'Stop'
 $Repo = if ($env:RELAY_WSL_REPO) { $env:RELAY_WSL_REPO } else { '/home/k/github/p2p-gostop' }
 $Docker = '/home/k/.local/bin/docker'
 $Target = 'http://127.0.0.1:17777'
+$SecretDirectory = '$HOME/.local/share/p2p-gostop/relay'
+$Origin = 'https://relay.invalid'
+$Release = 'v0.0.0'
 $Marker = Join-Path $PSScriptRoot '.funnel-owned'
 $Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { 'C:\Program Files\Tailscale\tailscale.exe' }
 
@@ -15,17 +18,28 @@ function Wsl([string]$Command) {
   return $output
 }
 function Compose([string]$Arguments) {
-  $command = 'RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) ' + $Docker + ' compose -f compose.relay.yaml ' + $Arguments
+  $command = 'RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret" ' +
+    'RELAY_ALLOWED_ORIGINS=' + $Origin + ' RELAY_RELEASE=' + $Release +
+    ' RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) ' + $Docker +
+    ' compose -f compose.relay.yaml ' + $Arguments
   Wsl $command
+}
+function EnsureSecret {
+  $null = Wsl ('mkdir -p -m 700 "' + $SecretDirectory + '" && chmod 700 "' + $SecretDirectory + '"')
+  $exists = (Wsl ('if test -f "' + $SecretDirectory + '/creation-secret"; then printf yes; else printf no; fi') | Out-String).Trim()
+  if ($exists -eq 'yes') { return }
+  $command = $Docker + ' compose run --rm -v "' + $SecretDirectory + ':/relay-secret" dev node tools/relay/create-credentials.ts /relay-secret/creation-secret'
+  $null = Wsl $command
+  Write-Host 'A new creation secret was saved under the WSL user home directory.'
 }
 function LocalHealth {
   for ($i = 0; $i -lt 15; $i++) {
     try {
-      $r = Invoke-RestMethod -Uri "$Target/healthz" -TimeoutSec 2 -MaximumRedirection 0
-      if ($null -ne $r -and (($r.ready -eq $true) -or ($r.status -eq 'ready'))) { return $r }
+      $r = Invoke-RestMethod -Uri "$Target/health" -TimeoutSec 2 -MaximumRedirection 0
+      if ($r.relay -eq 'p2p-gostop' -and $r.ready -eq $true) { return $r }
     } catch { Start-Sleep -Seconds 1 }
   }
-  Fail 'Local /healthz is not ready. Check: docker compose -f compose.relay.yaml logs --tail=30 relay. Verify RELAY_PUBLIC and the credentials file.'
+  Fail 'Local /health is not ready. Check: docker compose -f compose.relay.yaml logs --tail=30 relay. Verify RELAY_PUBLIC, RELAY_RELEASE and the creation secret file.'
 }
 function FunnelStatus {
   $output = & $Tailscale funnel status 2>&1
@@ -44,11 +58,11 @@ function DnsName {
 function PublicHealth([string]$Url) {
   for ($i = 0; $i -lt 12; $i++) {
     try {
-      $r = Invoke-RestMethod -Uri "$Url/healthz" -TimeoutSec 4 -MaximumRedirection 0
-      if ($null -ne $r -and (($r.ready -eq $true) -or ($r.status -eq 'ready'))) { return }
+      $r = Invoke-RestMethod -Uri "$Url/health" -TimeoutSec 4 -MaximumRedirection 0
+      if ($r.relay -eq 'p2p-gostop' -and $r.ready -eq $true) { return }
     } catch { Start-Sleep -Seconds 2 }
   }
-  Fail 'Public /healthz did not respond. Check Funnel approval, DNS/TLS, Windows localhost forwarding, and port 443. The cause is not yet identified.'
+  Fail 'Public /health did not respond. Check Funnel approval, DNS/TLS, Windows localhost forwarding, and port 443. The cause is not yet identified.'
 }
 
 try {
@@ -80,18 +94,28 @@ if ($Action -eq 'stop') {
 }
 
 try {
-  try { $null = Wsl 'test -f secrets/relay-credentials' }
-  catch { Fail 'Credentials file is missing. Run create-credentials.ts once in the dev image.' }
   try { $null = Wsl 'test -d packages/web/dist' }
   catch { Fail 'Web dist is missing. Build the same release as the Galaxy APK in the dev image.' }
+  $releaseInput = if ($env:RELAY_RELEASE) { $env:RELAY_RELEASE } else {
+    try { (Wsl 'git describe --tags --exact-match' | Out-String).Trim() }
+    catch { Fail 'This checkout is not a release tag. Check out the matching APK release tag or set RELAY_RELEASE explicitly.' }
+  }
+  if ($releaseInput -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { Fail 'RELAY_RELEASE must be vMAJOR.MINOR.PATCH.' }
+  $Release = $releaseInput
+  EnsureSecret
   $dns = DnsName
   $url = "https://$dns"
+  $Origin = "$url,http://127.0.0.1:17777"
   $before = FunnelStatus
   $ours = $before.Contains($Target)
   if ($ours -and -not (Test-Path $Marker)) { Fail 'Port 443 already points to this target but this script does not own it. Inspect tailscale funnel status before changing it.' }
   if (-not $ours -and $before -match 'https://') { Fail 'Another HTTPS Serve/Funnel endpoint is active. Inspect tailscale funnel status; this script will not replace it.' }
   $null = Compose 'up -d --no-build'
   $null = LocalHealth
+  $version = Invoke-RestMethod -Uri "$Target/version" -TimeoutSec 3 -MaximumRedirection 0
+  if ($version.current.release -ne $Release -or $version.current.path -notmatch '^/r/v[0-9]+\.[0-9]+\.[0-9]+/[a-f0-9]{64}/$') {
+    Fail 'The relay web artifact does not match RELAY_RELEASE. Rebuild the matching APK/web release.'
+  }
   if (-not $ours) {
     # No --bg: Tailscale documents that --bg resumes sharing after reboot.
     $process = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru
@@ -108,7 +132,8 @@ try {
     if ($qrWindows) { Start-Process -FilePath $qrWindows }
   } catch { Write-Host 'QR viewer could not open; use the WSL file path below.' }
   Write-Host "Relay ready: $url/"
-  Write-Host "Health: $url/healthz"
+  Write-Host "Health: $url/health"
+  Write-Host "Web: $url$($version.current.path)"
   Write-Host "QR file in WSL: $Repo/tools/relay/relay-url.svg"
   Write-Host 'Health confirms the relay response only; host/guest game connection is a separate check.'
   exit 0

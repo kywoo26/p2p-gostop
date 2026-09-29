@@ -18,12 +18,16 @@ assert.match(compose, /127\.0\.0\.1:17777:17777/);
 assert.match(compose, /restart: 'no'/);
 assert.match(compose, /read_only: true/);
 assert.match(compose, /RELAY_PUBLIC: '1'/);
-assert.match(compose, /RELAY_CREDENTIALS_FILE: \/run\/secrets\/relay-credentials/);
+assert.match(compose, /RELAY_CREATION_SECRET_FILE: \/run\/secrets\/creation-secret/);
+assert.match(compose, /RELAY_ALLOWED_ORIGINS:/);
+assert.match(compose, /RELAY_RELEASE:/);
+assert.match(compose, /RELAY_DIST_DIR:/);
+assert.match(compose, /127\.0\.0\.1:17777\/health/);
 assert.match(start, /relay\.ps1" start/i);
 assert.match(stop, /relay\.ps1" stop/i);
 assert.match(helper, /funnel --https=443 \$Target off/);
 assert.match(helper, /Compose 'down'/);
-assert.match(helper, /healthz/);
+assert.match(helper, /\/health/);
 assert.doesNotMatch(helper, /^\s*[^#\r\n]*funnel\s+--bg\b/im);
 assert.doesNotMatch(helper, /funnel reset|tailscale down/i);
 

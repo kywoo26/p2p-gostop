@@ -18,11 +18,24 @@ services:
       - '127.0.0.1:17777:17777'
     environment:
       RELAY_PUBLIC: '1'
-      RELAY_CREDENTIALS_FILE: /run/secrets/relay-credentials
+      RELAY_CREATION_SECRET_FILE: /run/secrets/creation-secret
+      RELAY_ALLOWED_ORIGINS: ${RELAY_ALLOWED_ORIGINS:?Funnel HTTPS origin required}
+      RELAY_RELEASE: ${RELAY_RELEASE:?release tag required}
+      RELAY_DIST_DIR: /app/packages/web/dist
       PORT: '17777'
       HOST: 0.0.0.0
     volumes:
       - type: bind
-        source: ./secrets/relay-credentials
-        target: /run/secrets/relay-credentials
+        source: ${RELAY_CREATION_SECRET_PATH:?secret file path required}
+        target: /run/secrets/creation-secret
         read_only: true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:17777/health').then(r => r.json()).then(j => process.exit(j.relay === 'p2p-gostop' && j.ready === true ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

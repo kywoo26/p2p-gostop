@@ -40,8 +40,8 @@ Windows 11 + Docker Desktop WSL2 통합 + Windows Tailscale 앱에서 실제 실
 
 | 날짜·검증자 / release·이미지 ID | 단계 | 관찰(상태·오류 코드·소요) | 판정 |
 |---|---|---|---|
-| 미실시 | 설치: 동일 APK/웹 SHA, 0600 생성 키, 이미지 build, `127.0.0.1:17777`만 publish |  | 대기 |
-| 미실시 | start 1회·반복: Docker 실행→로컬 `/healthz`→Funnel→공개 `/healthz`, URL·기본 주소 QR 출력 |  | 대기 |
+| 미실시 | 설치: 동일 APK/웹 SHA, 저장소 밖 0600·base64url 43자 생성 키, 이미지 build, `127.0.0.1:17777`만 publish |  | 대기 |
+| 미실시 | start 1회·반복: Docker 실행→로컬 `/health`·`/version`→Funnel→공개 `/health`, URL·호환 웹 경로·기본 주소 QR 출력 |  | 대기 |
 | 미실시 | stop 1회·반복: 소유 Funnel 443 off→전용 Compose down, 다른 Funnel/컨테이너 보존 |  | 대기 |
 | 미실시 | Docker 종료·17777 점유·Tailscale 종료·Funnel 미승인·공개 DNS/TLS 실패 각각 유발 |  | 대기 |
 | 미실시 | Windows 재부팅/로그인·Docker 재시작: 자동 공개/중계 기동 0, 수동 시작 뒤 WSL localhost 전달 |  | 대기 |

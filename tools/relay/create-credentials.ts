@@ -3,15 +3,19 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, open } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const path = resolve(process.argv[2] ?? 'secrets/relay-credentials');
+const output = process.argv[2];
+if (output === undefined || !output.startsWith('/relay-secret/')) {
+  throw new Error('비밀은 저장소 밖 /relay-secret 바인드 마운트에만 생성합니다');
+}
+const path = resolve(output);
 await mkdir(resolve(path, '..'), { recursive: true, mode: 0o700 });
 const file = await open(path, 'wx', 0o600);
 try {
-  await file.writeFile(`${randomBytes(32).toString('hex')}\n`, 'utf8');
+  await file.writeFile(`${randomBytes(32).toString('base64url')}\n`, 'utf8');
   await file.chmod(0o600);
 } finally {
   await file.close();
 }
 console.log(
-  `자격 증명 파일 생성 완료: ${path} (0600, 256비트). 내용을 공개하거나 로그에 붙이지 마세요.`,
+  `생성 자격 파일 생성 완료: ${path} (0600, base64url 43자). 내용을 공개하거나 로그에 붙이지 마세요.`,
 );
