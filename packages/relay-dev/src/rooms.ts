@@ -135,7 +135,10 @@ export class Rooms {
       }
       if (state.codeExpiresAt <= now) this.codes.delete(state.code);
       for (const [key, credential] of state.room.credentials)
-        if (credential.expiresAt <= now) state.room.credentials.delete(key);
+        if (credential.expiresAt <= now) {
+          state.room.expiredGuestHashes.set(key, credential.hash);
+          state.room.credentials.delete(key);
+        }
       for (const [key, until] of state.claims) if (until <= now) state.claims.delete(key);
     }
     return expired;

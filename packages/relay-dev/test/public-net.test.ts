@@ -114,6 +114,109 @@ it('코드 존재/부재/점유는 같은 대기 응답, host 수락만 자격 �
   expect(missing.inbox).toEqual([]);
 });
 
+it('코드 참여 닉네임을 정리해 host에만 보내고 거절 시 pending을 해제한다', async () => {
+  const logs: string[] = [];
+  relay = await startRelay({
+    log: (line) => logs.push(line),
+    publicMode: { creationSecret: secret, allowedOrigins: [origin] },
+  });
+  const created = await fetch(`http://127.0.0.1:${relay.port}/api/rooms`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const result: unknown = await created.json();
+  if (
+    !result ||
+    typeof result !== 'object' ||
+    !('roomId' in result) ||
+    !('hostToken' in result) ||
+    !('code' in result) ||
+    typeof result.roomId !== 'string' ||
+    typeof result.hostToken !== 'string' ||
+    typeof result.code !== 'string'
+  )
+    throw new Error('invalid response');
+  const { roomId, hostToken, code } = result;
+  const host = new Client(`ws://127.0.0.1:${relay.port}/ws?role=host&room=${roomId}`);
+  await host.open();
+  host.send({ t: 'relay-auth', token: hostToken });
+  expect(await host.next()).toContain('absent');
+
+  const cases: { name?: string; nickname?: string }[] = [
+    { name: '가나다', nickname: '가나다' },
+    { name: '나'.repeat(22), nickname: '나'.repeat(20) },
+    { name: 'A\u0000B\nC\rD\u007fE\u0085F\u2028G\u2029H', nickname: 'ABCDEFGH' },
+    {},
+    { name: '\n\u0000' },
+  ];
+  for (const item of cases) {
+    const suffix = item.name === undefined ? '' : `&name=${encodeURIComponent(item.name)}`;
+    const guest = new Client(`ws://127.0.0.1:${relay.port}/join?code=${code}${suffix}`);
+    await guest.open();
+    expect(await guest.next()).toBe('{"t":"relay-join-pending"}');
+    const request = await host.next();
+    const message: unknown = JSON.parse(request);
+    if (!message || typeof message !== 'object') throw new Error('invalid join request');
+    expect(message).toMatchObject({ t: 'relay-join-request' });
+    expect(Object.getOwnPropertyDescriptor(message, 'nickname')?.value).toBe(item.nickname);
+    expect(Object.hasOwn(message, 'nickname')).toBe(item.nickname !== undefined);
+    const denied = guest.closeCode();
+    host.send({ t: 'relay-deny', requestId: field(request, 'requestId') });
+    expect(await guest.next()).toBe('{"t":"relay-join-denied"}');
+    expect(await denied).toBe(1000);
+  }
+  expect(logs).toEqual([]);
+});
+
+it('host가 초대 claim을 거절하면 게스트에 원인을 알리고 claim을 해제한다', async () => {
+  relay = await startRelay({ publicMode: { creationSecret: secret, allowedOrigins: [origin] } });
+  const base = `http://127.0.0.1:${relay.port}`;
+  const created = await fetch(`${base}/api/rooms`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const result: unknown = await created.json();
+  if (
+    !result ||
+    typeof result !== 'object' ||
+    !('roomId' in result) ||
+    !('hostToken' in result) ||
+    typeof result.roomId !== 'string' ||
+    typeof result.hostToken !== 'string'
+  )
+    throw new Error('invalid response');
+  const { roomId, hostToken } = result;
+  const invite = token();
+  expect(
+    (
+      await fetch(`${base}/api/rooms/${roomId}/credentials`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${hostToken}` },
+        body: JSON.stringify({
+          token: invite,
+          permission: 'invite',
+          expiresAt: Date.now() + 60_000,
+        }),
+      })
+    ).status,
+  ).toBe(201);
+  const host = new Client(`ws://127.0.0.1:${relay.port}/ws?role=host&room=${roomId}`);
+  await host.open();
+  host.send({ t: 'relay-auth', token: hostToken });
+  expect(await host.next()).toContain('absent');
+  for (let n = 0; n < 2; n++) {
+    const guest = new Client(`ws://127.0.0.1:${relay.port}/ws?role=guest&room=${roomId}`);
+    await guest.open();
+    guest.send({ t: 'relay-auth', token: invite });
+    expect(await guest.next()).toBe('{"t":"relay-claim-pending"}');
+    const requestId = field(await host.next(), 'requestId');
+    const denied = guest.closeCode();
+    host.send({ t: 'relay-deny', requestId });
+    expect(await guest.next()).toBe('{"t":"relay-claim-denied"}');
+    expect(await denied).toBe(1000);
+  }
+});
+
 it('초대는 host 확정 뒤 한 번만 쓰고 위조 복귀는 좌석을 교체하지 않는다', async () => {
   relay = await startRelay({ publicMode: { creationSecret: secret, allowedOrigins: [origin] } });
   const base = `http://127.0.0.1:${relay.port}`;
