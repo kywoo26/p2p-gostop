@@ -20,7 +20,12 @@ import { settings } from '../settings/settings.svelte.ts';
 import { removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
 import { pushOffer, toBoardView } from './adapter.ts';
 import type { AiClient } from './ai-client.ts';
-import type { GameController, GameStats, PushDecision } from './controller.ts';
+import {
+  AutoChoice,
+  type GameController,
+  type GameStats,
+  type PushDecision,
+} from './controller.ts';
 import { log } from './log.svelte.ts';
 import { Playback, type RoundSummary } from './playback.svelte.ts';
 import { soloSummary } from './records.ts';
@@ -83,6 +88,14 @@ export class SoloSession implements GameController {
   private cancelThink: (() => void) | null = null;
   /** 상태가 바뀔 때마다 증가: CPU 결정이 오래된 상태에 적용되지 않게 한다 */
   private generation = 0;
+  private autoHeld = true;
+  private readonly autoChoice = new AutoChoice(
+    () => ({ view: this.boardOf(this.state), ready: !this.autoHeld && this.canAct }),
+    (action) => this.submit(action),
+    (action) => {
+      if (action.type !== 'chooseTarget') this.playback.showToast('유일한 수 자동 진행');
+    },
+  );
 
   constructor(session: SessionState, options: SoloOptions) {
     this.difficulty = options.difficulty;
@@ -220,6 +233,11 @@ export class SoloSession implements GameController {
     this.kick();
   }
 
+  autoAdvance(held: boolean): void {
+    this.autoHeld = held;
+    this.autoChoice.advance(held);
+  }
+
   /** 이 기기 좌석의 액션 (spec 6.3 탭 한 번). 받아들이면 true */
   submit(action: Action, tapAt: number = performance.now()): boolean {
     if (this.disposed || !this.canAct || action.seat !== ME) return false;
@@ -283,6 +301,7 @@ export class SoloSession implements GameController {
 
   dispose(): void {
     this.disposed = true;
+    this.autoChoice.dispose();
     this.cancelThink?.();
     this.playback.dispose();
   }

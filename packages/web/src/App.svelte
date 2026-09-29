@@ -14,7 +14,7 @@
   import type { RecordsView } from './lib/view-types.ts';
   import { hotspot } from './p2p/hotspot.svelte.ts';
   import { detectMode } from './p2p/role.ts';
-  import { p2p } from './p2p/store.svelte.ts';
+  import { hostConfigFrom, p2p } from './p2p/store.svelte.ts';
   import Diagnostics from './routes/Diagnostics.svelte';
   import Game, { type MenuItem } from './routes/Game.svelte';
   import GuestApp from './routes/GuestApp.svelte';
@@ -184,6 +184,21 @@
     }
   }
 
+  function changeSettings(patch: Parameters<typeof settings.update>[0]) {
+    settings.update(patch);
+    // 로비에서 바뀐 국진 규칙은 기존 방의 welcome에도 곧바로 싣는다.
+    if (
+      host?.stage === 'lobby' &&
+      host.resumable === null &&
+      ('preset' in patch ||
+        'gukjinAsk' in patch ||
+        'perPoint' in patch ||
+        'startBalance' in patch ||
+        'playerName' in patch)
+    )
+      host.configure(hostConfigFrom(settings.value));
+  }
+
   function onError(message: string) {
     log.error(message);
   }
@@ -263,7 +278,7 @@
   <Settings
     settings={settings.value}
     sessionActive={current.resumable !== null || match !== null}
-    onchange={(patch) => settings.update(patch)}
+    onchange={changeSettings}
     back={returnFromSettings ?? '#/'}
   />
 {:else if route === '/diagnostics'}
