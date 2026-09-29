@@ -22,7 +22,7 @@
 | 연결 | [PR #59](https://github.com/kywoo26/p2p-gostop/pull/59)는 `9651364`로 병합됨. `fix/guest-clock`(.1-C)이 #60 시계 연결과 #78을 진행 중이다. |
 | 개발 환경 | [PR #38](https://github.com/kywoo26/p2p-gostop/pull/38) 열림. 현재 명령은 `./dev.sh`; 병합 뒤 해당 PR의 명령·AGENTS·허용 규칙으로 함께 갱신한다. B1은 조사 중 [PR #73](https://github.com/kywoo26/p2p-gostop/pull/73)으로 제출됨. #33과 CI 파일 소유권을 조율한다. |
 
-읽은 근거: spec 전체, intend 전체, plan 지정 절, [M0](reviews/M0-review.md)·[M1](reviews/M1-review.md)·[M3](reviews/M3-review.md)·[M4 protocol](reviews/M4-protocol-review.md) 리뷰, [MVP 감사](reviews/mvp-rush-audit.md), [harness 감사](reviews/harness-audit.md), [UI 구조](ui.md), [M4 실기기 절차](device-test/M4.md), [AI 조정](ai-tuning.md), `packages/web/src/{routes,ui,game,p2p,settings,bridge,storage}`, `android/app`, `packages/ai`, 기존 브라우저/E2E 테스트. GitHub open issue 목록은 `gh issue list --state open --limit 100`으로 조회했다. 최초 조사 상태에 PR #76 리뷰의 진행 중 작업을 반영했다.
+읽은 근거: spec 전체, intend 전체, plan 지정 절, [M0](reviews/M0-review.md)·[M1](reviews/M1-review.md)·[M3](reviews/M3-review.md)·[M4 protocol](reviews/M4-protocol-review.md) 리뷰, [MVP 감사](reviews/mvp-rush-audit.md), [harness 감사](reviews/harness-audit.md), [UI 구조](design/ui-spec.md), [M4 실기기 절차](device-test/procedure.md), [AI 조정](ai-tuning.md), `packages/web/src/{routes,ui,game,p2p,settings,bridge,storage}`, `android/app`, `packages/ai`, 기존 브라우저/E2E 테스트. GitHub open issue 목록은 `gh issue list --state open --limit 100`으로 조회했다. 최초 조사 상태에 PR #76 리뷰의 진행 중 작업을 반영했다.
 
 ### 1.2 이미 있는 기능을 다시 만들지 않기
 

@@ -11,7 +11,7 @@
 - 외부 네트워크 요청(CDN, 웹폰트, 원격 API)을 코드에 넣지 않는다. 모든 자산은 번들한다.
 - 실기기 검증(핫스팟, iPhone Safari)은 사람이 한다. 에이전트는 `docs/device-test/`의 절차서를 갱신하고, 사람이 준 결과만 그곳에 기록한다.
 
-## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`agent-era-stack.md`)
+## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`docs/research/agent-era-stack.md`)
 | 항목 | 버전 |
 |---|---|
 | Node / npm | 24.21.0 LTS / 11.x, npm workspaces (`engines >=24.20.0`: Playwright 이미지의 Node가 24.20.0) |
@@ -46,7 +46,7 @@
 
 ## 4. 구조와 관례
 - 모노레포: `packages/{engine,ai,protocol,web,relay-dev}`, `tools/sim`, `android/`, `docker/`, `docs/`. 의존 방향: engine ← ai ← web, engine ← protocol ← web. android는 TS 패키지에 의존하지 않고 `packages/web/dist`만 `android/app/src/main/assets/web`으로 복사.
-- 엔진 API: `reduce(state, action) → {state, events}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules)`. 모두 순수 함수, 시드 PRNG는 상태 안.
+- 엔진 API: `reduce(state, action) → {ok:true, state, events} | {ok:false, reason, message}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules?)`. 모두 순수 함수, 시드 PRNG는 상태 안.
 - 웹: Svelte scoped CSS + `src/styles/tokens.css`(OKLCH, `--dur-*`). 카드 애니메이션은 `src/anim/`의 WAAPI FLIP 헬퍼, 모달·배너는 Svelte transition. 카드는 `<img>`로 svgo 최적화 SVG.
 - 테스트: JSON 규칙 벡터(`packages/engine/test/vectors/*.json`, 각 항목에 규칙 ID R/B/S/E/G/M와 한국어 설명) + fast-check 속성 테스트. 특수 이벤트는 정상·경계·반례 3종. "서로 다른 월 두 쌍 먹기는 따닥이 아니다" 반례 필수.
 - 툴체인(plan.md 1.8 하이브리드): 순수 TS 패키지는 루트 `.oxlintrc.json`(oxlint, `--type-aware`)·`.oxfmtrc.json`(oxfmt)·TS 7 `tsc --noEmit`. `packages/web`은 `packages/web/eslint.config.js`(ESLint, 금지 API 규칙)·`packages/web/.prettierrc`(Prettier)·`svelte-check`(TS 6). 루트 `npm run lint|check|format`이 둘 다 돌린다. 한국어 주석·문서, 영어 식별자.
