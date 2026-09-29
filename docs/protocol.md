@@ -4,6 +4,8 @@
 
 전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 `PROTOCOL_VERSION = 2`다(v1과 호환되지 않는다: 원장 요약, BoardView 상세 필드, 판 사이 대기).
 
+> **#123 문서 개정안:** §1~10은 현행 v2, §11은 리뷰·사용자 승인 전 v3 초안이다. P2P 기본 10초·호스트 끄기/조정·솔로 제외는 확정, 나머지 초과 정책/필드는 권고다. 이 PR은 `messages.ts`·`schema.ts`·버전 상수를 수정하지 않는다.
+
 ## 1. 중계 계약 (Android `SmokeServer` RelayRoles = `relay-dev`)
 
 | 규칙 | 동작 |
@@ -189,3 +191,71 @@
 - `packages/web/src/net/ws-transport.node.test.ts`: `npm run test:net -w packages/web`(Node)와 브라우저 모드에서 WsTransport 정책 + 가짜 Android 중계 위 세션 한 판.
 
 실기기 검증은 Android와 iPhone Safari 통합 단계(M5)에서 진행한다.
+
+## 11. P2P 결정 타이머 v3 초안 (#123, 승인 전)
+
+정책 정본: [spec §3.6·5.1·6.8](../spec.md#36-p2p-제한시간-개정안-123-승인-전), FR-16·51~53, NP-02/03/05/10, NF-05; 구현 인계: plan M3·M4·M6·D2. 기본값 외 수치(준비 5초·마감 확인 2초 포함)는 권고다.
+
+### 11.1 현행 계약과 변경 경계
+
+| 계약 | 개정 전 (main `1287e7f`) | 개정 후 제안 |
+|---|---|---|
+| `ready{round}` | settled의 다음 판 요청, 게스트 승자면 보류 정산 받기 | 그대로 유지. 로비 준비(FR-06)·재생 완료·마감 확인으로 재사용 금지 |
+| `requestId` | action/push 요청 응답을 연결하는 선택적 ID. seq 검사로 중복 액션 차단; ID 자체의 완료 캐시는 없음 | 재전송에도 같은 ID 유지. v3 action/push에는 필수. 완료한 결정/요청의 응답 캐시·소비 표식을 추가해 중복 적용 차단. 타이머 통지/초과 실행에 사용자 requestId를 만들어 붙이지 않음 |
+| `advanceTime(nowMs)` | 호스트 logicalTime 역행 무시·60초 무응답 판정; 수신은 직전 logicalTime으로 활동 기록. 게스트는 기본 5초 ack 감시 | 외부 호스트 단조 시각을 수신/로컬 입력/연결 사건에도 주입해 deadline 판정. 게스트 ackTimeout 5초는 유지하되 생각 시간과 무관. 세션/엔진 내부 실제 타이머 없음 |
+| `connected`·인증 | ping만으로도 connected가 true일 수 있음; 소켓 인증은 별도 | 인증된 현재 소켓의 결정별 확인만 시작/초과의 증거. ping·log·ready·오래된 ack는 대체 불가 |
+| 이벤트 seq / status.rev | 이벤트 및 판 단계 순번 | 이벤트 없는 카운트다운 갱신은 별도 `timerRev`. seq/status.rev를 매초 올리거나 전송하지 않음 |
+| 공정성 검증 §6.4 | 좌석 1 액션 전부가 실제 송신 부분열이어야 함 | 검증된 **timeout 표시 액션만** 별도 허용. 표식 없는 액션은 기존 검사 유지(§11.4). 초과를 일반 송신으로 위장 금지 |
+
+### 11.2 메시지·필드 초안 (실행 스키마 아님)
+
+| 구조 | 필드 / 검증 제안 |
+|---|---|
+| `TimerSettings` | `decisionMs: null 또는 5000/10000/20000/30000/60000`, `policy: 'fixed-v1'`. null=끔. `RuleOptions`와 별도 세션 설정, 솔로 전달 없음 |
+| `DecisionKey` | `epoch`(현재 호스트 세대), `round`(양의 정수), `decisionId`(세션 내 증가 정수), `baseSeq`(결정 직전 이벤트 순번). 소켓 교체는 key 유지; 호스트 복원만 epoch 교체 |
+| `DecisionClock` | `key, seat, timerRev, state, hostNowMs, remainingMs, deadlineMs, confirmByMs, attempt`. state=`preparing/running/checking/paused/resolved`; running만 deadlineMs 유효, preparing/checking만 confirmByMs 유효(그 외 null). remainingMs는 0~decisionMs, 시각은 호스트 epoch 내 음이 아닌 안전 정수. attempt는 확인 시도마다 증가하며 오래된 응답 차단 |
+| `TimeoutResult` | `key, actionIndex, seat, baseSeq, toSeq, deadlineMs, confirmedAtMs, reason:'timeout', policy:'fixed-v1', action`. actionIndex는 해당 판 actions의 0 기반 위치. 실제 수락한 합법 액션만, 숨은 후보/상대 손패 목록 없음 |
+
+| 방향 / 메시지 | v3 필드 초안 | 처리 |
+|---|---|---|
+| H→G `welcome` | 기존 + `timerSettings` 필수 | 양쪽 동일 설정 확인. 진행 세션 설정 변경 거부 |
+| H→G `events`·`snapshot` | 기존 + `decision: DecisionClock 또는 null`, `timeoutResult?: TimeoutResult` | 뷰와 시계를 함께 수신. timeoutResult는 그 전이의 원인; 중복은 key/actionIndex로 제거. 상대 비공개 pending의 종류·기본 액션은 deadline 전에 전송하지 않음 |
+| H→G `decisionDeadline` (신규) | `clock: DecisionClock` | 이벤트 없는 시작/중단/마감 상태 통지. 게스트는 baseSeq 뷰 확보 전 보류, 작은 timerRev 무시. 상대도 seat·남은 시간만 표시 가능 |
+| G→H `decisionReady` (신규) | `key, attempt, renderedSeq` | 현재 뷰까지 재생/스킵·프롬프트 반영 후 foreground일 때 1회. 같은 확인 재전송은 멱등; 최초 offer 후 5초 상한 고정 |
+| G→H `action` | 기존 + `decisionKey`(시간 제한 대상이면 필수), `requestId` 필수 | seq와 key·좌석·합법성·호스트 수신시각을 함께 검사. 선 고르기/밀기는 key 없음. 호스트 로컬 입력도 같은 검증 경로 |
+| H→G `expiryCheck` (신규) | `key, attempt, confirmByMs` | 마감 때 1회, 2초 상한. 호스트 좌석 결정에도 게스트 접속 확인 필요 |
+| G→H `expiryAck` (신규) | `key, attempt, renderedSeq` | 현재 소켓 인증·foreground·최신 뷰에서만 응답. 메뉴는 응답 가능, 숨김/재생 미완료는 응답 불가. 단순 수신 확인 아님 |
+| G→H `decisionUnavailable` (신규) | `key, reason:'background' 또는 'resync'` | 백그라운드/뷰 소실 통지. 전달 실패 가능하므로 이것만으로 단절 감지하지 않음. 호스트 UI도 로컬 동일 처리 |
+| H→G `reject` | 기존 + `DECISION_EXPIRED`·`STALE_DECISION`·`DECISION_PAUSED` 코드 | 원래 requestId를 반사하고 최신 snapshot+clock 전송. 실패가 새 창/10초를 만들지 않음 |
+| H→G `revealHost` | 기존 + `timeoutCount, timeoutDigest` | 원래 actions는 순수 엔진 액션 그대로. 별도 표식 이력의 개수·해시(§11.4) |
+| G→H `timeoutGet` / H→G `timeoutPage` (신규) | 요청 `round,from`; 응답 `round,from,total,entries: TimeoutResult[]` | 해당 판 초과 기록 재동기화/검증. 같은 from 재요청 멱등; 직전 판까지 제공. 페이지 실제 인코딩 ≤16KB, entries 본문 예산 8KB. 새 메시지도 인증 필요 |
+
+**카운트다운은 통지가 아니라 로컬 표시 갱신이다.** `hostNowMs`와 수신 기준 로컬 단조 시각으로 남은 시간을 근사하며 네트워크 지연 때문에 권위 시각과 다를 수 있다. 기기 벽시계끼리 빼지 않는다. 0은 ‘호스트 확인 중’이지 로컬 자동 액션 신호가 아니다. 결정 시작 준비 확인 시점에는 전체 예산으로 표시하고 호스트 deadline 통지로 보정한다.
+
+### 11.3 시작·마감·복구 순서
+
+| 단계 | 호스트 계약 | 게스트/호스트 UI 계약 |
+|---|---|---|
+| offer | 새 결정 key·preparing, 준비 확인 상한 5초. 같은 key의 중복 송신은 attempt·상한 유지 | 최신 뷰까지 재생, 스킵도 최종 뷰 반영 후 확인. 메뉴는 확인을 지연시키지 않음 |
+| 재생 준비 확인 | 양쪽 decisionReady 수신 시 running, deadline=현재 호스트 시각+예산. 최초 preparing 중 현재 결정의 합법 수동 입력은 먼저 수락 가능 | 새 창은 **decisionReady를 보낼 때 입력 활성화**, deadline 수신 대기 잠금 없음. 따라서 준비 왕복·재생 때문에 설정된 생각 시간이 짧아지지 않음. 중단된 창은 running 재개 통지 뒤에만 입력 허용, 잔여 0이면 수동 입력 금지 |
+| running | 수동 입력 `< deadline`만 수락. 입력과 tick은 수신시각 기준 직렬화, key 소비는 1회 | 옵션 120ms 지연/메뉴 열람도 deadline 연장 없음. 전송 재시도는 같은 key/requestId |
+| checking | deadline에서 expiryCheck, 2초 안의 현재 attempt 응답과 호스트 가용성 확인 뒤 최신 legal 재검사→초과 액션 1회→결과 저장/전파 | 확인 기간은 추가 생각 시간 아님. 늦은 action은 reject. timeoutResult는 액션 응답 감시를 성공으로 끝내지 않으며, 해당 결정의 오래된 outbox를 폐기 |
+| paused | 준비 확인 실패, 마감 확인 실패, 알려진 단절/숨김/호스트 실행 중단이면 자동 실행 없음. 마감 전 남은 값, 마감 후 0 보존 | 복구 안내·입력 잠금, 오래된 확인·미전송 입력 폐기. 임의 ping이 와도 자동 재개하지 않음 |
+| resume | 인증+snapshot+새 attempt의 준비 확인 후 같은 key·남은 값. 0이면 바로 checking. `unavailableSinceMs`를 별도 보존해 타이머 복구 대기 3분도 기존 수동 대기/무효/종료 조건에 포함(현재 connected/lastGuestActivity 조건의 개정) | 재렌더·새로고침·다른 소켓·반복 hello가 예산을 늘리지 않음. ping/hello/실패한 확인은 최초 중단시각을 초기화하지 않음. 복구 5초 목표는 시간 보너스 아님 |
+
+**NP-05 경합 규칙:** 주기 ping 25초/무응답 60초는 유지하고 반복적인 고빈도 ping을 추가하지 않는다. 준비/마감의 유한 확인 교환만 추가한다. 같은 호스트 시각이면 단절/숨김 처리가 초과 확정보다 우선, 이미 완료한 key는 다시 실행하지 않는다. 10초 마감에서 조용한 끊김은 최대 2초 확인 실패 후 잔여 0으로 중단하며 60초 감지를 기다려 자동 수를 쌓지 않는다. 확인 직후의 물리적 끊김까지 원자적으로 알 수는 없으며, 호스트가 이미 수락한 결과는 재접속 때 재전달한다.
+
+### 11.4 초과 기록·공정성·호환성
+
+| 항목 | 제안 |
+|---|---|
+| 기록의 의미 | 타이머/초과 원인은 프로토콜 메타데이터. 엔진 이벤트·액션 타입·규칙/원장 계산에 타이머를 넣지 않음. 공개 로그는 ‘시간 초과: 일반 내기/스톱’처럼 결과만, 선택 전 후보 ID는 노출 금지 |
+| 공정성 검사 보강 | 게스트는 실제 송신 액션과 관찰한 clock/check/초과 결과를 분리 저장. timeout 표식의 key·actionIndex 유일성, baseSeq/toSeq, 해당 시점 합법성·고정 정책 결과를 replay로 대조. 관찰 기록과 충돌·설정 끔·제외 행동·잘못된 ID 선택은 실패. **표식만 붙이면 모든 게스트 액션을 허용하는 예외 금지**; 나머지 액션은 기존 실제 송신 부분열 검사를 유지 |
+| 검증 한계 | commit-reveal은 호스트 실제 경과시간의 암호학적 증명이 아니다. 게스트 관찰이 보존된 구간은 deadline/확인 응답과 대조; 기록 없는 복원 구간의 시각은 ‘시간 검증 불가’로 구분하며 정상 시간 사용을 입증했다고 표시하지 않음. 셔플/액션 검증과 시간 검증 결과를 분리 |
+| 이력 페이지·해시 | TimeoutResult를 actionIndex 오름차순으로 모은 정규 배열 `[epoch,round,decisionId,baseSeq,actionIndex,seat,toSeq,deadlineMs,confirmedAtMs,policy,action]`의 JSON UTF-8을 기존 순수 JS SHA-256으로 해시. action은 현행 wire 필드 순서로 정규화. count=0도 빈 배열 해시 명시. 판당 최대 400개(기존 actions 상한), 페이지 합·해시·관찰 기록을 모두 대조; 검증 페이지 누락은 미완/복구, 성공 처리 금지 |
+| 다음 판·재접속 | snapshot/차분에 현재 clock 필수, 완료 결과 유실은 timeoutPage로 회복. 게스트는 직전 판 초과 이력 검증을 끝내기 전 새 commit에 응답하지 않음. 페이지 ack 감시는 round/from 기준, 기존 5초 응답 감시·백오프 재사용. 저장에는 현재/최근 판 관찰·초과 기록도 포함 |
+| v2/v3 wire | **PROTOCOL_VERSION 2→3 권고**. 새 t는 v2 union에 없고, 추가 필드는 v2 파서가 지우므로 선택적 필드 추가만으로 호환 불가. hello 버전을 스키마 본문보다 먼저 검사해 VERSION_MISMATCH 안내. 구버전과 제한 켬으로 조용히 연결하거나 요청 필드 생략으로 우회 금지; 끔에서도 v3끼리 연결 |
+| 저장 버전 | wire와 별개인 `HostSessionState.v` 현행 1 및 게스트 저장 형식을 개정. v1에 타이머 이력이 없으면 제한 **끔**으로 명시 이관, 새 세션은 10초. 새 형식 필드 소실은 손상으로 거부. 새 저장에는 settings/key/잔여량/완료 표식/이력 포함; epoch 변경 시 과거 확인 무효. running 중 강제 종료로 저장 이후 소비량이 불명확하면 그 판 입력 재개 금지, 기존 대기/무효/종료만 제공. 중단을 저장했거나 시계 연속성을 증명한 경우만 잔여량 재개(오래된 저장 잔여량의 반복 충전 금지) |
+| 크기·정보 경계 | NP-07 16KB 유지. 최대 actions·타이머 이력/재접속 snapshot 바이트 검증 필수. 최종 reveal도 초과하면 제한을 올리지 말고 별도 분할 계약을 먼저 확정. 수신 스키마는 시각·ID 상한, 상태별 null 조건·설정 일치·중복 key를 검증; 모든 신규 메시지는 소켓 인증 규칙 적용 |
+
+C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으로 위장하지 않는다. 테스트 소유: 호스트 가짜 단조 시계·경합(`packages/protocol/test`), 실제 relay-dev 재연결(`packages/relay-dev/test/session-relay.test.ts`), Chromium/WebKit 두 클라이언트 E2E(`packages/web/e2e`). 구현 체크리스트 정본은 [#123](https://github.com/kywoo26/p2p-gostop/issues/123).
