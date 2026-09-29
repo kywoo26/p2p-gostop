@@ -13,9 +13,10 @@
     onchange?: ((patch: Partial<AppSettings>) => void) | undefined;
     /** 진행 중인 세션이 있으면 규칙·금액 변경이 다음 세션부터라고 알린다 */
     sessionActive?: boolean;
+    back?: string;
   }
 
-  let { settings, onchange, sessionActive = false }: Props = $props();
+  let { settings, onchange, sessionActive = false, back = '#/' }: Props = $props();
 
   const PRESET_OPTIONS: { id: PresetId; label: string }[] = [
     { id: 'traditional', label: '정통' },
@@ -39,7 +40,7 @@
   ]);
 </script>
 
-<Screen title="설정">
+<Screen title="설정" {back}>
   <fieldset>
     <legend>규칙 프리셋</legend>
     <div class="segmented">
