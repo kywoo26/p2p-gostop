@@ -1,10 +1,10 @@
 # M4 호스트·게스트 프로토콜
 
-근거: `spec.md` NP-01~NP-09, FR-07·FR-14, MN-01/02/05, NF-05/06 및 `plan.md` 1.1·M4. 이 문서는 `packages/protocol`(v2)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/README.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
+근거: `spec.md` NP-01~NP-10, FR-07·FR-14·FR-51~53, MN-01/02/05, NF-05/06 및 `plan.md` 1.1·M4·§3-2. 이 문서는 `packages/protocol`(v3)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/README.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
 
-전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 `PROTOCOL_VERSION = 2`다(v1과 호환되지 않는다: 원장 요약, BoardView 상세 필드, 판 사이 대기).
+전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 `PROTOCOL_VERSION = 3`이다. v2와 호환되지 않으며, 첫 hello의 버전이 다르면 호스트는 `VERSION_MISMATCH`와 새로고침 안내를 보낸다.
 
-> **#123 문서 개정안:** §1~10은 현행 v2, §11은 리뷰·사용자 승인 전 v3 초안이다. P2P 기본 10초·호스트 끄기/조정·솔로 제외는 확정, 나머지 초과 정책/필드는 권고다. 이 PR은 `messages.ts`·`schema.ts`·버전 상수를 수정하지 않는다.
+§1~10의 기존 세션·중계 계약에 §11의 승인된 결정 타이머 계약을 더한 v3가 현행이다. 옛 저장본의 제한 끔 이관은 §11.4를 따른다.
 
 ## 1. 중계 계약 (Android `SmokeServer` RelayRoles = `relay-dev`)
 
@@ -192,13 +192,13 @@
 
 실기기 검증은 Android와 iPhone Safari 통합 단계(M5)에서 진행한다.
 
-## 11. P2P 결정 타이머 v3 초안 (#123, 승인 전)
+## 11. P2P 결정 타이머 v3 (#123)
 
-정책 정본: [spec §3.6·5.1·6.8](../spec.md#36-p2p-제한시간-개정안-123-승인-전), FR-16·51~53, NP-02/03/05/10, NF-05; 구현 인계: plan M3·M4·M6·D2. 기본값 외 수치(준비 5초·마감 확인 2초 포함)는 권고다.
+정책 정본: [spec §3.6·5.1·6.8](../spec.md#36-p2p-제한시간-개정안-123-승인-전), FR-16·51~53, NP-02/03/05/10, NF-05; 구현 인계: plan M3·M4·M6·D2. 준비 5초·마감 확인 2초 등 승인된 계약을 현행 실행값으로 적용한다.
 
 ### 11.1 현행 계약과 변경 경계
 
-| 계약 | 개정 전 (main `1287e7f`) | 개정 후 제안 |
+| 계약 | v2 | 현행 v3 |
 |---|---|---|
 | `ready{round}` | settled의 다음 판 요청, 게스트 승자면 보류 정산 받기 | 그대로 유지. 로비 준비(FR-06)·재생 완료·마감 확인으로 재사용 금지 |
 | `requestId` | action/push 요청 응답을 연결하는 선택적 ID. seq 검사로 중복 액션 차단; ID 자체의 완료 캐시는 없음 | 재전송에도 같은 ID 유지. v3 action/push에는 필수. 완료한 결정/요청의 응답 캐시·소비 표식을 추가해 중복 적용 차단. 타이머 통지/초과 실행에 사용자 requestId를 만들어 붙이지 않음 |
@@ -207,16 +207,16 @@
 | 이벤트 seq / status.rev | 이벤트 및 판 단계 순번 | 이벤트 없는 카운트다운 갱신은 별도 `timerRev`. seq/status.rev를 매초 올리거나 전송하지 않음 |
 | 공정성 검증 §6.4 | 좌석 1 액션 전부가 실제 송신 부분열이어야 함 | 검증된 **timeout 표시 액션만** 별도 허용. 표식 없는 액션은 기존 검사 유지(§11.4). 초과를 일반 송신으로 위장 금지 |
 
-### 11.2 메시지·필드 초안 (실행 스키마 아님)
+### 11.2 메시지·필드 (현행 v3 실행 스키마)
 
-| 구조 | 필드 / 검증 제안 |
+| 구조 | 필드 / 검증 계약 |
 |---|---|
 | `TimerSettings` | `decisionMs: null 또는 5000/10000/20000/30000/60000`, `policy: 'fixed-v1'`. null=끔. `RuleOptions`와 별도 세션 설정, 솔로 전달 없음 |
 | `DecisionKey` | `epoch`(현재 호스트 세대), `round`(양의 정수), `decisionId`(세션 내 증가 정수), `baseSeq`(결정 직전 이벤트 순번). 소켓 교체는 key 유지; 호스트 복원만 epoch 교체 |
 | `DecisionClock` | `key, seat, timerRev, state, hostNowMs, remainingMs, deadlineMs, confirmByMs, attempt, resumeFloorUsed, recoveryGrantMs, pauseReason`. state=`preparing/running/checking/paused/resolved`; running만 deadlineMs 유효, preparing/checking만 confirmByMs 유효(그 외 null). remainingMs는 0~decisionMs, 시각은 호스트 epoch 내 음이 아닌 안전 정수. attempt는 확인 시도마다 증가. resumeFloorUsed는 결정당 1회 증액 소비 여부, recoveryGrantMs는 그 증액(0~2999ms); pauseReason은 `peer/hostBackground/guestBackground/hostGap/clockUnknown/recoveryLimit` 또는 null. 복귀·실행 공백의 정본은 §11.3 |
 | `TimeoutResult` | `key, actionIndex, seat, baseSeq, toSeq, deadlineMs, confirmedAtMs, reason:'timeout', policy:'fixed-v1', action`. actionIndex는 해당 판 actions의 0 기반 위치. 실제 수락한 합법 액션만, 숨은 후보/상대 손패 목록 없음 |
 
-| 방향 / 메시지 | v3 필드 초안 | 처리 |
+| 방향 / 메시지 | v3 필드 | 처리 |
 |---|---|---|
 | H→G `welcome` | 기존 + `timerSettings` 필수 | 양쪽 동일 설정 확인. 진행 세션 설정 변경 거부 |
 | H→G `events`·`snapshot` | 기존 + `decision: DecisionClock 또는 null`, `timeoutResult?: TimeoutResult` | 뷰와 시계를 함께 수신. timeoutResult는 그 전이의 원인; 중복은 key/actionIndex로 제거. 상대 비공개 pending의 종류·기본 액션은 deadline 전에 전송하지 않음 |
@@ -243,15 +243,15 @@
 | paused | 준비/마감 확인 실패·명시 단절·숨김·호스트 실행 공백이면 자동 실행 없음. 진행 attempt를 무효화하고 유효 중단시각의 잔여량 보존(호스트 공백은 아래 표). preparing이면 통지한 예산, checking이면 0 | 복구 안내·입력 잠금, 중단 전 attempt의 미전송/응답 대기 요청은 취소(성공 처리 아님). 이미 호스트가 수락한 결과는 snapshot으로 복원. 임의 ping이 와도 자동 재개하지 않음 |
 | resume | 인증+snapshot 이후 아래 예산으로 새 offer→입력 가능 확인→마감 개시. `unavailableSinceMs`를 별도 보존해 타이머 복구 대기 3분도 기존 수동 대기/무효/종료 조건에 포함 | 재렌더/hello/실패한 확인으로 예산·최초 중단시각 갱신 금지. 호스트의 실제 running 재개(잔여 0은 초과 확정) 때만 부재 구간 종료. NF-05 복구 5초 목표와 생각 시간은 별개 |
 
-| 복귀 예산 (재접속·양쪽 백그라운드 복귀 공통) | 규범 제안 / 반복 충전 방지 |
+| 복귀 예산 (재접속·양쪽 백그라운드 복귀 공통) | 현행 계약 / 반복 충전 방지 |
 |---|---|
 | 잔여 R≥3000ms | B=R. offer 수신→입력 가능 확인→호스트 시작 순서로 통지 지연이 B를 소모하지 않음 |
-| 0<R<3000ms, 아직 증액 안 함 | **복귀 하한 3000ms 권고**: B=3000, recoveryGrantMs=3000−R, resumeFloorUsed=true를 **offer 송신 전에 저장**. 기존 ‘설정값 이하’에서 ‘설정값+결정당 1회 증액 이하’로 개정. 좌석 0/1 동일 |
+| 0<R<3000ms, 아직 증액 안 함 | **복귀 하한 3000ms**: B=3000, recoveryGrantMs=3000−R, resumeFloorUsed=true를 **offer 송신 전에 저장**. 기존 ‘설정값 이하’에서 ‘설정값+결정당 1회 증액 이하’로 개정. 좌석 0/1 동일 |
 | 같은 결정에서 다시 R<3000ms | 한 번 증액했으면 더 지급하지 않고 `paused/recoveryLimit` 유지, 입력·초과 실행 모두 보류. 대기/기존 3분 후 판 무효/세션 종료만 제공. R≥3000인 재개는 여전히 가능. 반복 복귀마다 3초를 충전하거나 짧은 입력 창을 강요하지 않는 절충안 |
 | R=0 / 완료한 결정 | 3초로 부활하지 않음. 미완료이면 입력 잠금 상태로 뷰 확인→마감 확인만 재시도; 완료이면 저장한 결과 전달 |
 | 확인 유실·재접속·epoch 복원 | offer를 보낸 뒤 확인 실패해도 B·증액 소비 여부는 보존(미사용 B를 깎지도, 증액을 재지급하지도 않음). 통지와 확인의 attempt가 다르면 거부. 복원 시 증액 이력도 복원 불가하면 clockUnknown으로 대기 |
 
-| 호스트 실행 공백 | 판정·중단 시각·처리 우선순위 (권고값) |
+| 호스트 실행 공백 | 판정·중단 시각·처리 우선순위 |
 |---|---|
 | 시계가 멈추는 의미 | 외부 단조 원시 시계는 계속 흐른다. **결정의 예산 소비·마감/확인 진행만 멈춘다**. NP-05 활동 감지용 시계까지 멈추지 않음. 외부 어댑터는 preparing/running/checking일 때 로컬 확인을 최대 500ms 간격으로 요청(네트워크 ping 아님), 정상 검사를 마친 원시 시각 `lastHealthyMs`를 기록. 새 세션 최초 offer 직전에 현재 단조 시각으로 초기화 |
 | 공백 검출 | 모든 수신·로컬 입력·tick 처리 **전에** 원시 시각 now를 표본화. 같은 렌더러/단조 시계 영역에서 `now−lastHealthyMs ≥ 2000ms`면 hostGap. 1999ms는 정상 진행, 2000/2001ms는 공백. 중간 확인이 없는 구간을 원격 송신 시각이나 밀린 콜백으로 정상 실행처럼 채우지 않음 |
@@ -272,14 +272,14 @@
 
 ### 11.4 초과 기록·공정성·호환성
 
-| 항목 | 제안 |
+| 항목 | 현행 계약 |
 |---|---|
 | 기록의 의미 | 타이머/초과 원인은 프로토콜 메타데이터. 엔진 이벤트·액션 타입·규칙/원장 계산에 타이머를 넣지 않음. 공개 로그는 ‘시간 초과: 일반 내기/스톱’처럼 결과만, 선택 전 후보 ID는 노출 금지 |
-| 공정성 검사 보강 | 게스트는 실제 송신 액션과 관찰한 clock/check/초과 결과를 분리 저장. timeout 표식의 key·actionIndex 유일성, baseSeq/toSeq, 해당 시점 합법성·고정 정책 결과를 replay로 대조. 관찰 기록과 충돌·설정 끔·제외 행동·잘못된 ID 선택은 실패. **표식만 붙이면 모든 게스트 액션을 허용하는 예외 금지**; 나머지 액션은 기존 실제 송신 부분열 검사를 유지 |
-| 검증 한계 | commit-reveal은 호스트 실제 경과시간의 암호학적 증명이 아니다. 게스트 관찰이 보존된 구간은 deadline/확인 응답과 대조; 기록 없는 복원 구간의 시각은 ‘시간 검증 불가’로 구분하며 정상 시간 사용을 입증했다고 표시하지 않음. 셔플/액션 검증과 시간 검증 결과를 분리 |
-| 이력 페이지·해시 | TimeoutResult를 actionIndex 오름차순으로 모은 정규 배열 `[epoch,round,decisionId,baseSeq,actionIndex,seat,toSeq,deadlineMs,confirmedAtMs,policy,action]`의 JSON UTF-8을 기존 순수 JS SHA-256으로 해시. action은 현행 wire 필드 순서로 정규화. count=0도 빈 배열 해시 명시. 판당 최대 400개(기존 actions 상한), 페이지 합·해시·관찰 기록을 모두 대조; 검증 페이지 누락은 미완/복구, 성공 처리 금지 |
+| 공정성 검사 보강 | 게스트는 실제 송신 액션과 welcome 설정·running clock·expiryCheck·보낸 expiryAck·초과 결과를 분리 저장. timeout 표식의 key·actionIndex 유일성, baseSeq/toSeq, 해당 시점 합법성·고정 정책 결과를 replay로 대조. 관찰한 deadline/확인 창과 충돌·설정 끔·제외 행동·잘못된 ID 선택은 실패. **표식만 붙이면 모든 게스트 액션을 허용하는 예외 금지**; 나머지 액션은 기존 실제 송신 부분열 검사를 유지 |
+| 검증 한계 | commit-reveal은 호스트 실제 경과시간의 암호학적 증명이 아니다. 게스트 관찰이 보존된 구간은 deadline/확인 응답과 대조하고 결과의 `time=verified`를 별도로 기록한다. 소켓·렌더러 공백 또는 옛 저장본처럼 기록 없는 구간의 시각은 `time=unverifiable`로 구분하며 정상 시간 사용을 입증했다고 표시하지 않는다. 셔플/액션 검증과 시간 검증 결과를 분리 |
+| 이력 페이지·해시 | TimeoutResult를 actionIndex 오름차순으로 모은 정규 배열 `[epoch,round,decisionId,baseSeq,actionIndex,seat,toSeq,deadlineMs,confirmedAtMs,policy,action]`의 JSON UTF-8을 기존 순수 JS SHA-256으로 해시. action은 현행 wire 필드 순서로 정규화. count=0도 빈 배열 해시 명시. 판당 최대 400개(기존 actions 상한), 페이지 합·해시·관찰 기록을 모두 대조한다. 실시간 이력에 빈틈이 있으면 페이지 커서를 0부터 독립적으로 진행하고 actionIndex로 병합·정렬한다; 페이지 누락은 미완/복구, 성공 처리 금지 |
 | 다음 판·재접속 | snapshot/차분에 현재 clock 필수, 완료 결과 유실은 timeoutPage로 회복. 게스트는 직전 판 초과 이력 검증을 끝내기 전 새 commit에 응답하지 않음. 페이지 ack 감시는 round/from 기준, 기존 5초 응답 감시·백오프 재사용. 저장에는 현재/최근 판 관찰·초과 기록도 포함 |
-| v2/v3 wire | **PROTOCOL_VERSION 2→3 권고**. 새 t는 v2 union에 없고, 추가 필드는 v2 파서가 지우므로 선택적 필드 추가만으로 호환 불가. hello 버전을 스키마 본문보다 먼저 검사해 VERSION_MISMATCH 안내. 구버전과 제한 켬으로 조용히 연결하거나 요청 필드 생략으로 우회 금지; 끔에서도 v3끼리 연결 |
+| v2/v3 wire | **PROTOCOL_VERSION=3**. 새 t는 v2 union에 없고, 추가 필드는 v2 파서가 지우므로 선택적 필드 추가만으로 호환 불가. hello 버전을 스키마 본문보다 먼저 검사해 VERSION_MISMATCH 안내. 구버전과 제한 켬으로 조용히 연결하거나 요청 필드 생략으로 우회 금지; 끔에서도 v3끼리 연결 |
 | 저장 버전 | wire와 별개인 `HostSessionState.v` 현행 1 및 게스트 저장 형식을 개정. v1에 타이머 이력이 없으면 제한 **끔**으로 명시 이관, 새 세션은 10초. 새 형식 필드 소실은 손상으로 거부. 새 저장에는 settings/key/잔여량/완료 표식/이력과 **resumeFloorUsed/recoveryGrantMs·lastHealthyMs의 시계 영역·확정 중단시각/사유** 포함; epoch 변경 시 과거 확인 무효. running 중 강제 종료로 저장 이후 소비량이 불명확하면 clockUnknown으로 입력 재개 금지. §11.3의 중단 확정/연속성 입증 때만 잔여량 재개 |
 | 크기·정보 경계 | NP-07 16KB 유지. 최대 actions·타이머 이력/재접속 snapshot 바이트 검증 필수. 최종 reveal도 초과하면 제한을 올리지 말고 별도 분할 계약을 먼저 확정. 수신 스키마는 시각·ID 상한, 상태별 null 조건·설정 일치·중복 key를 검증; 모든 신규 메시지는 소켓 인증 규칙 적용 |
 

@@ -50,6 +50,25 @@ export default defineConfig({
   plugins: [
     svelte(),
     {
+      name: 'record-bundled-npm-packages',
+      apply: 'build',
+      generateBundle(_options, bundle) {
+        const names = new Set<string>();
+        for (const output of Object.values(bundle)) {
+          if (output.type !== 'chunk') continue;
+          for (const id of Object.keys(output.modules)) {
+            const match = id.replaceAll('\\', '/').match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+            if (match?.[1]) names.add(match[1]);
+          }
+        }
+        this.emitFile({
+          type: 'asset',
+          fileName: 'oss/bundled-packages.json',
+          source: `${JSON.stringify([...names].sort())}\n`,
+        });
+      },
+    },
+    {
       name: 'exclude-prototype-assets-from-release',
       closeBundle() {
         if (process.env['PRO_ASSET_REVIEW'] === '1') return;

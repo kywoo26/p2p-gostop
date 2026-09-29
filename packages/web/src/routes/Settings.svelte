@@ -1,12 +1,18 @@
 <script lang="ts">
-  // 설정 (spec 6.2, FR-20·FR-22·FR-23): 규칙 프리셋, 점당 금액(시작 잔액 자동 제안), 진행 속도, 효과음.
-  // 규칙·금액은 새 세션부터 적용된다(FR-24). 24개 개별 토글(FR-21)과 진동은 M6.
-  import { PER_POINT_OPTIONS, type PerPoint } from '@p2p-gostop/ai';
+  // 설정 (FR-21·FR-22·FR-23·FR-46): 세션 규칙·금액과 기기별 표시·입력 설정을 분리한다.
+  import { MONEY_MODEL_BASIS, MONEY_STATS, PER_POINT_OPTIONS, type PerPoint } from '@p2p-gostop/ai';
   import { PRESETS, type PresetId } from '@p2p-gostop/engine';
+  import { getBridge } from '../bridge/bridge.ts';
   import { formatMoney } from '../lib/format.ts';
   import type { SpeedSetting } from '../lib/view-types.ts';
-  import { effectiveStartBalance, type AppSettings } from '../settings/settings.svelte.ts';
+  import {
+    effectiveRules,
+    effectiveStartBalance,
+    presetSettingsPatch,
+    type AppSettings,
+  } from '../settings/settings.svelte.ts';
   import Screen from '../ui/Screen.svelte';
+  import RuleSettings from '../ui/RuleSettings.svelte';
 
   interface Props {
     settings: AppSettings;
@@ -17,6 +23,7 @@
   }
 
   let { settings, onchange, sessionActive = false, back = '#/' }: Props = $props();
+  const native = getBridge().isNative;
 
   const PRESET_OPTIONS: { id: PresetId; label: string }[] = [
     { id: 'traditional', label: '정통' },
@@ -30,7 +37,19 @@
     { id: 'very-fast', label: '매우 빠름' },
   ];
 
-  const rules = $derived(PRESETS[settings.preset]);
+  const rules = $derived(effectiveRules(settings));
+  const moneyStats = $derived(MONEY_STATS[settings.preset]);
+  function changeRule(key: keyof typeof rules, value: unknown) {
+    if (sessionActive) return;
+    if (key === 'gukjin') {
+      onchange?.({
+        customRules: { ...rules, gukjin: value as 'auto' | 'ask' },
+        gukjinAsk: value === 'ask',
+      });
+      return;
+    }
+    onchange?.({ customRules: { ...rules, [key]: value } });
+  }
   const ruleSummary = $derived([
     `보너스 카드 ${rules.bonusCards}장`,
     `보너스 뺏기 ${rules.bonusSteal ? '켬' : '끔'}`,
@@ -50,37 +69,31 @@
             type="radio"
             name="preset"
             value={preset.id}
-            checked={settings.preset === preset.id}
-            onchange={() => onchange?.({ preset: preset.id })}
+            checked={settings.preset === preset.id && settings.customRules === null}
+            disabled={sessionActive}
+            onchange={() => onchange?.(presetSettingsPatch(preset.id))}
           />
           <span>{preset.label}</span>
         </label>
       {/each}
     </div>
+    {#if settings.customRules !== null}<p class="help">
+        사용자 지정 · 기준 프리셋 {PRESET_OPTIONS.find((p) => p.id === settings.preset)?.label}
+      </p>
+      <button
+        type="button"
+        disabled={sessionActive}
+        onclick={() =>
+          onchange?.({ customRules: null, gukjinAsk: PRESETS[settings.preset].gukjin === 'ask' })}
+        >프리셋 규칙 복원</button
+      >
+    {/if}
     <ul class="summary">
       {#each ruleSummary as line (line)}<li>{line}</li>{/each}
     </ul>
   </fieldset>
 
-  <fieldset>
-    <legend>국진 처리</legend>
-    <label class="switch">
-      <span>매번 묻기</span>
-      <input
-        type="checkbox"
-        role="switch"
-        checked={settings.gukjinAsk}
-        disabled={sessionActive}
-        onchange={(e) => onchange?.({ gukjinAsk: e.currentTarget.checked })}
-      />
-    </label>
-    <p class="help">
-      {settings.gukjinAsk
-        ? '국진을 먹을 때마다 열끗 또는 쌍피를 직접 고릅니다.'
-        : '자동 최적: 정산 점수가 큰 쪽으로 계산하고, 점수가 같으면 피박을 피하는 쪽을 택합니다.'}
-    </p>
-    {#if sessionActive}<p class="help">진행 중인 세션에서는 변경할 수 없습니다.</p>{/if}
-  </fieldset>
+  <RuleSettings {rules} disabled={sessionActive} onchange={changeRule} />
 
   <fieldset>
     <legend>금액</legend>
@@ -88,6 +101,7 @@
       <span>점당</span>
       <select
         value={settings.perPoint}
+        disabled={sessionActive}
         onchange={(e) =>
           onchange?.({ perPoint: Number(e.currentTarget.value) as PerPoint, startBalance: null })}
       >
@@ -100,8 +114,44 @@
       <span>시작 잔액</span>
       <strong>{formatMoney(effectiveStartBalance(settings), settings.unit)}</strong>
     </p>
+    <label class="row"
+      ><span>시작 잔액 직접 입력</span><input
+        type="number"
+        min="1"
+        max="1000000000"
+        step="1"
+        value={settings.startBalance ?? ''}
+        placeholder={String(effectiveStartBalance({ ...settings, startBalance: null }))}
+        disabled={sessionActive}
+        onchange={(e) =>
+          onchange?.({
+            startBalance: e.currentTarget.value === '' ? null : Number(e.currentTarget.value),
+          })}
+      /></label
+    >
+    <button
+      type="button"
+      disabled={sessionActive || settings.startBalance === null}
+      onclick={() => onchange?.({ startBalance: null })}>권장 잔액 복원</button
+    >
+    <label class="row"
+      ><span>단위</span><select
+        value={settings.unit}
+        disabled={sessionActive}
+        onchange={(e) => onchange?.({ unit: e.currentTarget.value as AppSettings['unit'] })}
+        ><option value="냥">냥</option><option value="원">원</option><option value="점">점</option
+        ></select
+      ></label
+    >
     <p class="help">
-      30판 세션에서 파산 확률 5% 이하가 되도록 셀프플레이로 산정한 값입니다(점당 금액에 비례).
+      {settings.preset} 프리셋: {MONEY_MODEL_BASIS.roundsPerPreset}판 셀프플레이, {MONEY_MODEL_BASIS.monteCarloSessions.toLocaleString(
+        'ko-KR',
+      )}회 무작위 {MONEY_MODEL_BASIS.sessionLength}판 세션으로 파산 위험 {(
+        moneyStats.bankruptcyRisk * 100
+      ).toFixed(2)}%를 추정했습니다. 점당 {MONEY_MODEL_BASIS.referencePerPoint} 기준 {formatMoney(
+        moneyStats.startBalance,
+        settings.unit,
+      )}이며 점당 금액에 비례합니다.
     </p>
     {#if sessionActive}
       <p class="help">규칙·금액은 새 세션부터 적용됩니다.</p>
@@ -127,7 +177,17 @@
   </fieldset>
 
   <fieldset>
-    <legend>소리</legend>
+    <legend>효과·소리</legend>
+    <label class="row"
+      ><span>효과 강도</span><select
+        value={settings.effectIntensity}
+        onchange={(e) =>
+          onchange?.({ effectIntensity: e.currentTarget.value as AppSettings['effectIntensity'] })}
+        ><option value="off">끔</option><option value="subtle">절제</option><option value="strong"
+          >강조</option
+        ></select
+      ></label
+    >
     <label class="switch">
       <span>효과음</span>
       <input
@@ -137,6 +197,52 @@
         onchange={(e) => onchange?.({ sound: e.currentTarget.checked })}
       />
     </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>기기 설정</legend>
+    {#if native}<label class="switch"
+        ><span>진동</span><input
+          type="checkbox"
+          role="switch"
+          checked={settings.vibrate}
+          onchange={(e) => onchange?.({ vibrate: e.currentTarget.checked })}
+        /></label
+      >{/if}
+    <div class="row">
+      <span>힌트 등급</span><select
+        aria-label="힌트 등급"
+        value={settings.hintLevel}
+        onchange={(e) =>
+          onchange?.({ hintLevel: e.currentTarget.value as AppSettings['hintLevel'] })}
+        ><option value="off">끔</option><option value="basic">기본</option><option value="detail"
+          >상세</option
+        ></select
+      >
+    </div>
+    <p class="help">
+      상세 힌트 계산과 AI 조언은 후속 구현 예정입니다. 설정은 이 기기에만 저장됩니다.
+    </p>
+    <label class="switch"
+      ><span>120ms 취소 지연</span><input
+        type="checkbox"
+        role="switch"
+        checked={settings.confirmDelay}
+        onchange={(e) => onchange?.({ confirmDelay: e.currentTarget.checked })}
+      /></label
+    >
+    <p class="help">켜면 손패를 누른 뒤 120ms 안에 다시 눌러 취소할 수 있습니다.</p>
+    <label class="switch"
+      ><span>자동치기 (준비 중)</span><input
+        type="checkbox"
+        role="switch"
+        checked={false}
+        disabled
+      /></label
+    >
+    <p class="help">
+      구현 후에도 선택 없는 합법 수만 진행합니다. 고/스톱·밀기·흔들기 등 결정은 직접 합니다.
+    </p>
   </fieldset>
 
   <a class="button" href="#/license">라이선스·저작자 표시</a>

@@ -13,6 +13,7 @@
     multiplier?: number | null;
     stopPreview?: boolean;
     expanded?: boolean;
+    timerText?: string | null;
   }
 
   let {
@@ -25,6 +26,7 @@
     multiplier = null,
     stopPreview = false,
     expanded = false,
+    timerText = null,
   }: Props = $props();
   const multiplierLabel = $derived(stopPreview ? '스톱 배수' : '누적 배수, 박 제외');
 </script>
@@ -35,6 +37,9 @@
 >
   <h2 class="identity" title={name}>
     <span class="who">{who}</span><span class="name">{name === who ? '' : name}</span>
+    {#if timerText}<span class="timer" data-testid="decision-timer" title={timerText}
+        >{timerText}</span
+      >{/if}
   </h2>
   <span class="score" aria-label={`${who} 현재 족보 점수 ${score}점`}>
     <b data-testid={who === '나' ? 'my-score' : 'opponent-score'}>{score}</b><span>점</span>
@@ -88,10 +93,19 @@
     flex-shrink: 0;
   }
   .name {
+    min-width: 0;
+    flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     color: var(--color-hud-muted);
+  }
+  .timer {
+    flex: 0 0 8ch;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
   }
   .me .who,
   .me .score {

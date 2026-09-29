@@ -9,7 +9,17 @@ import type { Action, RuleOptions, Seat } from '@p2p-gostop/engine';
 import { PROTOCOL_VERSION, byteLength, decode, tryEncode } from './codec.ts';
 import { commit, toHex } from './crypto.ts';
 import type { LedgerSummary, SessionLedgerEntry } from './ledger.ts';
-import type { ErrorCode, GuestMessage, HostMessage, RoundStatus } from './messages.ts';
+import type {
+  DecisionClock,
+  DecisionKey,
+  ErrorCode,
+  GuestMessage,
+  HostMessage,
+  RoundStatus,
+  TimerSettings,
+  TimeoutResult,
+} from './messages.ts';
+import { sameDecision, timeoutDigest } from './timer-policy.ts';
 import { isRelayFrame, type RelayNotice } from './relay.ts';
 import type { Transport } from './transport.ts';
 import {
@@ -23,7 +33,11 @@ import {
 import type { BoardView, SettlementView } from './view-types.ts';
 
 export type RoundCheck =
-  | { readonly round: number; readonly result: 'verified' }
+  | {
+      readonly round: number;
+      readonly result: 'verified';
+      readonly time?: 'verified' | 'unverifiable';
+    }
   | { readonly round: number; readonly result: 'aborted'; readonly reason: string }
   | { readonly round: number; readonly result: 'unverifiable'; readonly reason: 'noCommitment' }
   | { readonly round: number; readonly result: 'failed'; readonly reason: VerifyFailure };
@@ -41,11 +55,18 @@ interface MutableObservation {
   readonly views: Record<string, string>;
   readonly sent: Action[];
   settlement: string | null;
+  timing?: {
+    settings: TimerSettings | null;
+    gap: boolean;
+    running: Array<NonNullable<ObservedRound['timing']>['running'][number]>;
+    checks: Array<NonNullable<ObservedRound['timing']>['checks'][number]>;
+    acks: Array<NonNullable<ObservedRound['timing']>['acks'][number]>;
+  };
 }
 
 /** GuestSession.toJSON()의 모양. 탭 수명 저장소(sessionStorage)에 두고 restore로 넘긴다 */
 export interface GuestSessionState {
-  readonly v: 1;
+  readonly v: 1 | 2;
   readonly token: string | null;
   readonly seq: number;
   readonly epoch: string | null;
@@ -59,6 +80,10 @@ export interface GuestSessionState {
   }[];
   readonly observations: readonly ObservedRound[];
   readonly checks: readonly RoundCheck[];
+  readonly timerSettings?: TimerSettings;
+  readonly decision?: DecisionClock | null;
+  readonly timeoutHistory?: readonly TimeoutResult[];
+  readonly nextRequestId?: number;
 }
 
 export interface GuestSessionOptions {
@@ -105,6 +130,16 @@ export class GuestSession {
   /** 정산 화면. 다음 판 첫 이벤트가 올 때까지 유지된다 */
   settlement: SettlementView | null = null;
   status: RoundStatus | null = null;
+  timerSettings: TimerSettings | null = null;
+  decision: DecisionClock | null = null;
+  readonly timeoutHistory: TimeoutResult[] = [];
+  private renderedAttempt: string | null = null;
+  private expiryPending: Extract<HostMessage, { t: 'expiryCheck' }> | null = null;
+  private pendingReveal: Extract<HostMessage, { t: 'revealHost' }> | null = null;
+  /** 실시간 timeoutResult에는 빈틈이 있을 수 있어 페이지의 연속 오프셋을 별도로 센다. */
+  private timeoutPageCursor: { round: number; next: number } | null = null;
+  private pendingCommit: Extract<HostMessage, { t: 'commitHost' }> | null = null;
+  private pendingEnd: Extract<HostMessage, { t: 'sessionEnd' }> | null = null;
   /** 파산 선택 요청 (seats에 1이 있으면 게스트가 고른다) */
   bankruptcy: {
     readonly round: number;
@@ -152,7 +187,19 @@ export class GuestSession {
     this.token = options.sessionToken;
     this.seq = options.lastSeq ?? 0;
     const saved = options.restore;
-    if (saved && saved.v === 1) {
+    if (saved && (saved.v === 1 || saved.v === 2)) {
+      if (
+        saved.v === 2 &&
+        (saved.timerSettings === undefined ||
+          saved.decision === undefined ||
+          saved.timeoutHistory === undefined ||
+          saved.nextRequestId === undefined)
+      )
+        throw new Error('게스트 타이머 저장 필드가 빠졌습니다');
+      this.nextRequestId = saved.nextRequestId ?? 1;
+      this.timerSettings = saved.timerSettings ?? { decisionMs: null, policy: 'fixed-v1' };
+      this.decision = saved.decision ?? null;
+      this.timeoutHistory.push(...(saved.timeoutHistory ?? []));
       this.token = saved.token ?? this.token;
       this.seq = saved.seq;
       this.epoch = saved.epoch;
@@ -163,6 +210,17 @@ export class GuestSession {
         views: { ...o.views },
         sent: [...o.sent],
         settlement: o.settlement,
+        ...(o.timing
+          ? {
+              timing: {
+                settings: o.timing.settings,
+                gap: true,
+                running: [...o.timing.running],
+                checks: [...o.timing.checks],
+                acks: [...o.timing.acks],
+              },
+            }
+          : {}),
       }));
       this.checks.push(...saved.checks);
       for (const check of saved.checks)
@@ -173,6 +231,7 @@ export class GuestSession {
     // 알림이 있는 전송: 호스트가 있다고 알려질 때(present·joined) hello를 보낸다. 끊김마다 hello를 쌓지 않는다(L-4).
     transport.onRelay?.((notice) => this.relayNotice(notice));
     transport.onClose(() => {
+      this.markTimeGap();
       this.linked = false;
       // 알림이 없는 전송: 전송이 다시 열리면 대기 중인 hello가 나간다. 백오프 시간은 전송 구현이 정한다.
       if (!relays) this.join();
@@ -214,6 +273,7 @@ export class GuestSession {
   // ---- 게스트 조작 API ----
 
   join(): void {
+    if (this.decision !== null) this.markTimeGap();
     if (this.connection !== 'tokenRejected' && this.connection !== 'versionMismatch')
       this.connection = 'joining';
     this.send({
@@ -237,6 +297,14 @@ export class GuestSession {
     this.commitments = [];
     this.observations = [];
     this.view = null;
+    this.timerSettings = null;
+    this.decision = null;
+    this.timeoutHistory.length = 0;
+    this.timeoutPageCursor = null;
+    this.pendingReveal = null;
+    this.pendingCommit = null;
+    this.pendingEnd = null;
+    this.nextRequestId = 1;
     this.settlement = null;
     this.status = null;
     this.bankruptcy = null;
@@ -257,7 +325,157 @@ export class GuestSession {
       // 보내기 전에 저장 기회를 준다: 저장본의 sent가 실제로 보낸 것보다 적으면 검증이 거짓 실패한다.
       this.changed();
     }
-    this.sendGame({ t: 'action', seq: this.seq, payload, requestId: this.nextRequestId++ });
+    const clock = this.decision;
+    this.sendGame({
+      t: 'action',
+      seq: this.seq,
+      payload,
+      requestId: this.nextRequestId++,
+      ...(clock !== null && clock.seat === payload.seat
+        ? { decisionKey: clock.key, decisionAttempt: clock.attempt }
+        : {}),
+    });
+    this.changed();
+  }
+  /** 뷰가 DOM에 반영되고 입력을 활성화한 같은 전이에서 호출한다. */
+  decisionReady(renderedSeq: number): boolean {
+    const clock = this.decision;
+    if (
+      clock === null ||
+      clock.state !== 'preparing' ||
+      renderedSeq < clock.key.baseSeq ||
+      this.connection !== 'joined' ||
+      !this.linked
+    )
+      return false;
+    const mark = `${clock.key.epoch}:${clock.key.decisionId}:${clock.attempt}`;
+    if (this.renderedAttempt === mark) return true;
+    this.renderedAttempt = mark;
+    this.send({ t: 'decisionReady', key: clock.key, attempt: clock.attempt, renderedSeq });
+    this.changed();
+    return true;
+  }
+  get decisionInputReady(): boolean {
+    const clock = this.decision;
+    if (clock === null) return true;
+    return (
+      clock.seat === 1 &&
+      clock.remainingMs > 0 &&
+      (clock.state === 'preparing' || clock.state === 'running') &&
+      this.renderedAttempt === `${clock.key.epoch}:${clock.key.decisionId}:${clock.attempt}`
+    );
+  }
+  decisionUnavailable(reason: 'background' | 'resync'): void {
+    this.markTimeGap();
+    if (this.decision !== null)
+      this.send({ t: 'decisionUnavailable', key: this.decision.key, reason });
+    this.renderedAttempt = null;
+  }
+  /** expiryCheck는 뷰와 foreground를 확인한 뒤에만 답한다. */
+  ackExpiry(renderedSeq: number, foreground: boolean): boolean {
+    const check = this.expiryPending;
+    const clock = this.decision;
+    if (
+      !foreground ||
+      check === null ||
+      clock === null ||
+      clock.state !== 'checking' ||
+      !sameDecision(clock.key, check.key) ||
+      clock.attempt !== check.attempt ||
+      renderedSeq < check.key.baseSeq ||
+      !this.linked
+    )
+      return false;
+    this.send({ t: 'expiryAck', key: check.key, attempt: check.attempt, renderedSeq });
+    const timing = this.observation(check.key.round)?.timing;
+    if (
+      timing &&
+      !timing.acks.some((ack) => sameDecision(ack.key, check.key) && ack.attempt === check.attempt)
+    )
+      timing.acks.push({ key: check.key, attempt: check.attempt });
+    this.expiryPending = null;
+    this.changed();
+    return true;
+  }
+  private acceptDecision(clock: DecisionClock | null): void {
+    if (clock === null) {
+      this.decision = null;
+      this.renderedAttempt = null;
+      return;
+    }
+    const before = this.decision;
+    if (before !== null && sameDecision(before.key, clock.key) && clock.timerRev < before.timerRev)
+      return;
+    if (
+      before !== null &&
+      sameDecision(before.key, clock.key) &&
+      clock.timerRev > before.timerRev + 1
+    )
+      this.markTimeGap();
+    if (
+      before === null ||
+      !sameDecision(before.key, clock.key) ||
+      before.attempt !== clock.attempt ||
+      clock.state === 'paused'
+    )
+      this.renderedAttempt = null;
+    this.decision = clock;
+    if (clock.state === 'running' && clock.deadlineMs !== null) {
+      const running = this.observation(clock.key.round)?.timing?.running;
+      if (
+        running &&
+        !running.some(
+          (item) =>
+            sameDecision(item.key, clock.key) &&
+            item.attempt === clock.attempt &&
+            item.deadlineMs === clock.deadlineMs,
+        )
+      )
+        running.push({
+          key: clock.key,
+          attempt: clock.attempt,
+          deadlineMs: clock.deadlineMs,
+          hostNowMs: clock.hostNowMs,
+          recoveryGrantMs: clock.recoveryGrantMs,
+        });
+    }
+  }
+  private cancelTimedRequest(key: DecisionKey, requestId?: number): void {
+    for (const [slot, message] of this.outbox) {
+      if (
+        message.t === 'action' &&
+        message.decisionKey &&
+        sameDecision(message.decisionKey, key) &&
+        (requestId === undefined || message.requestId === requestId)
+      )
+        this.outbox.delete(slot);
+    }
+    for (const [slot, pending] of this.inflight) {
+      const message = pending.message;
+      if (
+        message.t === 'action' &&
+        message.decisionKey &&
+        sameDecision(message.decisionKey, key) &&
+        (requestId === undefined || message.requestId === requestId)
+      )
+        this.inflight.delete(slot);
+    }
+  }
+  private acceptTimeout(result: TimeoutResult): void {
+    if (
+      !this.timeoutHistory.some(
+        (entry) => sameDecision(entry.key, result.key) && entry.actionIndex === result.actionIndex,
+      )
+    ) {
+      this.timeoutHistory.push(result);
+      this.timeoutHistory.sort(
+        (a, b) => a.key.round - b.key.round || a.actionIndex - b.actionIndex,
+      );
+    }
+    this.cancelTimedRequest(result.key);
+  }
+  requestTimeoutPage(round: number, from = 0): void {
+    this.sendGame({ t: 'timeoutGet', round, from });
   }
   /** settled에서 승자가 게스트이면 밀기를 요청한다 */
   push(): void {
@@ -267,6 +485,7 @@ export class GuestSession {
       this.changed();
     }
     this.sendGame({ t: 'push', seq: this.seq, requestId: this.nextRequestId++ });
+    this.changed();
   }
   /** settled 단계에서 다음 판을 요청한다. 시작은 호스트가 한다 */
   requestNextRound(): void {
@@ -321,6 +540,7 @@ export class GuestSession {
           directResponse &&
           ((request.requestId !== undefined && m.requestId === request.requestId) ||
             (m.requestId === undefined &&
+              (m.t !== 'events' || m.timeoutResult === undefined) &&
               ((m.t === 'events' && m.to > request.seq) ||
                 (m.t === 'snapshot' && m.seq > request.seq))));
       } else if (request.t === 'ready') {
@@ -336,6 +556,8 @@ export class GuestSession {
           (m.t === 'reject' && m.reason === 'BANKRUPT' && m.seq === this.seq);
       } else if (request.t === 'ledgerGet') {
         answered = m.t === 'ledgerPage' && m.from === request.from;
+      } else if (request.t === 'timeoutGet') {
+        answered = m.t === 'timeoutPage' && m.from === request.from && m.round === request.round;
       }
       if (m.t === 'sessionEnd') answered = true;
       if (answered) this.inflight.delete(key);
@@ -392,7 +614,7 @@ export class GuestSession {
 
   toJSON(): GuestSessionState {
     return {
-      v: 1,
+      v: 2,
       token: this.token ?? null,
       seq: this.seq,
       epoch: this.epoch,
@@ -403,8 +625,23 @@ export class GuestSession {
         views: { ...o.views },
         sent: [...o.sent],
         settlement: o.settlement,
+        ...(o.timing
+          ? {
+              timing: {
+                settings: o.timing.settings,
+                gap: o.timing.gap,
+                running: [...o.timing.running],
+                checks: [...o.timing.checks],
+                acks: [...o.timing.acks],
+              },
+            }
+          : {}),
       })),
       checks: this.checks.slice(-CHECK_LIMIT),
+      timerSettings: this.timerSettings ?? { decisionMs: null, policy: 'fixed-v1' },
+      decision: this.decision,
+      timeoutHistory: this.timeoutHistory.slice(-800),
+      nextRequestId: this.nextRequestId,
     };
   }
 
@@ -413,7 +650,10 @@ export class GuestSession {
   private relayNotice(notice: RelayNotice): void {
     // 새 소켓(present)이거나 호스트 소켓이 바뀌었다(joined·left): hello로 다시 인증할 때까지 미룬다.
     // absent는 프레임 하나를 전달하지 못했다는 뜻일 뿐이라 인증 상태를 바꾸지 않는다(#40).
-    if (notice.peer !== 'absent') this.linked = false;
+    if (notice.peer !== 'absent') {
+      this.markTimeGap();
+      this.linked = false;
+    }
     this.hostPresent = notice.peer === 'present' || notice.peer === 'joined';
     if (this.hostPresent) this.join();
     this.changed();
@@ -433,11 +673,23 @@ export class GuestSession {
   private observation(round: number): MutableObservation | undefined {
     return this.observations.find((o) => o.round === round);
   }
+  private markTimeGap(): void {
+    if (this.decision === null) return;
+    const timing = this.observation(this.decision.key.round)?.timing;
+    if (timing) timing.gap = true;
+  }
   private observe(view: BoardView, settlement: SettlementView | undefined): void {
     let observed = this.observation(view.round);
     if (observed === undefined) {
       if (!this.commitmentFor(view.round)?.revealed) return;
-      observed = { round: view.round, events: {}, views: {}, sent: [], settlement: null };
+      observed = {
+        round: view.round,
+        events: {},
+        views: {},
+        sent: [],
+        settlement: null,
+        timing: { settings: this.timerSettings, gap: false, running: [], checks: [], acks: [] },
+      };
       this.observations = [...this.observations.slice(-1), observed];
     }
     observed.views[String(view.eventSeq)] = viewDigest(view);
@@ -450,6 +702,8 @@ export class GuestSession {
     this.settlement = m.settlement ?? null;
     this.applyStatus(m.status);
     this.observe(m.view, m.settlement);
+    this.acceptDecision(m.decision);
+    if (m.timeoutResult) this.acceptTimeout(m.timeoutResult);
     const observed = this.observation(m.view.round);
     if (m.t === 'events' && observed)
       for (const event of m.list) observed.events[String(event.seq)] = eventDigest(event);
@@ -459,9 +713,14 @@ export class GuestSession {
     this.rules = m.rules;
     this.ledger = m.ledger;
     this.names = m.names;
+    this.timerSettings = m.timerSettings;
     this.connection = 'joined';
     const restarted = this.epoch !== null && this.epoch !== m.epoch;
     this.epoch = m.epoch;
+    if (restarted) {
+      this.decision = null;
+      this.renderedAttempt = null;
+    }
     if (restarted && m.seq < this.seq) {
       // 호스트가 저장본에서 복원돼 순번이 되감겼다(#25). 호스트 순번을 따르고, 되감긴 구간의 관찰은 버린다.
       this.logLine(`호스트 복원 감지: 순번 ${this.seq} → ${m.seq}`);
@@ -504,6 +763,10 @@ export class GuestSession {
     const c = this.commitment;
     if (c !== null && m.round < c.round) return; // 지난 판의 재전송
     if (c !== null && m.round > c.round) {
+      if (this.pendingReveal?.round === c.round) {
+        this.pendingCommit = m;
+        return;
+      }
       // 정상 호스트는 판 종료 때(재접속이면 resync에서) revealHost를 다음 commitHost보다 먼저 보낸다.
       // 공개한 판의 결과를 보이지 않고 다음 판으로 넘어가면 게스트 원문으로 덱을 본 뒤 다시 뽑는 재추첨이다.
       if (this.flagMissingReveal()) return;
@@ -554,6 +817,17 @@ export class GuestSession {
     this.send({ t: 'revealGuest', round: c.round, secret: c.guestSecret });
   }
   private revealHost(m: Extract<HostMessage, { t: 'revealHost' }>): void {
+    const entries = this.timeoutHistory
+      .filter((entry) => entry.key.round === m.round)
+      .toSorted((a, b) => a.actionIndex - b.actionIndex);
+    if (entries.length < m.timeoutCount) {
+      if (this.pendingReveal?.round !== m.round) {
+        this.pendingReveal = m;
+        this.timeoutPageCursor = { round: m.round, next: 0 };
+        this.requestTimeoutPage(m.round, 0);
+      }
+      return;
+    }
     // 중복, 또는 이미 missingReveal로 판정한 판(뒤늦은 공개로 되돌리지 않는다). roundSkip은 위조된 커밋 메시지에 대한
     // 기록이라 그 번호의 판이 나중에 정상으로 진행되면 따로 검증한다.
     if (this.decided(m.round)) return;
@@ -567,6 +841,8 @@ export class GuestSession {
       m.guestSecret !== c.guestSecret
     ) {
       check = { round: m.round, result: 'failed', reason: 'commitment' };
+    } else if (entries.length !== m.timeoutCount || timeoutDigest(entries) !== m.timeoutDigest) {
+      check = { round: m.round, result: 'failed', reason: 'actions' };
     } else {
       // 공개한 판을 하나도 보지 못했다면 "본 것 없음·보낸 것 없음"으로 대조한다(리뷰 R3: 아무 수열이나 통과 금지).
       const observed = this.observation(m.round) ?? {
@@ -586,12 +862,30 @@ export class GuestSession {
         round: m.round,
         firstSeq: m.firstSeq,
         observed,
+        timeoutResults: entries,
       });
       check = result.ok
-        ? { round: m.round, result: 'verified' }
+        ? { round: m.round, result: 'verified', ...(result.time ? { time: result.time } : {}) }
         : { round: m.round, result: 'failed', reason: result.reason };
     }
     this.recordCheck(check);
+  }
+  private finishTimeoutPages(failed: boolean): void {
+    const reveal = this.pendingReveal;
+    this.pendingReveal = null;
+    this.timeoutPageCursor = null;
+    if (reveal === null) return;
+    if (failed) this.recordCheck({ round: reveal.round, result: 'failed', reason: 'actions' });
+    else this.revealHost(reveal);
+    const nextCommit = this.pendingCommit;
+    this.pendingCommit = null;
+    if (nextCommit !== null) this.commitHost(nextCommit);
+    const end = this.pendingEnd;
+    this.pendingEnd = null;
+    if (end !== null) {
+      this.ended = { reason: end.reason, seat: end.seat };
+      this.flagMissingReveal();
+    }
   }
   private receive(raw: string): void {
     if (isRelayFrame(raw)) return; // 전송이 거르지 못한 알림은 메시지로 쓰지 않는다
@@ -612,6 +906,12 @@ export class GuestSession {
       this.logLine(`welcome 전 ${m.t} 무시`);
       return;
     }
+    if (
+      m.t === 'reject' &&
+      (m.reason === 'DECISION_EXPIRED' || m.reason === 'DECISION_PAUSED') &&
+      m.decisionKey
+    )
+      this.cancelTimedRequest(m.decisionKey, m.requestId);
     // 오래된 프레임을 현재 요청의 응답으로 간주하지 않는다.
     this.settle(m);
     switch (m.t) {
@@ -637,6 +937,7 @@ export class GuestSession {
         }
         if (m.from !== this.seq + 1) {
           // 빈틈: 토큰과 lastSeq로 다시 hello (호스트가 차분이나 스냅샷을 보낸다)
+          this.markTimeGap();
           this.error('STALE_SEQ');
           this.join();
           break;
@@ -645,6 +946,46 @@ export class GuestSession {
         break;
       case 'status':
         this.applyStatus(m.status);
+        break;
+      case 'decisionDeadline':
+        this.acceptDecision(m.clock);
+        break;
+      case 'expiryCheck':
+        if (
+          this.decision !== null &&
+          sameDecision(this.decision.key, m.key) &&
+          this.decision.attempt === m.attempt
+        ) {
+          this.expiryPending = m;
+          const checks = this.observation(m.key.round)?.timing?.checks;
+          if (
+            checks &&
+            !checks.some((check) => sameDecision(check.key, m.key) && check.attempt === m.attempt)
+          )
+            checks.push({ key: m.key, attempt: m.attempt, confirmByMs: m.confirmByMs });
+        }
+        break;
+      case 'timeoutPage':
+        if (this.pendingReveal?.round !== m.round || this.timeoutPageCursor?.round !== m.round)
+          break;
+        if (m.from !== this.timeoutPageCursor.next) break; // 이전 페이지의 중복 응답
+        if (
+          m.total !== this.pendingReveal.timeoutCount ||
+          m.from + m.entries.length > m.total ||
+          (m.entries.length === 0 && m.from < m.total) ||
+          m.entries.some((entry) => entry.key.round !== m.round)
+        ) {
+          this.finishTimeoutPages(true);
+          break;
+        }
+        for (const entry of m.entries) this.acceptTimeout(entry);
+        this.timeoutPageCursor.next = m.from + m.entries.length;
+        if (this.timeoutPageCursor.next < m.total)
+          this.requestTimeoutPage(m.round, this.timeoutPageCursor.next);
+        else
+          this.finishTimeoutPages(
+            this.timeoutHistory.filter((entry) => entry.key.round === m.round).length !== m.total,
+          );
         break;
       case 'reject':
         this.error(m.reason);
@@ -671,6 +1012,10 @@ export class GuestSession {
         this.bankruptcy = { round: m.round, seats: m.seats, balances: m.balances };
         break;
       case 'sessionEnd':
+        if (this.pendingReveal !== null) {
+          this.pendingEnd = m;
+          break;
+        }
         this.ended = { reason: m.reason, seat: m.seat };
         this.flagMissingReveal();
         break;

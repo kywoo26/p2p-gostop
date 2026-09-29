@@ -15,6 +15,9 @@ export const ERROR_CODES = [
   'COMMIT_INVALID',
   'ROUND_NOT_READY',
   'BANKRUPT',
+  'DECISION_EXPIRED',
+  'STALE_DECISION',
+  'DECISION_PAUSED',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
@@ -40,6 +43,52 @@ export interface RoundStatus {
   readonly endReason: 'bankruptcy' | 'host' | null;
 }
 
+/** FR-51/NP-10: 세션 시작 전에 확정하는 P2P 전용 설정. */
+export interface TimerSettings {
+  readonly decisionMs: null | 5000 | 10000 | 20000 | 30000 | 60000;
+  readonly policy: 'fixed-v1';
+}
+export interface DecisionKey {
+  readonly epoch: string;
+  readonly round: number;
+  readonly decisionId: number;
+  readonly baseSeq: number;
+}
+export type DecisionState = 'preparing' | 'running' | 'checking' | 'paused' | 'resolved';
+export type PauseReason =
+  | 'peer'
+  | 'hostBackground'
+  | 'guestBackground'
+  | 'hostGap'
+  | 'clockUnknown'
+  | 'recoveryLimit';
+export interface DecisionClock {
+  readonly key: DecisionKey;
+  readonly seat: Seat;
+  readonly timerRev: number;
+  readonly state: DecisionState;
+  readonly hostNowMs: number;
+  readonly remainingMs: number;
+  readonly deadlineMs: number | null;
+  readonly confirmByMs: number | null;
+  readonly attempt: number;
+  readonly resumeFloorUsed: boolean;
+  readonly recoveryGrantMs: number;
+  readonly pauseReason: PauseReason | null;
+}
+export interface TimeoutResult {
+  readonly key: DecisionKey;
+  readonly actionIndex: number;
+  readonly seat: Seat;
+  readonly baseSeq: number;
+  readonly toSeq: number;
+  readonly deadlineMs: number;
+  readonly confirmedAtMs: number;
+  readonly reason: 'timeout';
+  readonly policy: 'fixed-v1';
+  readonly action: Action;
+}
+
 export type GuestMessage =
   | {
       readonly t: 'hello';
@@ -55,6 +104,8 @@ export type GuestMessage =
       readonly seq: number;
       readonly payload: Action;
       readonly requestId?: number;
+      readonly decisionKey?: DecisionKey;
+      readonly decisionAttempt?: number;
     }
   | { readonly t: 'push'; readonly seq: number; readonly requestId?: number }
   | { readonly t: 'ping' }
@@ -65,7 +116,25 @@ export type GuestMessage =
   | { readonly t: 'ready'; readonly round: number }
   | { readonly t: 'bankruptcy'; readonly choice: 'recharge' | 'end' }
   /** 원장 전체 이력 요청 (ledger.get). from = 시작 색인 */
-  | { readonly t: 'ledgerGet'; readonly from: number };
+  | { readonly t: 'ledgerGet'; readonly from: number }
+  | {
+      readonly t: 'decisionReady';
+      readonly key: DecisionKey;
+      readonly attempt: number;
+      readonly renderedSeq: number;
+    }
+  | {
+      readonly t: 'expiryAck';
+      readonly key: DecisionKey;
+      readonly attempt: number;
+      readonly renderedSeq: number;
+    }
+  | {
+      readonly t: 'decisionUnavailable';
+      readonly key: DecisionKey;
+      readonly reason: 'background' | 'resync';
+    }
+  | { readonly t: 'timeoutGet'; readonly round: number; readonly from: number };
 
 export type HostMessage =
   | {
@@ -81,6 +150,7 @@ export type HostMessage =
       /** 호스트의 현재 순번. 게스트 lastSeq보다 작으면 호스트가 되감긴 것(복원) */
       readonly seq: number;
       readonly status: RoundStatus;
+      readonly timerSettings: TimerSettings;
     }
   | {
       readonly t: 'snapshot';
@@ -91,6 +161,8 @@ export type HostMessage =
       readonly status: RoundStatus;
       /** 해당 action/push 요청의 응답일 때만 포함 */
       readonly requestId?: number;
+      readonly decision: DecisionClock | null;
+      readonly timeoutResult?: TimeoutResult;
     }
   | {
       readonly t: 'events';
@@ -102,6 +174,8 @@ export type HostMessage =
       readonly settlement?: SettlementView;
       readonly status: RoundStatus;
       readonly requestId?: number;
+      readonly decision: DecisionClock | null;
+      readonly timeoutResult?: TimeoutResult;
     }
   /** 뷰는 그대로이고 단계·준비·파산 상태만 바뀜 */
   | {
@@ -116,8 +190,23 @@ export type HostMessage =
       readonly reason: ErrorCode;
       readonly message: string;
       readonly requestId?: number;
+      readonly decisionKey?: DecisionKey;
     }
   | { readonly t: 'pong' }
+  | { readonly t: 'decisionDeadline'; readonly clock: DecisionClock }
+  | {
+      readonly t: 'expiryCheck';
+      readonly key: DecisionKey;
+      readonly attempt: number;
+      readonly confirmByMs: number;
+    }
+  | {
+      readonly t: 'timeoutPage';
+      readonly round: number;
+      readonly from: number;
+      readonly total: number;
+      readonly entries: readonly TimeoutResult[];
+    }
   | { readonly t: 'commitHost'; readonly round: number; readonly hash: string }
   | { readonly t: 'revealGuestRequest'; readonly round: number; readonly guestHash: string }
   | { readonly t: 'roundAborted'; readonly round: number; readonly reason: string }
@@ -133,6 +222,8 @@ export type HostMessage =
       readonly options: RoundOptions;
       /** 이 판 첫 이벤트의 세션 순번. 게스트가 받은 이벤트와 리플레이 이벤트를 맞춰 보는 기준 */
       readonly firstSeq: number;
+      readonly timeoutCount: number;
+      readonly timeoutDigest: string;
     }
   | {
       readonly t: 'bankruptcyPrompt';
