@@ -137,14 +137,28 @@ export function ruleGoStop(state: GameState, seat: Seat, w: Weights): 'go' | 'st
   const me = state.seats[seat];
   const op = state.seats[otherSeat(seat)];
   const g = w.goStop;
-  if (me.hand.length + me.bombTokens < g.minTurns || me.goCount >= g.maxGo) {
+  const { m, t } = seatCounts(state, seat);
+  const potential = potentialOf(t, m, w.combo);
+  // G6: 피는 가치 합이며 0장 예외를 지킨다. G7: 광박은 상대 광 0장일 때만 가능하다.
+  const piExposed = (pi: number): boolean =>
+    pi <= state.rules.piBakThreshold && !(state.rules.piBakZeroExempt && pi === 0);
+  const ownBakRisk = (piExposed(m.pi) && t.pi >= 8) || (m.gwang === 0 && t.gwang >= 2);
+  const bakChance = (piExposed(t.pi) && t.pi <= 5 && m.pi >= 8) || (t.gwang === 0 && m.gwang >= 2);
+  const extraGo =
+    g.bold > 0 && bakChance && !ownBakRisk && op.score.total < 3 && potential < 7 ? 1 : 0;
+  if (me.hand.length + me.bombTokens < g.minTurns || me.goCount >= g.maxGo + extraGo) {
     return 'stop';
   }
+  // 다음 자기 뒤집기까지 더미가 없거나, 박 위험과 상대 득점 위협이 겹치면 받는다.
+  if (
+    g.bold > 0 &&
+    (state.deck.length < 2 || (ownBakRisk && (op.score.total >= 3 || potential >= 7)))
+  )
+    return 'stop';
   if (op.score.total >= g.oppScoreStop) {
     return 'stop';
   }
-  const { m, t } = seatCounts(state, seat);
-  return potentialOf(t, m, w.combo) >= g.oppPotentialStop ? 'stop' : 'go';
+  return potential >= g.oppPotentialStop ? 'stop' : 'go';
 }
 
 /** 국진을 피로 쓸지: 점수가 큰 쪽, 같으면 피가 모자랄 때(피박 방지) 피 */
@@ -223,7 +237,13 @@ export function heuristicAction(
 const MAX_STEPS = 400;
 
 /** 판 끝까지 양측 모두 휴리스틱으로 둔다. */
-export function rollout(state: GameState, rng: Rng, w: Weights, debugReduce = false): GameState {
+export function rollout(
+  state: GameState,
+  rng: Rng,
+  w: Weights,
+  debugReduce = false,
+  evSeat?: Seat,
+): GameState {
   let s = state;
   for (let i = 0; s.phase !== 'end'; i++) {
     if (i > MAX_STEPS) {
@@ -234,7 +254,8 @@ export function rollout(state: GameState, rng: Rng, w: Weights, debugReduce = fa
       throw new Error('입력할 좌석이 없습니다');
     }
     const legal = legalActions(s, seat);
-    s = step(s, heuristicAction(s, seat, legal, rng, w), debugReduce);
+    const noise = seat === evSeat ? w.goStop.selfNoise : w.rollout.noise;
+    s = step(s, heuristicAction(s, seat, legal, rng, w, noise), debugReduce);
   }
   return s;
 }

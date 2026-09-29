@@ -29,13 +29,13 @@
     "noise": 0.3
   },
   "goStop": {
-    "maxGo": 2,
-    "oppScoreStop": 5,
-    "minTurns": 3,
-    "oppPotentialStop": 9,
+    "maxGo": 1,
+    "oppScoreStop": 4,
+    "minTurns": 5,
+    "oppPotentialStop": 5,
     "evMargin": 0.1,
-    "bold": 1,
-    "selfNoise": 0
+    "bold": 0,
+    "selfNoise": 0.3
   },
   "search": {
     "winWeight": 0.5,

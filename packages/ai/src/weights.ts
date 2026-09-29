@@ -59,7 +59,7 @@ export interface RolloutWeights {
 }
 
 export interface GoStopWeights {
-  /** 규칙 기반 고/스톱: 이 고 횟수 이상이면 스톱 */
+  /** 규칙 기반 고/스톱의 보통 상한. bold > 0인 저위험 박 기회에는 한 번 추가한다. */
   readonly maxGo: number;
   /** 상대 현재 점수가 이 이상이면 스톱 */
   readonly oppScoreStop: number;
@@ -67,8 +67,12 @@ export interface GoStopWeights {
   readonly minTurns: number;
   /** 상대 피박·광박 등 위험 신호(상대 잠재력)가 이 이상이면 스톱 */
   readonly oppPotentialStop: number;
-  /** 기대값 비교(AI-06)에서 고를 부르려면 EV(고)가 스톱 × (1 + margin) 초과 */
+  /** EV(고)가 스톱 × (1 + evMargin × (1-bold)) 초과일 때 고 */
   readonly evMargin: number;
+  /** 과감성 [0, 1]: EV 여유를 줄이고, 낮은 상대 위험의 박 기회에 한 번 더 고한다. */
+  readonly bold: number;
+  /** 고 EV 롤아웃에서 자기 카드 선택에 더할 잡음. 상대는 rollout.noise를 유지한다. */
+  readonly selfNoise: number;
 }
 
 export interface SearchWeights {
@@ -103,7 +107,15 @@ const SHAPE = {
   risk: { piBak: 'n', gwangBak: 'n', goBak: 'n', goBonus: 'n' },
   tactic: { handMatch: 'n', exposure: 'n', denial: 'n', steal: 'n' },
   rollout: { bonus: 'n', bomb: 'n', flipOnly: 'n', discard: 'n', noise: 'n' },
-  goStop: { maxGo: 'n', oppScoreStop: 'n', minTurns: 'n', oppPotentialStop: 'n', evMargin: 'n' },
+  goStop: {
+    maxGo: 'n',
+    oppScoreStop: 'n',
+    minTurns: 'n',
+    oppPotentialStop: 'n',
+    evMargin: 'n',
+    bold: 'n',
+    selfNoise: 'n',
+  },
   search: { winWeight: 'n', pointScale: 'n', ucbC: 'n' },
 } as const;
 
@@ -143,6 +155,9 @@ function check(value: unknown, shape: Shape, path: string): void {
 /** 신뢰할 수 없는 JSON을 검증해 Weights로 돌려준다. 키 누락·추가·비숫자면 예외. */
 export function parseWeights(value: unknown): Weights {
   assertWeights(value);
+  const goStop = value.goStop;
+  if (goStop.bold < 0 || goStop.bold > 1) throw new RangeError('goStop.bold: 0~1 범위여야 합니다');
+  if (goStop.selfNoise < 0) throw new RangeError('goStop.selfNoise: 음수일 수 없습니다');
   return deepFreeze(value);
 }
 
