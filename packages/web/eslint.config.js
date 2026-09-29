@@ -6,6 +6,7 @@ import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 import svelteConfig from './svelte.config.js';
+import workspace from '../../lint-imports.mjs';
 
 // 게스트 페이지는 비보안 컨텍스트(http://192.168.x.y)에서 돈다. Secure Context 전용 API 금지 (spec NF-02, AGENTS.md 3장).
 const insecureContextMessage =
@@ -35,6 +36,7 @@ const boundarySelectors = boundaryPatterns.map((pattern) => ({
 }));
 
 const importRestrictions = {
+  'workspace/string-literal-imports': 'error',
   'no-restricted-imports': [
     'error',
     { patterns: boundaryPatterns.map((regex) => ({ regex, message: boundaryMessage })) },
@@ -90,6 +92,7 @@ export default defineConfig(
   svelte.configs.recommended,
   svelte.configs.prettier,
   {
+    plugins: { workspace },
     rules: {
       ...importRestrictions,
       '@typescript-eslint/no-unused-vars': [

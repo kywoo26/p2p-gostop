@@ -24,7 +24,8 @@
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_"
       }
-    ]
+    ],
+    "workspace/string-literal-imports": "error"
   },
   "overrides": [
     {
@@ -56,7 +57,7 @@
       }
     },
     {
-      "files": ["packages/engine/**/*.ts"],
+      "files": ["packages/engine/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
       "rules": {
         "eslint/no-restricted-imports": [
           "error",
@@ -84,7 +85,10 @@
       }
     },
     {
-      "files": ["packages/ai/**/*.ts", "packages/protocol/**/*.ts"],
+      "files": [
+        "packages/ai/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
+        "packages/protocol/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"
+      ],
       "rules": {
         "eslint/no-restricted-imports": [
           "error",
@@ -112,7 +116,7 @@
       }
     },
     {
-      "files": ["packages/relay-dev/src/**/*.ts"],
+      "files": ["packages/relay-dev/src/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
       "rules": {
         "eslint/no-restricted-imports": [
           "error",
@@ -140,7 +144,7 @@
       }
     },
     {
-      "files": ["packages/relay-dev/test/**/*.ts"],
+      "files": ["packages/relay-dev/test/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
       "rules": {
         "eslint/no-restricted-imports": [
           "error",
@@ -168,7 +172,7 @@
       }
     },
     {
-      "files": ["tools/sim/**/*.ts"],
+      "files": ["tools/sim/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
       "rules": {
         "eslint/no-restricted-imports": [
           "error",
@@ -195,5 +199,6 @@
         ]
       }
     }
-  ]
+  ],
+  "jsPlugins": ["./lint-imports.mjs"]
 }

@@ -4,7 +4,7 @@ import { writeFileSync, unlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const cases = [];
-const add = (dir, source, banned) => cases.push({ dir, source, banned });
+const add = (dir, source, banned, extension) => cases.push({ dir, source, banned, extension });
 for (const target of ['ai', 'protocol', 'web', 'relay-dev', 'sim'])
   add('packages/engine/src', `import '@p2p-gostop/${target}';`, true);
 for (const dir of ['packages/ai/src', 'packages/protocol/src', 'tools/sim/src'])
@@ -37,10 +37,39 @@ for (const target of ['relay-dev', 'sim', 'protocol/net', 'ai/testing', 'engine/
 add('packages/web/src/lib', '<script lang="ts">import "@p2p-gostop/engine/src/index.ts";</script>', true);
 add('packages/web/src/lib', '<script lang="ts">import "@p2p-gostop/engine";</script>', false);
 add('packages/web/e2e', "void import('@p2p-gostop/engine/src/index.ts');", true);
+// #98: 백틱 상수와 계산된 경로도 허용하지 않는다. 같은 규칙을 두 AST에서 확인한다.
+for (const dir of ['packages/engine/src', 'packages/web/src/lib']) {
+  const target = dir.includes('/engine/') ? '@p2p-gostop/protocol' : '@p2p-gostop/relay-dev';
+  for (const expression of [
+    '`' + target + '`',
+    '`' + './index.ts' + '`',
+    '`@p2p-gostop/${"protocol"}`',
+    '"@p2p-gostop/" + "protocol"',
+    'modulePath',
+    'String("./index.ts")',
+    'true ? "./index.ts" : "./other.ts"',
+  ]) add(dir, `const modulePath = './index.ts'; void modulePath; void import(${expression});`, true);
+  add(dir, 'void import(("./index.ts"));', false);
+}
+for (const dir of ['packages/engine/src', 'packages/ai/src', 'packages/protocol/src', 'packages/relay-dev/src', 'packages/relay-dev/test', 'tools/sim/src']) {
+  const target = dir === 'tools/sim/src' ? 'protocol' : 'ai';
+  for (const extension of ['ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs']) {
+    add(dir, `void import('@p2p-gostop/${target}');`, true, extension);
+    add(dir, 'void import("./index.ts");', false, extension);
+  }
+}
+for (const extension of ['js', 'mjs', 'cjs', 'mts', 'cts']) {
+  add('packages/web/src/lib', 'void import(`@p2p-gostop/relay-dev`);', true, extension);
+  add('packages/web/src/lib', 'void import("@p2p-gostop/engine");', false, extension);
+}
+add('packages/ai/src', "export * from '@p2p-gostop/protocol';", true, 'mjs');
+add('packages/web/src/lib', '<script lang="ts">void import(`@p2p-gostop/relay-dev`);</script>', true);
+add('packages/web/src/lib', '<script lang="ts">void import("@p2p-gostop/engine");</script>', false);
+add('packages/web/e2e', 'void import(`@p2p-gostop/relay-dev`);', true);
 let passed = 0;
-for (const { dir, source, banned } of cases) {
+for (const { dir, source, banned, extension } of cases) {
   const web = dir.startsWith('packages/web/');
-  const file = `${dir}/__boundary_probe__.${source.startsWith('<script') ? 'svelte' : 'ts'}`;
+  const file = `${dir}/__boundary_probe__.${extension ?? (source.startsWith('<script') ? 'svelte' : 'ts')}`;
   writeFileSync(file, source + '\n', { flag: 'wx' });
   try {
     const run = web
@@ -49,7 +78,7 @@ for (const { dir, source, banned } of cases) {
     if (run.error) throw run.error;
     const report = JSON.parse(run.stdout);
     const diagnostics = web ? report.flatMap((r) => r.messages) : report.diagnostics;
-    const found = diagnostics.some((d) => /no-restricted-(imports|syntax)/.test(d.ruleId ?? d.code ?? ''));
+    const found = diagnostics.some((d) => /no-restricted-(imports|syntax)|string-literal-imports/.test(d.ruleId ?? d.code ?? ''));
     if (found !== banned || run.status !== (banned ? 1 : 0))
       throw new Error(JSON.stringify({ file, source, banned, status: run.status, diagnostics, stderr: run.stderr }));
     passed++;
