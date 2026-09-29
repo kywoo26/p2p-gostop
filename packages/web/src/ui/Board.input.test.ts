@@ -49,7 +49,7 @@ for (const kind of ['target', 'gostop', 'gukjin', 'shake', 'chongtong', 'first']
   });
 }
 
-test('폭탄 확인 중 다른 손패 입력0, 취소 후 시작 카드 복귀', async () => {
+test('폭탄 카드는 Enter로 즉시 폭탄, Shift+Enter로 해당 한 장만 낸다', async () => {
   const onaction = vi.fn();
   const screen = await render(Board, {
     view: layoutFixture('bomb'),
@@ -59,16 +59,120 @@ test('폭탄 확인 중 다른 손패 입력0, 취소 후 시작 카드 복귀',
   const opener = screen.container.querySelector<HTMLButtonElement>('[data-slot="2"]')!;
   opener.focus();
   await userEvent.keyboard('{Enter}');
-  const other = screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!;
-  expect(other.closest('[inert]')).not.toBeNull();
-  // 브라우저가 실제 좌표 입력을 inert 배경에 전달하지 않음.
-  const rect = other.getBoundingClientRect();
-  expect(other.contains(document.elementFromPoint(rect.x + 24, rect.y + 24))).toBe(false);
-  other.click(); // synthetic 입력도 Board 경계에서 차단
+  expect(onaction).toHaveBeenCalledTimes(1);
+  expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'bomb', seat: 0, month: 1 });
+  expect(screen.container.querySelector('.prompt')).toBeNull();
+  await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
+  expect(onaction).toHaveBeenCalledTimes(2);
+  expect(onaction.mock.calls[1]?.[0]).toEqual({ type: 'play', seat: 0, card: 2 });
+});
+
+test('폭탄 카드 초점에서 보조 버튼으로 한 장만 내기를 선택할 수 있다', async () => {
+  const onaction = vi.fn();
+  const screen = await render(Board, {
+    view: layoutFixture('bomb'),
+    extras: layoutExtras('bomb'),
+    onaction,
+  });
+  screen.container.querySelector<HTMLButtonElement>('[data-slot="2"]')!.focus();
+  await userEvent.click(screen.getByRole('button', { name: '선택 카드 한 장만 내기' }));
+  expect(onaction).toHaveBeenCalledTimes(1);
+  expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 2 });
+});
+
+test('길게 누른 폭탄 카드는 한 장만, 일반 카드는 미리보기만; pointercancel은 입력0', async () => {
+  const onaction = vi.fn();
+  const screen = await render(Board, {
+    view: layoutFixture('bomb'),
+    extras: layoutExtras('bomb'),
+    onaction,
+  });
+  const bomb = screen.container.querySelector<HTMLButtonElement>('[data-slot="2"]')!;
+  pointer(bomb, 'pointerdown');
+  pointer(bomb, 'pointercancel');
+  pointer(bomb, 'pointerup');
+  bomb.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
   expect(onaction).not.toHaveBeenCalled();
-  await userEvent.click(screen.getByRole('button', { name: '취소' }));
-  await vi.waitFor(() => expect(document.activeElement).toBe(opener));
+  pointer(bomb, 'pointerdown');
+  await new Promise((resolve) => setTimeout(resolve, 410));
+  pointer(bomb, 'pointerup');
+  bomb.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  expect(onaction).toHaveBeenCalledTimes(1);
+  expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 2 });
+  const ordinary = screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!;
+  pointer(ordinary, 'pointerdown');
+  await new Promise((resolve) => setTimeout(resolve, 410));
+  pointer(ordinary, 'pointerup');
+  ordinary.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  expect(onaction).toHaveBeenCalledTimes(1);
+});
+
+for (const cancel of ['pointerleave', 'pointercancel'] as const) {
+  for (const key of ['{Enter}', ' '] as const) {
+    test(`${cancel} 뒤 click이 없어도 첫 ${key === ' ' ? 'Space' : 'Enter'}로 즉시 낸다`, async () => {
+      const onaction = vi.fn();
+      const screen = await render(Board, { view: layoutFixture('play'), onaction });
+      const card = screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!;
+      pointer(card, 'pointerdown');
+      pointer(card, cancel);
+      expect(onaction).not.toHaveBeenCalled();
+      card.focus();
+      await userEvent.keyboard(key);
+      expect(onaction).toHaveBeenCalledTimes(1);
+      expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 6 });
+    });
+  }
+}
+
+test('120ms 재탭 취소는 일반·폭탄 모두 전송 전만 적용하고 busy·뷰 교체 때 폐기', async () => {
+  const onaction = vi.fn();
+  const screen = await render(Board, {
+    view: layoutFixture('bomb'),
+    extras: layoutExtras('bomb'),
+    confirmDelay: true,
+    onaction,
+  });
+  const bomb = screen.container.querySelector<HTMLButtonElement>('[data-slot="2"]')!;
+  bomb.click();
+  bomb.click();
+  await new Promise((resolve) => setTimeout(resolve, 140));
   expect(onaction).not.toHaveBeenCalled();
+  bomb.click();
+  await screen.rerender({ busy: true });
+  await new Promise((resolve) => setTimeout(resolve, 140));
+  expect(onaction).not.toHaveBeenCalled();
+  await screen.rerender({ busy: false });
+  screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!.click();
+  await vi.waitFor(() => expect(onaction).toHaveBeenCalledTimes(1));
+  expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 6 });
+});
+
+test('뷰 교체 전에 시작한 포인터는 교체 뒤 click에서 내지 않는다', async () => {
+  const onaction = vi.fn();
+  const view = layoutFixture('play');
+  const screen = await render(Board, { view, onaction });
+  const card = screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!;
+  pointer(card, 'pointerdown');
+  await screen.rerender({ view: { ...view, eventSeq: view.eventSeq + 1 } });
+  pointer(card, 'pointerup');
+  card.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  expect(onaction).not.toHaveBeenCalled();
+  pointer(card, 'pointerdown');
+  pointer(card, 'pointerup');
+  card.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+  expect(onaction).toHaveBeenCalledTimes(1);
+});
+
+test('뒤집기만 버튼은 합법 수와 남은 횟수, 유일 자동 수에 맞춰 표시한다', async () => {
+  const view = layoutFixture('flip');
+  const screen = await render(Board, { view, extras: layoutExtras('flip') });
+  expect(screen.getByRole('button', { name: '뒤집기만 2회' })).toBeTruthy();
+  await screen.rerender({ view: { ...view, legal: [{ type: 'flipOnly', seat: 0 }] } });
+  expect(screen.container.querySelector('[data-choice="flipOnly"]')).toBeNull();
+  await screen.rerender({
+    view: { ...view, seats: [{ ...view.seats[0], bombTokens: 0 }, view.seats[1]] },
+  });
+  expect(screen.container.querySelector('[data-choice="flipOnly"]')).toBeNull();
 });
 
 test('선택 연쇄와 선택 후 busy: 초점은 다음 창, 이후 유효 판 정보로 복귀', async () => {

@@ -313,6 +313,7 @@
       view={pb.board}
       {extras}
       unit={settings.value.unit}
+      confirmDelay={'confirmDelay' in settings.value && settings.value.confirmDelay === true}
       banner={pb.banner}
       toast={pb.toast}
       busy={pb.busy || !controller.canAct}
@@ -431,12 +432,16 @@
     <h2 id="game-wait-title">
       {decision?.pauseReason === 'clockUnknown'
         ? '시간을 확인할 수 없습니다'
-        : '상대가 돌아오지 않습니다'}
+        : decision?.state === 'paused' && decision.pauseReason !== 'peer'
+          ? '판 진행이 멈췄습니다'
+          : '상대가 돌아오지 않습니다'}
     </h2>
     <p>
       {decision?.pauseReason === 'clockUnknown'
         ? '호스트가 다시 시작되어 남은 시간을 확인할 수 없습니다. 판은 멈춰 있습니다.'
-        : '3분 넘게 연결이 끊겨 있습니다. 판은 그대로 멈춰 있습니다.'}
+        : decision?.state === 'paused' && decision.pauseReason !== 'peer'
+          ? '진행이 오래 중단되어 판이 멈춰 있습니다.'
+          : '3분 넘게 연결이 끊겨 있습니다. 판은 그대로 멈춰 있습니다.'}
     </p>
     <div class="items">
       <button type="button" class="item primary" data-menu="wait" onclick={() => onwait?.()}

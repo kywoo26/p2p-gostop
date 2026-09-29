@@ -337,6 +337,7 @@ test('게스트 시계는 1초마다 진행하고 화면 복귀 즉시 진행하
 
 test('게스트 3분 부재 때 계속 기다리기 또는 종료를 고를 수 있다 (spec 2.4)', async () => {
   let now = 0;
+  const wallClock = vi.spyOn(Date, 'now').mockImplementation(() => now);
   const [hostWire, guestWire] = createMemoryTransportPair();
   const host = new HostGame({
     config: CONFIG,
@@ -351,17 +352,22 @@ test('게스트 3분 부재 때 계속 기다리기 또는 종료를 고를 수 
     onTicket: () => {},
     persist: false,
   });
-  await settle();
-  expect(host.start()).toBe(true);
-  (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'left' });
-  now = 180_001;
-  host.tick();
-  expect(host.waitPrompt).toBe(true);
-  host.keepWaiting();
-  expect(host.waitPrompt).toBe(false);
-  host.end();
-  expect(hostWire.sent.some((m) => m.t === 'sessionEnd' && m.reason === 'host')).toBe(true);
-  guest.dispose();
+  try {
+    await settle();
+    expect(host.start()).toBe(true);
+    (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'left' });
+    now = 180_001;
+    host.tick();
+    expect(host.waitPrompt).toBe(true);
+    host.keepWaiting();
+    expect(host.waitPrompt).toBe(false);
+    host.end();
+    expect(hostWire.sent.some((m) => m.t === 'sessionEnd' && m.reason === 'host')).toBe(true);
+  } finally {
+    guest.dispose();
+    host.dispose();
+    wallClock.mockRestore();
+  }
 });
 
 test('호스트 시계만 움직일 때 rev·seq가 같으면 저장을 다시 쓰지 않는다 (MN-05)', async () => {
