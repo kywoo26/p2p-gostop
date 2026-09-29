@@ -164,4 +164,11 @@
   .screen :global(tr:last-child > *) {
     border-bottom: 0;
   }
+
+  @media (min-width: 1024px) {
+    .screen {
+      max-width: 58rem;
+      padding-inline: var(--space-8);
+    }
+  }
 </style>

@@ -41,13 +41,23 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Pixel 7'] },
-      grepInvert: smoke ? /@timing|@full/ : /@timing/,
+      grepInvert: smoke ? /@timing|@full|@mac/ : /@timing|@mac/,
     },
     {
       name: 'webkit',
       use: { ...devices['iPhone 15'] },
       ...(smoke ? { grep: /@guest|@layout|@fonts/ } : {}),
-      grepInvert: smoke ? /@timing|@full|@paired/ : /@timing/,
+      grepInvert: smoke ? /@timing|@full|@paired|@mac/ : /@timing|@mac/,
+    },
+    {
+      name: 'mac-chromium',
+      use: { ...devices['Desktop Chrome'] },
+      grep: /@mac/,
+    },
+    {
+      name: 'mac-webkit',
+      use: { ...devices['Desktop Safari'] },
+      grep: /@mac/,
     },
     {
       name: 'timing-chromium',

@@ -107,7 +107,10 @@
   let landscape = $state(false);
   let infoDialog: HTMLDialogElement;
   $effect(() => {
-    const media = window.matchMedia('(orientation: landscape)');
+    // 손에 든 기기의 가로 회전만 안내한다. Mac 창은 방향·크기와 무관하게 같은 판을 쓴다.
+    const media = window.matchMedia(
+      '(orientation: landscape) and (pointer: coarse) and (max-width: 1023px)',
+    );
     const update = () => {
       landscape = media.matches;
     };
@@ -881,6 +884,126 @@
     .board:not(.two-hands) .captured-zone > :global(.captured) {
       position: static;
       visibility: visible;
+    }
+  }
+
+  /* RP-06: 동일한 뷰와 행동을 세 영역에 배치한다. DOM 순서와 카드 슬롯 판정은 그대로다. */
+  @media (min-width: 1024px), (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
+    .board.board.board,
+    .board.board.board.hud-expanded {
+      --table-card: var(--board-card-wide);
+      --fan-hand: 110px;
+      --fan-seat: 52px;
+      --fan-capture: 110px;
+      --fan-top: 48px;
+      --fan-gap: 8px;
+      grid-template-columns: minmax(180px, 1fr) minmax(320px, 2fr) minmax(180px, 1fr);
+      grid-template-rows: var(--fan-top) minmax(0, 1fr) var(--fan-hand);
+      column-gap: clamp(12px, 2vw, 32px);
+      max-width: 1440px;
+      margin-inline: auto;
+    }
+    .board.board.board .hud {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .board.board.board .center {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .board.board.board .opponent-hud,
+    .board.board.board .mine-hud {
+      grid-row: 2;
+      align-self: start;
+      height: var(--fan-seat);
+    }
+    .board.board.board .opponent-hud,
+    .board.board.board .captured-zone:not(.mine) {
+      grid-column: 1;
+    }
+    .board.board.board .mine-hud,
+    .board.board.board .captured-zone.mine {
+      grid-column: 3;
+    }
+    .board.board.board .captured-zone {
+      grid-row: 2;
+      align-self: start;
+      height: var(--fan-capture);
+      margin-top: calc(var(--fan-seat) + 8px);
+    }
+    .board.board.board .decision-area,
+    .board.board.board .decision-area.idle-slot {
+      position: relative;
+      inset: auto;
+      transform: none;
+      grid-column: 3;
+      grid-row: 2;
+      align-self: end;
+      width: 100%;
+      max-height: min(240px, calc(100% - var(--fan-seat) - var(--fan-capture) - 16px));
+      min-height: 56px;
+      margin: 0;
+      pointer-events: auto;
+    }
+    .board.board.board.go-stop .decision-area {
+      top: auto;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      transform: none;
+    }
+    .board.board.board .hand-zone {
+      grid-column: 2;
+      grid-row: 3;
+    }
+    .board.board.board.two-hands,
+    .board.board.board.first-pick {
+      --fan-hand: 206px;
+    }
+    .board.board.board.first-pick {
+      --fan-hand: 0px;
+    }
+  }
+
+  /* 200% 확대의 720×450 상당: 카드 크기를 모바일과 같게 두고 영역 높이를 확보한다. */
+  @media (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
+    .board.board.board,
+    .board.board.board.hud-expanded {
+      --table-card: var(--board-card-compact);
+      --fan-top: 48px;
+      --fan-seat: 40px;
+      --fan-capture: 68px;
+      --fan-hand: 100px;
+      --fan-gap: 8px;
+      grid-template-columns: 190px minmax(300px, 1fr) 190px;
+      column-gap: 8px;
+      padding-block: 4px;
+    }
+    .board.board.board.two-hands {
+      --fan-hand: 160px;
+    }
+    .board.board.board .captured-zone {
+      margin-top: calc(var(--fan-seat) + 8px);
+    }
+    .board.board.board .captured-zone :global(.stack) {
+      width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 1px);
+    }
+    .board.board.board .captured-zone :global(.stack > .card + .card) {
+      margin-left: calc(1px - var(--capture-card));
+    }
+    .board.board.board .captured-zone :global(.group),
+    .board.board.board .captured-zone :global(.name) {
+      width: 100%;
+      min-width: 0;
+    }
+    .board.board.board :global(.seat-bar .balance) {
+      font-size: 12px;
+      line-height: 18px;
+      letter-spacing: -0.75px;
+    }
+    .board.board.board .decision-area,
+    .board.board.board .decision-area.idle-slot {
+      max-height: calc(100% - var(--fan-seat) - var(--fan-capture) - 8px);
     }
   }
 </style>

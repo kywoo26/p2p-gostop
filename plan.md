@@ -409,7 +409,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-RP-03 | 자동 검증 완료·실기기 미검증 | 양쪽 로비·좌석과 새 방, AC-RP-01/03 E2E. 상대 신원 확인은 사람 절차 |
 | FR-RP-04 | 자동 검증 완료·실기기 미검증 | reload/resume·snapshot·4001·재시작 뒤 새 방, AC-RP-01/02/03 E2E. 실제 망 이동은 사람 절차 |
 | FR-RP-05 | 자동 검증 완료·실기기 미검증 | 호스트 부재·방 소실·만료 안내, AC-RP-02/03 E2E와 relay TTL 테스트. 10분 실시간 대기는 사람 절차 |
-| FR-RP-06 | 자동 검증 완료·실기기 미검증 | 동일 정적 웹·게임·정산, AC-RP-01 E2E와 기존 레이아웃 E2E. Mac·iPhone 조작은 사람 절차 |
+| FR-RP-06 | 구현·자동 검증 완료(실기기 미검증) | RP-06 단일 BoardView/액션, 넓은 화면·키보드·200% Mac Chromium/WebKit E2E와 모바일 레이아웃 회귀; RP-07 동일 정적 웹·게임·정산 AC-RP-01 E2E. Mac Safari/Chrome·iPhone 실기기 조작은 사람 절차 |
 | FR-RP-07 | 자동 검증 완료·실기기 미검증 | health→방→공유, AC-RP-01 E2E와 기존 안내 테스트. Windows start/stop·Funnel은 사람 절차 |
 | FR-RP-08 | 자동 검증 범위 완료·실기기 미검증 | RP-04A/B Android JVM gate와 AC-RP-04 웹 회귀. Galaxy LOHS/FGS/LAN 수신은 사람 절차 |
 | NP-RP-01/02 | 자동 검증 완료·실기기 미검증 | 공개 역할 인증·실제 브라우저 방 생성/접속, AC-RP-01/02 E2E와 `public-auth.test.ts`; 실제 Funnel TLS는 사람 절차 |
