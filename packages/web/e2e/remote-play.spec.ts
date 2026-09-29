@@ -19,7 +19,7 @@ import {
 } from '@playwright/test';
 import { WebSocket } from 'ws';
 
-const appOrigin = 'http://127.0.0.1:4173';
+const appOrigin = `http://127.0.0.1:${process.env['PLAYWRIGHT_PORT'] ?? '4173'}`;
 const release = 'v0.0.1';
 const relayCli = resolve('../relay-dev/src/cli.ts');
 const dist = resolve('dist');
@@ -271,7 +271,7 @@ function playStep(): string | false {
   if (next) return 'settled';
   const board = document.querySelector<HTMLElement>('[data-testid="board"][data-awaiting="me"]');
   if (!board || match.dataset['canAct'] !== 'true') return false;
-  const choices = [...board.querySelectorAll<HTMLButtonElement>('dialog [data-choice]')].filter(
+  const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]')].filter(
     (button) => !button.disabled,
   );
   if (choices.length) {
