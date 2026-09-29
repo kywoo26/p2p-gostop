@@ -1,9 +1,7 @@
 // 플레이 보조 판정(C01·C02·C05). 현재 공개 뷰와 카드 카탈로그만 읽으며 행동을 실행하지 않는다.
-import { getCard, type CardId } from './cards.ts';
-import { unseenCards } from './determinize.ts';
+import { ALL_CARD_IDS, BASE_CARD_COUNT, getCard, type CardId } from './cards.ts';
 import { matchPreview } from './preview.ts';
-import type { Action, GameState, Pending } from './state.ts';
-import type { PlayerView } from './view.ts';
+import type { Action, CapturedPile, FloorGroup, Pending, Phase, Seat, TurnCtx } from './state.ts';
 
 export interface EquivalentTargets {
   readonly equivalent: boolean;
@@ -16,7 +14,7 @@ export interface EquivalentTargets {
  * 같은 월·같은 피 가치라도 특수 역할이 있으면 자동 선택하지 않는다.
  */
 export function equivalentTargets(
-  table: PlayerView | GameState,
+  table: { readonly pending: Pending | null; readonly floor: readonly FloorGroup[] },
   pending: Pending,
 ): EquivalentTargets {
   const current = table.pending;
@@ -90,11 +88,60 @@ export interface CaptureAssessment {
   readonly reason: CaptureReason;
 }
 
+/** PlayerView와 wire BoardView가 공유하는 공개 카드 입력. 숨은 패·규칙·난수는 받지 않는다. */
+export interface CapturePublicView {
+  readonly viewer: Seat;
+  readonly phase: Phase;
+  readonly turn: Seat;
+  readonly pending: { readonly kind: string; readonly seat?: Seat } | null;
+  readonly seats: readonly [
+    {
+      readonly hand: readonly CardId[] | null;
+      readonly captured: CapturedPile;
+      readonly revealed: readonly CardId[];
+    },
+    {
+      readonly hand: readonly CardId[] | null;
+      readonly captured: CapturedPile;
+      readonly revealed: readonly CardId[];
+    },
+  ];
+  readonly floor: readonly FloorGroup[];
+  readonly legal: readonly Action[];
+  readonly ctx?: Pick<TurnCtx, 'played' | 'flipped' | 'heldBonuses'> | null;
+  readonly inFlight?: { readonly played: CardId | null; readonly staged: readonly CardId[] };
+}
+
+function unseenBaseCards(view: CapturePublicView): Set<CardId> {
+  const seen = new Set<CardId>(view.seats[view.viewer].hand ?? []);
+  for (const group of view.floor) for (const id of group.cards) seen.add(id);
+  for (const seat of view.seats) {
+    for (const id of [
+      ...seat.captured.gwang,
+      ...seat.captured.yeol,
+      ...seat.captured.tti,
+      ...seat.captured.pi,
+      ...seat.revealed,
+    ])
+      seen.add(id);
+  }
+  if (view.ctx != null) {
+    if (view.ctx.played !== null) seen.add(view.ctx.played);
+    if (view.ctx.flipped !== null) seen.add(view.ctx.flipped);
+    for (const id of view.ctx.heldBonuses) seen.add(id);
+  }
+  if (view.inFlight !== undefined) {
+    if (view.inFlight.played !== null) seen.add(view.inFlight.played);
+    for (const id of view.inFlight.staged) seen.add(id);
+  }
+  return new Set(ALL_CARD_IDS.slice(0, BASE_CARD_COUNT).filter((id) => !seen.has(id)));
+}
+
 /**
  * 자기 손패의 합법 play마다 현재 바닥 짝과 상대 손패의 같은 월 카드 유무를 판정한다.
  * 확정은 지금 해당 월의 짝을 먹을 수 있다는 뜻이며 미래 소유·점수를 보장하지 않는다.
  */
-export function guaranteedCaptures(view: PlayerView): CaptureAssessment[] {
+export function guaranteedCaptures(view: CapturePublicView): CaptureAssessment[] {
   const hand = view.seats[view.viewer].hand ?? [];
   const playable =
     view.phase === 'turn' &&
@@ -104,7 +151,7 @@ export function guaranteedCaptures(view: PlayerView): CaptureAssessment[] {
   const legal = new Set(
     view.legal.filter((action) => action.type === 'play').map((action) => action.card),
   );
-  const unseen = new Set(unseenCards(view));
+  const unseen = unseenBaseCards(view);
   const opponent = view.viewer === 0 ? 1 : 0;
   const opponentRevealed = view.seats[opponent].revealed;
   return [...new Set(hand)]

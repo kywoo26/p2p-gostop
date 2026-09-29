@@ -21,6 +21,7 @@ import { removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
 import { loadSoloSave, type SoloSave } from '../storage/solo-save.ts';
 export type { SoloSave } from '../storage/solo-save.ts';
 import { pushOffer, toBoardView } from './adapter.ts';
+import { displayedHintLevel, type HintLevel } from './assist.ts';
 import type { AiClient } from './ai-client.ts';
 import {
   AutoChoice,
@@ -83,6 +84,15 @@ export class SoloSession implements GameController {
   /** 상태가 바뀔 때마다 증가: CPU 결정이 오래된 상태에 적용되지 않게 한다 */
   private generation = 0;
   private autoHeld = true;
+
+  recordHintUsage(level: HintLevel): void {
+    if (this.state.phase !== 'playing') return;
+    const previous = this.state.hintUsage ?? 'off';
+    const next = displayedHintLevel(previous, level, true);
+    if (next === previous) return;
+    this.state = { ...this.state, hintUsage: next };
+    this.save();
+  }
   private readonly autoChoice = new AutoChoice(
     () => ({ view: this.boardOf(this.state), ready: !this.autoHeld && this.canAct }),
     (action) => this.submit(action),
@@ -90,6 +100,10 @@ export class SoloSession implements GameController {
       if (action.type !== 'chooseTarget') this.playback.showToast('유일한 수 자동 진행');
     },
   );
+
+  get hintPlayerView(): PlayerView {
+    return this.viewOf(this.state);
+  }
 
   constructor(session: SessionState, options: SoloOptions) {
     this.difficulty = options.difficulty;

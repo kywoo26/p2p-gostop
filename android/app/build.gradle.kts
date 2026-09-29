@@ -1,5 +1,15 @@
 import java.time.Instant
+import groovy.json.JsonSlurper
+import org.gradle.api.DefaultTask
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedComponentResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Sync
+import org.gradle.api.tasks.TaskAction
 
 plugins {
     alias(libs.plugins.android.application)
@@ -136,4 +146,50 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.junit)
     testImplementation(libs.json)
+}
+
+// NF-07: 웹 단계에서는 Gradle을 호출하지 않는다. Android 빌드가 실제 런타임 그래프와 커밋된 고지를 대조한다.
+abstract class VerifyOssNotices : DefaultTask() {
+    @get:InputFile abstract val catalog: RegularFileProperty
+    @get:InputFile abstract val notice: RegularFileProperty
+    @get:Input abstract val releaseRoot: Property<ResolvedComponentResult>
+
+    @TaskAction fun verify() {
+        val document = JsonSlurper().parse(catalog.get().asFile) as Map<*, *>
+        val notices = document["android"] as List<*>
+        val expected = notices.map { item ->
+            val entry = item as Map<*, *>
+            "${entry["name"]}:${entry["version"]}"
+        }.toSet()
+        val actual = mutableSetOf<String>()
+        val visited = mutableSetOf<Any>()
+        fun visit(component: ResolvedComponentResult) {
+            if (!visited.add(component.id)) return
+            val id = component.id
+            if (id is ModuleComponentIdentifier) actual.add("${id.group}:${id.module}:${id.version}")
+            component.dependencies.filterIsInstance<ResolvedDependencyResult>()
+                .forEach { visit(it.selected) }
+        }
+        visit(releaseRoot.get())
+        check(actual == expected) {
+            "Android 고지 의존성 불일치: 누락=${(actual - expected).sorted()}, 초과=${(expected - actual).sorted()}"
+        }
+        val text = notice.get().asFile.readText()
+        for (item in notices) {
+            val entry = item as Map<*, *>
+            check(text.contains("${entry["name"]} ${entry["version"]} — ${entry["license"]}")) {
+                "Android 고지 원문 누락: ${entry["name"]}"
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    val verifyOssNotices = tasks.register<VerifyOssNotices>("verifyOssNotices") {
+        catalog.set(rootProject.layout.projectDirectory.file("../packages/web/src/oss-notices.json"))
+        notice.set(rootProject.layout.projectDirectory.file("../packages/web/public/oss/NOTICE.txt"))
+        releaseRoot.set(configurations.named("releaseRuntimeClasspath")
+            .flatMap { it.incoming.resolutionResult.rootComponent })
+    }
+    tasks.named("preBuild") { dependsOn(verifyOssNotices) }
 }

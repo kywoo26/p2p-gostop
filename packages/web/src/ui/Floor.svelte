@@ -12,9 +12,18 @@
     highlight?: readonly CardId[];
     /** 바닥에 놓이기 전 잠시 머무는 카드 (뒤집은 카드, 낸 보너스) */
     staging?: readonly CardId[];
+    /** 공개 손패로 판정한 폭탄·총통 짝 월. */
+    handLinks?: Readonly<Record<number, 'bomb' | 'chongtong'>>;
   }
 
-  let { compact = false, groups, deckCount, highlight = [], staging = [] }: Props = $props();
+  let {
+    compact = false,
+    groups,
+    deckCount,
+    highlight = [],
+    staging = [],
+    handLinks = {},
+  }: Props = $props();
 </script>
 
 <div class="table" class:compact>
@@ -40,7 +49,8 @@
     {#each groups as group (group.month)}
       <li
         class={['group', `kind-${group.kind}`]}
-        aria-label={`${group.month}월 ${group.cards.length}장${group.kind === 'loose' ? '' : ' 뻑'}`}
+        data-hand-link={handLinks[group.month]}
+        aria-label={`${group.month}월 ${group.cards.length}장${group.kind === 'loose' ? '' : ' 뻑'}${handLinks[group.month] === 'bomb' ? ', 손패 폭탄 후보의 짝' : handLinks[group.month] === 'chongtong' ? ', 손패 총통 후보의 짝' : ''}`}
       >
         {#each group.cards as id (id)}
           <Card {id} size="m" flippable highlight={highlight.includes(id)} />

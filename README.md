@@ -42,6 +42,8 @@ docker compose run --rm dev npm run sim -- 42       # 셀프플레이 시뮬레�
 docker compose run --rm dev bash                    # 컨테이너 셸
 ```
 
+- OSS 고지 갱신은 개발 이미지에서 `docker compose run --rm dev npm run oss:refresh -w packages/web`로 수동 실행해 생성물 2개를 커밋한다. 웹 빌드는 npm 고지만 대조하고 Android 빌드는 Gradle 런타임 의존성을 대조한다.
+
 - **Dev Container**: VS Code "Reopen in Container"(또는 Codespaces, devcontainer CLI)는 `.devcontainer/devcontainer.json`으로 같은 `dev` 서비스에 붙는다. Claude Code 공식 feature를 설치하고 컨테이너별 `/home/dev/.claude` 볼륨에 설정을 보존한다. 그 안에서는 앞의 `docker compose run --rm dev` 없이 `npm test`, `android/gradlew -p android assembleDebug`처럼 그대로 실행한다.
 - 이전 이미지에서 이미 생성된 Claude 설정 볼륨은 root 소유일 수 있다. Dev Container를 닫고 `docker volume ls --format '{{.Name}}'`에서 `p2p-gostop-claude-`로 시작하는 해당 컨테이너의 볼륨명을 확인한 뒤 `docker compose run --rm --user root -v <볼륨명>:/home/dev/.claude dev chown -R 1000:1000 /home/dev/.claude`로 복구하고 다시 연다. 새 이미지에서 처음 만든 볼륨은 dev 소유로 초기화된다.
 - 컨테이너는 uid 1000(`dev`)으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 소스와 함께 바인드 마운트되어 체크아웃(워크트리)마다 따로 있다. Gradle·npm 캐시와 디버그 서명 키(`~/.android`)는 이름이 고정된 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)이라 모든 체크아웃이 공유한다.
@@ -74,10 +76,6 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - 규범은 `AGENTS.md` 하나이고 `CLAUDE.md`는 이를 참조한다.
 - Svelte 공식 MCP 서버 `@sveltejs/mcp`는 **무료 오픈소스**이며, 프로젝트 `.mcp.json`에 **로컬 stdio**(`npx -y @sveltejs/mcp@0.1.26`)로 등록해 쓴다. 원격 호스팅 엔드포인트는 쓰지 않는다.
 
-## 라이선스
-
-코드는 MIT. 카드 이미지는 Wikimedia Commons 화투 SVG(CC BY-SA 4.0, 저작자 Spenĉjo, Marcus Richert, Louie Mantia Jr.)를 번들하며 앱의 설정 > 라이선스에 표기한다. 배포 의존성 고지 완성은 #74에서 추적한다.
-
 ## 문서 지도
 
 - [의도](intend.md) → [명세](spec.md) → [구현 계획](plan.md): 목표·요구사항·현재 마일스톤과 결정.
@@ -93,3 +91,8 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.
 - [플랫폼 조사](docs/research/tech-stack.md) / [도구 비교](docs/research/agent-era-stack.md): 제약·호환성·선택 근거, 설치 버전은 AGENTS.md.
 - [완료된 리뷰 인덱스](docs/reviews/README.md): M0·M1·M3·M4·MVP·하네스 감사의 PR/커밋과 남은 이슈.
+
+## 라이선스
+
+코드는 MIT 라이선스입니다.
+서드파티 자산과 폰트는 각 고지(`packages/web/assets-src/*/License*`, `packages/web/src/pro-assets/credits.ts`, Pretendard OFL)를 따릅니다.

@@ -45,9 +45,12 @@ jobs:
         # Actions cache 버전은 저장 경로도 포함한다. setup-gradle의 기본 홈 경로를 유지한다.
         run: echo "GRADLE_USER_HOME=$HOME/.gradle" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v6
+        # 구성 캐시(android/.gradle/configuration-cache)는 암호화 키가 있을 때만 저장·복원된다.
+        # PR 런에서 복원한 일부 엔트리가 EACCES(scandir)로 잡을 중단시켜(2026-09-30 #162 3회)
+        # 키를 main 푸시에만 주어 PR은 구성 캐시 없이 Gradle 홈 캐시만 읽는다.
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+          cache-encryption-key: ${{ github.ref == 'refs/heads/main' && secrets.GRADLE_ENCRYPTION_KEY || '' }}
       - name: android (assembleDebug · test · lint)
         # setup-gradle의 init script·구성 캐시 경로가 호스트/컨테이너에서 같아야 한다.
         # copyWebDist는 위에서 검증한 웹 번들을 APK에 넣는다.

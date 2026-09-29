@@ -1,6 +1,8 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { acceptRound, parseSession, startNextRound } from '../game/session.ts';
+import { PRESETS, type RuleOptions } from '@p2p-gostop/engine';
+import { acceptRound, createSession, parseSession, startNextRound } from '../game/session.ts';
 import { SoloSession } from '../game/solo.svelte.ts';
+import { RULE_FIELDS } from '../settings/rule-options.ts';
 import { readJson, STORAGE_KEYS, writeJson } from './local.ts';
 import legacy from './fixtures/solo-v0-balanced.json';
 import playing from './fixtures/solo-v1-playing.json';
@@ -11,6 +13,51 @@ import refilled from './fixtures/solo-v1-refilled.json';
 afterEach(() => {
   vi.restoreAllMocks();
   SoloSession.clearSaved();
+});
+
+test.each(
+  RULE_FIELDS.flatMap((field) =>
+    field.choices
+      .filter((choice) => !choice.disabled)
+      .map((choice) => [field.key, JSON.stringify(choice.value), choice.value] as const),
+  ),
+)('활성 규칙 %s=%s는 JSON 저장 뒤 솔로 세션으로 복원된다 (FR-21, MN-05)', (key, _label, value) => {
+  const rules = { ...PRESETS.standard, [key]: value } as RuleOptions;
+  const session = createSession({
+    preset: 'standard',
+    rules,
+    perPoint: 100,
+    startBalance: 10000,
+    names: ['나', '컴퓨터'],
+    seed: 1234,
+  }).session;
+  const restored = parseSession(JSON.parse(JSON.stringify(session)) as unknown);
+  expect(restored?.config.rules).toEqual(rules);
+  expect(restored?.game.rules).toEqual(rules);
+});
+
+test('나가리 상한 없음은 v0·v1에서 복원하고 손상 값은 거부한다 (MN-05)', () => {
+  const rules = { ...PRESETS.standard, nagariCap: null };
+  const session = createSession({
+    preset: 'standard',
+    rules,
+    perPoint: 100,
+    startBalance: 10000,
+    names: ['나', '컴퓨터'],
+    seed: 1234,
+  }).session;
+  const raw = JSON.parse(JSON.stringify(session)) as typeof session;
+  expect(parseSession(raw)?.config.rules.nagariCap).toBeNull();
+  const { refilled: _refilled, ...old } = raw;
+  expect(parseSession({ ...old, version: 0 })?.config.rules.nagariCap).toBeNull();
+  for (const bad of ['unlimited', undefined]) {
+    const broken = {
+      ...raw,
+      config: { ...raw.config, rules: { ...raw.config.rules, nagariCap: bad } },
+      game: { ...raw.game, rules: { ...raw.game.rules, nagariCap: bad } },
+    };
+    expect(parseSession(broken)).toBeNull();
+  }
 });
 
 test.each([
@@ -53,6 +100,32 @@ test('밀기 결정은 미정산으로 복원하고 받기를 한 번만 적용�
   const accepted = acceptRound(state);
   expect(accepted.records).toHaveLength(1);
   expect(acceptRound(accepted)).toEqual(accepted);
+});
+
+test('옛 v0/v1 저장을 복원해 정산해도 힌트 이력은 미확인으로 남는다 (FR-50, #150)', () => {
+  const { refilled: _refilled, roundStart: _roundStart, ...legacyBody } = pending.session;
+  for (const raw of [pending.session, { ...legacyBody, version: 0 }]) {
+    const restored = parseSession(raw);
+    expect(restored).not.toBeNull();
+    if (restored === null) continue;
+    expect(restored.phase).toBe('pushDecision');
+    expect(Object.hasOwn(restored, 'hintUsage')).toBe(false);
+    const settled = acceptRound(restored);
+    expect(settled.phase).toBe('roundOver');
+    expect(settled.records).toHaveLength(1);
+    const record = settled.records[0];
+    if (record === undefined) throw new Error('정산 기록이 없습니다');
+    expect(Object.hasOwn(record, 'hintUsage')).toBe(false);
+  }
+});
+
+test('새 판의 명시적 off와 실제 basic 사용은 정산 기록에 구별해 남긴다 (FR-50)', () => {
+  for (const hintUsage of ['off', 'basic'] as const) {
+    const restored = parseSession({ ...pending.session, hintUsage });
+    expect(restored).not.toBeNull();
+    if (restored === null) continue;
+    expect(acceptRound(restored).records[0]?.hintUsage).toBe(hintUsage);
+  }
 });
 
 test('밀기 완료 저장에서 다음 판을 열면 배수·원장을 이어간다 (FR-18, MN-05)', () => {
