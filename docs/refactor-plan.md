@@ -11,19 +11,19 @@
 ### 1.1 명령과 분모
 
 ```sh
-./dev.sh install
+docker compose run --rm dev npm ci
 # 호스트 git은 추적 파일 목록만 제공. 계측은 Docker의 기존 TypeScript 6 AST로 실행.
-git ls-files packages tools android | ./dev.sh npm exec -- node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)" > /tmp/codebase-audit.json
-./dev.sh npm exec -- knip
-./dev.sh lint
-./dev.sh check
-./dev.sh test
-./dev.sh npm run test:net -w packages/web
-./dev.sh test:browser
-./dev.sh build:web
-./dev.sh e2e
-./dev.sh apk:debug
-./dev.sh android:test
+git ls-files packages tools android | docker compose run --rm -T dev node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)" > /tmp/codebase-audit.json
+docker compose run --rm dev npm exec -- knip
+docker compose run --rm dev npm run lint
+docker compose run --rm dev npm run check
+docker compose run --rm dev npm test
+docker compose run --rm dev npm run test:net -w packages/web
+docker compose run --rm dev npm run test:browser
+docker compose run --rm dev npm run build -w packages/web
+docker compose run --rm dev npm run e2e -w packages/web
+docker compose run --rm dev android/gradlew -p android assembleDebug
+docker compose run --rm dev android/gradlew -p android testDebugUnitTest
 # 수동 교차 확인
 wc -l packages/web/src/ui/Board.svelte packages/web/src/game/session.ts android/app/src/main/kotlin/com/kywoo26/p2pgostop/HotspotService.kt
 rg -n 'export (type|interface)|ERROR_CODES|errorCode|rules: z.record' packages/protocol/src/{view-types,messages,schema}.ts
@@ -120,7 +120,7 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 | RF-06 | `web/ui/settle-labels.ts` + game/records·p2p/host 소비 | 정산 라벨은 이미 한 곳. engine/protocol로 한국어 UI 라벨을 옮기지 않음 |
 | RF-07 | SeatView·RoundRecord·SettlementInput 동명 선언 | engine 공개 관찰/표시용 뷰, 시뮬레이션/저장 기록 등 의미가 다름. 이름 일치만으로 합치지 않음. UiEvent는 deprecated 픽스처 호환 계약 |
 | RF-08 | `host.ts` 1,009줄·session 테스트 1,171줄 | 인증·수열·원장·복원 책임 결합. 복원 직렬화 → 순번/전송 → 판 수명 순으로 하루 단위 분리 |
-| RF-09 | `knip.json`·기준선 `./dev.sh check` | 기준 코드의 knip 미사용 항목 **0**, exit 0. entry/export와 `ignoreExportsUsedInFile` 범위 내 결과이며 죽은 코드 부재 증명 아님. 신규 감사 `.mjs`가 unused file 1로 검출되어 문서 `.txt` 부록으로 변경; 제품 예외 추가 없음 |
+| RF-09 | `knip.json`·기준선 `docker compose run --rm dev npm run check` | 기준 코드의 knip 미사용 항목 **0**, exit 0. entry/export와 `ignoreExportsUsedInFile` 범위 내 결과이며 죽은 코드 부재 증명 아님. 신규 감사 `.mjs`가 unused file 1로 검출되어 문서 `.txt` 부록으로 변경; 제품 예외 추가 없음 |
 | RF-10 | `protocol/test/m4.test.ts`, engine `e1-api.test.ts`, 나머지 기능명 테스트 | 마일스톤명과 기능명이 혼재. engine/ai/protocol은 `test/`, web은 src 동거+e2e, Android는 src/test. 위치는 유지하고 소유 기능 수정 시 명칭/지도 개선 |
 | RF-11 | plan §1.6 FLIP “수십 줄”, §2 gradle-cache/pw-browsers | 실제 flip.ts와 관련 모듈, compose는 node_modules/android-home. 계획/현황 혼동. #38·#73 인계 후 원문 담당이 정정 |
 | RF-12 | docs/protocol §1 Kotlin 벡터 후속, `RelayScenarioTest.kt:33`; §10 wire 벡터 수 | 공유 relay-scenarios.json을 이미 읽음. wire.json도 문서 36개와 달리 실제 41개. 원문 담당 인계 때 정정 |
@@ -189,7 +189,7 @@ R1 #93, R2 #98, R3a #99, R4 웹 호스트 #148, R5 솔로 저장 #150이 병합�
 | AI/시뮬레이션 | spec AI·ai-tuning → ai/types·policies, sim → info-hiding·sim 테스트 | 사용자 자유 영역 지정이 최신이나 #56/#66/#67 진행 상태 재확인 |
 | 웹 저장·세션 | MN-05 → game/session·storage/local → session·p2p 브라우저 테스트 | #88 파싱, #85 p2p, 이후 Galaxy 직렬 인계와 사용자 재지시 |
 | UI/페이싱/Back/카드 | Galaxy §5·UI 규범 → 해당 소유 파일 → browser/E2E | #86 anim, #88 메뉴/Back, #83→HUD→.1-A, #89 카드 병합 뒤 사용자 재지시 |
-| 도구·CI | AGENTS §5·plan §1.8 → dev.sh/docker/CI | #38→#73. 이 감사에서 수정 금지 |
+| 도구·CI | AGENTS §5·plan §1.8 → Docker/CI 진입점 | #38→#73. 이 감사에서 수정 금지 |
 | Android | plan §1.7 → HotspotService·GameActivity·SmokeServer → JVM/사람 절차 | Back #88, relay #61, 셸 .3-C 담당 인계 |
 | 디자인 문서 | docs/design/* | 디자인 리드 전용, 변경 없음 |
 
@@ -218,7 +218,7 @@ R1 #93, R2 #98, R3a #99, R4 웹 호스트 #148, R5 솔로 저장 #150이 병합�
 
 ## 8. 기준선 검증 기록
 
-제품 코드 무변경. Docker 초기 설치 258패키지. 첫 test+check 동시 실행에서 AI info-hiding 테스트 한 개가 5초 timeout(486/487 통과), 다른 검사를 겹치지 않은 동일 `./dev.sh test` 재실행은 **25파일·487개 전부 통과**했다. timeout을 규칙 결함으로 단정하거나 한도를 늘리지 않았다. 문서용 감사 스크립트가 knip unused에 걸린 건 `.txt` 부록으로 수정했다. 최종 결과는 아래 표에 기록한다.
+제품 코드 무변경. Docker 초기 설치 258패키지. 첫 test+check 동시 실행에서 AI info-hiding 테스트 한 개가 5초 timeout(486/487 통과), 다른 검사를 겹치지 않은 동일 `docker compose run --rm dev npm test` 재실행은 **25파일·487개 전부 통과**했다. timeout을 규칙 결함으로 단정하거나 한도를 늘리지 않았다. 문서용 감사 스크립트가 knip unused에 걸린 건 `.txt` 부록으로 수정했다. 최종 결과는 아래 표에 기록한다.
 
 | 검사 | 결과 |
 |---|---|

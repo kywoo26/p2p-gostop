@@ -59,7 +59,7 @@
 - 의존성 추가: `docker compose run --rm dev npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다. 루트의 옛 셸 래퍼는 폐기되어 안내만 출력하고 실패한다(M6에서 삭제).
+- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다.
 - 새 체크아웃·워크트리에는 `node_modules`가 없다(소스와 함께 바인드 마운트). 처음 한 번 `npm ci`를 돌린다. 기존 체크아웃의 `node_modules`가 root 소유라면 `ls -ld node_modules`로 확인한다. 빈 디렉터리는 호스트에서 `rmdir node_modules`로 제거하고, 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 해당 디렉터리만 복구한 뒤 `npm ci`를 다시 실행한다. 옛 `*_node_modules`·`*_android-home` 명명 볼륨은 별도이므로, 필요 없으면 `docker volume ls --format '{{.Name}}'`로 확인한 정확한 이름만 `docker volume rm <옛_볼륨명>`으로 삭제한다(README 전환 절차).
 - PR 필수 명령:
 ```sh
