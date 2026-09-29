@@ -357,7 +357,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-47 | 부분 | E/src/view.ts·interaction-assist.ts 공개 카드 최소 입력, P/src/view.ts; W/src/game/assist.ts 솔로 PlayerView 직접 계산·P2P BoardView wire 필드 투영·test/assist.test.ts 은닉 | 추가 힌트의 DOM/ARIA/로그 동일성 #87·#143·#90 | — |
 | FR-48 | 부분 | E/src/preview.ts·interaction-assist.ts, P/src/view.ts; W/src/game/assist.ts·ui/Board.svelte 기본 매칭/확정/행동 상태 데이터 | 카드 상태 CSS·상세 순수 API·200%·초점 통합 #81·#51 | 미 |
 | FR-49 | 미구현 | A/src/policies/ismcts.ts는 CPU 전용, W/src/settings/settings.svelte.ts에 조언 opt-in/요청 경로 없음 | 솔로 전용 조언·P2P 계산 차단 회귀 #90 | — |
-| FR-50 | 부분 | W/src/game/session.ts·solo.svelte.ts·storage/session-schema.ts에 실제 손패 표식 표시 기반 단조 hintUsage 훅·판 기록 #80·#115 | 옛 기록 미확인 UI·AI 조언 사용 #90·#44 | — |
+| FR-50 | 부분 | W/src/game/session.ts·solo.svelte.ts·storage/session-schema.ts에 실제 손패 표식 표시 기반 단조 hintUsage 훅·판 기록, session-save.test.ts의 v0/v1 복원→정산 미확인 보존 #80·#115 | 옛 기록 미확인 UI·AI 조언 사용 #90·#44 | — |
 | FR-51 | 미구현 | W/src/routes/HostRoom.svelte·P/src/messages.ts에 P2P 제한 설정 없음 | 10초 기본·호스트 끄기/조정은 확정, 후보값·세부 계약 제안 #123 | 미 |
 | FR-52 | 미구현 | W/src/ui/Board.svelte에 결정별 남은 초/준비 상태 시계 없음 | 예약 HUD 시계 #123 | 미 |
 | FR-53 | 미구현 | P/src/host.ts advanceTime은 연결 감시이며 결정 초과 액션 실행 없음 | 결정당 최대1회 초과 정책(제안) #123 | — |

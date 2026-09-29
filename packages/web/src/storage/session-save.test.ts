@@ -55,6 +55,32 @@ test('밀기 결정은 미정산으로 복원하고 받기를 한 번만 적용�
   expect(acceptRound(accepted)).toEqual(accepted);
 });
 
+test('옛 v0/v1 저장을 복원해 정산해도 힌트 이력은 미확인으로 남는다 (FR-50, #150)', () => {
+  const { refilled: _refilled, roundStart: _roundStart, ...legacyBody } = pending.session;
+  for (const raw of [pending.session, { ...legacyBody, version: 0 }]) {
+    const restored = parseSession(raw);
+    expect(restored).not.toBeNull();
+    if (restored === null) continue;
+    expect(restored.phase).toBe('pushDecision');
+    expect(Object.hasOwn(restored, 'hintUsage')).toBe(false);
+    const settled = acceptRound(restored);
+    expect(settled.phase).toBe('roundOver');
+    expect(settled.records).toHaveLength(1);
+    const record = settled.records[0];
+    if (record === undefined) throw new Error('정산 기록이 없습니다');
+    expect(Object.hasOwn(record, 'hintUsage')).toBe(false);
+  }
+});
+
+test('새 판의 명시적 off와 실제 basic 사용은 정산 기록에 구별해 남긴다 (FR-50)', () => {
+  for (const hintUsage of ['off', 'basic'] as const) {
+    const restored = parseSession({ ...pending.session, hintUsage });
+    expect(restored).not.toBeNull();
+    if (restored === null) continue;
+    expect(acceptRound(restored).records[0]?.hintUsage).toBe(hintUsage);
+  }
+});
+
 test('밀기 완료 저장에서 다음 판을 열면 배수·원장을 이어간다 (FR-18, MN-05)', () => {
   const state = parseSession(pushed.session);
   expect(state).not.toBeNull();

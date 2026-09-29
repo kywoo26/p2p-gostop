@@ -65,6 +65,11 @@
   } | null = null;
   let suppressClick = false;
   let previousRevision: object | undefined;
+  let handRoot: HTMLElement;
+
+  function moving(): boolean {
+    return handRoot.querySelector('.card[style*="will-change"]') !== null;
+  }
 
   /** 부채꼴: 가운데에서 멀수록 기울이고 조금 내린다 */
   function fan(index: number, count: number): string {
@@ -99,6 +104,10 @@
    */
   function press(event: PointerEvent) {
     suppressClick = false;
+    if (moving()) {
+      pressed = null;
+      return;
+    }
     const slot =
       event.target instanceof Element ? event.target.closest<HTMLElement>('[data-slot]') : null;
     const id = slot === null ? null : Number(slot.dataset['slot']);
@@ -126,7 +135,7 @@
     pressed = null;
     suppressClick = true;
     release();
-    if (current.armed && playable.includes(id) && bombCards.includes(id)) {
+    if (current.armed && playable.includes(id) && bombCards.includes(id) && !moving()) {
       onplay?.(id, current.at, true);
     }
   }
@@ -145,6 +154,7 @@
     const press = pressed;
     pressed = null;
     onpreview?.(null);
+    if (moving()) return;
     // 취소된 포인터의 합성 click만 막는다. 뒤따르는 click 없이 키보드가 눌리면 첫 입력부터 수락한다.
     if (suppressClick && event.detail !== 0) {
       suppressClick = false;
@@ -164,11 +174,12 @@
   function keydown(id: CardId, event: KeyboardEvent) {
     if (!event.shiftKey || event.key !== 'Enter' || !bombCards.includes(id)) return;
     event.preventDefault();
-    if (playable.includes(id)) onplay?.(id, performance.now(), true);
+    if (playable.includes(id) && !moving()) onplay?.(id, performance.now(), true);
   }
 </script>
 
 <div
+  bind:this={handRoot}
   class={['hand', { waiting: !myTurn, compact }]}
   role="group"
   aria-label="내 손패"
@@ -200,7 +211,15 @@
             },
           ]}
           style:transform={compact ? 'none' : fan(i, row.length)}
-          aria-label={`${cardLabel(id)}${secured ? ' (확정 획득 짝)' : canMatch ? ' (먹을 수 있음)' : ''}${group ? ` (${HAND_CUES[group.kind].label})` : ''}${bombCards.includes(id) ? ' 폭탄 내기, 한 장만 내기: 길게 누르거나 Shift+Enter' : ' 내기'}`}
+          aria-label={[
+            cardLabel(id),
+            secured ? '확정 획득 짝' : canMatch ? '먹을 수 있음' : null,
+            group ? HAND_CUES[group.kind].label : null,
+            bombCards.includes(id) ? '폭탄 내기, 한 장만 내기: 길게 누르거나 Shift+Enter' : null,
+            '내기',
+          ]
+            .filter(Boolean)
+            .join(', ')}
           aria-keyshortcuts={bombCards.includes(id) ? 'Shift+Enter' : undefined}
           disabled={!canPlay}
           data-slot={id}
@@ -240,6 +259,7 @@
   {/each}
 </div>
 
+<!-- svelte-ignore css_unused_selector (기존 카드 상태 CSS는 디자인 리드가 정리) -->
 <style>
   .hand {
     display: grid;

@@ -13,12 +13,13 @@ const original = createSession({
 
 test('정상 저장과 재충전 전 v0 저장을 읽되 시드·판·잔액을 보존한다 (MN-05)', () => {
   expect(parseSession(original)).toEqual(original);
-  const { refilled: _refilled, ...old } = original;
+  const { refilled: _refilled, hintUsage: _hintUsage, ...old } = original;
   const migrated = parseSession({ ...old, version: 0 });
   expect(migrated?.config.seed).toBe(1234);
   expect(migrated?.roundNumber).toBe(1);
   expect(migrated?.ledger.balances).toEqual([10000, 10000]);
   expect(migrated?.refilled).toEqual([0, 0]);
+  expect(migrated?.hintUsage).toBeUndefined();
 });
 
 test('현재 판의 힌트 사용은 복원하고 옛 판 기록의 필드 부재는 미확인으로 남긴다 (FR-50)', () => {

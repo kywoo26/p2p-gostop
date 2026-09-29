@@ -14,6 +14,7 @@ for (const [width, height] of [
       test.setTimeout(90_000);
       await page.setViewportSize({ width, height });
       await page.goto(`./#/dev/gallery/feedback-${state}`);
+      await expect(page.locator('.hand .slot')).toHaveCount(10);
       await page.evaluate(() => document.fonts.ready);
       const report = await page.evaluate(() => {
         const overlap = (a: DOMRect, b: DOMRect) =>

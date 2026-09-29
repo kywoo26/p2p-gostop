@@ -136,7 +136,8 @@ function commitSettlement(session: SessionState, settlement: Settlement): Sessio
   const ledger = applySettlement(before, settlement, session.config.rules);
   const amount = ledger.balances[0] - before.balances[0];
   const record: RoundRecord = {
-    hintUsage: session.hintUsage ?? 'off',
+    // #150 복원 경계: 옛 저장의 필드 부재는 '미확인'이다. 새 판의 명시적 off만 기록한다.
+    ...(session.hintUsage === undefined ? {} : { hintUsage: session.hintUsage }),
     round: session.roundNumber,
     winner: settlement.winner,
     reason: settlement.reason,
