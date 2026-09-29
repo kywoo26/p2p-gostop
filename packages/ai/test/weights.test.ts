@@ -29,4 +29,13 @@ describe('가중치 파일 (AI-07)', () => {
     expect(w.combo).toEqual(DEFAULT_WEIGHTS.combo);
     expect(DEFAULT_WEIGHTS.search.ucbC).not.toBe(2);
   });
+
+  it('과감성은 0~1, 자기 롤아웃 잡음은 0 이상이다', () => {
+    for (const bold of [-1, 1.01]) {
+      expect(() => withWeights(DEFAULT_WEIGHTS, { goStop: { bold } })).toThrow('bold');
+    }
+    expect(() => withWeights(DEFAULT_WEIGHTS, { goStop: { selfNoise: -0.1 } })).toThrow(
+      'selfNoise',
+    );
+  });
 });

@@ -65,22 +65,26 @@ export function utility(points: number, s: SearchWeights): number {
 }
 
 export interface GoStopAnalysis {
-  /** 지금 스톱하면 받는 점수 */
+  /** 지금 스톱하면 받는 정산 점수. 모든 배수·박 포함, × 점당 = 냥(상한 전). */
   readonly stopPoints: number;
-  /** 고를 불렀을 때의 표본 평균 점수(나가리 0 포함) */
+  /** 고 이후 표본 평균 정산 순액(점 단위, 이후 즉시 정산 포함). × 점당 = 냥(상한 전). */
   readonly goEv: number;
   readonly pWin: number;
   readonly pLose: number;
   readonly pNagari: number;
-  /** 이겼을 때 평균 획득, 졌을 때 평균 손실(양수, 고박 포함) */
+  /** 승리/패배 조건부 평균 순액/순손실(고박·이후 즉시 정산 포함). */
   readonly meanGain: number;
   readonly meanLoss: number;
+  /** 나가리여도 이후 즉시 정산은 남으므로 EV에서 버리지 않는다. */
+  readonly meanNagari: number;
+  readonly threshold: number;
   readonly samples: number;
   readonly decision: 'go' | 'stop';
 }
 
 /**
- * AI-06 고/스톱 기대값 비교: 스톱 획득 vs P(승)·증가액 − P(패)·손실(고박 포함).
+ * AI-06: 스톱 획득 vs P(승)·평균 순액 − P(패)·평균 순손실 + P(나가리)·평균 즉시 순액.
+ * 둘 다 엔진 정산 점수(모든 배수·박 포함) 단위다. 같은 양의 점당 금액을 곱하면 냥 EV 비교와 같다.
  * 결정화 표본마다 고를 적용하고 판 끝까지 롤아웃한다. 스톱 값은 공개 정보로 정확히 계산된다.
  */
 export function analyzeGoStop(
@@ -91,6 +95,8 @@ export function analyzeGoStop(
   deadline: { readonly now: () => number; readonly until: number } | null = null,
   debugReduce = false,
 ): GoStopAnalysis {
+  if (!Number.isInteger(samples) || samples <= 0)
+    throw new RangeError('고/스톱 표본 수는 양의 정수여야 합니다');
   const me = view.viewer;
   const sunk = view.instantPayouts.reduce(
     (sum, p) => sum + (p.to === me ? p.points : -p.points),
@@ -106,13 +112,14 @@ export function analyzeGoStop(
   let nagari = 0;
   let gain = 0;
   let loss = 0;
+  let nagariNet = 0;
   let n = 0;
   for (; n < samples; n++) {
     if (deadline !== null && n >= 8 && n % CLOCK_EVERY === 0 && deadline.now() >= deadline.until) {
       break;
     }
     const det = n === 0 ? base : determinize(view, rng);
-    const end = rollout(step(det, { type: 'go', seat: me }, debugReduce), rng, w, debugReduce);
+    const end = rollout(step(det, { type: 'go', seat: me }, debugReduce), rng, w, debugReduce, me);
     const points = terminalPoints(end, me) - sunk;
     const winner = end.result?.winner ?? null;
     if (winner === me) {
@@ -120,13 +127,16 @@ export function analyzeGoStop(
       gain += points;
     } else if (winner === null) {
       nagari++;
+      nagariNet += points;
     } else {
       losses++;
       loss -= points;
     }
   }
-  const goEv = (gain - loss) / n;
-  const decision = goEv > stopPoints * (1 + w.goStop.evMargin) ? 'go' : 'stop';
+  const goEv = (gain - loss + nagariNet) / n;
+  // bold=1은 순액 EV끼리 비교한다. 과감성을 올려도 손실을 할인하거나 승률로 보상을 바꾸지 않는다.
+  const threshold = stopPoints * (1 + w.goStop.evMargin * (1 - w.goStop.bold));
+  const decision = goEv > threshold ? 'go' : 'stop';
   return {
     stopPoints,
     goEv,
@@ -135,6 +145,8 @@ export function analyzeGoStop(
     pNagari: nagari / n,
     meanGain: wins > 0 ? gain / wins : 0,
     meanLoss: losses > 0 ? loss / losses : 0,
+    meanNagari: nagari > 0 ? nagariNet / nagari : 0,
+    threshold,
     samples: n,
     decision,
   };

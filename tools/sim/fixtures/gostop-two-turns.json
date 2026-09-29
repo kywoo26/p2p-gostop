@@ -31,7 +31,7 @@
   "goStop": {
     "maxGo": 2,
     "oppScoreStop": 5,
-    "minTurns": 3,
+    "minTurns": 2,
     "oppPotentialStop": 9,
     "evMargin": 0.1,
     "bold": 1,
