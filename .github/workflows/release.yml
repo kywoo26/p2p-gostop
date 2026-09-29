@@ -41,9 +41,7 @@ jobs:
       APK_NAME: p2p-gostop-${{ github.ref_name }}.apk
       # 릴리스 키 인증서 지문(공개 정보, APK에서 누구나 읽을 수 있다). 키를 바꾸면 이 값도 바꾼다.
       EXPECTED_CERT_SHA256: c83292d046a6419f76666f102cbc573dab822a78897b4c2d37a66d96fdef5944
-      # 웹 빌드 컨테이너 이미지 = 개발 이미지(docker/Dockerfile)의 베이스. CI가 검사한 것과 같은 Node(24.20.0)·npm으로 빌드한다.
-      # 개발 이미지 전체(JDK·SDK)는 웹 빌드에 필요 없어 러너에서 다시 빌드하지 않고 베이스만 받는다.
-      WEB_BUILD_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble
+      WEB_BUILD_IMAGE: p2p-gostop-dev:1
     steps:
       - uses: actions/checkout@v7
         with:
@@ -73,8 +71,24 @@ jobs:
             exit 1
           fi
 
-      # ---- 웹 앱: 격리 컨테이너에서 빌드 (비밀 없음, 저장소 읽기 전용, 설치 스크립트 없음) ----
+      - uses: ./.github/actions/dev-image
+        with:
+          install: 'false' # npm은 서명 단계와 분리된 읽기 전용 컨테이너에서만 실행
+      - name: Gradle 캐시 경로 설정
+        run: echo "GRADLE_USER_HOME=$RUNNER_TEMP/gradle-home" >> "$GITHUB_ENV"
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true # 태그에서 main 공유 캐시를 갱신하지 않는다.
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - name: 동일 SHA의 main CI 웹 번들 복원
+        id: web
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/restore-web-dist.sh
+
+      # ---- 웹 앱: 캐시가 없으면 기존 격리 빌드 (비밀 없음, 읽기 전용, 설치 스크립트 없음) ----
       - name: 웹 빌드 (격리 컨테이너)
+        if: steps.web.outputs.reused != 'true'
         run: |
           out="$RUNNER_TEMP/web-dist"
           rm -rf "$out" && mkdir -p "$out"
@@ -111,12 +125,6 @@ jobs:
           fi
 
       # ---- Android ----
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: "21"
-      - uses: gradle/actions/setup-gradle@v6
-
       - name: 서명 키스토어 복원
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -135,18 +143,24 @@ jobs:
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
       - name: 단위 테스트 + assembleRelease
-        working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+        run: |
+          mkdir -p "$RUNNER_TEMP/dev-home"
+          docker compose run --rm --user "$(id -u):$(id -g)" -e HOME="$RUNNER_TEMP/dev-home" \
+            -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE" \
+            -v "$RUNNER_TEMP:$RUNNER_TEMP" \
+            -e GRADLE_USER_HOME -e GRADLE_ENCRYPTION_KEY -e GITHUB_WORKSPACE \
+            -e RUNNER_TEMP -e GITHUB_ACTION \
+            dev android/gradlew -p android testDebugUnitTest assembleRelease --max-workers=2
 
       - name: 서명자 인증서 확인, 이름 변경, 체크섬
         run: |
           APK=android/app/build/outputs/apk/release/app-release.apk
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -name apksigner | sort -V | tail -1)
-          "$APKSIGNER" verify --print-certs "$APK" | tee signer.txt
+          docker compose run --rm --user root dev \
+            /opt/android-sdk/build-tools/36.0.0/apksigner verify --print-certs "$APK" | tee signer.txt
           # 출력 형식: "V2 Signer: certificate SHA-256 digest: <hex>" (구버전은 "Signer #1 certificate SHA-256 digest: <hex>")
           digests=$(grep -oE 'certificate SHA-256 digest: [0-9a-f]{64}' signer.txt | awk '{print $NF}' | sort -u)
           if [ "$(printf '%s\n' "$digests" | grep -c .)" != 1 ]; then
@@ -165,7 +179,10 @@ jobs:
 
       - name: 키스토어 삭제
         if: always()
-        run: rm -f "$RUNNER_TEMP/release.jks"
+        run: |
+          rm -f "$RUNNER_TEMP/release.jks"
+          # 서명 비밀을 담을 수 있는 구성 캐시는 릴리스에서 영속화하지 않는다.
+          rm -rf android/.gradle/configuration-cache
 
       - name: GitHub Release 업로드
         uses: softprops/action-gh-release@v3

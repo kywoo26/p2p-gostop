@@ -117,7 +117,8 @@ p2p-gostop/
 | QR | `uqr` 0.1.3 | |
 | 위생 | **knip 6.38.0**, 번들 ≤1.5MB·외부 URL 0건 검사 스크립트(의존성 0) | CI 게이트 |
 | 의존성 갱신 | Dependabot(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | |
-| 개발 환경 (2026-09-29) | 단일 개발 이미지 `docker/Dockerfile` + 루트 `compose.yaml` + `.devcontainer/`(2장). CI는 같은 이미지를 러너에서 빌드하고 Gradle 홈만 `actions/cache@v6`로 보존 | 자체 래퍼(`dev.sh`) 대신 표준 도구. `actions/cache`는 컨테이너 안 Gradle에 setup-gradle을 쓸 수 없어 추가(첫 실행 Gradle 4분 8초) |
+| 개발 환경 (2026-09-29, B1) | 단일 개발 이미지 + Compose + Dev Container(2장). `docker/setup-buildx-action@v4`·`docker/build-push-action@v7`로 GHA 레이어 캐시, `actions/cache@v6`로 npm 다운로드 캐시 | Docker 공식 액션 도입 근거: SDK 설치 레이어 재사용. 런타임 의존성 추가 없음 |
+| Gradle CI 캐시 (B1) | `gradle/actions/setup-gradle@v6`, build/configuration cache, `GRADLE_ENCRYPTION_KEY` Secret | Gradle 홈·작업 공간·임시 디렉터리를 같은 절대 경로로 컨테이너에 마운트. main만 쓰기, PR·태그 읽기 전용. 공식 기본 enhanced provider 사용(비공개 저장소 preview 조건은 build-performance.md 참조) |
 | 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, 프로젝트 `.claude/`(서브에이전트 3종·스킬 3종·권한 규칙, 편집 훅 없음: 포맷은 `lint:fix`·CI `lint`로 강제, 근거 `docs/reviews/harness-audit.md`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 | Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |

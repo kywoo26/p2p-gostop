@@ -31,7 +31,7 @@
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
 | Docker 이미지 | 단일 개발 이미지 `p2p-gostop-dev`(`docker/Dockerfile`, 태그는 `compose.yaml`): 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble` + JDK `eclipse-temurin:21.0.12.1_1-jdk-noble` + Android cmdline-tools 23.0(16111833, SHA-256 고정)로 설치한 `platforms;android-36`·`build-tools;36.0.0`·`platform-tools` |
-| GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(ci.yml의 Gradle 홈), softprops/action-gh-release@v3. setup-java@v6·gradle/actions/setup-gradle@v6는 release.yml의 서명 빌드에만 남는다(ci.yml은 개발 이미지로 돈다) |
+| GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(npm), gradle/actions/setup-gradle@v6, docker/setup-buildx-action@v4, docker/build-push-action@v7, softprops/action-gh-release@v3. 빌드·테스트는 개발 이미지 안에서 실행 |
 
 ## 3. 금지 목록 (에이전트가 자주 틀리는 것)
 - **Svelte 4 문법 금지**: `export let`, `$:`, `on:click`, `createEventDispatcher`, `<slot>`. Svelte 5 runes(`$state`, `$derived`, `$effect`, `$props`), `onclick`, `{@render children()}`, snippets를 쓴다.
