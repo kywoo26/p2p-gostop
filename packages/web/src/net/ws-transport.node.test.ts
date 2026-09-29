@@ -94,13 +94,12 @@ describe('WsTransport (가짜 WebSocket)', () => {
     });
     visibility.visibilityState = 'visible';
     visibility.dispatchEvent(new Event('visibilitychange'));
-    expect(sockets).toHaveLength(2);
-    expect(logs.some((line) => line.includes('socket#1 close') && line.includes('stale'))).toBe(
-      true,
-    );
-    sockets[1]!.open();
+    // CONNECTING 중 복귀는 소켓을 교체하지 않는다. 첫 연결을 기다린다.
+    expect(sockets).toHaveLength(1);
+    sockets[0]!.open();
     pages.dispatchEvent(new Event('pageshow'));
-    expect(sockets).toHaveLength(2);
+    expect(sockets).toHaveLength(1);
+    expect(logs.some((line) => line.includes('socket#1 close'))).toBe(false);
     transport.dispose();
   });
 

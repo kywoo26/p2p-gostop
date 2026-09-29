@@ -7,6 +7,7 @@ import {
 } from '../settings/settings.svelte.ts';
 import { GuestGame, type GuestOptions } from './guest.svelte.ts';
 import { clearHostSave, HostGame, loadHostSave, type HostConfig } from './host.svelte.ts';
+import { loadTimerPreference } from './host-save.ts';
 import { loadGuestState, readTicket } from './ticket.ts';
 
 export function hostConfigFrom(settings: AppSettings): HostConfig {
@@ -16,6 +17,7 @@ export function hostConfigFrom(settings: AppSettings): HostConfig {
     perPoint: settings.perPoint,
     startBalance: effectiveStartBalance(settings),
     hostName: settings.playerName,
+    timerDecisionMs: loadTimerPreference(),
   };
 }
 

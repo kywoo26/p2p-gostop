@@ -564,7 +564,7 @@ describe('재검토 중요 2: 소켓 인증 (NF-06, FR-07)', () => {
     expect(h.host.state).toBe(before.state);
     expect(JSON.stringify(h.host.toJSON())).toBe(before.json);
     // 토큰 없는 hello는 거절만 한다(환영·스냅샷 없음)
-    h.link.inject(0, encode({ t: 'hello', v: 2, name: '낯선 이', lastSeq: 0 }));
+    h.link.inject(0, encode({ t: 'hello', v: 3, name: '낯선 이', lastSeq: 0 }));
     h.link.deliver(nth(h.link, 0, 0));
     expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['reject']);
     expect(h.link.queue[0]!.raw).toContain('TOKEN_INVALID');
@@ -1041,6 +1041,7 @@ describe('#40 absent는 인증을 되돌리지 않는다, 응답 없는 요청 �
         view: h.guest.view!,
         ledger: h.guest.ledger!,
         status: h.guest.status!,
+        decision: null,
       }),
     );
     h.link.inject(

@@ -358,24 +358,24 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-48 | 부분 | E/src/preview.ts·interaction-assist.ts, P/src/view.ts; W/src/game/assist.ts·ui/Board.svelte 기본 매칭/확정/행동 상태 데이터 | 카드 상태 CSS·상세 순수 API·200%·초점 통합 #81·#51 | 미 |
 | FR-49 | 미구현 | A/src/policies/ismcts.ts는 CPU 전용, W/src/settings/settings.svelte.ts에 조언 opt-in/요청 경로 없음 | 솔로 전용 조언·P2P 계산 차단 회귀 #90 | — |
 | FR-50 | 부분 | W/src/game/session.ts·solo.svelte.ts·storage/session-schema.ts에 실제 손패 표식 표시 기반 단조 hintUsage 훅·판 기록, session-save.test.ts의 v0/v1 복원→정산 미확인 보존 #80·#115 | 옛 기록 미확인 UI·AI 조언 사용 #90·#44 | — |
-| FR-51 | 미구현 | W/src/routes/HostRoom.svelte·P/src/messages.ts에 P2P 제한 설정 없음 | 10초 기본·호스트 끄기/조정은 확정, 후보값·세부 계약 제안 #123 | 미 |
-| FR-52 | 미구현 | W/src/ui/Board.svelte에 결정별 남은 초/준비 상태 시계 없음 | 예약 HUD 시계 #123 | 미 |
-| FR-53 | 미구현 | P/src/host.ts advanceTime은 연결 감시이며 결정 초과 액션 실행 없음 | 결정당 최대1회 초과 정책(제안) #123 | — |
+| FR-51 | 완료 | W/src/routes/HostRoom.svelte·p2p/host-save.ts의 로비 끄기/5~60초·별도 저장, P/src/messages.ts welcome; W/e2e/p2p.spec.ts 사전 표시 | 실기기 로비·저장 확인 #75 | 미 |
+| FR-52 | 완료 | W/src/ui/Board.svelte·SeatBar.svelte, routes/Game.svelte의 HUD·프롬프트·메뉴·판 정보 시계; W/e2e/p2p.spec.ts | 최소 높이·Safari 음성 안내 실기기 확인 #75 | 미 |
+| FR-53 | 완료 | P/src/timer-policy.ts·host.ts·verify.ts 초과 행동/결과 기록·검증; P/test/timer.test.ts, relay-dev/test/session-relay.test.ts, W/e2e/p2p.spec.ts | 실기기 결과 확인 #75 | — |
 
 ### 프로토콜 (NP)
 
 | ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
 |---|---|---|---|---|
 | NP-01 | 완료 | P/src/transport.ts·codec.ts, W/src/p2p/link.ts; P/test/protocol.test.ts, W/src/p2p/wiring.test.ts | — | — |
-| NP-02 | 완료 | P/src/messages.ts·host.ts·guest.ts, W/src/p2p/guest.svelte.ts; P/test/schema-contracts.test.ts·session.test.ts, W/e2e/reconnect.spec.ts 응답 유실 | v2 기준. v3 제안은 아래 #123 | — |
-| NP-03 | 완료 | P/src/host.ts·guest.ts; P/test/session.test.ts, W/e2e/p2p.spec.ts 토큰 복귀·순번 | 시계 연속성은 v3 제안 #123 | — |
+| NP-02 | 완료 | P/src/messages.ts·host.ts·guest.ts, W/src/p2p/guest.svelte.ts; P/test/schema-contracts.test.ts·session.test.ts, W/e2e/reconnect.spec.ts 응답 유실 | v3 결정 계약은 NP-10 | — |
+| NP-03 | 완료 | P/src/host.ts·guest.ts; P/test/session.test.ts·timer.test.ts, W/e2e/p2p.spec.ts 토큰 복귀·순번·시계 | — | — |
 | NP-04 | 완료 | P/src/messages.ts·guest.ts 버전 거부; P/test/m4.test.ts·session.test.ts | — | — |
-| NP-05 | 완료 | P/src/guest.ts ping·host.ts 60초 감시; P/test/session.test.ts advanceTime | 결정 마감 확인은 별도 제안 #123 | — |
+| NP-05 | 완료 | P/src/guest.ts ping·host.ts 60초 감시·2초 마감 확인; P/test/session.test.ts·timer.test.ts | — | — |
 | NP-06 | 완료 | P/src/crypto.ts·verify.ts·host.ts·guest.ts; P/test/m4.test.ts SHA 벡터·20판, session.test.ts 검증 | — | — |
 | NP-07 | 완료 | P/src/codec.ts·schema.ts; P/test/protocol.test.ts 16KB/64KB 구별, E/test/properties.test.ts 뷰 크기 | 로그/원장 페이지 64KB 예외는 현행 계약 | — |
 | NP-08 | 완료 | K/server/SmokeServer.kt, android/app/build.gradle.kts SDK36, W/scripts/check-bundle.mjs; KT/NoExternalUrlTest.kt | — | — |
 | NP-09 | 완료 | P/src/codec.ts·host.ts, W/src/game/diagnostics.ts, K/log/LogBuffer.kt·BridgeLogs.kt; KT/log/Utf8Test.kt·BridgeLogsTest.kt, P/test/m4.test.ts | — | M0 |
-| NP-10 | 미구현 | P/src/host.ts·messages.ts에 결정 ID/deadline/decisionReady 계약 없음 | 단일 호스트 결정 시계·경합/복귀 계약 제안 #123 | — |
+| NP-10 | 완료 | P/src/host.ts·guest.ts·messages.ts·schema.ts의 단일 시계/결정 ID/확인/중단·복귀; P/test/timer.test.ts, relay-dev/test/session-relay.test.ts, W/e2e/p2p.spec.ts | 렌더러 재시작의 clockUnknown은 수동 대기·판 무효·종료, 실기기 #75 | — |
 
 ### AI·머니 (AI/MN)
 
@@ -427,19 +427,19 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 | spec 재등장 행 | 현행 상태 | 개정안 상태·근거/추적 |
 |---|---|---|
-| §3.6 FR-16 | 완료(본표) | 부분: 수동 선택 구현, 예약 구역/흔들기 바텀 시트 #46·#112, 제한 초과 #123 미구현 |
-| §5.1 NP-02 | 완료(v2) | 미구현: P/src/messages.ts에 v3 결정 메시지 없음, #123 |
-| §5.1 NP-03 | 완료(v2) | 미구현: P/src/host.ts·guest.ts에 timerRev 없음, #123 |
-| §5.1 NP-05 | 완료(하트비트) | 미구현: 마감 확인 교환 없음, #123 |
-| §5.1 NF-05 | 부분 | 미구현: 시계 연속성·복귀 보정 없음, #123 |
-| §5.1 NP-10 경계 표제 | 미구현 | NP-10 세부 표의 제목이며 별도 요구사항 아님, #123 |
-| §6.8 FR-46·49·50 | 미구현 | 미구현: 카운트다운은 힌트 이력에 합산하지 않는 표시 계약·회귀 없음, #123·#80·#90 |
+| §3.6 FR-16 | 완료(본표) | 부분: 수동 선택 구현, 예약 구역/흔들기 바텀 시트 #46·#112, P2P 제한 켬 초과는 #123 구현 |
+| §5.1 NP-02 | 완료(v3) | 완료: P/src/messages.ts·schema.ts의 결정 메시지와 버전 검사 #123 |
+| §5.1 NP-03 | 완료(v3) | 완료: P/src/host.ts·guest.ts의 timerRev·복귀 계약 #123 |
+| §5.1 NP-05 | 완료(하트비트) | 완료: 만료 확인 교환·25/60초 감시 분리 #123 |
+| §5.1 NF-05 | 부분 | 시계 연속성·복귀 보정 구현 #123; 실기기 연결 확인 #75 |
+| §5.1 NP-10 경계 표제 | 완료 | NP-10 세부 표의 제목이며 별도 요구사항 아님, #123 |
+| §6.8 FR-46·49·50 | 미구현 | 카운트다운은 핵심 정보로 표시하며 힌트 이력에 합산하지 않음 #123; 힌트·조언·사용 이력 자체는 #80·#90 |
 
-제안 행의 검증 테스트는 아직 없으며 실기기 미검증이다. 문서 PR #149 병합은 구현·초과 세부 정책 승인·시험 통과를 뜻하지 않는다.
+타이머 개정안의 자동 검증은 #123에서 추가했다. 실기기 결과는 아직 없다.
 
 ### 요약·의도별 달성도
 
-고유 ID **86개 중 완료 45·부분 26·미구현 9·미검증 6**. 완료율은 **45/86 = 52.3%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
+고유 ID **86개 중 완료 49·부분 26·미구현 5·미검증 6**. 완료율은 **49/86 = 57.0%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
 
 - **기내 오프라인 1:1:** 아키텍처·M0 기내 모드 연결·자동20판 경로 확보, 현재 정식 UI 실기기 AC-08/09 미검증(#75).
 - **iPhone 무설치:** Safari HTTP 진입·QR 스모크 달성, 현재 게임/잠금복귀를 실기기로 다시 확인해야 함(#75).

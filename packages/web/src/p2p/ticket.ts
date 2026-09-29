@@ -60,7 +60,9 @@ export function loadGuestState(name: string): GuestSessionState | null {
     const raw = tabStorage()?.getItem(GUEST_STATE_KEY);
     if (!raw) return null;
     const value = JSON.parse(raw) as { name?: unknown; state?: GuestSessionState };
-    return value.name === name && value.state?.v === 1 ? value.state : null;
+    return value.name === name && (value.state?.v === 1 || value.state?.v === 2)
+      ? value.state
+      : null;
   } catch {
     return null;
   }
