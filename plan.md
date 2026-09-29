@@ -409,7 +409,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-RP-03 | 부분: 역할 좌석·방 삭제                                                                                                               | RP-05A/B 로비·닉네임·규칙/머니 표시와 초대 재발급 UX  |
 | FR-RP-04 | 부분: 같은 방 역할 재인증·4001, 재시작 시 방 소실; RP-05B 저장 자격 이어하기·방별 게임 복원 UI                                        | RP-07 게임 hello·snapshot/중복 적용 통합 검증         |
 | FR-RP-05 | 부분: host 단절 10분·방 절대 만료; RP-05A 호스트 방·초대 화면과 RP-05B 게스트 입력 잠금·호스트 부재/중계 장애/만료 안내·재시도/나가기 | RP-07 세션 종료 통합 검증                             |
-| FR-RP-06 | 부분: RP-05B 게스트 웹 입력·상태 화면과 Chromium/WebKit 하위 경로 E2E                                                                 | RP-06 키보드·200% 확대·Mac 가로 검증                  |
+| FR-RP-06 | 구현(실기기 미검증): RP-05B 게스트 경로 + RP-06 단일 BoardView/액션, 넓은 화면·키보드·200% 자동 검증 | Mac Safari/Chrome 실기기 검증 |
 | FR-RP-07 | 부분: 최소 `/health`·`/version` 응답, RP-05C 3단계 안내·오류별 문구, RP-05A HostRoom/Versus 연결 완료                                 | RP-03 PC 스크립트 연계·실기기 검증                    |
 | FR-RP-08 | 미구현: RP-02 서버는 Android LOHS/LAN gate를 제어하지 않음                                                                            | RP-04B/05C/07 원격 진입·복귀 시 핫스팟 차단 검증      |
 
