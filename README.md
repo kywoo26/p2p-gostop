@@ -48,7 +48,7 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. 없는 태그면 다음 `run`이 자동으로 빌드한다(오프라인에서도 기존 이미지로 계속 작업할 수 있게 매번 빌드하지 않는다).
 - CI(`ci.yml`)는 같은 이미지를 러너에서 빌드해 위와 같은 명령을 돌린다.
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
-- `./dev.sh`는 폐기되었다(새 명령을 안내하고 실패한다, M6에서 삭제).
+- 루트의 옛 셸 래퍼는 폐기되었다(새 명령을 안내하고 실패한다, M6에서 삭제).
 
 ## 툴체인 (plan.md 1.8)
 

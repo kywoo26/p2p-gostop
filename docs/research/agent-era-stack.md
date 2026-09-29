@@ -280,7 +280,7 @@
 
 | 관례 | 현황(근거) | 판정·범위 |
 |---|---|---|
-| **AGENTS.md + CLAUDE.md** | 2025-12-09 OpenAI가 Linux Foundation 산하 Agentic AI Foundation에 기증(MCP와 함께). 6만+ 저장소, Codex·Cursor·Copilot·Gemini CLI 등이 읽는다. Radar Vol.33 Trial, Vol.34는 "팀 공유 지침(CLAUDE.md/AGENTS.md)"을 Adopt. Claude Code는 CLAUDE.md가 **없을 때만** AGENTS.md를 읽는다. [Claude Code memory 문서](https://code.claude.com/docs/en/memory) | **ADOPT**: 규범은 `AGENTS.md` 한 곳에 두고, `CLAUDE.md`는 `@AGENTS.md` 한 줄과 Claude 전용 메모(훅·스킬 사용법)만 둔다. 내용은 실행 명령(`./dev.sh …`), 버전 고정 표, 금지 사항(Svelte 4 문법, Tailwind v3, 비보안 API, 외부 URL), 테스트 기준 |
+| **AGENTS.md + CLAUDE.md** | 2025-12-09 OpenAI가 Linux Foundation 산하 Agentic AI Foundation에 기증(MCP와 함께). 6만+ 저장소, Codex·Cursor·Copilot·Gemini CLI 등이 읽는다. Radar Vol.33 Trial, Vol.34는 "팀 공유 지침(CLAUDE.md/AGENTS.md)"을 Adopt. Claude Code는 CLAUDE.md가 **없을 때만** AGENTS.md를 읽는다. [Claude Code memory 문서](https://code.claude.com/docs/en/memory) | **ADOPT**: 규범은 `AGENTS.md` 한 곳에 두고, `CLAUDE.md`는 `@AGENTS.md` 한 줄과 Claude 전용 메모(훅·스킬 사용법)만 둔다. 내용은 실행 명령(`docker compose run --rm dev …`, 2026-09-29 갱신), 버전 고정 표, 금지 사항(Svelte 4 문법, Tailwind v3, 비보안 API, 외부 URL), 테스트 기준 |
 | **llms.txt(소비)** | svelte.dev/llms.txt(+ medium/small) 제공. GSAP·Motion·Bits UI·shadcn-svelte도 제공. Tailwind는 없음. 사이트 게시용으로는 채택률이 낮다(상위 1,000개 사이트의 8.7%) | **ADOPT(소비만)**: AGENTS.md에 "Svelte 작업 전 svelte.dev/llms-small.txt 또는 Svelte MCP 참조"를 명시. 이 프로젝트가 llms.txt를 게시할 필요는 없음 |
 | **Svelte MCP / Claude Code 플러그인**(`@sveltejs/mcp` 0.1.26, `sveltejs/ai-tools`) | 공식. 문서 섹션 검색, `svelte-autofixer`(생성한 컴포넌트를 정적 분석해 Svelte 4 문법·runes 오용 지적), 스킬 2종 | **ADOPT(개발 시)**: `/plugin install svelte` |
 | **Context7** | 무료 월 1,000회 + 한도 후 일 20회(API 키 필요). Radar Vol.33 Trial("코드 환각을 크게 줄임") | **ADOPT(유지)**. 사용자 전역 지침과 일치 |

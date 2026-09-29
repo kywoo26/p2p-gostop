@@ -298,7 +298,7 @@ KVM과 에뮬레이터에 대한 정직한 평가:
 | QR | 웹: `uqr` **0.1.3** (SVG) / Android(필요 시): ZXing core **3.5.4** | QR을 웹 UI에서 그리면 Android 쪽 의존성 제로. |
 | 로컬 빌드 이미지 | ~~`cimg/android:2026.08.1-node`~~ → 2026-09-29부터 자체 단일 이미지 `docker/Dockerfile`(6장 결정 참조) | JDK 21, platform 36, Node·Playwright 브라우저 포함. 한 이미지로 APK+웹 빌드+E2E. |
 | 웹 테스트 이미지 | `mcr.microsoft.com/playwright:v1.63.0-noble` | 공식, npm 버전과 일치. |
-| Node | **24.21.0 LTS** | Vite 8/Vitest 5/Playwright 요구치 충족. |
+| Node | ~~24.21.0 LTS~~ → **24.20.0 LTS**(2026-09-29부터 개발 이미지 베이스 `playwright:v1.63.0-noble` 내장본을 로컬·CI·릴리스 공통으로 사용) | Vite 8/Vitest 5/Playwright 요구치 충족. |
 | CI | GitHub Actions `ubuntu-24.04` 고정, `checkout@v7`, `setup-java@v6`, `setup-gradle@v6`, `setup-node@v7`, `action-gh-release@v3` | 11월 ubuntu-latest 26.04 전환 회피. |
 | 배포 | 고정 자가 서명 키로 release APK → GitHub Releases | 업데이트 덮어쓰기 설치 가능. 한국은 2026-09 현재 개발자 인증 대상 아님. |
 
