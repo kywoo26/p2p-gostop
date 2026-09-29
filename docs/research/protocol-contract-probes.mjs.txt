@@ -1,0 +1,11 @@
+// 전후 비교용 wire v2 수신 결과. Docker: node --input-type=module < 이 파일
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { decode } from '@p2p-gostop/protocol';
+const vectors = JSON.parse(readFileSync('packages/protocol/test/vectors/wire.json', 'utf8'));
+const probes = vectors.map(({ id, from, value }) => ({ id, from, value }));
+for (const month of [-1, 0, ...Array.from({ length: 12 }, (_, i) => i + 1), 13, 1.5, '1', null, true, {}, []]) {
+  probes.push({ id: `month-${JSON.stringify(month)}`, from: 'guest', value: { t: 'action', seq: 0, payload: { type: 'bomb', seat: 0, month, extra: 'strip' } } });
+}
+const output = probes.map(({ id, from, value }) => ({ id, result: decode(JSON.stringify(value), from) }));
+console.log(JSON.stringify({ probes: output.length, sha256: createHash('sha256').update(JSON.stringify(output)).digest('hex') }));
