@@ -1,6 +1,6 @@
 # 맞고 UI/UX 규범 — 세로 게임판과 상태 화면
 
-상태: **D2 UI 구현 규범** · 2026-09-29 · 적용 대상: **PR #42가 main에 들어간 뒤의 정식 웹 UI**(솔로·호스트·게스트). 관련 요구사항: `spec.md` UX §6, 시나리오 §2, `plan.md` §1.6·§3-2, `intend.md` §4.4. 구현 우선순위는 10장의 격차 표를 따른다. `spec.md` §6과 문구가 달라야 하는 항목은 12장에 개정안으로 표시하며 이번 PR은 `spec.md`를 수정하지 않는다. 이 문서는 게임 규칙을 새로 정의하지 않는다. 카드 방향은 **고전 화투의 월별 도상을 충실히 다듬은 리마스터**다. 요청된 `docs/design/cards-style.md`는 이 체크아웃에 없으므로 `design/cards-phase1` 브랜치의 초안을 읽었다. 그 문서의 모던 시안 A/B는 최신 `plan.md` §3-2 D1에서 기각됐으므로 카드 최종 디자인의 근거로 쓰지 않는다. 현행 카드 비율 약 0.614만 현재 UI 분석에 사용한다.
+상태: **D2 UI 구현 규범** · 2026-09-29 · 솔로·호스트·게스트 정식 UI 대상. [spec §6](../../spec.md)의 UX-01~25 상세 정의이며 [plan §9 D1·D2](../../plan.md)를 따른다. 규범과 구현 현황(§10·§13)은 구분한다. 카드 방향은 **Commons 48장 유지·렌더링 개선, 보너스 3장·뒷면만 신규 제작**이다. 게임 규칙은 변경하지 않는다.
 
 ## 1. 화면 크기와 안전 영역
 
@@ -69,9 +69,9 @@
 
 ## 5. 동작과 재생
 
-**UX-15.** 아래 단계·정지 시간(ms)을 정본으로 한다. 기본값은 보통이며, 빠름은 `spec.md` §6.4와 AC-06의 기존 시간표를 유지한다. 매우 빠름은 빠름 이동 시간 ×0.6이고 정지는 없다. 정지는 해당 이동이 끝난 뒤 다음 단계를 커밋하기 전까지다. 선택 없는 보통 턴의 대표 경로(내기·두 번 매칭·뒤집기·획득)는 약 1.6~2.2초, 빠름은 ≤700ms를 목표로 한다.
+**UX-15.** 아래 단계·정지 시간(ms)은 `spec.md` §6.4와 같은 시간표다. 기본값은 보통, 빠름은 AC-06용 기존 이동 표(정지 0), 매우 빠름은 빠름 ×0.6이다. 정지는 해당 이동이 끝난 뒤 다음 이벤트를 커밋하기 전까지다. 복잡한 빠름 턴은 이동 시간 계획 합을 500ms로 비례 압축한다. 선택 없는 빠름 턴의 탭→이벤트 재생·최신 뷰 스냅 완료 목표는 ≤700ms다. 선택 없는 보통 턴의 대표 경로 계획은 약 1.6~2.2초이며 자동 계측 p50 허용 범위는 1.4~2.4초다.
 
-| 단계·정지 | 보통(기본) | 빠름 | 매우 빠름 |
+| 단계·정지 (ms) | 보통(기본) | 빠름 | 매우 빠름 |
 |---|---:|---:|---:|
 | 손패 → 바닥 이동 / 닿은 뒤 정지 | 270 / 100 | 120 / 0 | 72 / 0 |
 | 매칭 강조 / 매칭 뒤 정지 | 100 / 200 | 80 / 0 | 48 / 0 |
@@ -81,10 +81,10 @@
 | 피 뺏기 이동 | 350 | 200 | 120 |
 | 사건 배너 표시 | 900 | 350 | 210 |
 | 고/스톱 모달 등장 | 225 | 150 | 90 |
-| 분배 총합 | ≤1800 | ≤1200 | ≤720 |
-| AI가 카드를 내기 전 최소 생각 간격 | 500 | 250 | 150 |
+| 분배 총합 상한 | 1,800 | 1,200 | 720 |
+| AI 최소 생각 간격(앞선 재생 큐 종료 뒤) | 500 | 250 | 150 |
 
-카드 이동 이징은 `cubic-bezier(.2,.8,.2,1)`, 짧은 등장/퇴장은 `ease-out`/`ease-in`이다. 한 턴 안에서 낸 카드 → 바닥 매칭 → 더미 공개 → 뒤집힌 카드의 매칭 → 획득의 공간 순서를 보존한다. 사건 배너는 카드 이동과 겹치되 카드 위로 내려오지 않는다. AI의 생각 간격은 앞선 재생 큐가 빈 뒤에 시작한다. 스킵·즉시 모드·동작 줄이기에서는 이동과 정지가 모두 0이다. [Apple Motion](https://developer.apple.com/design/human-interface-guidelines/motion), [Material 3 motion](https://m3.material.io/styles/motion/overview).
+카드 이동 이징은 `cubic-bezier(.2,.8,.2,1)`, 짧은 등장/퇴장은 `ease-out`/`ease-in`이다. 한 턴 안에서 낸 카드 → 바닥 매칭 → 더미 공개 → 뒤집힌 카드의 매칭 → 획득의 공간 순서를 보존한다. 사건 배너는 카드 이동과 겹치되 카드 위로 내려오지 않는다. 판 종료·선 고르기 문구 읽기 대기(배너 시간 ×2)는 카드 턴 계측과 별개이며 스킵하면 즉시 끝난다. §6 UX-18~19의 사건·EngineEvent 표와 §8 EventBanner 행에 남은 350/160(+30)/200ms, 분배 1.2s, 턴 700ms는 **빠름 기준**이다. 선택한 속도의 시간에는 위 표가 우선한다. 스킵·즉시 모드·동작 줄이기에서는 이동과 정지가 모두 0이며 AI 생각 간격도 건너뛸 수 있다. [Apple Motion](https://developer.apple.com/design/human-interface-guidelines/motion), [Material 3 motion](https://m3.material.io/styles/motion/overview).
 
 **UX-16.** 재생 중 입력은 잠그고 스킵은 현재 애니메이션을 마지막 프레임으로 보내며 남은 이벤트를 즉시 반영한다. 새 이벤트가 들어오면 이전 시퀀스를 끝 상태로 수렴시킨 뒤 새 시퀀스를 재생한다. 선택창이 열린 순간 카드 이동은 끝나 있어야 한다. 상대 턴은 동일한 카드 경로로 보여 주고 HUD에 “상대 차례” 또는 “생각 중…”을 안정적으로 표시한다; 무한 펄스·회전 로더를 쓰지 않는다. 상대 손패 내용은 공개하지 않는다.
 
@@ -92,7 +92,7 @@
 
 ## 6. 사건 효과 규범
 
-**UX-18.** 효과 강도는 `끔/절제(기본)/강조` 3단계다. 절제는 아래 표의 시간과 채도, 강조는 시각 면적만 최대 1.25배로 넓히되 §6.4 시간·3회 플래시 한도를 늘리지 않는다. “끔”에서도 문구와 점수 변화를 남긴다. 효과음은 별도 On/Off와 시스템 볼륨, 진동은 Android 브리지에서만 별도 On/Off다. iPhone Safari에는 진동 호출을 하지 않는다. 소리·진동이 없어도 정보가 같아야 한다.
+**UX-18.** 효과 강도는 `끔/절제(기본)/강조` 3단계다. 절제는 아래 표의 시간과 채도, 강조는 시각 면적만 최대 1.25배로 넓히되 §5 UX-15의 시간·3회 플래시 한도를 늘리지 않는다. 아래 사건·EngineEvent 표의 숫자는 **빠름 기준**이며 보통·매우 빠름은 UX-15 표를 따른다. “끔”에서도 문구와 점수 변화를 남긴다. 효과음은 별도 On/Off와 시스템 볼륨, 진동은 Android 브리지에서만 별도 On/Off다. iPhone Safari에는 진동 호출을 하지 않는다. 소리·진동이 없어도 정보가 같아야 한다.
 
 | 사건 | 시각 강도·색·지속 | 소리 / Android 진동 | 겹침 정책 |
 |---|---|---|---|
@@ -100,7 +100,7 @@
 | 쪽 | 중, 청색 배너 350ms | 가벼운 짝 / 짧은 1회 | 획득 이동과 겹침 |
 | 따닥 | 중, 주황 배너 350ms | 짝 2음 / 짧은 2회 | 후보 그룹만 강조 |
 | 쓸 | 중, 녹색 배너 350ms | 쓸림 1음 / 짧은 1회 | 바닥을 덮는 전면 플래시 금지 |
-| 흔들기 | 중, 보라 윤곽 350ms | 종이 흔듦 1음 / 짧은 2회 | 카드 4장 노출 후 선택 결과 표시 |
+| 흔들기 | 중, 보라 윤곽 350ms | 종이 흔듦 1음 / 짧은 2회 | 흔든 카드 노출 후 선택 결과 표시 |
 | 폭탄 | 강조, 보라 카드 묶음 확산 350ms | 낮은 팡 1음 / 짧은 2회 | 손패 위 파편·입자 효과 금지 |
 | 고 | 중, 금색 배너 350ms | 상승 1음 / 짧은 1회 | 선택 확정 뒤만 표시 |
 | 스톱 | 강조, 흰색 배너 350ms | 종결 1음 / 중간 1회 | 정산 전환 전 순서 유지 |
@@ -147,7 +147,7 @@
 | `Pushed` | “밀기 · 다음 판 배수 ×N” 금색 문구 350ms; 포기한 정산액 0 표기 |
 | `Nagari` | “나가리 · 다음 판 배수 ×N” 중립 문구 350ms; 진동 없음 |
 
-**UX-19.** 동시 사건은 엔진 이벤트 순서대로 최대 1개 배너 + 1개 알림만 보여 준다. 2개 이상은 같은 700ms 턴 예산 안에서 문구를 병합하거나 다음 알림 레일로 넘긴다. 짧은 효과음을 중첩해 크게 만들지 않고 마지막 입력 후 100ms 안의 동종 음은 합친다. 보조 효과가 턴 진행을 지연하면 생략한다.
+**UX-19.** 동시 사건은 엔진 이벤트 순서대로 최대 1개 배너 + 1개 알림만 보여 준다. 2개 이상은 빠름의 700ms 턴 예산 안에서 문구를 병합하거나 다음 알림 레일로 넘긴다. 보통·매우 빠름은 UX-15 시간표를 따른다. 짧은 효과음을 중첩해 크게 만들지 않고 마지막 입력 후 100ms 안의 동종 음은 합친다. 보조 효과가 턴 진행을 지연하면 생략한다.
 
 ## 7. 상태별 화면과 문구
 
@@ -172,16 +172,16 @@
 
 **UX-22.** 각 컴포넌트는 아래 상태와 3장 규범에 맞게 그린다. `위반`은 이 체크아웃 기준이며 기존 PR에서 일부 보완된 내용은 재확인 후 이슈를 닫는다.
 
-| 컴포넌트 | 정상 / 비활성 / 대기·선택 / 오류·종료 | 현재 위반 또는 미정 |
+| 컴포넌트 | 정상 / 비활성 / 대기·선택 / 오류·종료 | 현재 격차 또는 미정 |
 |---|---|---|
-| `Board` | 6행 격자 / 입력 잠금 / 선택 레일 / 읽기 전용 | `min-height:100dvh`+`overflow:hidden`만 있어 선택 크기·짧은 화면 하한 보장 없음; 메뉴 없음 |
+| `Board` | 6행 격자 / 입력 잠금 / 선택 레일 / 읽기 전용 | `min-height:100dvh`+`overflow:hidden`만 있어 선택 크기·짧은 화면 하한 보장 없음; 메뉴는 Game에 구현 |
 | `SeatBar` | 점수·금액 / 상대 차례 / 생각 중 / 연결 상태띠 | 칩 줄바꿈이 HUD 높이를 불규칙하게 늘림; 연결 상태 모형 없음 |
 | `CapturedPile` | 4그룹 / 0장 / 강조 / 종료 | 카드 수 증가 때 높이·터치 노출 계약 없음 |
 | `Floor` | 8~12그룹 / 선택 불가 / 후보 강조 / 뻑 묶음 | 4열 고정; 12그룹·짧은 화면의 48px 입력·오버플로 검증 없음 |
 | `Hand`·`Card` | 월 정렬 / 불투명도 ≥0.7 / 10장 2줄 / 잠금 | 2줄 노출 터치 사각형 검증 없음; 현행 비활성 `Card`는 0.7로 밝기 계약을 충족 |
 | `PromptPanel`·선택류 | 관련 정보 / 없음 / 대상·고스톱·국진 등 / 상태 오류 | 절대 위치 `bottom: 카드 높이+24px`, 큰 패널이 내 획득패·HUD를 덮음; 프롬프트 전용 행 부재 |
-| `EventBanner`·toast | 350ms/2s / 숨김 / 큐 / 정산 전 종료 | 둘 다 중앙 영역 z=3; 긴 문구·동시 표출·토스트 수명 계약 없음 |
-| `Screen`·로비 경로 | 단계 안내 / 입장 잠금 / 대기 / 오류 | QR 자리 그림은 있으나 로비 연결 상태별 복구 행동 부족 |
+| `EventBanner`·toast | 배너는 UX-15 속도별 시간/토스트 2s / 숨김 / 큐 / 정산 전 종료 | 둘 다 중앙 영역 z=3; 토스트 1.6초×속도 자동 소멸 구현; 긴 문구·선택 중 큐 계약 미완 |
+| `Screen`·로비 경로 | 단계 안내 / 입장 잠금 / 대기 / 오류 | 실제 QR·로비 구현; 연결 상태별 복구 행동·배치 보강 필요 |
 | `Settlement`·`Game` | 결과·다음 판 / 잠금 / 파산 / 종료 | 종료된 세션에도 정산의 “다음 판”이 남는 경로(M3 L-5); 오버레이는 페이지 전체 스크롤 |
 | `Settings` | 강도·속도·음향 / 해당 없음 / 변경 즉시 미리보기 / 저장 실패 | 효과 강도·Android 진동 토글 없음 |
 
@@ -202,18 +202,18 @@
 | G-01 심각 | `board-gostop-chromium.png`, `board-target-webkit.png`: 패널이 내 획득패·점수 줄을 덮음. `PromptPanel.svelte` 절대 bottom | UX-04/08/09: 전용 선택 행, 핵심 숫자와 손패 무가림 | [#46](https://github.com/kywoo26/p2p-gostop/issues/46) |
 | G-02 심각 | `board-390x844-chromium.png`, `board-430x932-webkit.png`: 큰 빈 바닥, `Floor` 4열 고정, `Board` overflow hidden. 360×780/12그룹/10장 조합 스냅샷 없음 | UX-01~06/25: 최악 조합의 가변 격자·축소·무스크롤 검증 | [#47](https://github.com/kywoo26/p2p-gostop/issues/47) |
 | G-03 중요 | `Board.svelte` 배너·토스트 같은 z=3, 움직이는 카드 계층 계약 없음 | UX-07/08/19: 전역 층위·큐·무가림 | [#48](https://github.com/kywoo26/p2p-gostop/issues/48) |
-| G-04 중요 | `board-390x844-chromium.png`: 토스트 지속·큐 계약 없음. M3 I-1 | UX-08: 2초 소멸·프롬프트 중 대기 | 기존 [#6](https://github.com/kywoo26/p2p-gostop/issues/6) |
+| G-04 해결/후속 | `game/playback.svelte.ts`: 토스트 자동 소멸·새 판 초기화 구현, #6 닫힘 | UX-08 선택 중 대기·알림 큐는 G-03(#48)에서 검증 | [#6](https://github.com/kywoo26/p2p-gostop/issues/6) |
 | G-05 중요 | `board-gostop-webkit.png`: 내 점수·진행도가 패널 뒤에 가림; `SeatBar` 칩 줄바꿈 | UX-04/09/25: 핵심 HUD와 200% 텍스트 배치 | G-01에 포함 |
 | G-06 중요 | `banners-chromium.png`: 사건별 색·문구는 있으나 강도·동시 사건·즉시 정산 규칙 없음; `Settings`는 속도·소리만 | UX-15~19: 효과·동시 큐·강도/진동 | [#49](https://github.com/kywoo26/p2p-gostop/issues/49) |
-| G-07 중요 | `guest-chromium.png`, `host-chromium.png`: 정적 연결/QR 자리, 재접속·교체·호스트 부재·파산·종료 화면 계약 미완 | UX-20/21: 상태별 복구 행동 | [#50](https://github.com/kywoo26/p2p-gostop/issues/50); 기존 [#44](https://github.com/kywoo26/p2p-gostop/issues/44), [#26](https://github.com/kywoo26/p2p-gostop/issues/26)와 분리 |
-| G-08 중요 | `Board.svelte` 게임 중 메뉴 없음; M3 I-5 | UX-07/10/20: 메뉴·뒤로 가기 | 기존 [#10](https://github.com/kywoo26/p2p-gostop/issues/10) |
+| G-07 중요 | `guest-chromium.png`, `host-chromium.png`: 실제 QR·로비·재접속·파산 흐름 구현; 갤러리 정적 화면만으로 런타임 미구현 판정 불가. 상태별 복구 행동·배치 검증 미완 | UX-20/21: 상태별 복구 행동 | [#50](https://github.com/kywoo26/p2p-gostop/issues/50); 기존 [#44](https://github.com/kywoo26/p2p-gostop/issues/44), [#26](https://github.com/kywoo26/p2p-gostop/issues/26)와 분리 |
+| G-08 중요 | `routes/Game.svelte` 메뉴·종료 확인, 브리지 gameActive 구현; #10은 열림 | UX-07/10/20: 메뉴·Android Back·세션 보존의 남은 경계 검증 | 기존 [#10](https://github.com/kywoo26/p2p-gostop/issues/10) |
 | G-09 중요 | `Hand` 2줄의 실제 노출 영역 미검증; `Card` 비활성 불투명도는 현행 0.7로 충분하나 선택 초점 관리 없음 | UX-06/09/23~25: 48px·대비·초점·읽기 순서 | [#51](https://github.com/kywoo26/p2p-gostop/issues/51) |
 | G-10 중요 | `Board`는 포인터다운 캡처로 스킵, 손패는 포인터다운 당시 허용 여부를 검사. M3 I-3은 닫힘 | UX-10: 빈 바닥/버튼으로 스킵 범위 좁히고 교차 입력 E2E | [#52](https://github.com/kywoo26/p2p-gostop/issues/52)(새 범위); [#8](https://github.com/kywoo26/p2p-gostop/issues/8) 해결 내용 존중 |
 | G-11 경미 | `tokens.css`에는 색 값은 있으나 의미 역할·탁자 밝기 검증 없음. `board-430x932-chromium.png` 큰 단색 여백 | UX-11~14: 탁자/카드 대비 토큰·최소 장식 | [#53](https://github.com/kywoo26/p2p-gostop/issues/53)(후순위) |
 | G-12 경미 | `settlement-chromium.png`: 정산 금액 읽기 가능, 종료 세션 “다음 판” 사각 경로 M3 L-5 | UX-20: 종료 시 새 게임/기록만 | 기존 M3 L-5, 새 이슈는 G-07에 포함 |
 | G-13 경미 | `banners-chromium.png`: 개별 배너 예시는 있으나 두 사건/긴 한국어 문구 기준샷 없음 | UX-18/19/25: 겹침·길이 fixture | G-03/G-06에 포함 |
 
-**집계: 심각 2, 중요 8, 경미 3. 신규 이슈 8개(#46~#53), 기존 이슈 활용 2개(#6, #10).** G-05는 G-01, G-12는 G-07, G-13은 G-03/G-06에서 수용한다. 별도 신규 이슈는 구현 단위로 만들고 기존 이슈를 중복 개설하지 않는다. M3 리뷰의 #4/#5/#7/#8/#9는 현재 코드에서 관련 수정이 보이므로 과거 결함을 그대로 재등록하지 않는다.
+**현재 추적:** #46~#53은 열림. G-04의 소멸 결함은 #6에서 해결됐으며 큐 후속만 #48에서 다룬다. #10은 메뉴 존재와 별개로 세션 보존 경계 확인이 남는다. G-05/G-12/G-13은 각각 G-01/G-07/G-03·06에 포함한다. 과거 리뷰의 해결 항목을 재등록하지 않는다.
 
 ## 11. 주석 와이어프레임
 
@@ -224,25 +224,46 @@
 
 PNG는 디자인 설명용 도식이며 실제 카드 도상을 복제하지 않는다. 렌더 재료는 `docs/design/wireframes.html`; `packages/web/e2e/design/`의 Playwright fixture를 Docker e2e 이미지에서 실행해 캡처한다.
 
-## 12. `spec.md` §6에 제안하는 문구 변경(미적용)
+## 12. 명세 반영
 
-```diff
- §6.1
-+ [UX-01~03] Safari 툴바 표시 `innerHeight`를 설계 최소 높이로 실측한다(임시 검증: 360×780/390×734/430×822). 게임 중 100dvh·safe-area 안에서 페이지 스크롤을 금지하고 가로 방향은 입력 잠금 덮개를 띄운다.
-+ [UX-23~24] 텍스트/필수 그래픽 대비는 WCAG 2.2 AA, 주요 입력은 48×48 CSS px와 8px 간격을 따른다.
- §6.2 게임판
-- 하단: 내 획득패, 내 손패 부채꼴(최대 10장, 겹침 스크롤 없음). 오버레이: 이벤트 배너, 선택 모달, 고/스톱 모달.
-+ [UX-04~09] 양쪽 좌석 HUD/상대 획득패/바닥/선택·동작/내 획득패·진행도/손패의 6행이며 손패는 1~5장 1줄, 6~10장 2줄이다. 내 점수·고·배수·잔액은 HUD에, 족보 진행도는 내 획득패 행에 상시 둔다. 선택은 손패·바닥·필수 숫자를 덮지 않는 예약 구역에 둔다. 겹침 순서는 board<moving cards<banner<toast<prompt<modal<menu다.
- §6.3
-- 상대 턴은 같은 애니메이션으로 재생되며 사용자가 화면을 탭하면 남은 애니메이션을 즉시 완료한다(스킵).
-+ [UX-10/16] 상대 턴은 같은 카드 경로로 재생한다. 빈 바닥 또는 전용 건너뛰기 버튼으로 스킵하고 같은 포인터 연쇄에서 카드를 내지 않는다.
- §6.4
-+ [UX-15~17] 기존 시간 예산을 유지한다. 이동은 transform·opacity만, 중단은 최종 상태로 수렴, 모션 감소/효과 끔은 즉시 배치로 표시한다.
- §6.5
-+ [UX-18~19] 사건별 색·문구·소리·Android 진동·강도·동시 사건 병합은 docs/design/ui-spec.md §6을 따른다. iPhone Safari 진동은 생략한다.
- §6.6 뒤
-+ [UX-20~25] 상태 화면·복구 행동, 접근성, 모바일 최악 조합 수용 기준은 docs/design/ui-spec.md §7~9를 따른다.
-```
+`spec.md` §6에 UX-01~25 개정안 반영됨(2026-09-29).
+
+## 13. 현재 웹 구현 지도 (docs/ui.md에서 통합)
+
+경로는 `packages/web/src/` 기준. `p2p/role.ts`가 루프백 origin은 호스트 앱, 비루프백은 게스트로 정한다. `?role=host|guest`·`?relay=host:port`는 개발/E2E 덮어쓰기다. 호스트는 해시 라우팅, 게스트는 `#g=<토큰>&n=<이름>`을 쓰므로 화면 상태로 이동한다. `?speed=instant`는 저장하지 않는 E2E 즉시 모드다.
+
+| 경로 | 화면 | 파일 | 비고 |
+|---|---|---|---|
+| `#/` | 홈 | `routes/Home.svelte` | 친구와 대전 / 혼자 연습 / 기록 / 설정 / 진단, 저장된 세션이 있으면 "이어하기" |
+| `#/solo` | 난이도 선택 | `routes/SoloSetup.svelte` | 쉬움·보통·상용급, 규칙·금액 요약 |
+| `#/game` | 게임판 + 정산 | `routes/Game.svelte` → `ui/Board.svelte`, `routes/Settlement.svelte` | 정산은 게임판 위 전체 화면 덮개(게임판은 계속 마운트) |
+| `#/records` | 기록 | `routes/Records.svelte` | 현재(또는 마지막) 세션의 판별 결과·합계 |
+| `#/settings` | 설정 | `routes/Settings.svelte` | 프리셋, 점당 금액(시작 잔액 자동 제안), 속도, 효과음 |
+| `#/diagnostics` | 진단·로그 | `routes/Diagnostics.svelte` | 인앱 로그, 전체 선택 텍스트 영역(Clipboard API 없음) |
+| `#/license` | 라이선스 | `routes/License.svelte` | |
+| `#/versus` | 방 열기 | `routes/Versus.svelte` → `routes/HostRoom.svelte` | 핫스팟(브리지)·Wi-Fi QR(`T:WPA`)·주소 QR(`uqr`)·3단계 안내·접속자·규칙·점당·시작 잔액·시작/이어하기. LAN 노출 경고(NF-06) |
+| `#/match` | 친구와 대전 게임판 + 정산 | `routes/Game.svelte`(HostGame) | 게스트 끊김 안내, 3분 대기 선택지(spec 2.4) |
+| `#/dev/gallery/*` | 개발 갤러리 | `routes/dev/gallery/Gallery.svelte` | 스크린샷·axe 대상 |
+
+| 모듈 | 책임·계약 |
+|---|---|
+| `game/controller.ts` | 세 모드의 GameController: playback·canAct·thinking·bankrupt·notice·stats, submit·nextRound·refill·end·attach·skipAnimations |
+| `game/solo.svelte.ts`, `game/session.ts` | 엔진·원장·판 기록·Worker, localStorage 저장. 재생 큐가 비면 CPU 결정 요청 |
+| `p2p/host.svelte.ts` | HostSession, 로비 hello 뒤 autoStart:false로 준비, 규칙 변경 시 같은 토큰 welcome. 좌석 0 이벤트 재계산·가림, gostop.host.v2 저장·복원, 5초 advanceTime 시계 |
+| `p2p/guest.svelte.ts` | GuestSession events/snapshot 재생, view.legal 기반 액션. 토큰·이름은 URL, 검증 자료는 sessionStorage. 다음 판은 호스트에 요청, 토큰 거절 시 joinFresh |
+| `game/playback.svelte.ts`, `game/display.ts` | 가린 이벤트와 목표 BoardView를 큐로 재생·스냅. 정산 묶음은 release까지 다음 분배 대기. 토스트·음향·진동·턴 시간 기록 |
+| `game/adapter.ts`, protocol 뷰 | BoardView 정본은 protocol toBoardView. PR #54로 게스트 gukjinAsPi·bombs·정산 국진 필드 제공; Game은 BoardView 필드를 Board extras로 전달 |
+| `anim/choreo.ts` | 단계별 DOM 측정→표시 리듀서→FLIP. 계획 합 500ms 상한으로 프레임 여유 확보. display.test.ts는 이벤트 재생과 새 뷰의 카드 배치 대조 |
+| `game/ai-client.ts` | Worker 실패/무응답 시 300ms 상한 인라인 폴백; CPU에는 playerView(state,1)만 전달. 실패 UX는 #65 |
+| `net`, `p2p/link.ts`, `bridge/bridge.ts` | WsTransport의 4001 교체·25초 ping·복귀 처리, 연결 상태 축약, HostBridge 계약(plan §1.7). 게스트 advanceTime 연결은 #60 |
+
+`routes/Game.svelte`는 공통 메뉴·정산·파산·3분 대기 화면과 E2E용 data-round/data-balances/data-seq/data-play-timings를 제공한다. Android gameActive·keepScreenOn은 웹에서 브리지로 전달한다.
+
+초기 Docker 계측(2026-09-28)은 Chromium p50 568~571ms·최대 596ms, WebKit p50 578~635ms·최대 599~737ms였고, 2코어 CI WebKit은 p50 660ms·최대 849ms까지 흔들렸다. 계획 상한을 540→500ms로 낮춘 근거이며 실기기 측정값은 아니다.
+
+AC-06 계측은 click timeStamp→이벤트 재생·스냅 완료를 기록한다. 현재 솔로 E2E는 p50≤700ms·두 번째 최대≤900ms를 단언하며 CI WebKit 보정 배율이 있다. 계획 상한 단위 테스트도 있으나 P2P는 시간 기록만 하므로 #58, 실기기 예산은 #70에서 검증한다.
+
+남은 웹 기능: 로비 준비·P2P 기록·판 무효 UI(#44, abortRound API는 이미 구현), 밀기 선택·정산 라벨(#30·#31), 규칙 토글/화폐 단위/잔액(#62), 진동·효과 강도(#49), AI 생각 시간(#65), 리플레이 내보내기(#71). 효과음은 Web Audio 합성 최소판이다.
 
 ### 조사 근거와 적용 범위
 

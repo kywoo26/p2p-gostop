@@ -9,7 +9,7 @@
 
 1. **LOHS SSID/비밀번호는 일반 앱이 정할 수 없다.** Android 16에서 `startLocalOnlyHotspotWithConfiguration` + `SoftApConfiguration.Builder`가 공개됐지만, AOSP 구현상 일반 앱의 config는 **밴드(채널)만 반영**되고 SSID(`AndroidShare_####`)와 15자 비밀번호는 **매 시작마다 무작위**로 생성된다. → 세션마다 Wi-Fi QR을 새로 보여 주는 흐름으로 설계.
 2. **게이트웨이 IP는 고정이 아니다**(192.168.0.0/16 등에서 무작위 /24). → `NetworkInterface` 순회로 찾아 URL QR 생성.
-3. **비행기 모드 + LOHS는 AOSP상 가능하나 삼성 One UI 7+는 시스템 핫스팟을 비행기 모드에서 막는다는 보고**가 있다. LOHS도 막히는지는 미확인. **가장 큰 위험이며, 실기기 확인이 최우선.**
+3. **비행기 모드 + LOHS는 AOSP상 가능하나 삼성 One UI 7+는 시스템 핫스팟을 비행기 모드에서 막는다는 보고**가 있다. S25 Ultra의 LOHS는 이후 [M0 회차](../device-test/results.md)에서 비행기 모드 동작을 확인했다. 다른 기기의 보장은 아니다.
 4. iPhone Safari에서 `http://192.168.x.y`는 **보안 컨텍스트가 아니다**(WebKit 소스 확인). Wake Lock, Service Worker(오프라인), Web Share, `crypto.subtle`/`randomUUID`를 쓸 수 없다 → 재접속/재동기화 설계가 필수. Safari는 로컬 네트워크 권한 프롬프트 대상이 아니다(TN3179).
 5. 서버는 **Ktor 3.6.0 + CIO**, 셸은 **Activity + WebView(Compose 불필요)**, 웹은 **Vite 8 + Svelte 5 + TypeScript**, 빌드는 **cimg/android + GitHub Actions**.
 
@@ -56,9 +56,9 @@
 ### 1.4 비행기 모드
 
 - AOSP `ActiveModeWarden`에는 SoftAP 시작 시 비행기 모드 검사가 없고, "SoftAp was enabled during airplane mode"라는 처리 분기가 있다. 즉 **AOSP 기준으로는 비행기 모드 중에도 LOHS 시작 가능**(Wi-Fi STA가 꺼져 있어도 AP 모드 매니저 단독으로 기동). [ActiveModeWarden.java](https://github.com/LineageOS/android_packages_modules_Wifi/blob/lineage-23.2/service/java/com/android/server/wifi/ActiveModeWarden.java)
-- 단, **삼성 One UI 7 이후 시스템 "모바일 핫스팟"은 비행기 모드에서 켤 수 없다는 사용자 보고**가 있다(S25, 2025-02, adb 우회도 실패. OnePlus 13에서는 동작). LOHS가 같은 제한을 받는지는 공개 자료가 없어 **미검증**. [XDA 스레드](https://xdaforums.com/t/airplane-mode-disables-mobile-hotspot-no-workaround.4717988/), [Samsung Community](https://us.community.samsung.com/t5/Tips/Airplane-mode/td-p/3282684)
+- 단, **삼성 One UI 7 이후 시스템 "모바일 핫스팟"은 비행기 모드에서 켤 수 없다는 사용자 보고**가 있다(S25, 2025-02, adb 우회도 실패. OnePlus 13에서는 동작). 조사 당시 공개 자료로는 LOHS의 같은 제한을 확인하지 못했다. 이후 S25 Ultra 실기기 성공은 결과 로그에 보존했다. [XDA 스레드](https://xdaforums.com/t/airplane-mode-disables-mobile-hotspot-no-workaround.4717988/), [Samsung Community](https://us.community.samsung.com/t5/Tips/Airplane-mode/td-p/3282684)
 - 비행기 모드를 켠 뒤 Wi-Fi를 다시 켜는 것 자체는 Android 표준 기능이며(기기가 "비행기 모드에서 Wi-Fi 유지"를 기억), 핫스팟 AP 동작과는 별개다. [Pixel 도움말](https://support.google.com/pixelphone/answer/12639358?hl=en)
-- **최우선 실기기 검증 항목**: 사용자 Android 16 기기에서 (1) 비행기 모드 ON → (2) Wi-Fi ON → (3) LOHS 시작 → (4) iPhone 접속.
+- **실기기 확인**: [M0 회차 1·2](../device-test/results.md)에서 비행기 모드 ON → Wi-Fi ON → LOHS 시작 → iPhone 접속 성공. 다른 기기와 B/C 경로는 통합 절차로 검증한다.
 
 ### 1.5 핫스팟 게이트웨이 IP 얻기
 
@@ -218,41 +218,21 @@ Network Security Config 예시(`res/xml/network_security_config.xml`):
 
 WebView는 앱 내부에서 서버에 접속하므로 핫스팟 IP가 아니라 루프백을 쓴다. iPhone은 핫스팟 IP로 같은 서버에 접속한다.
 
-## 5. 툴체인 최신 안정 버전 (2026-09-28 레지스트리 직접 조회)
+## 5. 툴체인 호환 근거
 
-| 도구 | 최신 안정 | 날짜 | 확인 경로 / 비고 |
-|---|---|---|---|
-| Android Gradle Plugin | **9.4.1** (9.5.0은 alpha07) | 2026-09-18 | [Google Maven](https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml). AGP 9.4: 최대 API 37, **Gradle 최소 9.6.0**, Build Tools 최소 36.0.0, **JDK 최소 17**. [AGP 릴리스 노트](https://developer.android.com/build/releases/gradle-plugin) |
-| AGP 9 내장 Kotlin | AGP 9.0+는 Kotlin 지원 내장. `org.jetbrains.kotlin.android` 플러그인을 적용하면 오히려 빌드 실패. 기본 KGP는 2.2.10이므로 Kotlin 2.4.20을 쓰려면 최상위 buildscript classpath에 KGP 추가. `kapt` 불가(KSP 사용), `kotlinOptions{}` → `kotlin.compilerOptions{}` | | [Migrate to built-in Kotlin](https://developer.android.com/build/migrate-to-built-in-kotlin) |
-| Gradle | **9.8.0** | 2026-09-24 | [services.gradle.org](https://services.gradle.org/versions/current) |
-| Kotlin | **2.4.20** (2.5.0-Beta1은 프리릴리스) | 2026-09-07 | [Maven Central](https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml) |
-| JDK | **Temurin 21** 권장 (AGP 최소 17) | | cimg/android, GitHub 러너 모두 21 보유 |
-| compileSdk / targetSdk | **compileSdk 36, targetSdk 36** (요구 사항 기준). Android 17(API 37)은 2026-06 안정 출시, SDK platform 37.x 안정 채널에 있음. compileSdk 37로 올려도 되지만 **targetSdk는 36 유지** 권장(targetSdk 37부터 LAN 인바운드에 `ACCESS_LOCAL_NETWORK` 필요, 1.7절). | | [Android 17 발표](https://developer.android.com/about/versions/17/blog-release), SDK repository2-3.xml |
-| cmdline-tools / build-tools | 23.0 / 37.0.0 | 2026-08-19 / 2026-03-26 | [repository2-3.xml](https://dl.google.com/android/repository/repository2-3.xml) |
-| androidx.webkit | **1.17.1** | 2026-09-23 | Google Maven. `addWebMessageListener` |
-| androidx.activity / core-ktx | 1.13.0 / 1.19.1 | | Google Maven |
-| Compose BOM | 2026.09.00 | 2026-09-09 | 사용 안 함(4장) |
-| Ktor | **3.6.0** | 2026-09-18 | 3.1절 |
-| ZXing core | **3.5.4** | 2025-11-11 | Maven Central. 생성만 필요하면 core만. `zxing-android-embedded`(4.3.0, 2021)는 사실상 미유지·불필요. QR을 웹 UI에서 그리면 Android 쪽 QR 라이브러리 자체가 불필요. |
-| Node.js | **24.21.0 LTS "Krypton"** | 2026-09-07 | [nodejs.org](https://nodejs.org/dist/index.json). Vite 8: `^20.19 \|\| >=22.12`, Vitest 5: `^22.12 \|\| ^24 \|\| >=26`, Playwright: 22/24/26 |
-| Vite | **8.3.1** | 2026-09-24 | npm |
-| TypeScript | **7.0.2** (Go 네이티브 컴파일러). 6.x 마지막은 6.0.3 | 2026-07-08 | npm. svelte-check 등 TS JS API 의존 도구의 TS 7 호환은 **미확인** → 문제 시 `typescript@6.0.3` 고정 |
-| Svelte | **5.57.1**, `@sveltejs/vite-plugin-svelte` **7.3.1**(peer: vite ^8, svelte ^5.46.4) | 2026-09 | npm |
-| SolidJS / Preact | 1.9.15 / 10.29.8 | 2026-08 | npm. 대안. Svelte는 `transition`/`animate`/`flip` 내장이 카드 애니메이션에 유리해 우선 |
-| Vitest | **5.0.2** | 2026-09-25 | npm |
-| Playwright | **1.63.0** (Chromium 153, Firefox 155, **WebKit 26.6** 번들) | 2026-09-04 | npm, GitHub 릴리스. WebKit은 Ubuntu 22.04/24.04/26.04, Debian 12/13, WSL, Docker에서 헤드리스 동작 |
-| 웹 QR | **`uqr` 0.1.3** (무의존, ~4.4KB gzip, SVG 출력) / `qrcode-generator` 2.0.4 / `qrcode` 1.5.4(의존성 多, 2024-08 이후 정체) | | npm |
+설치 버전의 정본은 [AGENTS.md §2](../../AGENTS.md)다. 이 문서는 2026-09-28 조사 당시 선택의 근거를 보존한다.
 
-Playwright WebKit과 iOS Safari의 거리 ([Playwright browsers 문서](https://playwright.dev/docs/browsers)):
-- WebKit main 브랜치 소스에서 빌드하며 "Apple Safari에 반영되기 전인 경우가 많다". 브랜드 Safari와는 패치 때문에 동일하지 않고, OS별로 기능 차이(예: 미디어 코덱)가 있으며 "가장 Safari에 가까운 경험은 mac에서 WebKit 실행"이라고 명시한다.
-- `devices['iPhone 17']` 등 디스크립터(iPhone 15~17e 존재)는 뷰포트·UA·터치만 흉내 낸다. iOS의 백그라운드 탭 정지, 화면 잠금 시 소켓 끊김, 주소창에 따른 뷰포트 변화, 캡티브/네트워크 동작은 재현 불가.
-- 결론: CSS/JS 호환성의 1차 필터로는 유용, 최종 확인은 실제 iPhone.
+- AGP의 Gradle·JDK 하한은 [릴리스 노트](https://developer.android.com/build/releases/gradle-plugin)로 확인한다. [내장 Kotlin 전환](https://developer.android.com/build/migrate-to-built-in-kotlin)에 따라 별도 Android Kotlin 플러그인·kapt를 적용하지 않는다.
+- compileSdk/targetSdk/minSdk 결정은 §1.7의 LAN 권한과 근처 기기 권한 분기 때문이다.
+- TS는 svelte-check·typescript-eslint의 peer 범위 때문에 web과 순수 TS 검사를 분리한다([비교 근거](agent-era-stack.md#40-먼저-바로잡을-것-typescript-7-단독-사용은-현재-불가능)).
+- 웹 QR은 uqr, 네이티브 생성은 ZXing core만 사용한다. 카메라 스캐너 래퍼는 불필요하다. Compose도 WebView 셸에 추가하지 않는다.
+- 조회 원천: [Google Maven](https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml), [Gradle](https://services.gradle.org/versions/current), [Kotlin Maven](https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml), [Android SDK](https://dl.google.com/android/repository/repository2-3.xml). 버전 갱신은 AGENTS.md에서만 한다.
 
 ## 6. Docker 이미지
 
-| 이미지 | 최신 태그 | 크기(압축) | 평가 |
+| 이미지 | 조사 당시 변형·태그 | 크기(압축) | 평가 |
 |---|---|---|---|
-| `mcr.microsoft.com/playwright` | **`v1.63.0-noble`** (jammy, resolute=26.04 변형) | 약 956MB (amd64) | 웹 E2E. npm `@playwright/test` 버전과 태그를 정확히 맞출 것. |
+| `mcr.microsoft.com/playwright` | Ubuntu noble 계열(jammy·resolute 변형) | 약 956MB (amd64) | 웹 E2E. npm `@playwright/test` 버전과 태그를 정확히 맞출 것. |
 | `cimg/android` (CircleCI) | **`2026.08.1`**, `-node`, `-browsers`, `-ndk` (2026-08-03) | 3.4GB / node 3.5GB / browsers 3.8GB / ndk 5.0GB | platforms 34~37.2, build-tools 35~37, Gradle 9.6.1, JDK 8/17/21(기본 21). **APK 빌드용 1순위.** `-node` 변형이면 웹 빌드까지 한 이미지. |
 | `mingc/android-build-box` | latest/nightly (2026-08-10) | 약 5.9GB | 유지되지만 과대. |
 | `thyrlian/android-sdk` | `10.0`=latest (2024-09-29) | 657MB | 2년간 이미지 갱신 없음 → 비권장. |
@@ -271,40 +251,19 @@ KVM과 에뮬레이터에 대한 정직한 평가:
 |---|---|---|
 | 요금 | 공개 저장소: 표준 러너 무료. **비공개(GitHub Free): 월 2,000분, 아티팩트 500MB**, 캐시 저장소당 10GB. Linux 1코어 초과분 $0.002/분. 자가 호스팅 러너 과금 계획(2026-03 예정)은 연기되어 현재 무료. | [Actions 과금 문서](https://docs.github.com/en/billing/concepts/product-billing/github-actions) |
 | 러너 | `ubuntu-latest` = Ubuntu 24.04 (이미지 20260920): JDK 8/11/**17(기본)**/21/25, Gradle 9.7.1, Kotlin 2.4.20, Node 22, build-tools 34~37, platforms 34~37.2. **2026-11에 ubuntu-latest가 26.04로 전환 예정** → `runs-on: ubuntu-24.04` 고정 권장. | [Ubuntu2404-Readme](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md) |
-| 액션 버전 | `actions/checkout@v7`, `actions/setup-java@v6`(temurin 21), `gradle/actions/setup-gradle@v6`, `actions/setup-node@v7`, `actions/upload-artifact@v7`, `softprops/action-gh-release@v3`, (선택) `reactivecircus/android-emulator-runner@v2`(v2.38.0, 호스티드 러너 KVM 사용 가능, udev 규칙 필요) | GitHub API releases |
 | 흐름 | 태그 푸시 → 웹 빌드(Vite) → `app/src/main/assets/web`에 복사 → `./gradlew assembleRelease` → `softprops/action-gh-release`로 APK 첨부. 사용자는 폰 브라우저로 Releases에서 다운로드·설치. **비공개 저장소면 폰 브라우저에서 GitHub 로그인 필요**(공개 저장소가 설치 경험상 가장 단순). | 설계 |
 | 서명 | `keytool -genkeypair -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias app`로 1회 생성 → base64로 Secrets 저장(비밀번호·alias 포함) → CI에서 `base64 -d` 복원 → `signingConfigs { create("release") {...} }`. AGP 기본 v1+v2(+v3) 서명. targetSdk 30+는 v2 이상 필수. **키를 고정해야 업데이트 덮어쓰기 설치가 된다.** debug APK를 배포할 경우에도 같은 `debug.keystore`를 Secrets로 고정해야 함. | AGP 기본 동작, Android 11 동작 변경(이번 세션 재조회 안 함) |
 | 사이드로드 정책 | Google 개발자 인증은 **2026-09-30부터 브라질·인도네시아·싱가포르·태국에서만** 시작, 2027년 전 세계 확대. **2026-09 한국은 영향 없음**(국가 목록 기준 추론). 2027년 이후 미등록 앱은 "고급 설치 흐름"(개발자 모드, 재시작, 1회 24시간 대기, 생체 인증) 필요, **ADB 설치는 예외**. 무료 "제한 배포" 계정(최대 20대)도 있음. | [Developer verification FAQ](https://developer.android.com/developer-verification/guides/faq), [Play Console 도움말](https://support.google.com/android-developer-console/answer/16561738) |
 
-## 권장 스택
+## 채택 결과
 
-| 계층 | 선택 (정확한 버전) | 한 줄 근거 |
-|---|---|---|
-| 호스트 네트워크 | `WifiManager.startLocalOnlyHotspot` (기본 2.4GHz). API 36에선 `startLocalOnlyHotspotWithConfiguration`으로 밴드만 옵션 | 통신사 테더링 제한 무관, 앱에서 원클릭. 자격 증명은 무작위이므로 QR로 전달. 이미 켜진 시스템 핫스팟도 감지해 폴백. |
-| Android 언어/빌드 | Kotlin **2.4.20**, AGP **9.4.1**(내장 Kotlin), Gradle **9.8.0**, JDK **Temurin 21** | 현재 최신 안정 조합, AGP 9.4 요구치(Gradle ≥9.6, JDK ≥17) 충족. |
-| SDK 레벨 | compileSdk **36**, targetSdk **36**, minSdk **33** | Android 16 기준. targetSdk 37의 LAN 권한 강제를 피하고, minSdk 33으로 위치 권한 분기 제거. |
-| 내장 서버 | Ktor **3.6.0** (`ktor-server-cio`, `ktor-server-websockets`) | 코루틴 기반 경량 엔진, WebSocket 내장, JVM에서 같은 코드 테스트 가능. Netty는 Android 이슈 이력. |
-| 정적 파일 | `assets/web`을 읽는 커스텀 Ktor 라우트 | 클래스패스 리소스보다 Android에서 확실. |
-| 백그라운드 유지 | 포그라운드 서비스 `connectedDevice` + `FLAG_KEEP_SCREEN_ON` | 프로세스가 죽으면 LOHS도 내려감. 시간 제한 없는 FGS 타입. |
-| Android UI | 단일 Activity + WebView, `androidx.webkit` **1.17.1** `addWebMessageListener` | 게임 UI 한 벌 재사용. Compose 불필요. origin 제한 브리지. |
-| 평문 허용 | Network Security Config로 `127.0.0.1`, `localhost`만 cleartext | `usesCleartextTraffic`은 폐지 예정. |
-| 웹 UI | Vite **8.3.1** + Svelte **5.57.1** + `@sveltejs/vite-plugin-svelte` **7.3.1** | 작은 번들, 내장 트랜지션/애니메이션. |
-| 언어 | TypeScript **7.0.2** (도구 호환 문제 시 **6.0.3** 고정) | 최신 안정. svelte-check 호환 미확인. |
-| 게임 엔진 | 순수 TS 모듈(프레임워크 무관) | Web Worker에서 AI 실행, BLE 전환 대비. |
-| 단위 테스트 | Vitest **5.0.2** | Vite 8과 같은 설정 공유. |
-| E2E | `@playwright/test` **1.63.0** (Chromium + WebKit 26.6) | iOS Safari 근사치 1차 필터. 최종은 실기기. |
-| QR | 웹: `uqr` **0.1.3** (SVG) / Android(필요 시): ZXing core **3.5.4** | QR을 웹 UI에서 그리면 Android 쪽 의존성 제로. |
-| 로컬 빌드 이미지 | `cimg/android:2026.08.1-node` | JDK 21, platforms 34~37, Node 포함. 한 이미지로 APK+웹 빌드. |
-| 웹 테스트 이미지 | `mcr.microsoft.com/playwright:v1.63.0-noble` | 공식, npm 버전과 일치. |
-| Node | **24.21.0 LTS** | Vite 8/Vitest 5/Playwright 요구치 충족. |
-| CI | GitHub Actions `ubuntu-24.04` 고정, `checkout@v7`, `setup-java@v6`, `setup-gradle@v6`, `setup-node@v7`, `action-gh-release@v3` | 11월 ubuntu-latest 26.04 전환 회피. |
-| 배포 | 고정 자가 서명 키로 release APK → GitHub Releases | 업데이트 덮어쓰기 설치 가능. 한국은 2026-09 현재 개발자 인증 대상 아님. |
+[plan.md §1](../../plan.md)의 아키텍처와 [AGENTS.md §2](../../AGENTS.md)의 버전 표로 대체한다. 서버·WebView·네트워크의 선택 이유는 위 §1~4, Docker·배포 비교는 §6~7에 남긴다.
 
 ## 리스크
 
 | # | 리스크 | 심각도 | 대응 |
 |---|---|---|---|
-| R1 | **비행기 모드에서 LOHS가 OEM(특히 삼성 One UI 7/8)에 의해 막힐 수 있음.** 시스템 핫스팟은 삼성에서 비행기 모드 시 불가 보고. LOHS는 미확인. | **블로커 후보** | 첫 마일스톤으로 "LOHS 켜고 SSID/비번/IP 표시만 하는" 최소 APK를 CI로 배포해 실기기에서 비행기 모드 ON → Wi-Fi ON → LOHS 시작을 검증. 실패 시 대안은 사실상 없음(iPhone 개인용 핫스팟은 셀룰러 필요, Wi-Fi Direct는 iOS 미지원) → 이륙 전 연결을 맺어 두는 방식이나 BLE 네이티브 경로 재검토. |
+| R1 | **비행기 모드에서 LOHS가 OEM(특히 삼성 One UI 7/8)에 의해 막힐 수 있음.** 시스템 핫스팟은 삼성에서 비행기 모드 시 불가 보고. LOHS는 S25 Ultra 실기기에서 성공. | 해당 기기 확인 | [M0 결과](../device-test/results.md)로 해당 기기 차단 위험 해소. 다른 기기·현재 UI·복귀는 통합 절차로 검증. |
 | R2 | LOHS 자격 증명이 매번 무작위(AOSP 확인, OEM 미확인). | 중 | 매 세션 Wi-Fi QR 표시. iPhone에 네트워크가 누적되는 것은 감수. 시스템 핫스팟 폴백 모드로 고정 자격 증명 선택지 제공. |
 | R3 | 핫스팟 IP가 무작위이고 인터페이스 이름이 기기마다 다름. | 중 | `NetworkInterface` 순회 + 재시도. 서버 `0.0.0.0` 바인딩. 화면에 IP 텍스트도 함께 표시. |
 | R4 | 캡티브 시트는 프로브 무응답이면 뜨지 않을 것으로 예상(Apple 문서 + 커뮤니티). 만약 뜬 경우 "취소"를 누르면 연결이 끊김(Apple 문서 확인). | 중 | 안내에 "시트가 뜨면 '인터넷 없이 사용'"을 명시. 실기기 스모크 테스트. |
@@ -314,7 +273,7 @@ KVM과 에뮬레이터에 대한 정직한 평가:
 | R6 | LOHS는 시작 시 앱이 포그라운드여야 하고 프로세스가 죽으면 종료. 사용자가 설정에서 끌 수도 있음. | 중 | FGS 유지, `onStopped`/`onFailed` 처리 후 재시작 UI. |
 | R7 | 5GHz 선택 시 비행기 모드에서 국가 코드 부재로 `ERROR_NO_CHANNEL` 가능(추론). | 낮 | 기본 2.4GHz, 실패 시 폴백. |
 | R8 | Ktor는 Android 서버를 공식 지원 플랫폼으로 명시하지 않음. R8 관련 이슈 이력. | 낮 | CIO 사용, minify 끄기로 시작, 서버 기동 계측 테스트. |
-| R9 | TypeScript 7(네이티브)과 Svelte 도구 호환 미확인. | 낮 | 문제 시 TS 6.0.3 고정. |
+| R9 | TypeScript 7과 Svelte 도구 비호환 확인. | 해소 | web은 TS 6, 순수 TS 타입 검사는 TS 7(AGENTS.md §2). |
 | R10 | Playwright WebKit ≠ iOS Safari. | 낮 | 최종 확인은 실기기, iOS 특이 동작은 수동 체크리스트. |
 | R11 | 에뮬레이터로 핫스팟 검증 불가. Docker의 KVM은 이 머신에서 동작 확인됐으나 가치가 제한적. | 낮 | 에뮬레이터는 선택 사항. |
 | R12 | Android 11+ 서명 필수, 키 분실 시 업데이트 불가. 2027년 개발자 인증 전 세계 확대. | 낮(현재) | 키스토어 백업(Secrets 외 별도 보관). 2027년 이후 무료 제한 배포 계정 또는 ADB 설치 고려. |
@@ -323,5 +282,4 @@ KVM과 에뮬레이터에 대한 정직한 평가:
 ## 열린 항목 (Open)
 
 - 2장 추론 항목: 프로브 무응답 시 CNA 미표시, QR로 연 IP URL의 HTTPS 우선 시도 동작, NoSleep 트릭 동작. 실기기(2.7)로 확정.
-- 삼성 One UI 8(Android 16)에서 LOHS의 비행기 모드 동작, 자격 증명 무작위화, 인터페이스 이름: 실기기 확인.
-- iPhone에서 `T:WPA` QR로 WPA3-SAE-transition LOHS 접속 가능 여부: 실기기 확인.
+- S25 Ultra의 비행기 모드 LOHS·인터페이스와 WPA QR 접속은 [실기기 원문](../device-test/results.md)에서 확인했다. 다른 기기·자격 증명 변경은 추가 확인한다.

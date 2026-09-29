@@ -11,26 +11,34 @@ import {
 import { evaluateState } from '../evaluator.ts';
 import { actingSeat, determinize } from '../knowledge.ts';
 import { heuristicAction, ruleGoStop, step } from '../rollout.ts';
+import { analyzePush } from '../push.ts';
 import type { Rng } from '../rng.ts';
 import type { DecisionContext, Policy } from '../types.ts';
 import { DEFAULT_WEIGHTS, type Weights } from '../weights.ts';
-import { firstOf, onlyAction } from './common.ts';
+import { clockOf, firstOf, onlyAction } from './common.ts';
 
 export interface GreedyOptions {
   /** 뒤집기 표본 수 K (결정화 사본 수) */
   readonly samples?: number;
   readonly weights?: Weights;
+  readonly debugReduce?: boolean;
 }
 
 /** 같은 턴 안의 자기 후속 프롬프트를 휴리스틱으로 처리한다(카드 내기 차례가 다시 오면 멈춤). */
-function finishOwnPrompts(state: GameState, seat: Seat, rng: Rng, w: Weights): GameState {
+function finishOwnPrompts(
+  state: GameState,
+  seat: Seat,
+  rng: Rng,
+  w: Weights,
+  debugReduce: boolean,
+): GameState {
   let s = state;
   for (let i = 0; i < 8 && s.phase !== 'end' && actingSeat(s) === seat; i++) {
     const kind = s.pending?.kind;
     if (kind === 'play' || kind === undefined) {
       break;
     }
-    s = step(s, heuristicAction(s, seat, legalActions(s, seat), rng, w, 0));
+    s = step(s, heuristicAction(s, seat, legalActions(s, seat), rng, w, 0), debugReduce);
   }
   return s;
 }
@@ -39,10 +47,22 @@ export class GreedyPolicy implements Policy {
   readonly name = 'greedy';
   private readonly samples: number;
   private readonly weights: Weights;
+  private readonly debugReduce: boolean;
 
   constructor(options: GreedyOptions = {}) {
     this.samples = options.samples ?? 8;
     this.weights = options.weights ?? DEFAULT_WEIGHTS;
+    this.debugReduce = options.debugReduce ?? false;
+  }
+
+  decidePush(view: PlayerView, ctx: DecisionContext): boolean {
+    const budget = ctx.timeBudgetMs;
+    const now = budget === undefined ? null : clockOf(ctx);
+    const deadline = now === null || budget === undefined ? null : { now, until: now() + budget };
+    return (
+      analyzePush(view, ctx.rng, 8, this.weights, ctx.balancePoints, this.debugReduce, deadline)
+        .decision === 'push'
+    );
   }
 
   decide(view: PlayerView, legal: readonly Action[], ctx: DecisionContext): Action {
@@ -68,7 +88,13 @@ export class GreedyPolicy implements Policy {
     for (const action of legal) {
       let total = 0;
       for (const det of dets) {
-        const after = finishOwnPrompts(step(det, action), me, rng, w);
+        const after = finishOwnPrompts(
+          step(det, action, this.debugReduce),
+          me,
+          rng,
+          w,
+          this.debugReduce,
+        );
         total += evaluateState(after, me, w);
       }
       if (total > bestValue) {

@@ -1,4 +1,4 @@
-// 게임 화면(routes/Game.svelte)이 쓰는 공통 모양: 솔로·호스트·게스트가 같은 게임판·정산 화면을 쓴다(docs/ui.md 4장).
+// 게임 화면(routes/Game.svelte)이 쓰는 공통 모양: 솔로·호스트·게스트가 같은 게임판·정산 화면을 쓴다(docs/design/ui-spec.md 13장).
 // 화면은 playback(재생 큐의 반응형 상태)과 아래 값만 읽고, 입력은 submit/nextRound/refill/end로만 올린다.
 import type { Action } from '@p2p-gostop/engine';
 import type { Playback } from './playback.svelte.ts';
