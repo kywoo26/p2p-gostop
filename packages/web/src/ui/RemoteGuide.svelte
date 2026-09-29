@@ -142,16 +142,6 @@
     color: var(--color-error);
   }
 
-  .button {
-    min-height: var(--touch-min);
-    padding: 0 var(--space-4);
-    border: 0;
-    border-radius: var(--radius-control);
-    background: var(--color-accent);
-    color: var(--color-on-accent);
-    font: inherit;
-  }
-
   .note {
     color: var(--color-text-muted);
     font-size: var(--font-size-s);

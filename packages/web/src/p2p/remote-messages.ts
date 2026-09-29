@@ -80,9 +80,9 @@ export const REMOTE_ERROR_MESSAGES: Record<RemoteErrorCode, RemoteMessage> = {
     action: '새 방을 만들고 초대를 다시 보내세요.',
   },
   version: {
-    title: '게임 버전 불일치',
-    detail: '상대와 게임 버전이 다릅니다.',
-    action: '양쪽 앱을 같은 배포 버전으로 업데이트하세요.',
+    title: '중계 버전 불일치',
+    detail: '앱과 PC 중계의 제어 버전이 다릅니다.',
+    action: '앱과 PC 중계를 같은 배포 버전으로 업데이트하세요.',
   },
   expired: {
     title: '초대 만료',
