@@ -227,7 +227,7 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await host.getByRole('button', { name: '핫스팟 대전' }).click();
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();

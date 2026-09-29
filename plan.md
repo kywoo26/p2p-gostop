@@ -403,6 +403,10 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | NP-RP-08 | 부분 | `src/static.ts`, `test/{static,public-process}.test.ts`: 최소 health·artifact별 버전 판정 | RP-04A의 원격 화면 진입 시 제한 조회 |
 | NF-RP-01/02/03/06 | 부분 | Origin 검사·역할 분리·상한·버전 경로/호환 표, `test/{public-auth,public-net,public-limits,public-process,static}.test.ts` | 공개 TLS/Funnel·실기기·동일 artifact 배포·복귀 실측 |
 
+### 원격 RP-05A UI 상태 (별도 분모)
+
+2026-09-30: FR-RP-01은 홈 모드 선택과 로컬 중계 URL·생성 자격 설정, FR-RP-02/03은 호스트 코드·초대 링크/QR·승인 목록·상대 상태 UI까지 **부분** 구현한다. FR-RP-05/06은 만료 표시와 모바일 4폭 캡처까지 **부분** 검증하며, 실제 기기·Funnel과 전체 게임 복귀는 RP-07에 남긴다. NF-RP-01/03은 URL 검증·자격 비표시·링크 fragment 표시까지만 부분 적용한다. 대응 검증은 `web/src/routes/{Home,Settings,HostRoom.remote}.test.ts`와 `web/e2e/remote-host.spec.ts`다.
+
 ### AI·머니 (AI/MN)
 
 | ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |

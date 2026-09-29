@@ -8,6 +8,9 @@
   import { getBridge } from './bridge/bridge.ts';
   import { current } from './game/current.svelte.ts';
   import { diagnosticsView } from './game/diagnostics.ts';
+  import { HostGame } from './p2p/host.svelte.ts';
+  import { createRemoteHost, type RemoteHostController } from './p2p/remote.ts';
+  import { loadRemoteHostSettings } from './net/index.ts';
   import { log } from './game/log.svelte.ts';
   import { toRecordRow } from './game/adapter.ts';
   import { DIFFICULTY_LABEL } from './game/solo.svelte.ts';
@@ -20,12 +23,13 @@
   import Game, { type MenuItem } from './routes/Game.svelte';
   import GuestApp from './routes/GuestApp.svelte';
   import Home from './routes/Home.svelte';
+  import HostRoom, { type HostRoomRules } from './routes/HostRoom.svelte';
   import License from './routes/License.svelte';
   import Records from './routes/Records.svelte';
   import Settings from './routes/Settings.svelte';
   import SoloSetup from './routes/SoloSetup.svelte';
   import Versus from './routes/Versus.svelte';
-  import { settings } from './settings/settings.svelte.ts';
+  import { effectiveStartBalance, settings } from './settings/settings.svelte.ts';
   import Screen from './ui/Screen.svelte';
 
   const GALLERY = '/dev/gallery';
@@ -35,7 +39,63 @@
   if (mode === 'host' && bridge.isNative) hotspot.watch();
 
   let hash = $state(location.hash);
+  let remoteHost = $state.raw<RemoteHostController | null>(null);
+  let remoteActive = $state(false);
   const route = $derived(hash.replace(/^#/, '') || '/');
+  const host = $derived(p2p.host);
+  const remoteRules = $derived<HostRoomRules>({
+    preset: host?.config.preset ?? settings.value.preset,
+    perPoint: host?.config.perPoint ?? settings.value.perPoint,
+    startBalance: host?.config.startBalance ?? effectiveStartBalance(settings.value),
+    hostName: host?.config.hostName ?? settings.value.playerName,
+    unit: settings.value.unit,
+  });
+
+  function openRemote(): RemoteHostController | null {
+    if (p2p.host && p2p.host.phase !== 'ended' && !remoteActive) {
+      location.hash = p2p.host.phase === 'playing' ? '#/match' : '#/versus';
+      return null;
+    }
+    if (remoteHost) return remoteHost;
+    if (!loadRemoteHostSettings(localStorage)) {
+      location.hash = '#/settings';
+      return null;
+    }
+    remoteHost = createRemoteHost({
+      settings: localStorage,
+      storage: sessionStorage,
+      onTransport: (transport) => {
+        p2p.closeRoom();
+        const game = new HostGame({
+          config: hostConfigFrom(settings.value),
+          transport,
+          persist: false,
+        });
+        p2p.host = game;
+      },
+    });
+    remoteHost.subscribe((snapshot) => {
+      remoteActive = snapshot.room !== undefined && snapshot.state !== 'ended';
+      if (snapshot.state === 'ended') p2p.closeRoom();
+    });
+    return remoteHost;
+  }
+
+  function changeRemoteRules(patch: Partial<HostRoomRules>) {
+    if (patch.preset !== undefined) settings.update({ preset: patch.preset, startBalance: null });
+    if (patch.perPoint !== undefined)
+      settings.update({ perPoint: patch.perPoint, startBalance: null });
+    if (patch.hostName !== undefined) settings.update({ playerName: patch.hostName });
+    host?.configure(hostConfigFrom(settings.value));
+  }
+
+  function startRemote() {
+    if (host?.start()) location.hash = '#/match';
+  }
+
+  $effect(() => {
+    if (route === '/remote') openRemote();
+  });
   let returnFromSettings = $state<string | null>(null);
   let backToken = $state(0);
   let backListenerReady = $state(false);
@@ -65,7 +125,6 @@
   )
     current.resumeSolo(settings.value);
 
-  const host = $derived(p2p.host);
   const inGame = $derived(
     mode === 'host' &&
       ((route === '/game' && current.solo !== null && current.solo.state.phase !== 'ended') ||
@@ -174,6 +233,11 @@
   function endMatch() {
     host?.end();
     p2p.closeRoom();
+    if (remoteHost) {
+      void remoteHost.close();
+      remoteHost = null;
+      remoteActive = false;
+    }
     location.hash = '#/';
   }
 
@@ -206,6 +270,10 @@
   }
 
   function onHashChange() {
+    if (location.hash === '#/versus' && remoteActive) {
+      location.hash = '#/remote';
+      return;
+    }
     const previous = route;
     hash = location.hash;
     if (previous === '/settings' || location.hash === '#/' || location.hash === '')
@@ -266,6 +334,17 @@
   {/if}
 {:else if route === '/versus'}
   <Versus />
+{:else if route === '/remote'}
+  {#if remoteHost}
+    <HostRoom
+      hotspot={hotspot.info}
+      guest={host?.guestName ? { name: host.guestName, connected: host.guestOnline } : null}
+      rules={remoteRules}
+      remote={remoteHost}
+      onrules={changeRemoteRules}
+      onstart={startRemote}
+    />
+  {/if}
 {:else if route === '/match'}
   {#if host !== null && host.phase !== 'lobby'}
     <Game
@@ -292,7 +371,7 @@
 {:else if route === '/settings'}
   <Settings
     settings={settings.value}
-    sessionActive={current.resumable !== null || match !== null}
+    sessionActive={current.resumable !== null || match !== null || remoteActive}
     onchange={changeSettings}
     back={returnFromSettings ?? '#/'}
   />
@@ -328,7 +407,13 @@
   {#if current.saveError}<p role="alert" class="storage-error">
       {current.saveError} <a href="#/solo">저장 상태 확인</a>
     </p>{/if}
-  <Home {resume} onresume={resumeSolo} {match} onmatch={() => (location.hash = '#/match')} />
+  <Home
+    {resume}
+    onresume={resumeSolo}
+    {match}
+    onmatch={() => (location.hash = '#/match')}
+    activeMode={remoteActive ? 'remote' : host && host.phase !== 'ended' ? 'hotspot' : undefined}
+  />
 {/if}
 
 <style>
