@@ -13,9 +13,12 @@
   import { DIFFICULTY_LABEL } from './game/solo.svelte.ts';
   import { sounds } from './game/sound.ts';
   import type { RecordsView } from './lib/view-types.ts';
+  import { parseRelayOrigin } from './net/index.ts';
   import { hotspot } from './p2p/hotspot.svelte.ts';
+  import { createRemoteGuest } from './p2p/remote.ts';
   import { detectMode } from './p2p/role.ts';
   import { hostConfigFrom, p2p } from './p2p/store.svelte.ts';
+  import { loadGuestState, saveGuestState } from './p2p/ticket.ts';
   import Diagnostics from './routes/Diagnostics.svelte';
   import Game, { type MenuItem } from './routes/Game.svelte';
   import GuestApp from './routes/GuestApp.svelte';
@@ -30,6 +33,67 @@
 
   const GALLERY = '/dev/gallery';
   const mode = detectMode();
+  // 원격 초대 비밀은 fragment에만 받는다. 페이지가 뜨자마자 메모리로 옮기고 주소에서 지운다.
+  const remoteJoin = /^#\/join(?:\?|$)/.test(location.hash);
+  const joinParams = remoteJoin ? new URLSearchParams(location.hash.split('?')[1] ?? '') : null;
+  const invitationUrl = joinParams?.has('t') ? location.href : null;
+  if (invitationUrl !== null) {
+    history.replaceState(history.state, '', `${location.pathname}${location.search}#/join`);
+  }
+  const savedRemote = (() => {
+    try {
+      const activeRaw = sessionStorage.getItem('p2p-gostop.remote-guest-active.v1');
+      if (activeRaw === null) return null;
+      const activeRoom: unknown = JSON.parse(activeRaw);
+      if (typeof activeRoom !== 'string') return null;
+      const raw = sessionStorage.getItem(`p2p-gostop.remote-guest.v1.${activeRoom}`);
+      if (raw === null) return null;
+      const value: unknown = JSON.parse(raw);
+      if (
+        typeof value !== 'object' ||
+        value === null ||
+        !('origin' in value) ||
+        typeof value.origin !== 'string'
+      )
+        return null;
+      return { room: activeRoom, origin: parseRelayOrigin(value.origin) };
+    } catch {
+      return null;
+    }
+  })();
+  const hasRemoteResume =
+    savedRemote !== null &&
+    (invitationUrl === null || savedRemote.room === joinParams?.get('room'));
+  const remoteOrigin = invitationUrl ? location.origin : (savedRemote?.origin ?? location.origin);
+  function makeRemoteGuest(origin: string) {
+    return createRemoteGuest({
+      allowedOrigin: origin,
+      storage: sessionStorage,
+      onTransport: (transport, nickname, roomId) => {
+        let sameRoom = false;
+        try {
+          sameRoom = sessionStorage.getItem('p2p-gostop.remote-game-room.v1') === roomId;
+          if (!sameRoom) {
+            saveGuestState(nickname, null);
+            sessionStorage.setItem('p2p-gostop.remote-game-room.v1', roomId);
+          }
+        } catch {
+          // 저장소가 막힌 탭은 현재 연결만 사용한다.
+        }
+        p2p.join({
+          name: nickname,
+          transport,
+          restore: sameRoom ? loadGuestState(nickname) : null,
+          onTicket: () => {},
+        });
+      },
+    });
+  }
+  const remoteGuest = remoteJoin ? makeRemoteGuest(remoteOrigin) : null;
+  // RP-04B 컨트롤러도 현재 fragment를 정리하므로 비밀 없는 참여 경로를 복원한다.
+  if (remoteJoin && location.hash === '') {
+    history.replaceState(history.state, '', `${location.pathname}${location.search}#/join`);
+  }
   const bridge = getBridge();
   // Android 앱: 핫스팟·LAN 상태(NF-06 경고)를 앱 전체에서 본다
   if (mode === 'host' && bridge.isNative) hotspot.watch();
@@ -233,7 +297,15 @@
   onunhandledrejection={(e) => onError(`처리되지 않은 Promise 거부: ${String(e.reason)}`)}
 />
 
-{#if mode === 'guest' && galleryPage === null}
+{#if remoteJoin && remoteGuest !== null}
+  <GuestApp
+    remoteController={remoteGuest}
+    createRemoteController={makeRemoteGuest}
+    {invitationUrl}
+    {hasRemoteResume}
+    initialRemoteOrigin={remoteOrigin}
+  />
+{:else if mode === 'guest' && galleryPage === null}
   <GuestApp />
 {:else if galleryPage !== null}
   <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, plan.md 1.2) -->
