@@ -4,7 +4,7 @@
 
 ## 1. 절대 규칙
 - 요구사항 상태를 바꾸는 PR은 `plan.md` §3-2 진행 매트릭스를 갱신한다.
-- 빌드·테스트는 호스트에서 네이티브로 실행하고, CI도 같은 명령을 러너에서 네이티브로 돈다(5장). 로컬과 CI의 동일성은 컨테이너가 아니라 **같은 버전 핀**으로 담보한다: `.nvmrc`(Node), `package-lock.json`(Playwright 1.63.0이 브라우저 빌드까지 결정), Gradle 설정(AGP·compileSdk 36·build-tools 36.0.0), JDK 21, 배포판 Ubuntu 24.04. 호스트 도구는 처음 한 번 `tools/setup-host.sh`로만 설치한다. sudo 암호나 Android SDK 라이선스 동의가 필요한 단계는 사람이 터미널에서 실행하고, 에이전트는 막힌 단계와 오류 원문을 오케스트레이터에 보고한다. 에이전트 도구 Svelte MCP(`.mcp.json`)도 호스트 `npx`로 돈다.
+- 빌드·테스트는 호스트에서 네이티브로 실행하고, CI도 같은 명령을 러너에서 네이티브로 돈다(5장). 로컬과 CI의 동일성은 컨테이너가 아니라 **같은 버전 핀**으로 담보한다: `.nvmrc`(Node), `package-lock.json`(Playwright 1.63.0이 브라우저 빌드까지 결정), Gradle 설정(AGP·compileSdk 36·build-tools 36.0.0), JDK 21, 배포판 Ubuntu 24.04. 호스트 도구는 처음 한 번 `tools/setup-host.sh`로만 설치한다. sudo 암호가 필요한 단계(apt)는 사람이 터미널에서 실행하고, 에이전트는 막힌 단계와 오류 원문을 오케스트레이터에 보고한다. 에이전트 도구 Svelte MCP(`.mcp.json`)도 호스트 `npx`로 돈다.
 - 라이브러리 API를 쓰기 전에 공식 문서(Context7)를 조회한다. 기억으로 쓰지 않는다.
 - 버전은 아래 표를 따른다. 표에 없는 의존성을 추가하려면 `plan.md` 1.8에 근거를 적고 나서 추가한다.
 - 게임 규칙의 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 정답으로 쓰지 않는다. PolyForm NC·무라이선스 저장소의 코드는 복사하지 않는다.
@@ -59,7 +59,7 @@
 - 의존성 추가: `npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-- 처음 한 번(그리고 `.nvmrc`·`@playwright/test`·Android 설정이 바뀐 뒤) 저장소 루트에서 `tools/setup-host.sh`. 여러 번 실행해도 되고, 설치하는 것을 단계별로 출력한다. 비대화형으로 실행하면 sudo·라이선스 단계를 보류로 남기고 실패한다. 에이전트는 그 출력(보류 목록과 오류 원문)을 오케스트레이터에 보고하고 나머지 작업을 계속한다.
+- 처음 한 번(그리고 `.nvmrc`·`@playwright/test`·Android 설정이 바뀐 뒤) 저장소 루트에서 `tools/setup-host.sh`. 여러 번 실행해도 되고, 설치하는 것을 단계별로 출력한다. 비대화형으로 실행하면 sudo 단계(와 설치에 실패한 SDK 패키지)를 보류로 남기고 실패하며, 스스로 재실행하지 않는다. 에이전트는 그 출력(보류 목록과 오류 원문)을 오케스트레이터에 보고하고 나머지 작업을 계속한다.
 - 셸마다 `nvm use`(`.nvmrc`). 새 체크아웃·워크트리는 먼저 `npm ci`.
 - PR 필수 명령(CI의 `ci.yml`도 같은 명령을 돈다):
 ```sh

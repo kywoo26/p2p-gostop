@@ -9,7 +9,8 @@
 #     openjdk-21-jdk-headless(Gradle), python3-pil·ffmpeg·libavif-bin(자산 변환, PA-03), unzip
 #   - Playwright 브라우저: ~/.cache/ms-playwright (npx playwright install)
 #   - Android SDK: $ANDROID_HOME(기본 ~/Android/Sdk)에 cmdline-tools + platforms;android-36·build-tools;36.0.0·platform-tools
-# sudo 암호나 SDK 라이선스 동의는 터미널에서 직접 실행할 때만 묻는다. 비대화형이면 그 단계를 보류로 남기고 끝에 알린다.
+# sudo 암호는 터미널에서 직접 실행할 때만 묻는다. 비대화형이면 그 단계를 보류로 남기고 끝에 알린다.
+# 어떤 단계도 스크립트를 다시 실행(exec)하지 않는다. 각 단계는 설치 여부를 먼저 확인하므로 여러 번 실행해도 된다.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -86,20 +87,28 @@ if [[ ! -x "$sdkmanager" ]]; then
   rm -rf "$tmp"
 fi
 sdk_pkgs=("platforms;android-36" "build-tools;36.0.0" "platform-tools")
-if [[ -f "$ANDROID_HOME/licenses/android-sdk-license" ]]; then
-  for p in "${sdk_pkgs[@]}"; do
-    if [[ ! -d "$ANDROID_HOME/${p//;//}" ]]; then
-      echo "설치: $p"
-      "$sdkmanager" --sdk_root="$ANDROID_HOME" --install "$p" >/dev/null
-    fi
-  done
-  echo "SDK: $(ls "$ANDROID_HOME/platforms") / build-tools $(ls "$ANDROID_HOME/build-tools")"
-elif interactive; then
-  echo "SDK 라이선스 동의가 필요하다(사용자 동의). 동의 뒤 SDK 패키지를 설치한다."
-  "$sdkmanager" --sdk_root="$ANDROID_HOME" --licenses
-  exec "$0"
+sdk_missing() {
+  local p
+  for p in "${sdk_pkgs[@]}"; do [[ -d "$ANDROID_HOME/${p//;//}" ]] || printf '%s\n' "$p"; done
+}
+mapfile -t todo < <(sdk_missing)
+if [[ ${#todo[@]} -gt 0 ]]; then
+  echo "설치: ${todo[*]}"
+  # cmdline-tools 23.0의 sdkmanager는 Android CLI(https://d.android.com/tools/agents/android-cli, `android sdk install`)로
+  # 위임된다. `--licenses`는 "no longer needed" 경고만 내고 파일을 만들지 않으며, 설치 명령이 묻지 않고
+  # licenses/android-sdk-license를 기록한다(2026-09-30 실측). 문서의 `android sdk install`에도 동의 옵션이 없다.
+  # 구버전 sdkmanager면 설치가 동의를 물으므로 터미널에서는 그대로 입력을 받고, 비대화형이면 stdin을 닫아 실패시킨다.
+  if interactive; then
+    "$sdkmanager" --sdk_root="$ANDROID_HOME" --install "${todo[@]}" || true
+  else
+    "$sdkmanager" --sdk_root="$ANDROID_HOME" --install "${todo[@]}" </dev/null >/dev/null || true
+  fi
+  mapfile -t todo < <(sdk_missing)
+fi
+if [[ ${#todo[@]} -gt 0 ]]; then
+  pending+=("Android SDK 패키지: 터미널에서 $sdkmanager --sdk_root=\"$ANDROID_HOME\" --install$(printf ' "%s"' "${todo[@]}")")
 else
-  pending+=("Android SDK 라이선스 동의: $sdkmanager --sdk_root=\"$ANDROID_HOME\" --licenses")
+  echo "SDK: $(ls "$ANDROID_HOME/platforms") / build-tools $(ls "$ANDROID_HOME/build-tools") / licenses $(ls "$ANDROID_HOME/licenses" 2>/dev/null | tr '\n' ' ')"
 fi
 # Gradle(AGP)은 ANDROID_HOME으로 SDK를 찾는다. 셸 설정에 한 번만 추가한다.
 case "${SHELL##*/}" in zsh) rc="$HOME/.zshenv" ;; *) rc="$HOME/.bashrc" ;; esac

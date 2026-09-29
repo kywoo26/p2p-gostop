@@ -44,7 +44,7 @@ npm run start -w packages/relay-dev  # 중계 ws://localhost:17777/ws?role=host|
 npm run sim -- 42 --workers 4        # 셀프플레이 시뮬레이션 CLI (공유 머신이면 워커 상한)
 ```
 
-- `tools/setup-host.sh`는 여러 번 실행해도 되고 설치하는 것을 단계별로 출력한다. sudo 암호와 Android SDK 라이선스 동의는 터미널에서 직접 실행할 때만 묻는다.
+- `tools/setup-host.sh`는 여러 번 실행해도 되고 설치하는 것을 단계별로 출력한다. sudo 암호는 터미널에서 직접 실행할 때만 묻는다. Android SDK는 cmdline-tools 23.0(Android CLI)이 설치하면서 라이선스 파일을 기록하므로 따로 동의 단계가 없다.
 - OSS 고지 갱신은 `npm run oss:refresh -w packages/web`로 수동 실행해 생성물 2개를 커밋한다. 웹 빌드는 npm 고지만 대조하고 Android 빌드는 Gradle 런타임 의존성을 대조한다.
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
 - **개발 이미지 삭제 뒤 정리**(2026-09-30, 선택): 옛 이미지·볼륨은 `docker image rm p2p-gostop-dev:1 p2p-gostop-dev:2 p2p-gostop-dev:3 p2p-gostop-dev:4`, `docker volume rm p2p-gostop-gradle p2p-gostop-npm p2p-gostop-android`로 지운다. 옛 컨테이너가 남긴 root 소유 `node_modules`가 있으면(`ls -ld node_modules`) `sudo chown -R "$USER" node_modules` 뒤 `npm ci`.
