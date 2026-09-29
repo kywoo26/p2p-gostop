@@ -1,7 +1,10 @@
 // 앱 전체의 현재 게임 (화면을 오가도 세션이 유지된다). 앱 시작 시 저장된 세션을 이어받는다(MN-05).
 import type { Difficulty } from '@p2p-gostop/ai';
-import { PRESETS } from '@p2p-gostop/engine';
-import { effectiveStartBalance, type AppSettings } from '../settings/settings.svelte.ts';
+import {
+  effectiveRules,
+  effectiveStartBalance,
+  type AppSettings,
+} from '../settings/settings.svelte.ts';
 import { createAiClient, timeBudgetFor, type AiClient } from './ai-client.ts';
 import { log } from './log.svelte.ts';
 import type { SessionConfig } from './session.ts';
@@ -15,7 +18,7 @@ function randomSeed(): number {
 function soloConfig(settings: AppSettings, difficulty: Difficulty): SessionConfig {
   return {
     preset: settings.preset,
-    rules: { ...PRESETS[settings.preset], gukjin: settings.gukjinAsk ? 'ask' : 'auto' },
+    rules: effectiveRules(settings),
     perPoint: settings.perPoint,
     startBalance: effectiveStartBalance(settings),
     names: ['나', `컴퓨터 · ${DIFFICULTY_LABEL[difficulty]}`],

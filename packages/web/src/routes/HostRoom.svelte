@@ -5,6 +5,7 @@
 
   export interface HostRoomRules {
     readonly preset: PresetId;
+    readonly custom: boolean;
     readonly perPoint: number;
     readonly startBalance: number;
     readonly hostName: string;
@@ -186,7 +187,7 @@
     <h2 id={`${ids}-rules`}>{resume ? '이어하기' : '규칙·금액'}</h2>
     {#if resume}
       <p class="rules">
-        {resume.round}판째부터 · {PRESET_LABEL[rules.preset]} · 점당 {formatMoney(
+        {resume.round}판째부터 · {rules.custom ? '사용자 지정' : PRESET_LABEL[rules.preset]} · 점당 {formatMoney(
           rules.perPoint,
           rules.unit,
         )}{resume.guestName ? ` · 지난 상대 ${resume.guestName}` : ''}
@@ -216,6 +217,9 @@
           {#each PRESETS as id (id)}<option value={id}>{PRESET_LABEL[id]}</option>{/each}
         </select>
       </label>
+      {#if rules.custom}<p class="rules">
+          사용자 지정 규칙이 게스트에게 전달됩니다. <a href="#/settings">세부 규칙·복원</a>
+        </p>{/if}
       <label class="row">
         <span>점당</span>
         <select

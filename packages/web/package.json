@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "python3 scripts/build-skin-assets.py --check && node scripts/check-font.mjs && vite build && node scripts/check-bundle.mjs",
+    "build": "python3 scripts/build-skin-assets.py --check && node scripts/check-font.mjs && vite build && node --test scripts/oss-notices.test.mjs && node scripts/check-bundle.mjs",
+    "oss:refresh": "vite build && node scripts/generate-oss-notices.mjs",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
     "lint": "eslint . && prettier --check .",

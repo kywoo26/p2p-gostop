@@ -74,6 +74,12 @@
     <h2 id="lic-code">앱 코드</h2>
     <p>{CODE_LICENSE.scope} 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.</p>
   </section>
+  <section aria-labelledby="lic-dependencies">
+    <h2 id="lic-dependencies">배포 의존성</h2>
+    <p>웹·Android 의존성 고지는 앱에 포함된 파일에서 확인할 수 있습니다.</p>
+    <a class="button" href={`${import.meta.env.BASE_URL}oss/NOTICE.txt`}>전체 공개 소스 고지 읽기</a
+    >
+  </section>
   <section aria-labelledby="lic-pro">
     <h2 id="lic-pro">게임 자산</h2>
     {#each PRO_CREDITS as item (item.source)}<p>{item.author} · {item.license}</p>
