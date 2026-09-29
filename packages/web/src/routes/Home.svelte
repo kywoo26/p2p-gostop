@@ -1,14 +1,17 @@
 <script lang="ts">
-  // 홈 화면 (spec 6.2). 친구와 대전은 M4(호스트/게스트)에서 연결한다.
+  // 홈 화면 (spec 6.2): 친구와 대전(방 열기) / 혼자 연습 / 기록 / 설정 / 진단. 진행 중인 대전·연습이 있으면 맨 위에 이어하기.
   import { BUILD_ID, BUILD_TIME } from '../lib/build-info.ts';
 
   interface Props {
     /** 이어할 수 있는 혼자 연습 세션 (MN-05). 있으면 맨 위에 "이어하기" */
     resume?: { readonly round: number; readonly label: string } | null;
     onresume?: (() => void) | undefined;
+    /** 진행 중인 친구와 대전 (호스트). 있으면 맨 위에 "대전으로 돌아가기" */
+    match?: { readonly round: number; readonly guest: string } | null;
+    onmatch?: (() => void) | undefined;
   }
 
-  let { resume = null, onresume }: Props = $props();
+  let { resume = null, onresume, match = null, onmatch }: Props = $props();
 
   const menu = [
     { id: 'versus', label: '친구와 대전', primary: true, href: '#/versus' },
@@ -22,6 +25,12 @@
 <main class="home">
   <h1>맞고 P2P</h1>
   <nav aria-label="메인 메뉴">
+    {#if match}
+      <button type="button" class="menu-button resume" onclick={() => onmatch?.()}>
+        대전으로 돌아가기 · {match.guest}
+        {match.round}판째
+      </button>
+    {/if}
     {#if resume}
       <button type="button" class="menu-button resume" onclick={() => onresume?.()}>
         이어하기 · {resume.label}

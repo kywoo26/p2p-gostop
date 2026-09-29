@@ -215,6 +215,7 @@ export class HostSession {
       rev: this.rev,
       stage: this.stageValue,
       round: this.roundNumber,
+      carry: this.carry,
       ready: [false, this.guestReady],
       bankrupt: [...this.bankrupt],
       endReason: this.endReason,

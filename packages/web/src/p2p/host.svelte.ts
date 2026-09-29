@@ -1,0 +1,712 @@
+// 호스트 모드 (spec 2.1·2.3·2.4, FR-01~07·11, MN-01·02·05, NP-02~06). 좌석 0 = 이 기기, 좌석 1 = 원격 게스트.
+// - 로비: 게스트의 hello가 오면 그 이름으로 protocol HostSession(autoStart:false)을 만들어 welcome을 보낸다.
+//   규칙·금액·이름이 바뀌면 같은 토큰으로 세션을 다시 만들고 마지막 hello를 다시 넘겨 welcome을 새로 보낸다.
+//   "시작"은 HostSession.start()다(로비 이후 토큰 없는 접속은 세션이 거절한다, NF-06).
+// - 게임: HostSession(v2)이 권위 엔진·원장·판 사이 대기(settled)·파산·재동기화를 맡는다. 화면은 솔로와 같은
+//   재생 큐(Playback)를 쓴다. 호스트 좌석이 볼 이벤트는 게스트로 나가는 events를 전송 층에서 지켜보며 같은 액션을
+//   엔진 reduce로 다시 계산해(순수 함수) 좌석 0으로 가린다. 판이 끝나면(settled·bankrupt) 정산 화면을 띄운다.
+// - 연결: 중계 알림(WsTransport onRelay)과 60초 시계(NP-05)로 게스트 연결을 보이고, 3분 넘게 돌아오지 않으면
+//   계속 기다릴지 묻는다(spec 2.4).
+// - 저장: 바뀔 때마다 HostSession.toJSON()을 localStorage(127.0.0.1 고정 origin)에 둔다. 이어하기는 fromJSON으로
+//   진행 중인 판까지 되살린다(MN-05, docs/protocol.md 7장).
+import {
+  legalActions,
+  reduce,
+  redactEvent,
+  type Action,
+  type EngineEvent,
+  type GameState,
+  type PresetId,
+  type RuleOptions,
+  type Seat,
+} from '@p2p-gostop/engine';
+import {
+  decode,
+  HostSession,
+  summarizeLedger,
+  type BoardView,
+  type HostMessage,
+  type HostSessionState,
+  type Message,
+  type RelayNotice,
+  type SessionStage,
+  type Transport,
+} from '@p2p-gostop/protocol';
+import { getBridge } from '../bridge/bridge.ts';
+import { gukjinPlacements, toRecordRow, withSeatExtras } from '../game/adapter.ts';
+import type { GameController, GameStats } from '../game/controller.ts';
+import { log } from '../game/log.svelte.ts';
+import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
+import type { MoneyUnit, RecordRow } from '../lib/view-types.ts';
+import { readJson, removeKey, writeJson } from '../storage/local.ts';
+import { INSTANT_LABEL } from '../ui/settle-labels.ts';
+import { emptyBoard, random32, randomHex, vibrateFor } from './common.ts';
+import { openLink, type LinkState, type RelayPeer } from './link.ts';
+import type { RelayAddress } from './role.ts';
+
+const ME: Seat = 0;
+const GUEST: Seat = 1;
+/** spec 2.4: 게스트가 이만큼 돌아오지 않으면 호스트에 선택지를 보인다 */
+const WAIT_PROMPT_MS = 3 * 60_000;
+/** NP-05 시계 주기 (60초 판정의 해상도) */
+const CLOCK_MS = 5_000;
+const HOST_SAVE_KEY = 'gostop.host.v2';
+
+export interface HostConfig {
+  readonly preset: PresetId;
+  readonly rules: RuleOptions;
+  readonly perPoint: number;
+  readonly startBalance: number;
+  readonly hostName: string;
+  readonly unit?: MoneyUnit;
+}
+
+/** localStorage 저장 (MN-05) */
+export interface HostSave {
+  readonly version: 2;
+  readonly config: HostConfig;
+  readonly state: HostSessionState;
+  readonly records: readonly RecordRow[];
+}
+
+export function loadHostSave(): HostSave | null {
+  const raw = readJson(HOST_SAVE_KEY);
+  if (typeof raw !== 'object' || raw === null) return null;
+  const o = raw as Partial<HostSave>;
+  if (
+    o.version !== 2 ||
+    typeof o.config?.rules !== 'object' ||
+    typeof o.state !== 'object' ||
+    o.state === null ||
+    o.state.v !== 1 ||
+    !Array.isArray(o.records)
+  )
+    return null;
+  return o as HostSave;
+}
+
+export function clearHostSave(): void {
+  removeKey(HOST_SAVE_KEY);
+}
+
+export type HostPhase = 'lobby' | 'playing' | 'ended';
+
+interface PendingAction {
+  readonly before: GameState;
+  readonly action: Action;
+  readonly tapAt: number | null;
+  readonly mine: boolean;
+}
+
+/** 한 HostSession이 쓰는 전송 창구. 세션을 다시 만들면 새 창구로 바꾸고 옛 처리기는 버린다 */
+class SessionPort implements Transport {
+  readonly messages = new Set<(raw: string) => void>();
+  readonly closes = new Set<() => void>();
+  readonly relays = new Set<(notice: RelayNotice) => void>();
+  private readonly out: (message: Message) => void;
+  private readonly again: () => void;
+  constructor(out: (message: Message) => void, reconnect: () => void) {
+    this.out = out;
+    this.again = reconnect;
+  }
+  send(message: Message): void {
+    this.out(message);
+  }
+  onMessage(handler: (raw: string) => void): () => void {
+    this.messages.add(handler);
+    return () => this.messages.delete(handler);
+  }
+  onClose(handler: () => void): () => void {
+    this.closes.add(handler);
+    return () => this.closes.delete(handler);
+  }
+  onRelay(handler: (notice: RelayNotice) => void): () => void {
+    this.relays.add(handler);
+    return () => this.relays.delete(handler);
+  }
+  reconnect(): void {
+    this.again();
+  }
+}
+
+export interface HostOptions {
+  readonly config: HostConfig;
+  /** 이어하기 (저장된 세션) */
+  readonly resume?: HostSave | null;
+  readonly address?: RelayAddress;
+  /** 테스트용 전송 (주면 WebSocket을 열지 않는다) */
+  readonly transport?: Transport;
+  readonly clock?: boolean;
+  readonly now?: () => number;
+  /** false면 저장하지 않는다 (테스트) */
+  readonly persist?: boolean;
+}
+
+export class HostGame implements GameController {
+  readonly mode = 'host' as const;
+  link = $state<LinkState>('connecting');
+  /** 게스트가 hello에 적은 이름 */
+  guestName = $state<string | null>(null);
+  /** 중계 알림으로 본 게스트 소켓 (알림이 없는 중계면 null) */
+  peer = $state<RelayPeer | null>(null);
+  config: HostConfig;
+  stage = $state<SessionStage>('lobby');
+  roundsPlayed = $state(0);
+  balances = $state.raw<readonly [number, number]>([0, 0]);
+  refilled = $state.raw<readonly [number, number]>([0, 0]);
+  seq = $state(0);
+  records = $state.raw<readonly RecordRow[]>([]);
+  /** 게스트가 끊긴 시각 (재접속하면 null) */
+  offlineSince = $state<number | null>(null);
+  /** 3분 대기 선택지 (spec 2.4) */
+  waitPrompt = $state(false);
+  /** 게스트가 settled에서 다음 판을 요청했다 */
+  guestReady = $state(false);
+  /** 파산으로 선택을 기다리는 좌석 */
+  bankruptSeats = $state.raw<readonly Seat[]>([]);
+  /** 반응형 갱신 신호 (세션의 일반 필드가 바뀔 때) */
+  private version = $state(0);
+  readonly playback: Playback;
+  readonly token: string;
+
+  private session: HostSession | null = null;
+  private port: SessionPort | null = null;
+  private readonly transport: Transport;
+  private readonly ws: { dispose(): void; reconnect(force?: boolean): void } | null;
+  private readonly resume: HostSave | null;
+  private readonly now: () => number;
+  private readonly persist: boolean;
+  private lastHello: string | null = null;
+  private pending: PendingAction | null = null;
+  private settledRound = 0;
+  private savedRev = -1;
+  private savedSeq = -1;
+  private clock: ReturnType<typeof setInterval> | null = null;
+  private disposed = false;
+
+  constructor(options: HostOptions) {
+    this.config = $state.raw(options.resume?.config ?? options.config);
+    this.resume = options.resume ?? null;
+    this.now = options.now ?? (() => Date.now());
+    this.persist = options.persist ?? true;
+    this.token = this.resume?.state.token ?? randomHex();
+    this.balances = this.resume?.state.ledger.balances ?? [
+      this.config.startBalance,
+      this.config.startBalance,
+    ];
+    this.records = this.resume?.records ?? [];
+    this.roundsPlayed = this.records.length;
+    if (options.transport) {
+      this.ws = null;
+      this.transport = options.transport;
+      this.link = 'open';
+    } else {
+      const ws = openLink({
+        role: 'host',
+        ...(options.address ? { address: options.address } : {}),
+        log: (line) => log.info(`호스트 ${line}`),
+        onState: (state) => {
+          this.link = state;
+          if (state === 'replaced') log.warn('다른 창이 호스트 연결을 가져갔습니다 (4001)');
+        },
+      });
+      this.ws = ws;
+      this.transport = ws;
+    }
+    this.transport.onMessage((raw) => this.incoming(raw));
+    this.transport.onClose(() => this.port?.closes.forEach((h) => h()));
+    this.transport.onRelay?.((notice) => this.onRelay(notice));
+    this.playback = new Playback(emptyBoard(ME, this.names, this.balances), {
+      viewer: ME,
+      names: () => this.names,
+      onBanner: vibrateFor,
+    });
+    if (options.clock ?? true) this.clock = setInterval(() => this.tick(), CLOCK_MS);
+  }
+
+  // ---- 표시 값 ----
+
+  get phase(): HostPhase {
+    return this.stage === 'lobby' ? 'lobby' : this.stage === 'ended' ? 'ended' : 'playing';
+  }
+
+  get names(): readonly [string, string] {
+    return (
+      this.session?.names ?? [
+        this.config.hostName,
+        this.guestName ?? this.resume?.state.guestName ?? '상대',
+      ]
+    );
+  }
+
+  /** 게스트가 지금 이어져 있는지: hello를 받았고, 중계가 떠났다고 하지 않았고, 60초 안에 소리가 있었다(NP-05) */
+  get guestOnline(): boolean {
+    void this.version;
+    if (this.guestName === null || this.session === null) return false;
+    if (this.peer === 'left' || this.peer === 'absent') return false;
+    return this.session.connected;
+  }
+
+  /** 이어할 수 있는 저장본 (아직 되살리지 않았을 때) */
+  get resumable(): HostSave | null {
+    void this.version;
+    return this.resume !== null && this.resume.state.stage !== 'ended' && this.session === null
+      ? this.resume
+      : null;
+  }
+
+  private get state(): GameState | null {
+    void this.version;
+    return this.session?.state ?? null;
+  }
+
+  get bankrupt(): boolean {
+    return this.bankruptSeats.includes(ME);
+  }
+
+  get canAct(): boolean {
+    const state = this.state;
+    return (
+      this.stage === 'playing' &&
+      this.playback.idle &&
+      this.guestOnline &&
+      state !== null &&
+      state.phase !== 'end' &&
+      legalActions(state, ME).length > 0
+    );
+  }
+
+  get thinking(): boolean {
+    const state = this.state;
+    return (
+      this.stage === 'playing' &&
+      this.playback.idle &&
+      state !== null &&
+      state.phase !== 'end' &&
+      legalActions(state, GUEST).length > 0 &&
+      legalActions(state, ME).length === 0
+    );
+  }
+
+  get notice(): string | null {
+    void this.version;
+    if (this.stage === 'ended') return '세션이 끝났습니다';
+    if (this.link === 'replaced') return '다른 창에서 호스트로 접속 중입니다';
+    if (this.link !== 'open') return '중계에 다시 연결하는 중…';
+    if (this.phase === 'playing' && !this.guestOnline) {
+      const name = this.guestName ?? '상대';
+      const since = this.offlineSince;
+      const minutes = since === null ? 0 : Math.floor((this.now() - since) / 60_000);
+      return `${name} 연결 끊김 — 돌아오기를 기다리는 중${minutes > 0 ? ` (${minutes}분)` : ''}`;
+    }
+    if (this.stage === 'handshake' && this.playback.idle) return '판을 나누는 중…';
+    return null;
+  }
+
+  /** 정산 화면 안내: 상대 파산 선택 대기·상대 준비 */
+  get settlementNote(): string | null {
+    if (this.stage === 'bankrupt' && !this.bankrupt)
+      return `${this.names[GUEST]}의 재충전·종료 선택을 기다리는 중`;
+    if (this.stage === 'settled' && this.guestReady) return `${this.names[GUEST]} 준비 완료`;
+    return null;
+  }
+
+  /** 정산 화면의 "다음 판"을 잠글지 (상대 파산 선택 대기) */
+  get settlementWaiting(): boolean {
+    return this.stage === 'bankrupt' && !this.bankrupt;
+  }
+
+  get stats(): GameStats {
+    return {
+      round: this.session?.roundNumber ?? this.resume?.state.roundNumber ?? 1,
+      phase:
+        this.stage === 'ended'
+          ? 'ended'
+          : this.stage === 'bankrupt'
+            ? 'bankrupt'
+            : this.playback.settlement !== null
+              ? 'roundOver'
+              : 'playing',
+      roundsPlayed: this.roundsPlayed,
+      balances: this.balances,
+      refilled: this.refilled,
+      startBalance: this.session?.ledger.startBalance ?? this.config.startBalance,
+      seq: this.seq,
+    };
+  }
+
+  /** 좌석 0 화면 + 표시용 좌석 값(국진 위치·폭탄 횟수) */
+  private board(): BoardView | null {
+    const session = this.session;
+    const view = session?.hostView() ?? null;
+    const state = session?.state ?? null;
+    if (view === null || state === null) return null;
+    const stats = (seat: Seat) => ({
+      gukjinAsPi: state.seats[seat].score.gukjinAsPi,
+      bombs: state.seats[seat].bombs,
+    });
+    return withSeatExtras(view, [stats(0), stats(1)]);
+  }
+
+  // ---- 로비 ----
+
+  /** 로비에서 규칙·금액·이름을 바꾼다. 게스트가 있으면 세션을 다시 만들어 welcome을 새로 보낸다 (FR-05, FR-24) */
+  configure(config: HostConfig): void {
+    if (this.stage !== 'lobby' || this.resume !== null) return;
+    this.config = config;
+    this.balances = [config.startBalance, config.startBalance];
+    this.playback.reset(emptyBoard(ME, this.names, this.balances));
+    if (this.lastHello !== null) this.openSession(this.guestName ?? '상대');
+  }
+
+  private newPort(): SessionPort {
+    const port = new SessionPort(
+      (message) => this.outgoing(message),
+      () => this.transport.reconnect(),
+    );
+    this.port = port;
+    return port;
+  }
+
+  /** 게스트 이름으로 세션을 (다시) 만들고 마지막 hello를 넘긴다. 로비에서만 */
+  private openSession(guestName: string): void {
+    const c = this.config;
+    const session = new HostSession(this.newPort(), {
+      rules: c.rules,
+      names: [c.hostName, guestName],
+      random32,
+      sessionToken: this.token,
+      perPoint: c.perPoint,
+      startBalance: c.startBalance,
+      autoStart: false,
+      ...(c.unit ? { unit: c.unit } : {}),
+      log: (line) => log.info(`세션 ${line}`),
+    });
+    this.attachSession(session);
+    if (this.lastHello !== null) this.dispatch(this.lastHello);
+  }
+
+  private attachSession(session: HostSession): void {
+    this.session = session;
+    session.advanceTime(this.now());
+    session.onChange(() => this.afterChange());
+  }
+
+  /** "시작": 첫 판 커밋 교환을 시작한다 */
+  start(): boolean {
+    if (this.stage !== 'lobby' || this.session === null || !this.guestOnline) return false;
+    const ok = this.session.start();
+    if (ok)
+      log.info(
+        `호스트 세션 시작: ${this.config.preset}, 점당 ${this.config.perPoint}, 시작 ${this.config.startBalance}`,
+      );
+    this.afterChange();
+    return ok;
+  }
+
+  /** 이어하기: 저장된 세션을 되살린다 (진행 중인 판은 시드+액션 리플레이, MN-05) */
+  resumeSaved(): boolean {
+    const saved = this.resume;
+    if (saved === null || this.session !== null) return false;
+    try {
+      const session = HostSession.fromJSON(this.newPort(), saved.state, {
+        random32,
+        log: (line) => log.info(`세션 ${line}`),
+      });
+      this.guestName = saved.state.guestName;
+      this.settledRound =
+        session.stage === 'settled' || session.stage === 'bankrupt' ? session.roundNumber : 0;
+      this.attachSession(session);
+      const board = this.board();
+      if (board !== null) this.playback.reset(board, this.settlementSummary());
+      log.info(`호스트 세션 이어하기: ${session.roundNumber}판 · ${session.stage}`);
+      this.afterChange();
+      if (this.lastHello !== null) this.dispatch(this.lastHello);
+      return true;
+    } catch (error) {
+      log.error(`이어하기 실패: ${String(error)}`);
+      this.session = null;
+      return false;
+    }
+  }
+
+  // ---- 전송 ----
+
+  private incoming(raw: string): void {
+    const parsed = decode(raw, 'guest');
+    const m = parsed.ok ? parsed.message : null;
+    if (m?.t === 'hello') {
+      if (this.guestName !== m.name) log.info(`게스트 입장: ${m.name}`);
+      this.lastHello = raw;
+      this.guestName = m.name;
+      // 로비: 세션이 없거나 이름이 바뀌었으면 그 이름으로 세션을 (다시) 만든다
+      if (this.stage === 'lobby' && this.resume === null && this.session?.names[GUEST] !== m.name) {
+        this.openSession(m.name);
+        return;
+      }
+    }
+    if (m?.t === 'action' && this.session?.state) {
+      this.pending = { before: this.session.state, action: m.payload, tapAt: null, mine: false };
+    }
+    const acceptedLog = m?.t === 'log' && this.session?.authenticated === true;
+    try {
+      this.dispatch(raw);
+      if (acceptedLog && m?.t === 'log') this.forwardGuestLog(m.entries);
+    } finally {
+      this.pending = null;
+    }
+  }
+
+  private dispatch(raw: string): void {
+    for (const handler of [...(this.port?.messages ?? [])]) handler(raw);
+    this.afterChange();
+  }
+
+  private outgoing(message: Message): void {
+    this.observe(message as HostMessage);
+    this.transport.send(message);
+  }
+
+  private observe(m: HostMessage): void {
+    if (m.t === 'events') this.onEventsSent(m.list, m.to);
+    else if (m.t === 'snapshot') {
+      this.seq = m.seq;
+      this.enqueueBoard();
+    }
+  }
+
+  /** 좌석 0이 볼 이벤트 묶음: 같은 액션을 reduce로 다시 계산한다(순수 함수라 결과가 같다). 분배는 보낸 목록 그대로 */
+  private onEventsSent(sent: readonly EngineEvent[], to: number): void {
+    let events: readonly EngineEvent[] = sent;
+    const pending = this.pending;
+    if (pending !== null) {
+      const result = reduce(pending.before, pending.action);
+      if (result.ok) events = result.events;
+    }
+    const board = this.board();
+    if (board === null) return;
+    this.seq = to;
+    this.balances = [board.seats[0].balance, board.seats[1].balance];
+    this.playback.enqueue(
+      events.map((e) => redactEvent(e, ME)),
+      board,
+      {
+        action: pending?.mine ? pending.action : null,
+        tapAt: pending?.mine ? pending.tapAt : null,
+      },
+    );
+  }
+
+  private enqueueBoard(): void {
+    const board = this.board();
+    if (board !== null) this.playback.enqueue([], board);
+  }
+
+  /** 판이 끝났다(settled·bankrupt): 정산 화면을 한 번 띄우고 기록한다 */
+  private settlementSummary(): RoundSummary | null {
+    const session = this.session;
+    const view = session?.settlementView ?? null;
+    const settlement = session?.settlement ?? null;
+    const state = session?.state ?? null;
+    const board = this.board();
+    if (
+      session === null ||
+      view === null ||
+      settlement === null ||
+      state === null ||
+      board === null
+    )
+      return null;
+    const names = this.names;
+    return {
+      view: {
+        ...view,
+        gukjin: gukjinPlacements(settlement, [state.seats[0].captured, state.seats[1].captured]),
+      },
+      instant: settlement.instantPayouts.map((p) => ({
+        label: INSTANT_LABEL[p.kind] ?? p.kind,
+        name: names[p.to],
+        points: p.points,
+      })),
+      nextCarry: settlement.winner === null ? settlement.nextCarry : null,
+    };
+  }
+
+  private onSettled(): void {
+    const session = this.session;
+    const summary = this.settlementSummary();
+    const board = this.board();
+    if (session === null || summary === null || board === null) return;
+    this.settledRound = session.roundNumber;
+    const view = summary.view;
+    const settlement = session.settlement;
+    if (settlement === null) return;
+    const names = this.names;
+    const before: readonly [number, number] = [view.balances[0].before, view.balances[1].before];
+    const after: readonly [number, number] = [view.balances[0].after, view.balances[1].after];
+    this.records = [
+      ...this.records,
+      toRecordRow({
+        round: session.roundNumber,
+        winner: settlement.winner,
+        reason: settlement.reason,
+        points: settlement.finalPoints,
+        before,
+        after,
+      }),
+    ];
+    this.roundsPlayed = this.records.length;
+    this.balances = session.ledger.balances;
+    this.playback.enqueue([], board, { settlement: summary });
+    log.info(
+      `판 ${session.roundNumber} 정산: ${settlement.winner === null ? '나가리' : `${names[settlement.winner]} ${settlement.finalPoints}점`} · 잔액 ${session.ledger.balances.join('/')}`,
+    );
+  }
+
+  private onRelay(notice: RelayNotice): void {
+    this.peer = notice.peer;
+    if (notice.peer === 'left' || notice.peer === 'absent')
+      log.warn(`게스트 소켓 ${notice.peer === 'left' ? '떠남' : '없음'}`);
+    else if (notice.peer === 'joined') log.info('게스트 소켓 접속');
+    this.port?.relays.forEach((h) => h(notice));
+    this.afterChange();
+  }
+
+  private forwardGuestLog(entries: readonly string[]): void {
+    log.info(`게스트 로그 ${entries.length}줄 수신`);
+    void getBridge().guestLog(entries);
+  }
+
+  private afterChange(): void {
+    const session = this.session;
+    if (session !== null) {
+      const stage = session.stage;
+      this.stage = stage;
+      this.guestReady = session.guestReady;
+      this.bankruptSeats = session.status.bankrupt;
+      this.refilled = summarizeLedger(session.ledger).recharged;
+      if (stage === 'bankrupt' || stage === 'settled' || stage === 'ended')
+        this.balances = session.ledger.balances;
+      if (
+        (stage === 'settled' || stage === 'bankrupt') &&
+        this.settledRound !== session.roundNumber
+      )
+        this.onSettled();
+      if (stage !== 'lobby') this.save();
+    }
+    this.version++;
+    this.updateOffline();
+  }
+
+  private updateOffline(): void {
+    if (this.phase !== 'playing') return;
+    if (this.guestOnline) {
+      if (this.offlineSince !== null) log.info('게스트 복귀');
+      this.offlineSince = null;
+      this.waitPrompt = false;
+    } else if (this.offlineSince === null) {
+      this.offlineSince = this.now();
+    } else if (!this.waitPrompt && this.now() - this.offlineSince >= WAIT_PROMPT_MS) {
+      this.waitPrompt = true;
+    }
+  }
+
+  /** NP-05: 외부 시계. 60초 무응답이면 세션이 끊김으로 표시한다 */
+  tick(): void {
+    this.session?.advanceTime(this.now());
+    this.afterChange();
+  }
+
+  // ---- 입력 ----
+
+  submit(action: Action, tapAt: number = performance.now()): boolean {
+    const session = this.session;
+    const before = session?.state ?? null;
+    if (!this.canAct || session === null || before === null || action.seat !== ME) return false;
+    this.pending = { before, action, tapAt, mine: true };
+    try {
+      const ok = session.apply(action);
+      if (!ok) log.warn(`액션 거부: ${JSON.stringify(action)}`);
+      return ok;
+    } finally {
+      this.pending = null;
+      this.afterChange();
+    }
+  }
+
+  skipAnimations(): void {
+    this.playback.skip();
+  }
+
+  reconnect(): void {
+    this.ws?.reconnect(true);
+  }
+
+  attach(root: HTMLElement | null): void {
+    this.playback.attach(root);
+  }
+
+  /** 정산 화면 → 다음 판 (호스트가 시작한다, #26) */
+  nextRound(): void {
+    if (this.stage !== 'settled') return;
+    this.playback.release();
+    this.session?.nextRound();
+    this.afterChange();
+  }
+
+  /** MN-02 재충전 (호스트 좌석이 파산했을 때) */
+  refill(): void {
+    if (!this.bankrupt) return;
+    this.session?.chooseBankruptcy('recharge');
+    this.afterChange();
+  }
+
+  /** 3분 대기 선택지: 계속 기다린다 */
+  keepWaiting(): void {
+    this.offlineSince = this.now();
+    this.waitPrompt = false;
+  }
+
+  /** 세션 종료: 게스트에 알리고(sessionEnd) 저장을 끝남으로 둔 뒤 연결을 닫는다 */
+  end(): void {
+    if (this.stage === 'ended') return;
+    if (this.bankrupt) this.session?.chooseBankruptcy('end');
+    else this.session?.end();
+    this.stage = 'ended';
+    this.waitPrompt = false;
+    this.save();
+    log.info(`호스트 세션 종료: ${this.roundsPlayed}판`);
+    this.dispose();
+  }
+
+  /** 게스트가 올린 진단 로그 (FR-30, NP-09) */
+  guestLogs(): readonly string[] {
+    return this.session?.guestLogs ?? [];
+  }
+
+  private save(): void {
+    const session = this.session;
+    if (!this.persist || session === null) return;
+    const rev = session.status.rev;
+    if (this.savedRev === rev && this.savedSeq === session.seq) return;
+    const save: HostSave = {
+      version: 2,
+      config: this.config,
+      state: session.toJSON(),
+      records: this.records,
+    };
+    if (!writeJson(HOST_SAVE_KEY, save)) log.warn('호스트 세션 저장 실패');
+    else {
+      this.savedRev = rev;
+      this.savedSeq = session.seq;
+    }
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (this.clock !== null) clearInterval(this.clock);
+    this.ws?.dispose();
+    this.playback.dispose();
+  }
+}

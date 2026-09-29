@@ -56,7 +56,7 @@
 | 게스트→호스트 | `ledgerGet` | `from` | 원장 전체 이력 요청(ledger.get) |
 | 호스트→게스트 | `ledgerPage` | `from,total,entries` | 원장 이력 한 쪽(64KB 이하) |
 
-`status`(`RoundStatus`)는 `{rev, stage, round, ready:[호스트, 게스트], bankrupt: Seat[], endReason}`이다. `rev`는 단계·준비·파산이 바뀔 때마다 1씩 늘고, 게스트는 더 작은 `rev`를 무시한다(순서 바뀜 대비).
+`status`(`RoundStatus`)는 `{rev, stage, round, carry?, ready:[호스트, 게스트], bankrupt: Seat[], endReason}`이다. `carry`는 나가리 뒤 다음 판에 적용할 이월 배수다. `rev`는 단계·준비·파산이 바뀔 때마다 1씩 늘고, 게스트는 더 작은 `rev`를 무시한다(순서 바뀜 대비).
 
 ### BoardView (#12)
 

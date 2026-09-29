@@ -14,8 +14,7 @@
     "docs/**",
     "**/dist/**",
     "**/coverage/**",
-    ".claude/**",
-    "tools/p2p-mini/**"
+    ".claude/**"
   ],
   "rules": {
     "typescript/consistent-type-imports": "error",
