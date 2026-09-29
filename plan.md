@@ -236,7 +236,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 | RP-05B · guest 코드/만료/복귀 UI, 4~6h           | UI 담당: `web/src/routes/{GuestJoin,GuestApp}.svelte`, 필요 `App.svelte` 라우팅·전용 테스트                                                                                                                      | 05A + §3 App 라우팅/UX 담당 병합·인계 → 코드 승인/토큰 탭 저장·만료/부재·다른 창 상태 검증. p2p 수정 필요 시 04B 담당 후속 PR로 먼저 인계                                                                                          |
 | RP-05C · PC→health→초대 3단계 안내, 4~6h         | UI 담당: `web/src/routes/{Versus,HostRoom}.svelte`·전용 browser/E2E, 필요 신규 원격 안내 컴포넌트                                                                                                                | 05B·03B·04A + UX/디자인 인계 → 녹색/빨강+텍스트·PC/Docker/Funnel 조치·원인 미확인·host 부재 구분. 원격 진입에서 핫스팟 시작0, health 취소/중복 억제·시작 버튼 상태 검사(FR-RP-07/08)                                               |
 | RP-06 · Mac 가로·접근성, 6~8h                    | 디자인 인계받은 UI 담당: `web/src/ui/{Board,Screen}.svelte`, `styles/tokens.css`, Mac 전용 browser/E2E·기준샷                                                                                                    | 05C + **#104→스킨 병합** + 디자인의 Board/토큰 인계 → 단일 반응형 앱의 BoardView/액션과 배치 영역/폭 계약 분리(향후 넓은 화면 확장), 키보드/200%·모바일4화면 회귀, `--dur-*`/anim·p2p 변경 없음. 공용 기준샷 담당과 변경 목록 합의 |
-| RP-07 · 통합 자동 검증, 6~8h                     | 통합 담당: 신규 `web/e2e/remote-play.spec.ts`, `docs/device-test/remote-play.md`                                                                                                                                 | 03A/B·04~06 병합 → AC-RP-01~06·지연/단절/한도/기내 회귀. 사람 Funnel 2시간/PC 복구는 별도 일정, 결과 제공 전 완료 판정 금지                                                                                                        |
+| RP-07 · 통합 자동 검증, 6~8h                     | 통합 담당: 신규 `web/e2e/remote-play.spec.ts`, `docs/device-test/remote-play.md`                                                                                                                                 | AC-RP-01~04/06 브라우저 통합 E2E; 스킨 #171 뒤 remote-play 8 통과(8 skip), smoke 314 통과. requestId 경합 중 수/정산 중복·앱 background·진행 중 TTL/quota 결과·LAN 첫 실행/기내 동일 APK와 Funnel 2시간·PC 복구·실기기는 미검증. AC-RP-05 사람 절차만 작성; 수용 완료 판정 금지 |
 
 선택적 RP-A도 아래 범위를 별도 승인한 경우에만 직렬 실행한다. 사람의 direct/DERP·VPN 해제 시험 시간은 별도다.
 
@@ -319,7 +319,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ---
 
-## 3-2. 진행 매트릭스 (2026-09-29, main `daa5e7d` 코드 대조)
+## 3-2. 진행 매트릭스 (기본 2026-09-29 main `daa5e7d`; RP-07 2026-09-30 `e33f044` 기반 갱신)
 
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
@@ -398,29 +398,32 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | NP-09 | 완료 | P/src/codec.ts·host.ts, W/src/game/diagnostics.ts, K/log/LogBuffer.kt·BridgeLogs.kt; KT/log/Utf8Test.kt·BridgeLogsTest.kt, P/test/m4.test.ts                   | —                                                                 | M0     |
 | NP-10 | 완료 | P/src/host.ts·guest.ts·messages.ts·schema.ts의 단일 시계/결정 ID/확인/중단·복귀; P/test/timer.test.ts, relay-dev/test/session-relay.test.ts, W/e2e/p2p.spec.ts | 렌더러 재시작의 clockUnknown은 수동 대기·판 무효·종료, 실기기 #75 | —      |
 
-### 원격 개정안 RP-02 서버 상태 (별도 분모, PR #161)
+### 원격 대전 RP-07 자동 검증 상태 (별도 분모)
 
-이 표는 §13의 신규 RP 접미 ID를 기존 86개 집계와 분리한다. 서버 구현·자동 검증 상태이며 웹/Android 연결·Funnel 실측은 완료 판정에 포함하지 않는다.
+§13의 RP 접미 ID는 기존 86개 집계와 분리한다. `packages/web/e2e/remote-play.spec.ts`는 공개 relay-dev를 실제 `dist` 정적 경로와 HTTPS 앞단으로 실행해 호스트·게스트를 별도 브라우저 컨텍스트로 검사한다. 인증·제한·TTL의 세부 반례는 `packages/relay-dev/test/public-*.test.ts`, 연결 복귀는 `packages/web/src/p2p/`의 `test:net`, UI 단위 경계는 기존 `remote-host*`·`remote-guest*` E2E를 함께 근거로 삼는다. **자동 검증 완료는 이 환경의 범위만 뜻한다.** Windows Funnel·Galaxy·iPhone Safari·Mac 실기기, 2시간 유지·PC 재부팅 결과는 제공되지 않아 수용 완료로 판정하지 않는다.
 
-| ID       | RP-02 서버 지원 상태                                                                                                                  | 남은 연계                                             |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| FR-RP-01 | 부분: 생성 API·host 자격 확인                                                                                                         | RP-04A/05A 모드 선택·URL/운영자 자격 설정, RP-07 검증 |
-| FR-RP-02 | 부분: 코드·초대 claim·host 승인·방별 자격; RP-05B 게스트 링크 fragment 정리·코드 입력/승인 대기 UI·브라우저/E2E 검증                  | RP-05A 호스트 링크·QR·공유 시트, RP-07 실제 중계 통합 |
-| FR-RP-03 | 부분: 역할 좌석·방 삭제                                                                                                               | RP-05A/B 로비·닉네임·규칙/머니 표시와 초대 재발급 UX  |
-| FR-RP-04 | 부분: 같은 방 역할 재인증·4001, 재시작 시 방 소실; RP-05B 저장 자격 이어하기·방별 게임 복원 UI                                        | RP-07 게임 hello·snapshot/중복 적용 통합 검증         |
-| FR-RP-05 | 부분: host 단절 10분·방 절대 만료; RP-05A 호스트 방·초대 화면과 RP-05B 게스트 입력 잠금·호스트 부재/중계 장애/만료 안내·재시도/나가기 | RP-07 세션 종료 통합 검증                             |
-| FR-RP-06 | 부분: RP-05B 게스트 웹 입력·상태 화면과 Chromium/WebKit 하위 경로 E2E                                                                 | RP-06 키보드·200% 확대·Mac 가로 검증                  |
-| FR-RP-07 | 부분: 최소 `/health`·`/version` 응답, RP-05C 3단계 안내·오류별 문구, RP-05A HostRoom/Versus 연결 완료                                 | RP-03 PC 스크립트 연계·실기기 검증                    |
-| FR-RP-08 | 미구현: RP-02 서버는 Android LOHS/LAN gate를 제어하지 않음                                                                            | RP-04B/05C/07 원격 진입·복귀 시 핫스팟 차단 검증      |
-
-| ID                | 상태 | 코드·검증 근거                                                                                                                                                                    | 남은 항목                                           |
-| ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| NP-RP-01/02       | 부분 | `packages/relay-dev/src/{auth,index}.ts`, `test/public-auth.test.ts`: 방 생성·역할 첫 프레임 인증·교체 전 검사                                                                    | RP-04A/B의 실제 WSS 호스트·게스트 연결              |
-| NP-RP-03/04       | 부분 | `src/{rooms,index}.ts`, `test/{rooms,public-net}.test.ts`: 초대 claim lease·원자성·코드 대기/수락·동일 초기 응답; RP-05B 링크 fragment 제거·코드 입력/취소 UI 브라우저/E2E        | RP-05A 호스트 초대 UI·RP-07 실제 중계 검증          |
-| NP-RP-05/06       | 부분 | `src/{limits,rooms,index}.ts`, `test/public-limits.test.ts`: 좌석·미인증·속도·큐·TTL·ping 제한                                                                                    | RP-07 장시간/단절 복구 통합                         |
-| NP-RP-07          | 부분 | 메모리 방 상태·토큰 해시, 게임 프레임 무로그; `test/{public-net,public-process}.test.ts`의 재시작·오류 경계                                                                       | 운영 PC 재시작·로그 검증 RP-03A/07                  |
-| NP-RP-08          | 부분 | `src/static.ts`, `test/{static,public-process}.test.ts`: 최소 health·artifact별 버전 판정                                                                                         | RP-04A의 원격 화면 진입 시 제한 조회                |
-| NF-RP-01/02/03/06 | 부분 | Origin 검사·역할 분리·상한·버전 경로/호환 표, `test/{public-auth,public-net,public-limits,public-process,static}.test.ts`; RP-05B 상대 하위 경로 번들 E2E·버전 오류 새로고침 안내 | 공개 TLS/Funnel·실기기·동일 artifact 배포·복귀 실측 |
+| ID | 상태 | 자동 검증 근거와 남은 사람 검증 |
+|---|---|---|
+| FR-RP-01 | 자동 검증 완료·실기기 미검증 | 원격 선택·설정·health·방 생성, AC-RP-01 E2E. Galaxy LOHS 경계는 사람 절차 |
+| FR-RP-02 | 자동 검증 완료·실기기 미검증 | 정적 초대·fragment 제거·코드 승인/거절, AC-RP-01/02 E2E. Android 공유 시트·QR 스캔은 사람 절차 |
+| FR-RP-03 | 자동 검증 완료·실기기 미검증 | 양쪽 로비·좌석과 새 방, AC-RP-01/03 E2E. 상대 신원 확인은 사람 절차 |
+| FR-RP-04 | 자동 검증 완료·실기기 미검증 | reload/resume·snapshot·4001·재시작 뒤 새 방, AC-RP-01/02/03 E2E. 실제 망 이동은 사람 절차 |
+| FR-RP-05 | 자동 검증 완료·실기기 미검증 | 호스트 부재·방 소실·만료 안내, AC-RP-02/03 E2E와 relay TTL 테스트. 10분 실시간 대기는 사람 절차 |
+| FR-RP-06 | 자동 검증 완료·실기기 미검증 | 동일 정적 웹·게임·정산, AC-RP-01 E2E와 기존 레이아웃 E2E. Mac·iPhone 조작은 사람 절차 |
+| FR-RP-07 | 자동 검증 완료·실기기 미검증 | health→방→공유, AC-RP-01 E2E와 기존 안내 테스트. Windows start/stop·Funnel은 사람 절차 |
+| FR-RP-08 | 자동 검증 범위 완료·실기기 미검증 | RP-04A/B Android JVM gate와 AC-RP-04 웹 회귀. Galaxy LOHS/FGS/LAN 수신은 사람 절차 |
+| NP-RP-01/02 | 자동 검증 완료·실기기 미검증 | 공개 역할 인증·실제 브라우저 방 생성/접속, AC-RP-01/02 E2E와 `public-auth.test.ts`; 실제 Funnel TLS는 사람 절차 |
+| NP-RP-03/04 | 자동 검증 완료·실기기 미검증 | 링크 claim/재사용·코드 승인/거절·위조 토큰, AC-RP-02 E2E와 `public-net.test.ts`; 실제 QR 전달은 사람 절차 |
+| NP-RP-05/06 | 자동 검증 완료·실기기 미검증 | 4001·프레임 폭주·짧은 TTL, AC-RP-02 E2E와 `public-limits.test.ts`; 장시간 유지·단절은 사람 절차 |
+| NP-RP-07 | 자동 검증 완료·실기기 미검증 | relay 프로세스 재시작 뒤 옛 방 거부·새 방, AC-RP-03 E2E와 `public-process.test.ts`; 운영 PC 재시작·로그 점검은 사람 절차 |
+| NP-RP-08 | 자동 검증 완료·실기기 미검증 | 공개 health/정적 release·원격 밖 요청 경계, AC-RP-01/04 E2E와 `static.test.ts`; Funnel health는 사람 절차 |
+| NF-RP-01~06 | 자동 검증 범위 완료·실기기 미검증 | 인증·상한·무로그·오프라인 웹·hello 버전은 기존 서버/웹 테스트와 AC-RP-01~04/06 E2E. 비용·지연·동일 APK artifact·실기기 품질은 사람 절차 |
+| AC-RP-01 | 자동 검증 완료·실기기 미검증 | 호스트/게스트 두 브라우저 한 판·정산·다음 판, 링크·정적 경로와 resume. 별도 망/Funnel/2시간은 사람 절차 |
+| AC-RP-02 | 부분 자동 검증·실기기 미검증 | 승인/거절·위조/만료/재사용·4001·폭주와 좌석 보존 E2E/relay 단위 검사. requestId 경합 중 수·정산 중복 미검증 |
+| AC-RP-03 | 부분 자동 검증·실기기 미검증 | 진행 중 호스트 부재 시 입력·원장 보존과 복귀, 중계 재시작·새 방 E2E. 앱 background·진행 중 방/host TTL 만료·quota 실패의 게임 결과 및 PC/실기기 복귀 미검증 |
+| AC-RP-04 | 부분 자동 검증·실기기 미검증 | 같은 문서에서 종료 후 외부 HTTP·WS 재시도 0, 솔로 첫 판 E2E. LAN 첫 실행·Galaxy 기내 동일 APK/LOHS 미검증 |
+| AC-RP-05 | 사람 절차 작성·실기기 미검증 | `docs/device-test/remote-play.md` 결과 칸 공란. 자동 테스트로 대체 불가 |
+| AC-RP-06 | 자동 검증 범위 완료·실기기 미검증 | health→방 안내·wire 불일치 hello 차단, E2E와 기존 UI/Android 테스트. start/stop 반복·PC 불통·Mac 조작은 사람 절차 |
 
 ### AI·머니 (AI/MN)
 
