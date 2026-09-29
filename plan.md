@@ -89,7 +89,7 @@ p2p-gostop/
 
 ### 1.5 AI 설계
 - `packages/ai`는 공개 `PlayerView`만 받고 시드 주입으로 결정론을 유지한다. 쉬움·보통·상용급 3단계이며 상용급은 결정화 몬테카를로와 루트 순차 반감을 사용한다(UCT 모드는 옵션으로 유지).
-- Web Worker에서 실행하며 가중치·벤치마크 근거는 [AI 튜닝](docs/ai-tuning.md)에 둔다. AI-04·AC-03은 PR #106 이후에도 미달이며 #66이 후속이다(PR #56 병합). Node 응답 시간은 AI-05 모바일 실측을 대체하지 않는다.
+- Web Worker에서 실행하며 가중치·벤치마크 근거는 [AI 튜닝](docs/ai-tuning.md)에 둔다. #66 재도전(PR #167)은 보통 65.01%가 95% 구간 62.91–67.10%로 미확정, 쉬움 76.87%가 미달이므로 AI-04·AC-03(P0)은 미완이다. Node 응답 시간은 AI-05 모바일 실측을 대체하지 않는다.
 
 ### 1.6 웹 앱 설계
 - 모드: `host`(권위 엔진 보유, 게스트에게 뷰 전송), `guest`(뷰 수신, 액션 요청), `solo`(엔진+AI 로컬, 네트워크 없음).
@@ -262,7 +262,7 @@ p2p-gostop/
 |---|---|---|
 | M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월 | [M0 리뷰](docs/reviews/README.md), [실기기 원문](docs/device-test/results.md) |
 | M1 엔진 | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28) | [M1 리뷰](docs/reviews/README.md), [규칙 벡터](docs/rules-vectors.md) |
-| M2 AI·머니 | 조건부 진행: AC-03 미달(63.35%/77.02%), MN-03·AC-10 부분(각 프리셋 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67 |
+| M2 AI·머니 | 조건부 진행: AC-03 기준선 63.35%/77.02%, #167 후보 보통 미확정(65.01%)·쉬움 미달(76.87%), P0 미완; MN-03·AC-10 부분(각 프리셋 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67 |
 | M3 솔로 UI | 구현·표시 수정 병합(#34); UX 규범 격차는 후속 | [M3 리뷰](docs/reviews/README.md), [UI 규범](docs/design/ui-spec.md) |
 | M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54·#59); 밀기 웹 PR #100 병합; 로비 준비·기록/연결 상태 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/README.md), #44·#75, §3-2 |
 | M5 실기기 | 현재 UI AC-08·AC-09 미검증, iPhone 확보 후 재개(#75) | [통합 절차](docs/device-test/procedure.md), [결과 로그](docs/device-test/results.md) |
@@ -309,7 +309,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 3-2. 진행 매트릭스 (2026-09-29, main `daa5e7d` 코드 대조)
 
-후속 main `8d2911b`(#152 문서/계획 이관, #154 sim 통계/보고 분리)을 병합했다. 아래 코드 대조·실행 수치는 `daa5e7d` 기준으로 보존하고, 삭제 문서 링크와 계획 소유권은 #152 정본으로 연결한다. 이번 병합에서는 링크 검사·lint를 수행하며 요구사항 완료율은 바꾸지 않는다.
+후속 main `8d2911b`(#152 문서/계획 이관, #154 sim 통계/보고 분리)을 병합했다. 아래 코드 대조·실행 수치는 `daa5e7d` 기준으로 보존하고, 삭제 문서 링크와 계획 소유권은 #152 정본으로 연결한다. AI-04·AC-03 행의 #167 판정은 별도로 `9f778f3` 소스에서 측정했으며 상태는 부분·P0 미완이다. 이번 병합에서는 링크 검사·lint를 수행하며 요구사항 완료율은 바꾸지 않는다.
 
 **집계 단위:** spec의 FR/NF/NP/AI/MN/AC 표는 93행이지만 고유 ID는 **86개**다. FR-16·NP-02·NP-03·NP-05·NF-05·FR-46(49·50 병기)의 개정안 재등장 6행과 NP-10 경계 표제 1행은 중복이다. 타이머 신규 ID FR-51~53·NP-10을 포함한 86개를 아래에서 빠짐없이 평가하고, 중복 7행은 뒤의 개정안 대응표로 추적한다. 보조 분모는 타이머 신규 ID를 제외한 기존 82개다. FR-51의 기본10초·호스트 끄기/조정·솔로 제외는 이미 사용자 확정이며, 이를 미확정으로 분류하는 뜻이 아니다. RL/UX의 별도 하위 규칙은 이번 ID 집계 밖이며 FR-10·NF-08 등에서 검증 근거로 연결한다.
 
@@ -384,7 +384,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | AI-01 | 완료 | A/src/knowledge.ts·types.ts는 PlayerView 입력; A/test/info-hiding.test.ts | — | — |
 | AI-02 | 완료 | A/src/push.ts·match.ts·policies/, W/src/game/ai-core.ts; A/test/push.test.ts·policies.test.ts, W/e2e/push.spec.ts CPU Worker, PR #56·#100 | — | — |
 | AI-03 | 완료 | A/src/factory.ts·policies/easy.ts·greedy.ts·ismcts.ts; A/test/policies.test.ts·ismcts.test.ts | 구조 3단 구현. 실력/시간 합격은 AI-04/05 별도 | — |
-| AI-04 | 부분 | A/src/policies/ismcts.ts, S/results/gostop/after-normal.json·after-easy.json(각2,000판), PR #106 | **63.35%/77.02%**, 기준65%/80% 미달; 독립 시드 재검증 #66 | — |
+| AI-04 | 부분 | A/src/policies/ismcts.ts, S/results/gostop/after-normal.json·after-easy.json, S/results/ac03-retry/candidate-normal.json·candidate-easy.json(각2,000판), PR #167 | #66 재도전: 보통 **65.01% 미확정**(95% 구간 62.91–67.10%가 65% 포함), 쉬움 **76.87% 미달**(목표 80%); P0 미완 | — |
 | AI-05 | 미검증 | W/src/workers/ai.worker.ts·game/ai-client.ts, A/test/ismcts.test.ts 기한 제한, S/results/gostop/timing-after.json | Galaxy≤1초·iPhone≤1.5초 실측, Worker 실패 UX #66·#75 | 미 |
 | AI-06 | 완료 | A/src/policies/ismcts.ts·rollout.ts, A/src/weights/default.json; A/test/ismcts.test.ts 고/스톱 EV·과감성, PR #106 결과 JSON | 체감/독립 시드 후속은 #66 유지 | — |
 | AI-07 | 완료 | A/src/weights/default.json·src/weights.ts, S/src/gostop.ts; A/test/weights.test.ts, S/results/gostop/*.json·docs/ai-tuning.md §8 | 강도 합격과 구별 | — |
@@ -414,7 +414,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | AC-00 | 완료 | K/HotspotService.kt·qr/WifiQr.kt·server/SmokePage.kt; KT/HotspotSessionTest.kt, docs/device-test/results.md v0.0.1·v0.0.2 사용자 로그 | 잠금 장시간·현재 게임은 AC-08/09 | M0 |
 | AC-01 | 완료 | E/test/vectors.test.ts·vector-harness.ts·vectors/{deal,score,bonus,events,gostop,pi,push,settle,view}.json, E/src/reduce.ts | 규칙 기대값 정본은 rules-commercial §12 | — |
 | AC-02 | 완료 | E/test/properties.test.ts·step-checks.ts; 이번 대조에서 ENGINE_FULL=1 실행: 10,000판+선 고르기 첫 판1,000판, 2개 테스트 통과(42.35초) | 기본 npm test의1,000판 축약과 구별 | — |
-| AC-03 | 부분 | S/results/gostop/after-normal.json·after-easy.json, A/src/policies/ismcts.ts | AI-04와 동일한63.35%/77.02% 미달 #66 | — |
+| AC-03 | 부분 | S/results/ac03-retry/candidate-normal.json·candidate-easy.json, A/src/policies/ismcts.ts | AI-04와 동일: 보통 65.01% 미확정·쉬움 76.87% 미달, P0 미완 #66 | — |
 | AC-04 | 완료 | W/e2e/p2p.spec.ts “호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀”, P/src/host.ts·guest.ts | 실제 핫스팟은 AC-08/09 | — |
 | AC-05 | 완료 | W/e2e/gallery.spec.ts 및 __screenshots__/gallery.spec.ts/*-webkit.png, p2p-screens.spec.ts | 현재 기준샷 회귀만 의미; 새 디자인 규범 완료는 아님 | — |
 | AC-06 | 부분 | W/src/anim/choreo.ts·durations.ts, W/e2e/solo.spec.ts timing·timing-fixtures.ts, PR #145 | P2P 단언·Galaxy 실측 #75(기존 #58·#70 통합); hosted WebKit 벽시계는 기록만 | 미 |
@@ -444,7 +444,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 - **기내 오프라인 1:1:** 아키텍처·M0 기내 모드 연결·자동20판 경로 확보, 현재 정식 UI 실기기 AC-08/09 미검증(#75).
 - **iPhone 무설치:** Safari HTTP 진입·QR 스모크 달성, 현재 게임/잠금복귀를 실기기로 다시 확인해야 함(#75).
 - **상용 규칙:** 확정 엔진 규칙·밀기/정산 회귀와 24행 설정 UI·미지원 옵션 안내 확보. 미션·가위바위보 엔진 및 자동치기 실행은 후속(#62).
-- **상용급 AI:** 탐색·공정성·과감성 구현, 승률63.35%/77.02%로 기준 미달이며 모바일 시간도 미검증(#66·#75).
+- **상용급 AI:** 탐색·공정성·과감성 구현, #167 후보 승률은 보통 65.01% 미확정(95% 구간 62.91–67.10%)·쉬움 76.87% 미달로 P0 미완이며 모바일 시간도 미검증(#66·#75).
 - **가상 머니·UI:** 원장/올인/저장·기본 플레이 가능, 프리셋별머니10,000판·스코어보드/손패 가림/힌트/음향 마무리 필요(#67·#79·#114·#115·#117).
 
 현재 정식 UI의 **실기기 미검증 연결 목록**: FR-01~05·FR-12·FR-14·FR-15·FR-17·FR-19·FR-21~23·FR-30·FR-32·FR-40~46·FR-48·FR-51~52, AI-05, MN-04·MN-05, NF-02~05·NF-08·NF-10, AC-06·AC-08·AC-09. M0/구버전 결과를 이 목록의 통과로 전용하지 않는다. 미구현 기능은 구현 후 사람 회차에 포함한다. 순수 엔진·머니 산술·프로토콜 단위 검증은 실기기 요구와 분리한다.
