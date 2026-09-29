@@ -207,5 +207,14 @@
     "source": "User-provided visual reference, 2026-09-30",
     "license": "User-provided reference; rights to be confirmed by product owner",
     "changes": "AI-assisted harmonization; transparent 96px WebP palette and size normalization."
+  },
+  {
+    "id": "skin-notice",
+    "file": "NOTICE.md",
+    "bytes": 349,
+    "sha256": "a7847079bd8776d6f698d2242d57a1a0e2cf459abb2b95afd9cc3768de20195f",
+    "source": "Project asset provenance",
+    "license": "See NOTICE.md",
+    "changes": "Reference rights notice."
   }
 ]

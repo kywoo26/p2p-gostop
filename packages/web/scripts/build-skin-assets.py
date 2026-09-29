@@ -41,6 +41,7 @@ for name in EXPECTED:
     outputs[filename] = data
     records.append(dict(id=f'{name}-illustrated', file=filename, bytes=len(data), width=96, height=96, sha256=hashlib.sha256(data).hexdigest(), source='User-provided visual reference, 2026-09-30', license='User-provided reference; rights to be confirmed by product owner', changes='AI-assisted harmonization; transparent 96px WebP palette and size normalization.'))
 outputs['NOTICE.md'] = ('# Hand action illustrations\n\nUser-provided bell and bomb image references (2026-09-30) were harmonized with AI image editing for this project. Edited PNG masters and source hashes: `assets-src/skin-icons/`. Release crops: 96px transparent WebP, matched outline and palette. The source rights should be confirmed by the product owner before release.\n').encode()
+records.append(dict(id='skin-notice', file='NOTICE.md', bytes=len(outputs['NOTICE.md']), sha256=hashlib.sha256(outputs['NOTICE.md']).hexdigest(), source='Project asset provenance', license='See NOTICE.md', changes='Reference rights notice.'))
 outputs['manifest.json'] = (json.dumps(records, ensure_ascii=False, indent=2) + '\n').encode()
 # Full provenance already ships at /pro/NOTICE.md and is displayed by License.
 assert sum(map(len, outputs.values())) <= 128 * 1024, 'Skin allocation exceeded; NF-03 remains 1.5 MiB'
