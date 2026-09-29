@@ -112,7 +112,7 @@ p2p-gostop/
 | TS·린트 하이브리드 | 순수 TS는 TS 7·oxlint·oxfmt, web은 TS 6·ESLint·Prettier·svelte-check; .svelte와 TS 7 도구 비호환 |
 | npm workspaces·공급망 쿨다운 | 비배포 모노레포에 pnpm·Turborepo·Biome 추가 안 함 |
 | Vitest·fast-check·브라우저 모드·Playwright·axe·knip·svgo | 규칙·실제 레이아웃·회귀·번들·죽은 코드 검증 |
-| CI 네이티브 설치 (NF-09) | `actions/setup-node`(.nvmrc, npm 캐시)·`actions/setup-java`(Temurin 21)·`npx playwright install --with-deps`(Playwright 공식 CI 절차)·러너 내장 Android SDK. 개발 이미지와 BuildKit 레이어 캐시는 2026-09-30 삭제 |
+| CI 네이티브 설치 (plan §2) | `actions/setup-node`(.nvmrc, npm 캐시)·`actions/setup-java`(Temurin 21)·`npx playwright install --with-deps`(Playwright 공식 CI 절차)·러너 내장 Android SDK. 개발 이미지와 BuildKit 레이어 캐시는 2026-09-30 삭제 |
 | Gradle CI 캐시 (B1) | setup-gradle로 build/configuration cache 보존; main만 쓰기, PR·태그 읽기 전용, 구성 캐시 암호화 Secret 사용. 컨테이너의 Gradle 홈·작업 경로를 러너와 일치시킴(조사: docs/research/build-performance.md) |
 | zod/mini·uqr | 프로토콜 입력 검증(TRIAL), 로컬 QR 생성. web 저장 경계도 동일 zod 4.6.5의 mini를 직접 의존해 사용한다(R5, MN-05·NF-05): v0→v1 보완과 #88의 중첩 검증을 스키마로 분리하며 저장 키·형식·수용 범위는 보존한다. |
 | `androidx.activity:activity` 1.13.0 | `GameActivity`의 Back을 `OnBackPressedCallback`으로 받고 HostBridge에 전달(v0.2.1-B, #10); Compose 미도입 |
@@ -525,7 +525,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (B1·NF-09): 러너에서 네이티브로 두 잡을 병렬 실행한다. ① npm ci → lint/check/단위 테스트 → 웹 빌드·예산·외부 URL 검사 → 웹 번들 포함 `assembleDebug testDebugUnitTest lint` 한 호출, ② 컴포넌트 테스트 → 전체 Playwright(기존 PR·수동 범위, timing 프로젝트 직렬 의존성 유지). npm 다운로드 캐시를 쓰며 Gradle 캐시는 setup-gradle로 main만 갱신한다. 잡 분리의 분 예산 증가와 벽시계 이득은 `docs/research/build-performance.md`에서 비교한다.
+- `ci.yml` (B1·plan §2): 러너에서 네이티브로 두 잡을 병렬 실행한다. ① npm ci → lint/check/단위 테스트 → 웹 빌드·예산·외부 URL 검사 → 웹 번들 포함 `assembleDebug testDebugUnitTest lint` 한 호출, ② 컴포넌트 테스트 → 전체 Playwright(기존 PR·수동 범위, timing 프로젝트 직렬 의존성 유지). npm 다운로드 캐시를 쓰며 Gradle 캐시는 setup-gradle로 main만 갱신한다. 잡 분리의 분 예산 증가와 벽시계 이득은 `docs/research/build-performance.md`에서 비교한다.
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
 - `release.yml` (B1): 정확한 SHA의 성공한 main push CI 웹 번들을 재사용한다. 재사용과 빌드는 비밀 없는 읽기 권한 전용 `web` 잡(새 VM, `npm ci --ignore-scripts`, npm 캐시 미사용)이 하고, 산출물만 아티팩트로 서명 잡 `apk`에 넘긴다. Gradle·`apksigner`는 러너 네이티브(내장 SDK)이고 Gradle 캐시는 읽기 전용이다. 빌드 후 추적 파일 변경이 있으면 실패. `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, main 이력·CI 성공 게이트를 유지한다(M0 리뷰 R-1/R-4~R-7).
