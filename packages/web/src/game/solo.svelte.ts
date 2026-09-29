@@ -14,7 +14,7 @@ import {
   type Seat,
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
-import { scaledMs } from '../anim/durations.ts';
+import { durationMs } from '../anim/durations.ts';
 import { settings } from '../settings/settings.svelte.ts';
 import { removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
 import { toBoardView } from './adapter.ts';
@@ -66,10 +66,6 @@ function decisionSeed(session: SessionState): number {
   return roundSeed(roundSeed(session.config.seed, session.roundNumber), session.actions.length + 1);
 }
 
-function sleep(ms: number): Promise<void> {
-  return ms <= 0 ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export class SoloSession implements GameController {
   readonly mode = 'solo' as const;
   state: SessionState;
@@ -82,6 +78,7 @@ export class SoloSession implements GameController {
   private readonly ai: AiClient;
   private readonly persist: boolean;
   private disposed = false;
+  private cancelThink: (() => void) | null = null;
   /** 상태가 바뀔 때마다 증가: CPU 결정이 오래된 상태에 적용되지 않게 한다 */
   private generation = 0;
 
@@ -95,7 +92,7 @@ export class SoloSession implements GameController {
     this.playback = new Playback(this.boardOf(session), {
       viewer: ME,
       names: () => this.state.config.names,
-      onIdle: () => this.kick(),
+      onIdle: (skipped) => this.kick(skipped),
       settlement: over ? this.summary(session) : null,
     });
     this.save();
@@ -222,6 +219,7 @@ export class SoloSession implements GameController {
 
   skipAnimations(): void {
     this.playback.skip();
+    this.cancelThink?.();
   }
 
   /** 정산 화면 → 다음 판 */
@@ -250,6 +248,7 @@ export class SoloSession implements GameController {
 
   dispose(): void {
     this.disposed = true;
+    this.cancelThink?.();
     this.playback.dispose();
   }
 
@@ -284,16 +283,30 @@ export class SoloSession implements GameController {
   }
 
   /** 큐가 비었을 때 다음 할 일: CPU 차례면 결정을 맡긴다 */
-  private kick(): void {
+  private kick(skipped = false): void {
     if (this.disposed || this.thinking || !this.playback.idle) return;
     const s = this.state;
     if (s.phase !== 'playing') return;
     const seats = actingSeats(s.game);
     if (seats.includes(ME) || !seats.includes(CPU)) return;
-    void this.runCpu();
+    void this.runCpu(skipped);
   }
 
-  private async runCpu(): Promise<void> {
+  /** AI 결정 자체는 기다리되, 표시용 최소 생각 간격은 탭 스킵으로 취소한다. */
+  private waitThinking(ms: number): Promise<void> {
+    if (ms <= 0) return Promise.resolve();
+    return new Promise((resolve) => {
+      const done = () => {
+        clearTimeout(timer);
+        if (this.cancelThink === done) this.cancelThink = null;
+        resolve();
+      };
+      const timer = setTimeout(done, ms);
+      this.cancelThink = done;
+    });
+  }
+
+  private async runCpu(skipped: boolean): Promise<void> {
     const generation = this.generation;
     const session = this.state;
     const view = this.viewOf(session, CPU);
@@ -302,17 +315,15 @@ export class SoloSession implements GameController {
     if (fallback === undefined) return;
     this.thinking = true;
     let action: Action = fallback;
+    // 실패해 첫 합법 수로 대체할 때도 최소 생각 간격을 지킨다.
+    const minimumThink = this.waitThinking(skipped ? 0 : durationMs('aiThink'));
     try {
-      const [result] = await Promise.all([
-        this.ai.decide({
-          difficulty: this.difficulty,
-          view,
-          seed: decisionSeed(session),
-          timeBudgetMs: this.timeBudgetMs,
-        }),
-        // CPU 수가 너무 순식간이면 따라가기 어렵다: 빠름 기준 250ms (즉시 모드 0)
-        sleep(scaledMs(250)),
-      ]);
+      const result = await this.ai.decide({
+        difficulty: this.difficulty,
+        view,
+        seed: decisionSeed(session),
+        timeBudgetMs: this.timeBudgetMs,
+      });
       if (legal.some((a) => sameAction(a, result.action))) {
         action = result.action;
       } else {
@@ -322,6 +333,7 @@ export class SoloSession implements GameController {
     } catch (error) {
       log.error(`CPU 결정 오류: ${String(error)} → 첫 합법 수`);
     } finally {
+      await minimumThink;
       this.thinking = false;
     }
     if (this.disposed || generation !== this.generation) return;

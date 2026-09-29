@@ -5,8 +5,8 @@
 // 화면은 board·busy·banner·toast·timings·settlement만 읽는다. 사람/CPU/원격을 구분하지 않는다.
 import { getCard, type Action, type EngineEvent, type Seat } from '@p2p-gostop/engine';
 import { tick } from 'svelte';
-import { deal, replay, skip, unskip, type ReplayHost } from '../anim/choreo.ts';
-import { DUR, scaledMs } from '../anim/durations.ts';
+import { deal, replay, skip, unskip, waitHold, type ReplayHost } from '../anim/choreo.ts';
+import { baseMs, durationMs, scaledMs } from '../anim/durations.ts';
 import type { BoardView } from '../lib/view-types.ts';
 import { bannerForEngineEvent, type Banner } from '../ui/banner.ts';
 import { cardLabel } from '../ui/cards.ts';
@@ -60,17 +60,13 @@ const TOAST_MS = 1600;
 /** 즉시 모드(배율 0)에서도 한 번은 읽을 수 있게 */
 const TOAST_MIN_MS = 400;
 
-function sleep(ms: number): Promise<void> {
-  return ms <= 0 ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export interface PlaybackOptions {
   /** 보는 좌석 (배너·토스트 문구의 "내"/상대 구분) */
   readonly viewer: Seat;
   /** 좌석 이름 (토스트 문구) */
   readonly names: () => readonly [string, string];
   /** 큐가 비고 멈춤이 풀렸을 때 (솔로: CPU 차례 확인) */
-  readonly onIdle?: () => void;
+  readonly onIdle?: (skipped: boolean) => void;
   /** 처음부터 정산 화면을 띄운다 (이어하기) */
   readonly settlement?: RoundSummary | null;
   /** 배너 이벤트 (진동 등 기기 피드백, spec 6.5) */
@@ -105,12 +101,14 @@ export class Playback {
 
   private readonly viewer: Seat;
   private readonly names: () => readonly [string, string];
-  private readonly onIdle: (() => void) | undefined;
+  private readonly onIdle: ((skipped: boolean) => void) | undefined;
   private readonly onBanner: ((kind: Banner['kind']) => void) | undefined;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private host: ReplayHost | null = null;
   private queue: Batch[] = [];
   private pumping = false;
+  /** 현재 재생 묶음에서 탭 스킵을 요청했는지, 다음 AI 생각 간격에 전달한다 */
+  private skipped = false;
   private disposed = false;
   private bannerSeq = 0;
   private toastSeq = 0;
@@ -178,11 +176,15 @@ export class Playback {
     this.pending = 0;
     this.board = snap(board, board.inFlight);
     this.settlement = settlement;
+    this.skipped = false;
   }
 
   /** 남은 애니메이션을 즉시 끝낸다 (spec 6.3 "화면을 탭하면 즉시 완료") */
   skip(): void {
-    if (this.busy && this.host !== null) skip(this.host.root);
+    if (this.busy && this.host !== null) {
+      this.skipped = true;
+      skip(this.host.root);
+    }
   }
 
   dispose(): void {
@@ -198,6 +200,7 @@ export class Playback {
     if (this.pumping || this.disposed) return;
     this.pumping = true;
     this.busy = true;
+    let wasSkipped: boolean;
     try {
       while (this.settlement === null && !this.disposed) {
         const batch = this.queue.shift();
@@ -207,7 +210,7 @@ export class Playback {
         // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
         if (batch.tapAt !== null && batch.action !== null) this.recordTiming(batch);
         if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
-          await sleep(scaledMs(DUR.banner * 2));
+          await waitHold(this.host.root, baseMs('banner', this.host.root) * 2);
         }
         if (batch.settlement !== null) this.settlement = batch.settlement;
       }
@@ -218,11 +221,13 @@ export class Playback {
       this.queue = [];
       this.pending = 0;
     } finally {
+      wasSkipped = this.skipped;
+      this.skipped = false;
       this.pumping = false;
       this.busy = false;
       if (this.host !== null) unskip(this.host.root);
     }
-    if (this.idle) this.onIdle?.();
+    if (this.idle) this.onIdle?.(wasSkipped);
   }
 
   /** 묶음 하나 재생 → 최신 뷰로 스냅 (spec 6.4) */
@@ -236,7 +241,7 @@ export class Playback {
       for (const e of events) this.onEvent(e);
       if (events.some((e) => e.type === 'FirstPicked')) {
         // 선 고르기 결과를 읽을 시간
-        await sleep(scaledMs(DUR.banner * 2));
+        await waitHold(host.root, baseMs('banner', host.root) * 2);
       }
       await deal(host, batch.board);
     } else {
@@ -266,8 +271,8 @@ export class Playback {
     this.bannerSeq += 1;
     this.banner = { ...banner, id: this.bannerSeq };
     if (this.bannerTimer !== null) clearTimeout(this.bannerTimer);
-    // spec 6.4: 350ms 표시 후 다음 단계와 겹쳐 사라진다
-    this.bannerTimer = setTimeout(() => (this.banner = null), scaledMs(DUR.banner) + 1);
+    // 사건 문구는 빠름 350ms / 보통 900ms 동안 읽을 수 있게 남긴다.
+    this.bannerTimer = setTimeout(() => (this.banner = null), durationMs('banner') + 1);
   }
 
   /** 짧은 알림. 일정 시간 뒤 사라진다(이슈 #6). 새 판 분배 때도 지운다 */

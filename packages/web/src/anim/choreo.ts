@@ -2,11 +2,12 @@
 // 엔진이 한 번의 reduce로 낸 이벤트 묶음을 "단계"로 나누고, 단계마다
 //   측정(이전 자리) → 이벤트 적용한 판 커밋(tick) → 측정(새 자리) → 자리가 바뀐 카드마다 FLIP 이동
 // 을 한다. 카드가 어디서 어디로 갔는지(손패→바닥, 더미→뒤집기 자리, 바닥→획득패, 획득패→상대 획득패)로 시간을 고른다.
-// 묶음 전체가 턴 예산(spec 6.4 탭→턴 종료 ≤ 700ms)을 넘을 것 같으면 단계 시간을 비율로 줄인다.
+// 빠름 묶음이 턴 예산(spec 6.4 탭→턴 종료 ≤ 700ms)을 넘을 것 같으면 이동 시간을 비율로 줄인다.
+// 기본 보통은 각 이동 뒤에 인지용 정지를 둔다(UX-15).
 // --dur-scale이 0(즉시 모드·동작 줄이기·건너뛰기)이면 측정·애니메이션 없이 커밋만 한다.
 import type { EngineEvent } from '@p2p-gostop/engine';
 import { applyEvent, placeOf, type CardPlace, type DisplayBoard } from '../game/display.ts';
-import { DUR, durScale } from './durations.ts';
+import { DUR, NORMAL_DUR, baseMs, durScale } from './durations.ts';
 import { finishAll, flipCard, flipMove, sequence } from './flip.ts';
 
 export interface ReplayHost {
@@ -80,20 +81,21 @@ function capturedCount(step: AnimStep): number {
   return step.events.reduce((n, e) => n + (e.type === 'Captured' ? e.cards.length : 0), 0);
 }
 
-/** 단계의 계획 시간 (빠름 기준 ms) */
-function stepMs(step: AnimStep): number {
+/** 단계의 계획 이동 시간 (선택한 시간표 기준 ms) */
+function stepMs(step: AnimStep, normal: boolean): number {
+  const d = normal ? NORMAL_DUR : DUR;
   switch (step.kind) {
     case 'play':
-      return DUR.handToFloor;
+      return d.handToFloor;
     case 'draw':
     case 'flip':
-      return DUR.flip;
+      return d.flip;
     case 'match':
-      return DUR.matchHighlight;
+      return d.matchHighlight;
     case 'collect': {
       const n = capturedCount(step);
-      const capture = n > 0 ? DUR.capture + DUR.captureStagger * (n - 1) : 0;
-      const steal = step.events.some((e) => e.type === 'PiStolen') ? DUR.steal : 0;
+      const capture = n > 0 ? d.capture + d.captureStagger * (n - 1) : 0;
+      const steal = step.events.some((e) => e.type === 'PiStolen') ? d.steal : 0;
       return Math.max(capture, steal);
     }
     case 'none':
@@ -103,29 +105,63 @@ function stepMs(step: AnimStep): number {
 
 export interface TurnPlan {
   readonly steps: readonly AnimStep[];
-  /** 단계 시간 합 (빠름 기준 ms, 줄이기 전) */
+  /** 단계 이동 시간 합 (선택한 시간표 기준 ms, 줄이기 전) */
   readonly rawMs: number;
   /** 계획 시간이 턴 예산을 넘으면 줄이는 배율 (≤ 1) */
   readonly factor: number;
-  /** 실제로 재생할 계획 시간 = rawMs × factor ≤ TURN_PLAN_MS */
+  /** 이동과 정지 시간 합. 빠름은 TURN_PLAN_MS 이내 */
   readonly plannedMs: number;
-  /** 단계별 재생 시간 (빠름 기준 ms, 줄인 뒤). runStep이 움직일 카드가 없는 단계에서 기다리는 시간이기도 하다 */
+  /** 단계별 이동 시간 (선택한 시간표 기준 ms, 줄인 뒤). 움직일 카드가 없을 때도 기다린다 */
   readonly stepMs: readonly number[];
+  /** 이동이 끝난 뒤 다음 사건을 보여 주기 전 정지 시간 */
+  readonly holdMs: readonly number[];
 }
 
 /** 이벤트 묶음의 애니메이션 계획 (replay와 같은 계산) */
-export function planTurn(events: readonly EngineEvent[]): TurnPlan {
+export function planTurn(events: readonly EngineEvent[], normal = false): TurnPlan {
   const steps = planSteps(events);
-  const rawMs = steps.reduce((sum, s) => sum + stepMs(s), 0);
-  const factor = rawMs > TURN_PLAN_MS ? TURN_PLAN_MS / rawMs : 1;
-  const scaled = steps.map((s) => stepMs(s) * factor);
+  const d = normal ? NORMAL_DUR : DUR;
+  const rawMs = steps.reduce((sum, s) => sum + stepMs(s, normal), 0);
+  const factor = !normal && rawMs > TURN_PLAN_MS ? TURN_PLAN_MS / rawMs : 1;
+  const scaled = steps.map((s) => stepMs(s, normal) * factor);
+  const holdMs = steps.map((s) => {
+    switch (s.kind) {
+      case 'play':
+        return d.playHold;
+      case 'draw':
+      case 'flip':
+        return d.revealHold;
+      case 'match':
+        return d.matchHold;
+      case 'collect':
+        return d.captureHold;
+      case 'none':
+        return 0;
+    }
+  });
   return {
     steps,
     rawMs,
     factor,
-    plannedMs: scaled.reduce((sum, ms) => sum + ms, 0),
+    plannedMs: scaled.reduce((sum, ms) => sum + ms, 0) + holdMs.reduce((sum, ms) => sum + ms, 0),
     stepMs: scaled,
+    holdMs,
   };
+}
+
+/** 정지도 탭 스킵에 즉시 반응한다. */
+export function waitHold(root: HTMLElement, baseMs: number): Promise<void> {
+  const ms = baseMs * durScale(root);
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      root.removeEventListener('animation-skip', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    root.addEventListener('animation-skip', done, { once: true });
+  });
 }
 
 type Rects = Map<string, DOMRect>;
@@ -163,6 +199,7 @@ async function runStep(
   factor: number,
   /** 이 단계의 계획 시간 (planTurn().stepMs, 줄인 뒤) */
   plannedMs: number,
+  holdMs: number,
 ): Promise<DisplayBoard> {
   let next = board;
   for (const event of step.events) {
@@ -195,7 +232,7 @@ async function runStep(
       const fromDeck = step.kind === 'flip' || step.kind === 'draw';
       const source = before.get(fromDeck ? '@deck' : '@opp-hand');
       if (source === undefined) continue;
-      const duration = ms(fromDeck ? DUR.flip : DUR.handToFloor);
+      const duration = ms(baseMs(fromDeck ? 'flip' : 'handToFloor', host.root));
       animations.push(flipMove(el, source, to, { duration }));
       if (inner !== null) animations.push(flipCard(inner, { duration }));
       continue;
@@ -204,26 +241,30 @@ async function runStep(
     if (isCaptured(now) && !isCaptured(was)) {
       animations.push(
         flipMove(el, from, to, {
-          duration: ms(DUR.capture),
-          delay: ms(DUR.captureStagger * captureIndex),
+          duration: ms(baseMs('capture', host.root)),
+          delay: ms(baseMs('captureStagger', host.root) * captureIndex),
         }),
       );
       captureIndex += 1;
     } else if (isCaptured(now) && isCaptured(was) && now !== was) {
-      animations.push(flipMove(el, from, to, { duration: ms(DUR.steal) }));
+      animations.push(flipMove(el, from, to, { duration: ms(baseMs('steal', host.root)) }));
     } else if (was === 'hand' && now !== 'hand') {
-      animations.push(flipMove(el, from, to, { duration: ms(DUR.handToFloor) }));
+      animations.push(flipMove(el, from, to, { duration: ms(baseMs('handToFloor', host.root)) }));
     } else {
       // 뒤집기 자리 → 바닥, 무더기 재배치, 손패·획득패 정렬 이동
-      animations.push(flipMove(el, from, to, { duration: ms(DUR.matchHighlight) }));
+      animations.push(
+        flipMove(el, from, to, { duration: ms(baseMs('matchHighlight', host.root)) }),
+      );
     }
   }
   if (animations.length === 0) {
     // 움직일 카드가 없어도 매칭 강조 등은 계획 시간만큼 보인다
-    await new Promise((resolve) => setTimeout(resolve, plannedMs * durScale(host.root)));
+    await waitHold(host.root, plannedMs);
+    await waitHold(host.root, holdMs);
     return next;
   }
   await sequence(() => animations);
+  await waitHold(host.root, holdMs);
   return next;
 }
 
@@ -236,10 +277,13 @@ export async function replay(
   from: DisplayBoard,
   events: readonly EngineEvent[],
 ): Promise<DisplayBoard> {
-  const plan = planTurn(events);
+  const plan = planTurn(
+    events,
+    host.root.ownerDocument.documentElement.dataset['speed'] === 'normal',
+  );
   let board = from;
   for (const [i, step] of plan.steps.entries()) {
-    board = await runStep(host, board, step, plan.factor, plan.stepMs[i] ?? 0);
+    board = await runStep(host, board, step, plan.factor, plan.stepMs[i] ?? 0, plan.holdMs[i] ?? 0);
   }
   return board;
 }
@@ -254,8 +298,11 @@ export async function deal(host: ReplayHost, board: DisplayBoard): Promise<void>
   const cards = [...host.root.querySelectorAll<HTMLElement>('[data-card-id]')].filter(
     (el) => el.closest('dialog') === null,
   );
-  const duration = DUR.handToFloor * 1.5;
-  const stagger = Math.min(40, (DUR.dealTotal - duration) / Math.max(1, cards.length));
+  const duration = baseMs('handToFloor', host.root) * 1.5;
+  const stagger = Math.min(
+    40,
+    (baseMs('dealTotal', host.root) - duration) / Math.max(1, cards.length),
+  );
   const animations = cards.flatMap((el, i) => {
     const to = el.getBoundingClientRect();
     const inner = el.querySelector<HTMLElement>('.inner');
@@ -269,6 +316,7 @@ export async function deal(host: ReplayHost, board: DisplayBoard): Promise<void>
 export function skip(root: HTMLElement): void {
   root.style.setProperty('--dur-scale', '0');
   finishAll(root);
+  root.dispatchEvent(new Event('animation-skip'));
 }
 
 /** 건너뛰기 해제 (큐가 비었을 때) */

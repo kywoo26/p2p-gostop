@@ -94,7 +94,7 @@ p2p-gostop/
 ### 1.6 웹 앱 설계
 - 모드: `host`(권위 엔진 보유, 게스트에게 뷰 전송), `guest`(뷰 수신, 액션 요청), `solo`(엔진+AI 로컬, 네트워크 없음).
 - 상태 관리: Svelte 5 runes. 외부 상태 라이브러리 없음. 엔진 이벤트 열을 애니메이션 큐가 소비하고, 큐가 비면 최신 뷰로 보정.
-- 애니메이션: **Web Animations API + 자체 FLIP 헬퍼**(`src/anim/`, 수십 줄). 컨테이너를 넘나드는 카드 이동(손패→바닥→획득패)은 이 헬퍼가, 모달·배너·토스트는 Svelte transition이 담당한다. `transform`·`opacity`만 애니메이션하고 `will-change`는 움직이는 카드에만 건다(iOS 메모리). `anim.finished`로 턴 시퀀스를 async 체인으로 구성. 속도 설정과 E2E 즉시 모드는 배율 하나(`--dur-scale`)로 처리. 라이브러리(GSAP, Motion, Pixi 등)는 도입하지 않음. FLIP 헬퍼가 복잡해지면 `motion` 미니 `animate()`만 TRIAL.
+- 애니메이션: **Web Animations API + 자체 FLIP 헬퍼**(`src/anim/`, 수십 줄). 컨테이너를 넘나드는 카드 이동(손패→바닥→획득패)은 이 헬퍼가, 모달·배너·토스트는 Svelte transition이 담당한다. `transform`·`opacity`만 애니메이션하고 `will-change`는 움직이는 카드에만 건다(iOS 메모리). `anim.finished`로 턴 시퀀스를 async 체인으로 구성. 기본 보통은 UX-15의 단계별 이동·정지 토큰을 쓰고, 빠름은 AC-06 표, 매우 빠름은 빠름 ×0.6을 쓴다. `--dur-scale: 0`은 스킵·동작 줄이기·E2E 즉시 모드에 적용한다. 라이브러리(GSAP, Motion, Pixi 등)는 도입하지 않음. FLIP 헬퍼가 복잡해지면 `motion` 미니 `animate()`만 TRIAL.
 - 스타일: Svelte scoped CSS + `tokens.css`. Tailwind·컴포넌트 라이브러리 없음. 네이티브 `<dialog>`로 부족하면 Bits UI 단일 컴포넌트만 검토.
 - 카드 자산: SVG를 svgo로 최적화해 `<img>`로 렌더(인라인 SVG·filter 금지, Safari 래스터 성능).
 - 비보안 컨텍스트 제약(spec NF-02)은 ESLint 코어 규칙 `no-restricted-properties`/`no-restricted-syntax`로 강제(커스텀 규칙 없음, .svelte에도 적용).
@@ -103,12 +103,16 @@ p2p-gostop/
 ### 1.8 스택·의존성 도입 근거
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
+**시각 방향 조사 제안(2026-09-29, VD-01~05):** 앱 의존성은 추가하지 않는다. Tailwind·shadcn·Storybook·GSAP 금지는 유지하며 비교 근거는 `docs/research/visual-direction.md`, 채택 대기안은 `docs/design/visual-direction.md`에 둔다. 로컬 OFL 폰트 1종의 실제 문구 서브셋만 후속 구현 후보로 제안한다(자산 상한 160 KiB, 사용자 방향 선택 후 확정). 조사 재현에 한해 Docker `python:3.12-slim` 안의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)을 임시 설치해 WOFF2 용량·숫자 기능을 측정한다. 방향 미확정 상태의 공통 OFL 파이프라인(`docs/design/fonts/`)은 같은 조사 도구로 해시·글리프·tnum/가변 축·160 KiB gate와 고지 원문 보존을 검증한다. 앱 연결은 채택 후 별도 PR이다. 호스트 설치·앱 런타임·npm lock 변경은 없다. 목업 렌더는 단일 개발 이미지의 Playwright 1.63.0을 사용한다. 이 문단은 앱 스택 변경 승인이 아니다.
+
 | 선택 | 이유·범위 |
 |---|---|
 | Vite + Svelte, scoped CSS·토큰, WAAPI FLIP | 작은 UI·번들 예산; React/Tailwind/shadcn/Storybook/Pixi/Phaser/GSAP 도입 안 함 |
 | TS·린트 하이브리드 | 순수 TS는 TS 7·oxlint·oxfmt, web은 TS 6·ESLint·Prettier·svelte-check; .svelte와 TS 7 도구 비호환 |
 | npm workspaces·공급망 쿨다운 | 비배포 모노레포에 pnpm·Turborepo·Biome 추가 안 함 |
 | Vitest·fast-check·브라우저 모드·Playwright·axe·knip·svgo | 규칙·실제 레이아웃·회귀·번들·죽은 코드 검증 |
+| 개발 이미지·CI 레이어 캐시 (B1) | Compose 이미지에 Docker 공식 setup-docker·setup-buildx·build-push 액션의 GHA 캐시 적용; containerd 저장소·docker driver로 중복 export/load 제거, npm 다운로드 캐시 사용 |
+| Gradle CI 캐시 (B1) | setup-gradle로 build/configuration cache 보존; main만 쓰기, PR·태그 읽기 전용, 구성 캐시 암호화 Secret 사용. 컨테이너의 Gradle 홈·작업 경로를 러너와 일치시킴(조사: docs/research/build-performance.md) |
 | zod/mini·uqr | 프로토콜 입력 검증(TRIAL), 로컬 QR 생성 |
 | `androidx.activity:activity` 1.13.0 | `GameActivity`의 Back을 `OnBackPressedCallback`으로 받고 HostBridge에 전달(v0.2.1-B, #10); Compose 미도입 |
 | Kotlin + WebView + Ktor | 네이티브 셸 유지; Capacitor·Tauri·RN·Flutter·Compose 도입 안 함 |
@@ -165,6 +169,11 @@ p2p-gostop/
 
 ---
 
+## 3-3. 우선순위 변경 (2026-09-29)
+- iPhone 실기기 사용 불가 → M5의 Safari 실기기 회차 보류. Safari 호환은 Playwright WebKit(E2E·브라우저 모드)로만 검증하고, iPhone 확보 시 재개.
+- 우선순위: **Galaxy 호스트 + 혼자 연습(AI) 완성도**(UX-spec 격차 #46~#53, #44, 밀기 UI #30/#31, 토글 UI FR-21, 기록·효과음·진동·접근성, 카드 렌더링 개선) → `v0.2.x`로 자주 릴리스.
+- **빌드·릴리스 성능**(B1): Astra가 현재 CI/릴리스 소요를 계측하고 정석·모던 수단만으로 단축안을 조사·도입(Gradle 빌드 캐시·구성 캐시, Docker 레이어 캐시, Playwright 샤딩, 릴리스 잡 구조, 자체 러너 검토). 우회·억지 방법 금지.
+
 ## 4. 테스트 전략
 
 | 층 | 대상 | 도구 | 실행 |
@@ -185,10 +194,10 @@ p2p-gostop/
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (push/PR): 단일 개발 이미지를 빌드해 `npm ci` → lint·check → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → 브라우저 테스트·Playwright E2E(Chromium·WebKit) → `assembleDebug` + Android 테스트·Lint를 같은 이미지에서 실행한다. Gradle 홈 캐시와 APK 아티팩트를 보존한다.
+- `ci.yml` (B1): 같은 개발 이미지·Compose 명령으로 두 잡을 병렬 실행한다. ① npm ci → lint/check/단위 테스트 → 웹 빌드·예산·외부 URL 검사 → 웹 번들 포함 `assembleDebug testDebugUnitTest lint` 한 호출, ② 컴포넌트 테스트 → 전체 Playwright(기존 PR·수동 범위, timing 프로젝트 직렬 의존성 유지). BuildKit GHA 레이어 캐시·npm 다운로드 캐시를 쓰며 Gradle 캐시는 setup-gradle로 main만 갱신한다. 잡 분리의 분 예산 증가와 벽시계 이득은 `docs/research/build-performance.md`에서 비교한다.
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
-- `release.yml`: 웹 빌드는 서명 잡 안에서 키스토어 복원 **전에**, 읽기 전용 마운트 + 비밀 없는 `docker run` 컨테이너에서 `npm ci --ignore-scripts`로 수행한다(계정 아티팩트 용량 초과로 잡 분리 대신 컨테이너 격리 채택). 빌드 후 추적 파일 변경이 있으면 실패. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, 태그 커밋이 main에 있어야 함(M0 리뷰 R-1/R-4~R-7).
+- `release.yml` (B1): 정확한 SHA의 성공한 main push CI 웹 번들을 재사용한다. 없거나 만료·용량 초과이면 키스토어 복원 **전에** 읽기 전용 마운트 + 비밀 없는 개발 이미지 컨테이너에서 `npm ci --ignore-scripts`로 빌드한다. Gradle·서명 검증도 개발 이미지에서 실행하고 Gradle 캐시는 읽기 전용이다. 빌드 후 추적 파일 변경이 있으면 실패. `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, main 이력·CI 성공 게이트를 유지한다(M0 리뷰 R-1/R-4~R-7).
 - `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
 - 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
 - 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.

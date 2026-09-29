@@ -1,7 +1,7 @@
 <script lang="ts">
   // 이벤트 배너 (spec 6.4: 350ms 표시 후 다음 단계와 겹쳐 사라짐, 6.5: 문구·색). 모달·배너는 Svelte transition(plan.md 1.6).
   import { fade, scale } from 'svelte/transition';
-  import { DUR, scaledMs } from '../anim/durations.ts';
+  import { durationMs } from '../anim/durations.ts';
   import type { BannerKind } from './banner.ts';
 
   interface Props {
@@ -17,8 +17,8 @@
 <div
   class={['banner', `kind-${kind}`]}
   role="status"
-  in:scale={{ duration: scaledMs(DUR.modal), start: 0.7 }}
-  out:fade={{ duration: scaledMs(DUR.banner / 2) }}
+  in:scale={{ duration: durationMs('modal'), start: 0.7 }}
+  out:fade={{ duration: durationMs('banner') / 2 }}
 >
   {#if actor}<span class="actor">{`${actor} `}</span>{/if}{text}!
 </div>

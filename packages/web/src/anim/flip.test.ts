@@ -68,6 +68,23 @@ describe('시간 배율 (--dur-scale, spec 6.4)', () => {
     move.cancel();
   });
 
+  test('보통 시간표는 단순 배율이 아닌 단계별 이동 시간을 쓴다', () => {
+    const before = document.documentElement.dataset['speed'];
+    document.documentElement.dataset['speed'] = 'normal';
+    try {
+      const el = stage(null);
+      const move = flipMove(el, new DOMRect(0, 0, 40, 60), el.getBoundingClientRect());
+      const flip = flipCard(el);
+      expect(move.effect?.getTiming().duration).toBe(270);
+      expect(flip.effect?.getTiming().duration).toBe(280);
+      move.cancel();
+      flip.cancel();
+    } finally {
+      if (before === undefined) delete document.documentElement.dataset['speed'];
+      else document.documentElement.dataset['speed'] = before;
+    }
+  });
+
   test('prefers-reduced-motion이면 즉시(0)', () => {
     const real = window.matchMedia.bind(window);
     vi.spyOn(window, 'matchMedia').mockImplementation((query: string) =>

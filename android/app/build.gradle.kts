@@ -1,5 +1,4 @@
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 import org.gradle.api.tasks.Sync
 
 plugins {
@@ -36,10 +35,12 @@ val gitDescribe = git("describe", "--tags", "--always", "--dirty") ?: "0.0.0-dev
 val gitSha = git("rev-parse", "--short=7", "HEAD") ?: "unknown"
 val gitCommitCount = git("rev-list", "--count", "HEAD")?.toIntOrNull() ?: 1
 // 빌드 시각 = HEAD 커밋 시각(UTC). 구성 단계에서 현재 시각을 쓰면 빌드마다 BuildConfig가 바뀌어
-// Gradle 캐시가 무효화되고 같은 커밋의 빌드가 재현되지 않는다(M0 리뷰 B-1). git이 없을 때만 현재 시각.
+// Gradle 캐시가 무효화되고 같은 커밋의 빌드가 재현되지 않는다(M0 리뷰 B-1).
+// Git 조회 실패 시 unknown은 시각 미확인을 뜻하는 결정적 값이다. 구성 캐시에 저장·재사용돼도
+// 현재 빌드 시각으로 오인하지 않는다. 워크트리 Docker에서 공용 .git 경로가 안 보일 때도 같다(B1, FR-31).
 val buildTime = git("show", "-s", "--format=%ct", "HEAD")?.toLongOrNull()
     ?.let { Instant.ofEpochSecond(it).toString() }
-    ?: Instant.now().truncatedTo(ChronoUnit.SECONDS).toString()
+    ?: "unknown"
 
 // 릴리스 서명: 환경변수가 있으면 고정 키, 없으면 디버그 키로 폴백(로컬 빌드용).
 // CI(release.yml)는 secrets에서 키스토어를 복원해 아래 변수를 넘긴다.
