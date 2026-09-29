@@ -5,7 +5,7 @@
 // 화면은 board·busy·banner·toast·timings·settlement만 읽는다. 사람/CPU/원격을 구분하지 않는다.
 import { getCard, type Action, type EngineEvent, type Seat } from '@p2p-gostop/engine';
 import { tick } from 'svelte';
-import { deal, replay, skip, unskip, waitHold, type ReplayHost } from '../anim/choreo.ts';
+import { deal, planTurn, replay, skip, unskip, waitHold, type ReplayHost } from '../anim/choreo.ts';
 import { baseMs, durationMs, scaledMs } from '../anim/durations.ts';
 import type { BoardView } from '../lib/view-types.ts';
 import { bannerForEngineEvent, type Banner } from '../ui/banner.ts';
@@ -19,6 +19,8 @@ import { sounds, type SoundKind } from './sound.ts';
 /** 탭 → 그 액션의 이벤트 재생 끝까지 걸린 시간 (spec AC-06, 6.4 "탭부터 턴 종료까지") */
 export interface TurnTiming {
   readonly action: Action['type'];
+  /** 이벤트 단계의 이동·정지 계획 합(ms). 벽시계 계측과 분리한다. */
+  readonly plannedMs: number;
   readonly ms: number;
   /** 재생 뒤 내 프롬프트(대상·고/스톱 등)가 떴는지: 이 경우 턴 종료가 아니라 프롬프트 표시까지 */
   readonly promptAfter: boolean;
@@ -254,9 +256,13 @@ export class Playback {
   private recordTiming(batch: Batch): void {
     if (batch.tapAt === null || batch.action === null) return;
     const ms = Math.round(performance.now() - batch.tapAt);
+    const plannedMs = planTurn(
+      batch.events,
+      document.documentElement.dataset['speed'] === 'normal',
+    ).plannedMs;
     const pending = batch.board.pending;
     const promptAfter = pending !== null && pending.seat === this.viewer && pending.kind !== 'play';
-    const timing: TurnTiming = { action: batch.action.type, ms, promptAfter };
+    const timing: TurnTiming = { action: batch.action.type, plannedMs, ms, promptAfter };
     this.timings = [...this.timings.slice(-99), timing];
     log.info(`턴 시간 ${timing.action} ${ms}ms${promptAfter ? ' (프롬프트까지)' : ''}`);
   }

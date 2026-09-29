@@ -85,7 +85,7 @@
 | 분배 총합 상한 | 1,800 | 1,200 | 720 |
 | AI 최소 생각 간격(앞선 재생 큐 종료 뒤) | 500 | 250 | 150 |
 
-E2E는 시드 1의 저장 세션으로 손패·바닥·더미 첫 장과 낼 카드를 고정하고, 예상 이벤트 열을 확인한 뒤 412×915에서 각 경로를 3회 재생해 p50을 단언한다. 다음은 **계측 허용 범위**이며 단계 시간의 합계 규범을 대체하지 않는다. 뻑 배너는 카드 이동과 겹쳐 표시된다.
+E2E는 시드 1의 저장 세션으로 손패·바닥·더미 첫 장과 낼 카드를 고정하고, 예상 이벤트 열을 확인한 뒤 412×915에서 각 경로의 첫 워밍업을 제외한 7회 실측 p50과 단계 계획 합을 따로 기록한다. Chromium은 아래 경로별 범위와 AC-06의 700ms를 엄격히 단언하고, hosted CI WebKit은 #103에서 확인한 실행 편차(매칭+획득 p50 로컬 562ms→CI 888ms) 때문에 벽시계만 기록하며 계획 상한·경로는 검증한다. 다음은 **계측 허용 범위**이며 단계 시간의 합계 규범을 대체하지 않는다. 뻑 배너는 카드 이동과 겹쳐 표시된다.
 
 | 선택 없는 고정 턴 경로 | 빠름 p50 (ms) | 보통 p50 (ms) |
 |---|---:|---:|
@@ -266,11 +266,11 @@ PNG는 디자인 설명용 도식이며 실제 카드 도상을 복제하지 않
 | `game/ai-client.ts` | Worker 실패/무응답 시 300ms 상한 인라인 폴백; CPU에는 playerView(state,1)만 전달. 실패 UX는 #65 |
 | `net`, `p2p/link.ts`, `bridge/bridge.ts` | WsTransport의 4001 교체·25초 ping·복귀 처리, 연결 상태 축약, HostBridge 계약(plan §1.7). 게스트 advanceTime 연결은 #60 |
 
-`routes/Game.svelte`는 공통 메뉴·정산·파산·3분 대기 화면과 E2E용 data-round/data-balances/data-seq/data-play-timings를 제공한다. Android gameActive·keepScreenOn은 웹에서 브리지로 전달한다.
+`routes/Game.svelte`는 공통 메뉴·정산·파산·3분 대기 화면과 E2E용 data-round/data-balances/data-seq/data-play-timings/data-play-plans를 제공한다. Android gameActive·keepScreenOn은 웹에서 브리지로 전달한다.
 
 초기 Docker 계측(2026-09-28)은 Chromium p50 568~571ms·최대 596ms, WebKit p50 578~635ms·최대 599~737ms였고, 2코어 CI WebKit은 p50 660ms·최대 849ms까지 흔들렸다. 계획 상한을 540→500ms로 낮춘 근거이며 실기기 측정값은 아니다.
 
-AC-06 계측은 click timeStamp→이벤트 재생·스냅 완료를 기록한다. 현재 솔로 E2E는 위 고정 3경로에서 빠름 p50≤700ms·두 번째 최대≤900ms와 경로별 범위를 단언하며 CI WebKit 보정 배율이 있다. 계획 상한 단위 테스트도 있으나 P2P는 시간 기록만 하므로 #58, 실기기 예산은 #70에서 검증한다.
+AC-06 계측은 click timeStamp→이벤트 재생·스냅 완료를 기록한다. 현재 솔로 E2E는 위 고정 3경로에서 Chromium 빠름 p50≤700ms·두 번째 최대≤900ms와 경로별 범위를 단언하며, hosted CI WebKit은 벽시계를 기록만 한다. 계획 상한 단위 테스트도 있으나 P2P는 시간 기록만 하므로 #58, 실기기 예산은 #70에서 검증한다.
 
 남은 웹 기능: 로비 준비·P2P 기록·판 무효 UI(#44, abortRound API는 이미 구현), 밀기 선택·정산 라벨(#30·#31), 규칙 토글/화폐 단위/잔액(#62), 진동·효과 강도(#49), AI 생각 시간(#65), 리플레이 내보내기(#71). 효과음은 Web Audio 합성 최소판이다.
 
