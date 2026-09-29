@@ -39,5 +39,7 @@
 | 변경 전 full | 300 | 20 | 243.9초 |
 | 변경 후 smoke | 250 | 0 | 104.2초 |
 | 변경 후 full | 298 | 20 | 225.6초 |
+| main 병합 후 smoke | 250 | 0 | 84.8초 |
+| main 병합 후 full | 298 | 20 | 227.0초 |
 
-공식 API는 [Context7 Playwright 문서](https://context7.com/microsoft/playwright)(tags/grep/projects/dependencies)를 조회했다. 실행 결과는 각각 1회, 로컬 `--reporter=json` stats 기준이며 실패·재시도0이다. smoke는 기존 대비57.3% 단축; full의 작은 시간 차이는 실행 편차를 포함한다. `npm ci`, `npm run lint:fix`, `npm run lint`, `npm run check`, `npm test`(563), `npm run test:browser`(598), `npm run build -w packages/web`, `android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=4` 모두 통과. 워크플로 소유자는 ci/e2e-speed이며 `ci.yml`은 수정하지 않았다. PR은 `npm run e2e:smoke -w packages/web`, main 푸시·수동·릴리스 전은 `npm run e2e -w packages/web`(full); 루트 별칭도 같다.
+공식 API는 [Context7 Playwright 문서](https://context7.com/microsoft/playwright)(tags/grep/projects/dependencies)를 조회했다. 최초 전후 비교는 `a714e30`, 재검증은 main `db20cd7` 앱 코드 및 `b9bd84b` CI 병합 후다. 실행 결과는 각각 1회, 로컬 `--reporter=json` stats 기준이며 실패·재시도0이다. smoke는 기존 대비57.3% 단축; full의 작은 시간 차이는 실행 편차를 포함한다. `npm ci`, `npm run lint:fix`, `npm run lint`, `npm run check`, `npm test`(563), `npm run test:browser`(main 병합 후640), `npm run test:net -w packages/web`(35), `npm run build -w packages/web`, `android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=4` 모두 통과. #181(`b9bd84b`) 병합 후 CI 일반/timing 단계에 이벤트별 스크립트를 연결했다. PR의 W timing은 제외하고 main 푸시도 full을 실행한다. 엔진 필터·캐시는 #181 그대로다. PR은 `npm run e2e:smoke -w packages/web`, main 푸시·수동·릴리스 전은 `npm run e2e -w packages/web`(full); 루트 별칭도 같다.
