@@ -671,6 +671,11 @@ class HostController extends SnapshotSource implements RemoteHostController {
     const request: JoinRequest = {
       id: control.requestId,
       kind: control.t === 'relay-claim' ? 'invite' : 'code',
+      ...(control.t === 'relay-join-request' &&
+      'nickname' in control &&
+      typeof control.nickname === 'string'
+        ? { nickname: control.nickname }
+        : {}),
       receivedAt,
       expiresAt: receivedAt + duration,
     };
@@ -690,10 +695,16 @@ class HostController extends SnapshotSource implements RemoteHostController {
     }
     if (!this.transport?.sendControl({ t: 'relay-accept', requestId, token: token32() }))
       throw new RemoteFailure('network');
-    this.deny(requestId);
+    this.removeRequest(requestId);
   }
 
   deny(requestId: string): void {
+    if (!this.value.requests.some((request) => request.id === requestId)) return;
+    this.transport?.sendControl({ t: 'relay-deny', requestId });
+    this.removeRequest(requestId);
+  }
+
+  private removeRequest(requestId: string): void {
     const timer = this.requestTimers.get(requestId);
     if (timer) clearTimeout(timer);
     this.requestTimers.delete(requestId);
@@ -854,6 +865,15 @@ class GuestController extends SnapshotSource implements RemoteGuestController {
       );
       this.transport = transport;
       transport.onControl((control) => {
+        if (settled) return;
+        if (control.t === 'relay-claim-denied') {
+          transport.dispose();
+          if (this.transport === transport) this.transport = null;
+          this.pendingInvite = null;
+          this.update({ state: 'ended', error: 'denied', peerPresent: false });
+          finish({ ok: false, code: 'denied' });
+          return;
+        }
         if (control.t !== 'relay-accepted' || settled) return;
         this.pendingInvite = null;
         const record: GuestRecord = {
@@ -870,6 +890,14 @@ class GuestController extends SnapshotSource implements RemoteGuestController {
       });
       transport.onConnection((event) => {
         if (settled || event.type !== 'close') return;
+        if (event.code === 4003) {
+          transport.dispose();
+          if (this.transport === transport) this.transport = null;
+          this.pendingInvite = null;
+          this.update({ state: 'ended', error: 'expired', peerPresent: false });
+          finish({ ok: false, code: 'expired' });
+          return;
+        }
         if (event.code === 1008) {
           transport.dispose();
           if (this.transport === transport) this.transport = null;
@@ -905,14 +933,24 @@ class GuestController extends SnapshotSource implements RemoteGuestController {
       const timer = setTimeout(() => finish(this.fail('timeout')), 61_000);
       this.pendingCancel = () => finish({ ok: false, code: 'denied' });
       try {
+        const socketFactory = (url: string): WebSocket => {
+          const endpoint = new URL(url);
+          endpoint.searchParams.set('name', nickname);
+          return (this.deps.socketFactory ?? ((address) => new WebSocket(address)))(endpoint.href);
+        };
         const channel = createPublicJoinChannel(
           origin,
           this.deps.allowedOrigin,
           code,
-          this.deps.socketFactory,
+          socketFactory,
         );
         this.channel = channel;
         channel.onControl((control) => {
+          if (control.t === 'relay-join-denied') {
+            this.update({ state: 'ended', error: 'denied', peerPresent: false });
+            finish({ ok: false, code: 'denied' });
+            return;
+          }
           if (control.t === 'relay-join-unavailable') finish(this.fail('unavailable'));
           if (control.t !== 'relay-accepted' || !control.roomId || settled) return;
           const record: GuestRecord = {
@@ -994,8 +1032,14 @@ class GuestController extends SnapshotSource implements RemoteGuestController {
   }
 
   retry(): void {
-    // 초대 인증 거절 뒤에는 재사용 가능한 자격이 없다. 새 링크를 받아야 한다.
-    if (!this.record && this.value.error === 'invalid') return;
+    // 초대 인증 실패 뒤에는 재사용 가능한 자격이 없다. 새 링크를 받아야 한다.
+    if (
+      !this.record &&
+      (this.value.error === 'invalid' ||
+        this.value.error === 'denied' ||
+        this.value.error === 'expired')
+    )
+      return;
     if (this.transport && this.value.error !== 'replaced') {
       this.update({ state: 'reconnecting', error: undefined });
       this.transport.reconnect(true);
