@@ -268,6 +268,6 @@ AC-06 계측은 click timeStamp→이벤트 재생·스냅 완료를 기록한�
 ### 조사 근거와 적용 범위
 
 - Apple [Layout](https://developer.apple.com/design/human-interface-guidelines/layout), [Buttons](https://developer.apple.com/design/human-interface-guidelines/buttons), [Motion](https://developer.apple.com/design/human-interface-guidelines/motion), [Dark Mode](https://developer.apple.com/design/human-interface-guidelines/dark-mode): 안전 영역·입력 크기·움직임·외관. 제품 수치 48px/8px는 이 앱의 더 엄격한 결정이다.
-- Material 3 [Motion](https://m3.material.io/styles/motion/overview), [Elevation](https://m3.material.io/styles/elevation/overview), [Color roles](https://m3.material.io/styles/color/roles): 의미 역할·층위·전환의 개념만 참고한다. 앱의 구체 시간은 기존 `spec.md` §6.4가 우선한다.
+- Material 3 [Motion](https://m3.material.io/styles/motion/overview), [Elevation](https://m3.material.io/styles/elevation/overview), [Color roles](https://m3.material.io/styles/color/roles): 의미 역할·층위·전환의 개념만 참고한다. 앱의 구체 시간은 UX-15 표가 정본이며 `spec.md` §6.4와 같은 값을 쓴다.
 - W3C [WCAG 2.2](https://www.w3.org/TR/WCAG22/): AA 기준과 모션 감소 관련 AAA 권고를 구분했다.
 - 상용 맞고 참고: [피망 뉴맞고 Google Play](https://play.google.com/store/apps/details?id=com.neowiz.games.newmatgo), [한게임 신맞고 Google Play](https://play.google.com/store/apps/details?id=com.NHNEnt.NDuelgo)의 **스토어 화면 이미지**만 배치 방향을 확인했다. 상대 정보 상단, 바닥 중앙, 내 손패 하단의 관행을 차용하되 그래픽·자산·문구를 베끼지 않았다. 스토어 이미지가 모든 게임 상태를 보여 주지 않으므로 최악 배치 수치는 자체 설계 가정이다.
