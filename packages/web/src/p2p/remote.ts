@@ -68,7 +68,8 @@ export interface RemoteSnapshot {
 export interface RemoteHostController {
   readonly snapshot: RemoteSnapshot;
   subscribe(cb: (s: RemoteSnapshot) => void): () => void;
-  checkHealth(): Promise<HealthResult>;
+  /** signal 취소 시 RelayHealthError('cancelled')로 reject하고 snapshot은 변경하지 않는다. */
+  checkHealth(options?: { signal?: AbortSignal }): Promise<HealthResult>;
   createRoom(): Promise<RemoteRoom>;
   accept(requestId: string): Promise<void>;
   deny(requestId: string): void;
@@ -112,6 +113,7 @@ export interface RemoteGuestDeps {
 }
 
 const HOST_KEY = 'p2p-gostop.remote-room.v1';
+const HOST_PENDING_KEY = 'p2p-gostop.remote-room-pending.v1';
 const GUEST_ACTIVE_KEY = 'p2p-gostop.remote-guest-active.v1';
 const GUEST_KEY = 'p2p-gostop.remote-guest.v1.';
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
@@ -125,6 +127,12 @@ interface HostRecord {
   readonly origin: string;
   readonly hostToken: string;
   readonly room: RemoteRoom;
+}
+
+interface PendingRoom {
+  readonly origin: string;
+  readonly roomId: string;
+  readonly hostToken: string;
 }
 
 interface GuestRecord {
@@ -244,6 +252,25 @@ function validHost(value: unknown, now: number): HostRecord | null {
   return item as HostRecord;
 }
 
+function validPendingRoom(value: unknown): PendingRoom | null {
+  if (!value || typeof value !== 'object') return null;
+  const item = value as Partial<PendingRoom>;
+  if (
+    typeof item.origin !== 'string' ||
+    typeof item.roomId !== 'string' ||
+    !ROOM_ID.test(item.roomId) ||
+    typeof item.hostToken !== 'string' ||
+    !TOKEN.test(item.hostToken)
+  )
+    return null;
+  try {
+    parseRelayOrigin(item.origin);
+  } catch {
+    return null;
+  }
+  return item as PendingRoom;
+}
+
 function validGuest(value: unknown, now: number): GuestRecord | null {
   if (!value || typeof value !== 'object') return null;
   const item = value as Partial<GuestRecord>;
@@ -289,8 +316,10 @@ async function responseJson(
       cache: 'no-store',
     });
   } catch {
+    if (init.signal?.aborted) throw new RemoteFailure('cancelled');
     throw new RemoteFailure('network');
   }
+  if (init.signal?.aborted) throw new RemoteFailure('cancelled');
   if (response.status !== expected) {
     if (response.status === 401 || response.status === 403) throw new RemoteFailure('auth');
     if (response.status === 429 || response.status === 503) throw new RemoteFailure('unavailable');
@@ -299,10 +328,12 @@ async function responseJson(
   }
   try {
     const value: unknown = await response.json();
+    if (init.signal?.aborted) throw new RemoteFailure('cancelled');
     if (!value || typeof value !== 'object' || Array.isArray(value))
       throw new RemoteFailure('invalid');
     return value as Record<string, unknown>;
   } catch {
+    if (init.signal?.aborted) throw new RemoteFailure('cancelled');
     throw new RemoteFailure('invalid');
   }
 }
@@ -371,6 +402,9 @@ class HostController extends SnapshotSource implements RemoteHostController {
   private record: HostRecord | null = null;
   private transport: WsTransport | null = null;
   private healthAbort: AbortController | null = null;
+  private createAbort: AbortController | null = null;
+  private generation = 0;
+  private pendingRoom: PendingRoom | null = null;
   private expiry: ReturnType<typeof setTimeout> | null = null;
   private readonly requestTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -381,7 +415,8 @@ class HostController extends SnapshotSource implements RemoteHostController {
     this.fetcher = deps.fetcher ?? fetch;
   }
 
-  async checkHealth(): Promise<HealthResult> {
+  async checkHealth(options?: { signal?: AbortSignal }): Promise<HealthResult> {
+    if (options?.signal?.aborted) throw new RelayHealthError('cancelled');
     const settings = loadRemoteHostSettings(this.deps.settings);
     if (!settings) {
       this.update({ state: 'error', error: 'invalid' });
@@ -389,18 +424,24 @@ class HostController extends SnapshotSource implements RemoteHostController {
     }
     this.healthAbort?.abort();
     const abort = new AbortController();
+    const cancel = () => abort.abort();
+    options?.signal?.addEventListener('abort', cancel, { once: true });
+    if (options?.signal?.aborted) cancel();
     this.healthAbort = abort;
-    this.update({ state: 'checking', error: undefined });
+    if (!options?.signal) this.update({ state: 'checking', error: undefined });
     try {
       const result = await checkPublicHealth(settings.baseUrl, abort.signal, this.fetcher);
+      if (abort.signal.aborted) throw new RelayHealthError('cancelled');
       if (result.controlVersion !== 1) throw new RemoteFailure('version');
       if (this.healthAbort === abort) this.update({ state: 'idle' });
       return result;
     } catch (error) {
+      if (abort.signal.aborted) throw new RelayHealthError('cancelled', { cause: error });
       if (this.healthAbort === abort && !abort.signal.aborted)
         this.update({ state: 'error', error: codeOf(error) });
       throw error;
     } finally {
+      options?.signal?.removeEventListener('abort', cancel);
       if (this.healthAbort === abort) this.healthAbort = null;
     }
   }
@@ -412,22 +453,42 @@ class HostController extends SnapshotSource implements RemoteHostController {
       this.update({ state: 'error', error: 'invalid' });
       throw new RemoteFailure('invalid');
     }
+    this.createAbort?.abort();
+    const abort = new AbortController();
+    this.createAbort = abort;
+    const generation = ++this.generation;
+    const active = () => {
+      if (this.generation !== generation || abort.signal.aborted)
+        throw new RemoteFailure('cancelled');
+    };
     this.update({ state: 'creating', error: undefined });
+    let createdRoom: PendingRoom | null = null;
     try {
+      const pending =
+        this.pendingRoom ?? validPendingRoom(get(this.deps.storage, HOST_PENDING_KEY));
+      if (pending) {
+        this.pendingRoom = pending;
+        await this.deletePending(pending);
+        active();
+      }
       const stored = validHost(get(this.deps.storage, HOST_KEY), this.now());
       if (stored && stored.origin === settings.baseUrl) {
+        active();
         this.record = stored;
         this.update({ room: stored.room });
-        await this.waitReady(this.connect(stored, true));
+        await this.waitReady(this.connect(stored, true), abort.signal);
+        active();
         return stored.room;
       }
+      active();
       remove(this.deps.storage, HOST_KEY);
       const version = await responseJson(
         this.fetcher,
         `${settings.baseUrl}/version`,
-        { method: 'GET' },
+        { method: 'GET', signal: abort.signal },
         200,
       );
+      active();
       const current = version.current;
       if (
         version.relay !== 'p2p-gostop' ||
@@ -444,7 +505,12 @@ class HostController extends SnapshotSource implements RemoteHostController {
       const created = await responseJson(
         this.fetcher,
         `${settings.baseUrl}/api/rooms`,
-        { method: 'POST', headers: { Authorization: `Bearer ${settings.creationSecret}` } },
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${settings.creationSecret}` },
+          // 서버가 201 뒤 방을 만들었는데 응답만 취소되면 종료 자격을 잃는다.
+          // 이 요청의 응답은 끝까지 읽고, 아래 세대 검사에서 취소 후 DELETE한다.
+        },
         201,
       );
       if (
@@ -459,6 +525,17 @@ class HostController extends SnapshotSource implements RemoteHostController {
         created.expiresAt > this.now() + ROOM_MS
       )
         throw new RemoteFailure('invalid');
+      // 201 뒤 어떤 단계가 실패해도 이 자격으로 이미 생성된 방을 정리할 수 있다.
+      const provisional: PendingRoom = {
+        origin: settings.baseUrl,
+        roomId: created.roomId,
+        hostToken: created.hostToken,
+      };
+      createdRoom = provisional;
+      active();
+      this.pendingRoom = provisional;
+      put(this.deps.storage, HOST_PENDING_KEY, provisional);
+      active();
       const invite = token32();
       const inviteExpires = Math.min(created.expiresAt, this.now() + INVITE_MS);
       await responseJson(
@@ -471,9 +548,11 @@ class HostController extends SnapshotSource implements RemoteHostController {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ token: invite, permission: 'invite', expiresAt: inviteExpires }),
+          signal: abort.signal,
         },
         201,
       );
+      active();
       const fragment = new URLSearchParams({ room: created.roomId, t: invite });
       const room: RemoteRoom = {
         roomId: created.roomId,
@@ -484,13 +563,35 @@ class HostController extends SnapshotSource implements RemoteHostController {
       const record: HostRecord = { origin: settings.baseUrl, hostToken: created.hostToken, room };
       this.record = record;
       put(this.deps.storage, HOST_KEY, record);
+      createdRoom = null;
+      this.pendingRoom = null;
+      remove(this.deps.storage, HOST_PENDING_KEY);
       this.update({ room });
-      await this.waitReady(this.connect(record, false));
+      await this.waitReady(this.connect(record, false), abort.signal);
+      active();
       return room;
     } catch (error) {
-      this.update({ state: 'error', error: codeOf(error) });
+      if (createdRoom) await this.deletePending(createdRoom).catch(() => {});
+      if (this.generation === generation && !abort.signal.aborted)
+        this.update({ state: 'error', error: codeOf(error) });
       throw error;
+    } finally {
+      if (this.createAbort === abort) this.createAbort = null;
     }
+  }
+
+  private async deletePending(pending: PendingRoom): Promise<void> {
+    const response = await this.fetcher(`${pending.origin}/api/rooms/${pending.roomId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${pending.hostToken}` },
+      credentials: 'omit',
+      redirect: 'error',
+      cache: 'no-store',
+    });
+    if (response.status !== 204 && response.status !== 404) throw new RemoteFailure('network');
+    if (this.pendingRoom?.roomId === pending.roomId) this.pendingRoom = null;
+    const stored = validPendingRoom(get(this.deps.storage, HOST_PENDING_KEY));
+    if (stored?.roomId === pending.roomId) remove(this.deps.storage, HOST_PENDING_KEY);
   }
 
   private connect(record: HostRecord, restored: boolean): WsTransport {
@@ -526,10 +627,16 @@ class HostController extends SnapshotSource implements RemoteHostController {
     return transport;
   }
 
-  private waitReady(transport: WsTransport): Promise<void> {
+  private waitReady(transport: WsTransport, signal: AbortSignal): Promise<void> {
     if (transport.state === 'open') return Promise.resolve();
     return new Promise((resolve, reject) => {
+      const cancelled = () => {
+        clearTimeout(timer);
+        off();
+        reject(new RemoteFailure('cancelled'));
+      };
       const timer = setTimeout(() => {
+        signal.removeEventListener('abort', cancelled);
         off();
         reject(new RemoteFailure('network'));
       }, 7_000);
@@ -541,6 +648,7 @@ class HostController extends SnapshotSource implements RemoteHostController {
         )
           return;
         clearTimeout(timer);
+        signal.removeEventListener('abort', cancelled);
         off();
         if (event.type === 'open') resolve();
         else
@@ -550,6 +658,8 @@ class HostController extends SnapshotSource implements RemoteHostController {
             ),
           );
       });
+      signal.addEventListener('abort', cancelled, { once: true });
+      if (signal.aborted) cancelled();
     });
   }
 
@@ -616,9 +726,19 @@ class HostController extends SnapshotSource implements RemoteHostController {
   }
 
   async close(): Promise<void> {
+    ++this.generation;
+    this.createAbort?.abort();
     this.healthAbort?.abort();
     const record = this.record;
+    const pending = this.pendingRoom ?? validPendingRoom(get(this.deps.storage, HOST_PENDING_KEY));
     this.end('room-ended');
+    if (pending) {
+      try {
+        await this.deletePending(pending);
+      } catch {
+        throw new RemoteFailure('network');
+      }
+    }
     if (!record) return;
     try {
       const response = await this.fetcher(`${record.origin}/api/rooms/${record.room.roomId}`, {
@@ -752,6 +872,8 @@ class GuestController extends SnapshotSource implements RemoteGuestController {
         if (settled || event.type !== 'close') return;
         if (event.code === 1008) {
           transport.dispose();
+          if (this.transport === transport) this.transport = null;
+          this.pendingInvite = null;
           finish(this.fail('invalid'));
         }
       });
@@ -872,6 +994,8 @@ class GuestController extends SnapshotSource implements RemoteGuestController {
   }
 
   retry(): void {
+    // 초대 인증 거절 뒤에는 재사용 가능한 자격이 없다. 새 링크를 받아야 한다.
+    if (!this.record && this.value.error === 'invalid') return;
     if (this.transport && this.value.error !== 'replaced') {
       this.update({ state: 'reconnecting', error: undefined });
       this.transport.reconnect(true);
