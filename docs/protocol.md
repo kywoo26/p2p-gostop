@@ -1,6 +1,6 @@
 # M4 호스트·게스트 프로토콜
 
-근거: `spec.md` NP-01~NP-09, FR-07·FR-14, MN-01/02/05, NF-05/06 및 `plan.md` 1.1·M4. 이 문서는 `packages/protocol`(v2)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/M4-protocol-review.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
+근거: `spec.md` NP-01~NP-09, FR-07·FR-14, MN-01/02/05, NF-05/06 및 `plan.md` 1.1·M4. 이 문서는 `packages/protocol`(v2)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/README.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
 
 전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 `PROTOCOL_VERSION = 2`다(v1과 호환되지 않는다: 원장 요약, BoardView 상세 필드, 판 사이 대기).
 

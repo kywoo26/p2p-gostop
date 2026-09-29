@@ -115,7 +115,7 @@ API 근거: [Pillow Image](https://pillow.readthedocs.io/en/stable/reference/Ima
 | 30Mbps +20ms | 20 | 218ms | 218ms | 254ms | 665,518 |
 | 60Mbps +20ms | 20 | 164ms | 165ms | 193ms | 665,518 |
 
-실제 `?role=guest&visual=pro` 참가 화면의 공유 응답-byte 큐이며 갤러리 대체가 아니다. 라디오 손실·연결 설정·모바일 CPU/Safari 디코더는 재현하지 못한다. **실기기 미검증**. 이 값으로 iPhone ≤2초 합격을 선언하지 않는다. [renderer/resources](../design/mockups/pro/measurements.json), [throttle60회](../design/mockups/pro/throttle.json) 원자료와 외부 요청0을 기록한다.
+실제 `?role=guest&visual=pro` 참가 화면의 공유 응답-byte 큐이며 갤러리 대체가 아니다. 라디오 손실·연결 설정·모바일 CPU/Safari 디코더는 재현하지 못한다. **실기기 미검증**. 이 값으로 iPhone ≤2초 합격을 선언하지 않는다. [renderer/resources](data/pro-measurements.json), [throttle60회](data/pro-throttle.json) 원자료와 외부 요청0을 기록한다.
 
 ## 6. NF-03 개정안 — 예산 개정 승인 전
 

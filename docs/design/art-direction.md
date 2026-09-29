@@ -67,3 +67,20 @@
 - 같은 먹/한지 색 변환 곡선으로 채도를 제한한다. 도상에 따라 검정 면적이 달라도 독자적인 원색·백색 배경을 남기지 않는다. 선택 상태의 금색 링은 초상 이미지 밖의 공통 UI이다.
 - 실제 40px·64px 표시 크기 contact sheet로 나란히 비교한다. 주 윤곽이 대략 1~2 CSS px의 같은 무게로 읽히게 크롭 배율·선 명도·축소 필터를 조정한다. 원본 전체에 일괄 stroke를 덧씌워 눈·깃털을 뭉개지 않는다. 2px 기능 아이콘과 세필 초상의 선은 역할이 다르므로 동일한 벡터 선으로 강제하지 않는다.
 - 12종 모두 같은 배경/링/조명 아래 확인하고, 크롭 좌표·색 변환·해상도·원본 SHA와 변경 사항을 manifest 및 License 고지에 기록한다. 이 비교 캡처와 채도·선 굵기 검수 결과를 스킨 PR에 첨부한다.
+
+## 결정 이력
+
+2026-09-29 사용자 결정으로 A · 사이(먹빛 판·한지색 포인트·Pretendard)를 채택했다. B(자주빛·아치·SUIT)는 카지노처럼 보일 위험과 장식 비용, C(청색·라임·Wanted)는 장시간 플레이의 피로와 카드 도상과의 불일치로 기각했다. B/C는 테마로 구현하지 않는다.
+
+| 평가 패키지 | 결론 | 근거 |
+|---|---|---|
+| ambientCG Fabric037/Wood050/Leather037/Metal034, para Effects 1, Kenney Particle/Casino/Impact/Interface | 채택 | CC0·로컬 가공으로 같은 색/광원 및 효과·소리 구성 |
+| Kenney UI Adventure / Animal Pack | 제외 | 프레임·동물 얼굴이 화투와 다른 시각 언어 |
+| Met JP660 학·소나무, Commons Hwatu | 채택 | Public Domain/CC0 원화와 CC BY-SA 4.0 카드 파생 초상; 고지 유지 |
+| Tailwind v4 / shadcn-svelte | 기각 | 맞춤 판·연출 문제를 풀지 못하고 기존 scoped CSS 전환·복사 코드 관리 비용이 큼 |
+| Bits UI | 조건부 시험 | 네이티브 dialog의 초점·중첩 결함이 입증될 때 primitive 하나만 비교 |
+| Melt UI / Skeleton / UnoCSS | 보류 / 기각 | Melt는 Bits 대비 유지비 이점 미확인; Skeleton·UnoCSS는 스타일·토큰 체계 중복 |
+| Motion mini | 조건부 시험 | 현재 WAAPI로 충분하며 추가 취소·완료 계약이 필요할 때만 비교 |
+| Rive / Lottie·dotLottie | 기각 | 짧은 국소 효과에 별도 렌더러·WASM/JSON·수명 관리가 과함 |
+| 아이콘: 자체 CSS/SVG / Lucide / Phosphor | 채택 / 제외 / 보류 | 자체 도형 우선; Lucide ISC는 당시 허용 자산 범위 밖, 필요할 때만 MIT SVG 소수 검토 |
+| 사운드: Web Audio + Kenney / Howler·BGM | 채택 후보 / 비채택 | 제스처 뒤 로컬 CC0 짧은 음만 예산 내 선택하고 별도 라이브러리·배경음은 추가하지 않음 |
