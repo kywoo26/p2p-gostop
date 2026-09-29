@@ -5,6 +5,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ATTRIBUTION_URLS } from '../src/cards/attribution.ts';
+import { FONT_ATTRIBUTION_URLS } from '../src/fonts/attribution.ts';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const LIMIT_BYTES = 1.5 * 1024 * 1024;
@@ -41,7 +42,7 @@ const MESSAGE_LINK_PREFIXES = ['https://svelte.dev/e/'];
  * 라이선스 화면에 글자로만 보여 주는 주소 (CC BY-SA 4.0 표기 의무, spec NF-07). 링크를 걸지 않고 요청하지 않는다.
  * 정확히 같은 문자열만 허용한다(src/cards/attribution.ts).
  */
-const DISPLAYED_URLS = new Set(ATTRIBUTION_URLS);
+const DISPLAYED_URLS = new Set([...ATTRIBUTION_URLS, ...FONT_ATTRIBUTION_URLS]);
 const URL_PATTERN = /https?:\/\/[^\s"'`<>()\\{}|^]+/g;
 
 async function* walk(dir) {

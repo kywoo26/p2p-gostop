@@ -34,6 +34,14 @@
     - paragraph:
       - text: Creative Commons Zero v1.0 Universal (퍼블릭 도메인 헌정) (CC0 1.0)
       - code: https://creativecommons.org/publicdomain/zero/1.0/
+  - region "글꼴":
+    - heading "글꼴" [level=2]
+    - paragraph: Pretendard Variable v1.3.9 · GostopSans
+    - paragraph: Copyright (c) 2021, Kil Hyung-jin
+    - paragraph: SIL Open Font License 1.1. UI 문자 서브셋·WOFF2 변환·힌팅 제거·수정본 이름 변경. 가변 가중치와 등폭 숫자 기능 유지.
+    - code: https://github.com/orioncactus/pretendard
+    - code: https://scripts.sil.org/OFL
+    - group: 폰트 라이선스 원문
   - region "앱 코드":
     - heading "앱 코드" [level=2]
     - paragraph: 앱 코드(엔진·UI)는 MIT 라이선스다. 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.

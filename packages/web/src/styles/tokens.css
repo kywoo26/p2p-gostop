@@ -1,3 +1,5 @@
+@import './fonts/GostopSans.css';
+
 /*
  * 디자인 토큰 (plan.md 1.6). 다크 배경, OKLCH 팔레트, 애니메이션 시간 예산(spec 6.4).
  * 보통은 단계별 이동·정지 시간표, 빠름은 AC-06 표, 매우 빠름은 빠름 ×0.6이다.
@@ -7,17 +9,17 @@
   color-scheme: dark;
 
   /* 표면과 글자 */
-  --color-bg: oklch(17% 0.015 260);
-  --color-surface: oklch(23% 0.02 260);
-  --color-surface-raised: oklch(29% 0.025 260);
-  --color-border: oklch(40% 0.025 260);
-  --color-text: oklch(95% 0.01 260);
-  --color-text-muted: oklch(75% 0.02 260);
-  --color-accent: oklch(78% 0.14 165);
-  --color-accent-pressed: oklch(70% 0.14 165);
-  --color-on-accent: oklch(20% 0.03 165);
+  --color-bg: oklch(19% 0.018 170);
+  --color-surface: oklch(28% 0.025 170);
+  --color-surface-raised: oklch(33% 0.025 170);
+  --color-border: oklch(62% 0.025 160);
+  --color-text: oklch(95% 0.025 85);
+  --color-text-muted: oklch(76% 0.025 140);
+  --color-accent: oklch(86% 0.07 85);
+  --color-accent-pressed: oklch(79% 0.07 85);
+  --color-on-accent: oklch(20% 0.025 160);
   /* 게임판 바탕 */
-  --color-felt: oklch(33% 0.06 160);
+  --color-felt: oklch(24% 0.025 170);
 
   /* 이벤트 배너 색 (spec 6.5). 색만으로 구분하지 않고 문구를 함께 쓴다 (NF-08). */
   --color-event-ppeok: oklch(64% 0.21 27);
@@ -61,11 +63,62 @@
   --card-tag-height: 16px;
   --card-symbol-stroke: 1px;
   --card-badge-gap: 2px;
-  --font-body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  --font-size-s: 0.8125rem;
+  --font-body:
+    'GostopSans', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-size-s: var(--type-label-size);
   --font-size-m: 1rem;
   --font-size-l: 1.125rem;
   --font-size-title: 2rem;
+
+  /* A · 사이: 의미 역할. 카드 크기/표식 및 --dur-*는 기존 소유 계약 유지. */
+  --color-control-border: var(--color-border);
+  --color-divider: oklch(49% 0.03 160);
+  --color-focus: var(--color-accent);
+  --color-selected: var(--color-accent);
+  --color-error: oklch(78% 0.13 25);
+  --color-warning: oklch(86% 0.1 85);
+  --color-success: oklch(82% 0.11 150);
+  --color-scrim: oklch(0% 0 0 / 0.65);
+  --font-display: var(--font-body);
+  --font-numeric: var(--font-body);
+  --type-caption-size: 0.75rem;
+  --type-caption-line: 1rem;
+  --type-label-size: 0.875rem;
+  --type-label-line: 1.25rem;
+  --type-body-size: 1rem;
+  --type-body-line: 1.375rem;
+  --type-section-size: 1.125rem;
+  --type-section-line: 1.5rem;
+  --type-title-size: 2rem;
+  --type-title-line: 2.5rem;
+  --type-home-size: 2.5rem;
+  --type-home-line: 3rem;
+  --type-score-size: 1.5rem;
+  --type-score-line: 1.875rem;
+  --type-amount-size: 3rem;
+  --type-amount-line: 3.625rem;
+  --type-event-size: 3.625rem;
+  --type-event-line: 3.75rem;
+  --font-weight-body: 400;
+  --font-weight-label: 500;
+  --font-weight-heading: 700;
+  --font-weight-number: 750;
+  --space-5: 1.25rem;
+  --space-8: 2rem;
+  --space-control-gap: 8px;
+  --space-hand-prompt: 16px;
+  --radius-control: 12px;
+  --radius-panel: 12px;
+  --radius-sheet: 16px;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --z-board: 0;
+  --z-moving: 20;
+  --z-banner: 30;
+  --z-toast: 40;
+  --z-prompt: 50;
+  --z-modal: 60;
+  --z-menu: 70;
 
   /* 애니메이션 시간 예산 (spec 6.4, "빠름" 기준) */
   --dur-scale: 1;
