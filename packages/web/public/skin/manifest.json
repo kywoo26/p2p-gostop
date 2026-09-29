@@ -60,7 +60,7 @@
     "bytes": 2238,
     "width": 64,
     "height": 64,
-    "sha256": "0b321a5969f12f0cfaebcb65d11c319e036495b83d9449c92043fe4b508dd730",
+    "sha256": "73cb35885a4342caee40a786208192570c9623dcb42d3ceb8de5255660ce1e8d",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_January_Hikari.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -71,7 +71,7 @@
     "bytes": 2544,
     "width": 64,
     "height": 64,
-    "sha256": "da0e36edda9a4c2c279f133cdd6b28e1930a8344940946dc7a431755cecefe75",
+    "sha256": "1f74ab5f17fde730a2e270965777f04b73797e5d4a5fae7d9a7be3acedd53064",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_February_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -82,7 +82,7 @@
     "bytes": 3160,
     "width": 64,
     "height": 64,
-    "sha256": "2386705221ed33acc642287817aeccb482967e7ca9e335e0663433ebc16b7f75",
+    "sha256": "bbcd460001826ffa6653fcdea1b3497368c97166d61370b17cfd5cc0ca46ecc0",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_March_Hikari.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -93,7 +93,7 @@
     "bytes": 3014,
     "width": 64,
     "height": 64,
-    "sha256": "2c1dbb27cd65baebdaa56d3be4689ea683d8ab032240213c4252e3e61a41fa74",
+    "sha256": "5202052335c5326d14eb71d10e83387c096a444f7b0cebcd58ef6ace9de93715",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_April_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -104,7 +104,7 @@
     "bytes": 2586,
     "width": 64,
     "height": 64,
-    "sha256": "a44dba49deeea87228a4f7241e2bcbbc52c06cfdaba02b7ebfc9796eb2410b62",
+    "sha256": "f94c69beeb82cc400e8bb368e9e7750bd035c6f1d9c83a5791a32703623b1df7",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_May_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -115,7 +115,7 @@
     "bytes": 2754,
     "width": 64,
     "height": 64,
-    "sha256": "906360277574ff7e418dc6b70d05846f3a7cbc09ea11f67b56a99c25ee9eedaf",
+    "sha256": "ec7db829d623206282fcd28331b4485361eff35cede7ee4131bf78debc96a260",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_June_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -126,7 +126,7 @@
     "bytes": 2786,
     "width": 64,
     "height": 64,
-    "sha256": "671ef77277b90044a9e4e3c00bf893544f110799cf7f8d56174fbefe7e01747c",
+    "sha256": "5cbc578feda2ed5e3a89959fc04c9f8f4111259cb13c489f6ae928a01d457527",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_July_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -137,7 +137,7 @@
     "bytes": 2144,
     "width": 64,
     "height": 64,
-    "sha256": "32a85eabd8299fb63390edd56ac07f3d531d6bb5c9966668f19039893bc02281",
+    "sha256": "961523e0940e724eecfe3756b0da78262dc07df08bbbe0064f543d8a6bf51890",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_August_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -148,7 +148,7 @@
     "bytes": 2550,
     "width": 64,
     "height": 64,
-    "sha256": "9284939aa325e7228378bde572e158bcbd2fb12d4e6137968711db7ae196b97e",
+    "sha256": "bf6fc461e16f35ebfbfb0de37f52d5631d106ac8886136dc77d2d02a3cc237ec",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_September_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -159,7 +159,7 @@
     "bytes": 2658,
     "width": 64,
     "height": 64,
-    "sha256": "7afe70404d535388f2575792e2a91f1220a4a1be8259f69560631513e0896eb8",
+    "sha256": "0cefd15373beb32de10f37129c82076604247c5990cd06ce81d147b0ffae5f01",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_October_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -170,7 +170,7 @@
     "bytes": 1978,
     "width": 64,
     "height": 64,
-    "sha256": "71fce2c019fd3118c63ec3d8b892c2e943c12e115e8fb95aee606b9b19ab0414",
+    "sha256": "20a54fc8d9a5788d2a3ecc9e6eb07de1648909577cd4f2f9ab3544fe458e93a7",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_November_Hikari.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
@@ -181,7 +181,7 @@
     "bytes": 2644,
     "width": 64,
     "height": 64,
-    "sha256": "a0d1a3b1542e12ace32eac2d2a5e697da802342ce109b4a0fd9e9395180e152f",
+    "sha256": "d0726b75a258c0f96da48fdfe7fbcc830944b63aae25213b6278eb10e1db34be",
     "source": "https://commons.wikimedia.org/wiki/File:Hwatu_December_Tane.svg",
     "license": "CC-BY-SA-4.0",
     "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
