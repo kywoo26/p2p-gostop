@@ -101,6 +101,9 @@ p2p-gostop/
 - 프로토콜 입력 검증: `zod/mini`(Zod 4) TRIAL. 신뢰할 수 없는 WS 입력을 스키마로 검증하고 타입을 스키마에서 도출.
 
 ### 1.8 스택 확정 (v0.2, 웹·도구 계층. Android·CI 계층은 tech-stack.md 권장 스택 그대로)
+
+**시각 방향 조사 제안(2026-09-29, VD-01~05):** 앱 의존성은 추가하지 않는다. Tailwind·shadcn·Storybook·GSAP 금지는 유지하며 비교 근거는 `docs/research/visual-direction.md`, 채택 대기안은 `docs/design/visual-direction.md`에 둔다. 로컬 OFL 폰트 1종의 실제 문구 서브셋만 후속 구현 후보로 제안한다(자산 상한 160 KiB, 사용자 방향 선택 후 확정). 조사 재현에 한해 Docker `python:3.12-slim` 안의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)을 임시 설치해 WOFF2 용량·숫자 기능을 측정한다. 호스트 설치·앱 런타임·npm lock 변경은 없다. 목업 렌더는 기존 Playwright 1.63.0 컨테이너를 사용한다. 이 문단은 앱 스택 변경 승인이 아니다.
+
 | 계층 | 선택 (2026-09-28 npm latest) | 비고 |
 |---|---|---|
 | Node / 패키지 | 24.21.0 LTS, npm workspaces, `.npmrc` `min-release-age=3` | 공급망 방어. pnpm·Turborepo 도입 안 함 |

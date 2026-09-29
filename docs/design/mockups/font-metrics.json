@@ -1,0 +1,99 @@
+{
+  "corpusCharacters": 714,
+  "renderedTextCharacters": 200,
+  "method": "ASCII + Korean in web src .ts/.svelte including comments + prototype + symbols; all weights and OpenType features retained, hinting removed. renderedText is actual 18-screen DOM text excluding icon symbols.",
+  "fonts": [
+    {
+      "source": "Pretendard.woff2",
+      "family": "VDPretendard",
+      "inputBytes": 2057688,
+      "subsetBytes": 146232,
+      "renderedTextSubsetBytes": 51876,
+      "inputSha256": "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4",
+      "subsetSha256": "5eb90d169816eb0f6f3aea21bd6a567930be59133c93be1d6252006b7687e3e1",
+      "tnum": true,
+      "defaultDigitWidths": [
+        1220,
+        898,
+        1202,
+        1264,
+        1278,
+        1222,
+        1256,
+        1130,
+        1242,
+        1256
+      ],
+      "missing": ""
+    },
+    {
+      "source": "SUIT.woff2",
+      "family": "VDSUIT",
+      "inputBytes": 624536,
+      "subsetBytes": 152104,
+      "renderedTextSubsetBytes": 49784,
+      "inputSha256": "aa894a204d5a6fbae259dac6868d350cbd373a390caee0313f92946af741df23",
+      "subsetSha256": "921225926c96ccacbac674ab128c15398639a1de634bab15b1af26716629b264",
+      "tnum": true,
+      "defaultDigitWidths": [
+        585,
+        284,
+        531,
+        556,
+        607,
+        558,
+        558,
+        519,
+        561,
+        558
+      ],
+      "missing": ""
+    },
+    {
+      "source": "Wanted.woff2",
+      "family": "VDWanted",
+      "inputBytes": 1289292,
+      "subsetBytes": 110412,
+      "renderedTextSubsetBytes": 40920,
+      "inputSha256": "4259e7e9a172e634c2cb419d793b84148990316341e910443e5d10965b2c8f16",
+      "subsetSha256": "9bda8ff3ea1cd08242d3cab3b93d752f7998dbb49247d0328f17e85f9f4a178d",
+      "tnum": true,
+      "defaultDigitWidths": [
+        1280,
+        880,
+        1200,
+        1240,
+        1280,
+        1240,
+        1240,
+        1160,
+        1240,
+        1240
+      ],
+      "missing": ""
+    },
+    {
+      "source": "Noto.ttf",
+      "family": "VDNoto",
+      "inputBytes": 10414588,
+      "subsetBytes": 120844,
+      "renderedTextSubsetBytes": 37612,
+      "inputSha256": "194018e6b2b293a7964f037b25c0249ce1418bc9ab3c971060a03aa57861e252",
+      "subsetSha256": "f2e90999398bbb2d3185d23e13708755b041918581c220a5099f0c6614b2e609",
+      "tnum": false,
+      "defaultDigitWidths": [
+        521,
+        521,
+        521,
+        521,
+        521,
+        521,
+        521,
+        521,
+        521,
+        521
+      ],
+      "missing": ""
+    }
+  ]
+}

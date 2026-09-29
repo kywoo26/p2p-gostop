@@ -9,7 +9,13 @@
     "packages/*": {},
     "tools/*": {},
     "packages/web": {
-      "entry": ["scripts/*.mjs", "e2e/design/wireframe.config.ts", "e2e/design/wireframe.render.ts"]
+      "entry": [
+        "scripts/*.mjs",
+        "e2e/design/wireframe.config.ts",
+        "e2e/design/wireframe.render.ts",
+        "e2e/design/visual-direction.config.ts",
+        "e2e/design/visual-direction.render.ts"
+      ]
     }
   }
 }
