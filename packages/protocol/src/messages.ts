@@ -4,17 +4,8 @@ import type { LedgerSummary, SessionLedgerEntry } from './ledger.ts';
 import type { BoardView, SettlementView } from './view-types.ts';
 
 export type Role = 'host' | 'guest';
-export type ErrorCode =
-  | 'MALFORMED'
-  | 'TOO_LARGE'
-  | 'VERSION_MISMATCH'
-  | 'TOKEN_INVALID'
-  | 'STALE_SEQ'
-  | 'ILLEGAL_ACTION'
-  | 'COMMIT_INVALID'
-  | 'ROUND_NOT_READY'
-  | 'BANKRUPT';
-export const ERROR_CODES: readonly ErrorCode[] = [
+/** NP-02: 거부 코드 목록을 타입과 수신 스키마가 함께 사용한다. */
+export const ERROR_CODES = [
   'MALFORMED',
   'TOO_LARGE',
   'VERSION_MISMATCH',
@@ -24,7 +15,8 @@ export const ERROR_CODES: readonly ErrorCode[] = [
   'COMMIT_INVALID',
   'ROUND_NOT_READY',
   'BANKRUPT',
-];
+] as const;
+export type ErrorCode = (typeof ERROR_CODES)[number];
 
 /**
  * 세션 단계 (#26). 판과 판 사이에 명시적 대기(settled)를 둔다.

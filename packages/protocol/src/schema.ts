@@ -2,6 +2,7 @@
 // z.object는 모르는 필드를 지우므로 게스트가 붙인 여분 필드가 호스트 상태(액션 열·revealHost)로 들어가지 않는다(#23).
 // 엔진 이벤트는 종류마다 필드가 달라 이벤트만 z.looseObject로 두고, 나머지는 모두 모양을 끝까지 검사한다.
 import * as z from 'zod/mini';
+import { ERROR_CODES } from './messages.ts';
 
 const nat = z.number().check(z.int(), z.minimum(0));
 const seat = z.literal([0, 1]);
@@ -197,17 +198,7 @@ const event = z.looseObject({
   cards: z.array(card).check(z.maxLength(51)),
   type: z.string().check(z.maxLength(32)),
 });
-const errorCode = z.enum([
-  'MALFORMED',
-  'TOO_LARGE',
-  'VERSION_MISMATCH',
-  'TOKEN_INVALID',
-  'STALE_SEQ',
-  'ILLEGAL_ACTION',
-  'COMMIT_INVALID',
-  'ROUND_NOT_READY',
-  'BANKRUPT',
-]);
+const errorCode = z.enum(ERROR_CODES);
 
 // 제어 문자 없는 이름 (리뷰 L-3)
 const name = z.string().check(z.minLength(1), z.maxLength(80), z.regex(/^[^\p{Cc}]+$/u));
