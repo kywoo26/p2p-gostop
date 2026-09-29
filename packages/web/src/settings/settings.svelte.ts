@@ -121,6 +121,16 @@ export function effectiveRules(s: AppSettings): RuleOptions {
   return { ...base, gukjin: s.gukjinAsk ? 'ask' : 'auto' };
 }
 
+/** 어느 화면에서 골라도 프리셋의 25개 규칙과 금액 기본값을 함께 복원한다. */
+export function presetSettingsPatch(preset: PresetId): Partial<AppSettings> {
+  return {
+    preset,
+    customRules: null,
+    gukjinAsk: PRESETS[preset].gukjin === 'ask',
+    startBalance: null,
+  };
+}
+
 /** 실제로 쓸 시작 잔액 */
 export function effectiveStartBalance(s: AppSettings): number {
   return s.startBalance ?? suggestedStartBalance(s.preset, s.perPoint);

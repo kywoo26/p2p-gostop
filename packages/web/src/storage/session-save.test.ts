@@ -1,6 +1,8 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { acceptRound, parseSession, startNextRound } from '../game/session.ts';
+import { PRESETS, type RuleOptions } from '@p2p-gostop/engine';
+import { acceptRound, createSession, parseSession, startNextRound } from '../game/session.ts';
 import { SoloSession } from '../game/solo.svelte.ts';
+import { RULE_FIELDS } from '../settings/rule-options.ts';
 import { readJson, STORAGE_KEYS, writeJson } from './local.ts';
 import legacy from './fixtures/solo-v0-balanced.json';
 import playing from './fixtures/solo-v1-playing.json';
@@ -11,6 +13,51 @@ import refilled from './fixtures/solo-v1-refilled.json';
 afterEach(() => {
   vi.restoreAllMocks();
   SoloSession.clearSaved();
+});
+
+test.each(
+  RULE_FIELDS.flatMap((field) =>
+    field.choices
+      .filter((choice) => !choice.disabled)
+      .map((choice) => [field.key, JSON.stringify(choice.value), choice.value] as const),
+  ),
+)('활성 규칙 %s=%s는 JSON 저장 뒤 솔로 세션으로 복원된다 (FR-21, MN-05)', (key, _label, value) => {
+  const rules = { ...PRESETS.standard, [key]: value } as RuleOptions;
+  const session = createSession({
+    preset: 'standard',
+    rules,
+    perPoint: 100,
+    startBalance: 10000,
+    names: ['나', '컴퓨터'],
+    seed: 1234,
+  }).session;
+  const restored = parseSession(JSON.parse(JSON.stringify(session)) as unknown);
+  expect(restored?.config.rules).toEqual(rules);
+  expect(restored?.game.rules).toEqual(rules);
+});
+
+test('나가리 상한 없음은 v0·v1에서 복원하고 손상 값은 거부한다 (MN-05)', () => {
+  const rules = { ...PRESETS.standard, nagariCap: null };
+  const session = createSession({
+    preset: 'standard',
+    rules,
+    perPoint: 100,
+    startBalance: 10000,
+    names: ['나', '컴퓨터'],
+    seed: 1234,
+  }).session;
+  const raw = JSON.parse(JSON.stringify(session)) as typeof session;
+  expect(parseSession(raw)?.config.rules.nagariCap).toBeNull();
+  const { refilled: _refilled, ...old } = raw;
+  expect(parseSession({ ...old, version: 0 })?.config.rules.nagariCap).toBeNull();
+  for (const bad of ['unlimited', undefined]) {
+    const broken = {
+      ...raw,
+      config: { ...raw.config, rules: { ...raw.config.rules, nagariCap: bad } },
+      game: { ...raw.game, rules: { ...raw.game.rules, nagariCap: bad } },
+    };
+    expect(parseSession(broken)).toBeNull();
+  }
 });
 
 test.each([

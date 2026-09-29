@@ -8,6 +8,7 @@
   import {
     effectiveRules,
     effectiveStartBalance,
+    presetSettingsPatch,
     type AppSettings,
   } from '../settings/settings.svelte.ts';
   import Screen from '../ui/Screen.svelte';
@@ -70,13 +71,7 @@
             value={preset.id}
             checked={settings.preset === preset.id && settings.customRules === null}
             disabled={sessionActive}
-            onchange={() =>
-              onchange?.({
-                preset: preset.id,
-                customRules: null,
-                gukjinAsk: PRESETS[preset.id].gukjin === 'ask',
-                startBalance: null,
-              })}
+            onchange={() => onchange?.(presetSettingsPatch(preset.id))}
           />
           <span>{preset.label}</span>
         </label>
@@ -236,7 +231,7 @@
         onchange={(e) => onchange?.({ confirmDelay: e.currentTarget.checked })}
       /></label
     >
-    <p class="help">취소 지연 입력 동작은 후속 구현에서 연결됩니다.</p>
+    <p class="help">켜면 손패를 누른 뒤 120ms 안에 다시 눌러 취소할 수 있습니다.</p>
     <label class="switch"
       ><span>자동치기 (준비 중)</span><input
         type="checkbox"

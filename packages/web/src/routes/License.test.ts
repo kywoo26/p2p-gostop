@@ -19,7 +19,7 @@ test('라이선스 화면: 저작자 3명, CC BY-SA 4.0, 원본·CC0 주소를 �
   expect(text).toContain('CC0 1.0');
   for (const url of ATTRIBUTION_URLS) expect(text).toContain(url);
   await expect.element(screen.getByRole('heading', { name: '배포 의존성' })).toBeVisible();
-  expect(notices.web.map((item) => item.name)).toEqual(['svelte', 'uqr', 'zod']);
+  expect(notices.web.map((item) => item.name)).toEqual(['clsx', 'svelte', 'uqr', 'zod']);
   expect(notices.android.some((item) => item.name === 'io.ktor:ktor-server-cio-jvm')).toBe(true);
   expect(
     screen.getByRole('link', { name: '전체 공개 소스 고지 읽기' }).element().getAttribute('href'),

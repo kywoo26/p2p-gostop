@@ -90,7 +90,9 @@ const Config = z
       Object.entries(PRESETS[preset]).every(([key, example]) =>
         key === 'jackpotRound'
           ? Jackpot.safeParse(rules[key]).success
-          : key in rules && typeof rules[key] === typeof example,
+          : key === 'nagariCap'
+            ? rules[key] === null || (key in rules && typeof rules[key] === typeof example)
+            : key in rules && typeof rules[key] === typeof example,
       ),
     ),
   );

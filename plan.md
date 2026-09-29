@@ -341,7 +341,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-20 | 완료 | E/src/rules.ts PRESETS, W/src/routes/Settings.svelte; E/test/rules.test.ts, W/src/game/display.test.ts | 미션 P2 제외 | — |
 | FR-21 | 부분 | E/src/rules.ts의 RuleOptions·UNIMPLEMENTED_RULES, W/src/settings/rule-options.ts·ui/RuleSettings.svelte·routes/Settings.svelte; W/src/routes/Settings.test.ts·e2e/settings-rules.spec.ts | §12.7 22개 세션 규칙+2개 로컬 행 매핑, 프리셋/사용자 지정/복원·welcome 전파. 미션·가위바위보 엔진 미구현 및 자동치기 실행은 후속 | 미 |
 | FR-22 | 부분 | W/src/routes/Settings.svelte·HostRoom.svelte, A/src/money-defaults.ts; A/test/money-defaults.test.ts, W/e2e/settings-rules.spec.ts | 수동 잔액·단위 UI 구현; 기본값 재산정 #67 | 미 |
-| FR-23 | 부분 | W/src/settings/settings.svelte.ts `effectIntensity`·`sound`·`vibrate`·`confirmDelay`, routes/Settings.svelte·game/sound.ts; W/src/settings/rule-options.test.ts·e2e/settings-rules.spec.ts | 기기별 UI·기존 진동 저장값 이행; 실제 효과 강도·취소 지연 동작과 음색은 #49·#111·#117 | 미 |
+| FR-23 | 부분 | W/src/settings/settings.svelte.ts `effectIntensity`·`sound`·`vibrate`·`confirmDelay`, routes/Settings.svelte·game/sound.ts; W/src/settings/rule-options.test.ts·e2e/settings-rules.spec.ts | 기기별 UI·기존 진동 저장값 이행; 취소 지연 입력은 #159, 실제 효과 강도·음색은 #49·#117 | 미 |
 | FR-24 | 완료 | W/src/game/session.ts·p2p/host.svelte.ts, P/src/host.ts welcome, Settings.svelte의 새 세션 안내; W/e2e/navigation.spec.ts·solo.spec.ts | 개별 미노출 설정은 FR-21/23 | — |
 | FR-30 | 완료 | W/src/game/diagnostics.ts·log.svelte.ts·routes/Diagnostics.svelte, K/BridgeLogs.kt·log/LogReport.kt; P/test/m4.test.ts, KT/BridgeLogsTest.kt·log/LogReportTest.kt | 현재 공유 시트 체감 재확인 #75 | M0 |
 | FR-31 | 완료 | W/src/lib/build-info.ts, K/DeviceInfo.kt; W/e2e/smoke.spec.ts의 홈 빌드 식별자 | — | — |
@@ -394,7 +394,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | MN-02 | 완료 | E/src/ledger.ts, P/src/host.ts·guest.ts; P/test/session.test.ts 좌석별 파산/종료·재충전, W/src/game/display.test.ts | 상태 화면 추가 회귀는 #44 | — |
 | MN-03 | 부분 | A/src/money-defaults.ts, S/src/runner.ts·stats.ts; A/test/money-defaults.test.ts, S/test/money-doc.test.ts | 프리셋별≥10,000판·최신 AI 재산정·도움말 #67 (기존 각 프리셋3,000판 및 프리셋 기본값 구현을 완료로 확대하지 않음) | — |
 | MN-04 | 완료 | A/src/money-defaults.ts, W/src/routes/Settings.svelte; A/test/money-defaults.test.ts, W/e2e/settings-rules.spec.ts | 수동 시작 잔액·자동 복원; 재산정 품질은 MN-03/#67 | — |
-| MN-05 | 완료 | W/src/storage/session-save.ts·session-schema.ts·p2p/host-save.ts·p2p/ticket.ts; W/src/storage/session-save.test.ts·p2p/host-save.test.ts, W/e2e/navigation.spec.ts | OS 프로세스 종료 실측은 NF-05/#75 | 미 |
+| MN-05 | 완료 | W/src/storage/session-save.ts·session-schema.ts·p2p/host-save.ts·p2p/ticket.ts; W/src/storage/session-save.test.ts의 활성 규칙 저장 왕복·p2p/host-save.test.ts, W/e2e/navigation.spec.ts·settings-rules.spec.ts | OS 프로세스 종료 실측은 NF-05/#75 | 미 |
 | MN-06 | 완료 | W/src/lib/format.ts·settings/settings.svelte.ts·routes/Settings.svelte; W/src/game/display.test.ts·e2e/settings-rules.spec.ts | 냥·원·점 로컬 단위 선택 | — |
 
 ### 비기능·수용 (NF/AC)
@@ -407,7 +407,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | NF-04 | 부분 | P/src/guest.ts·host.ts, K/HotspotService.kt, W/src/p2p/link.ts·styles/tokens.css; P/test/session.test.ts, W/src/p2p/wiring.test.ts | 실제 서비스 알림1개·유휴/복귀·배터리 회차 #75 | 미 |
 | NF-05 | 부분 | W/src/p2p/link.ts·host-save.ts·storage/session-save.ts; W/e2e/reconnect.spec.ts·navigation.spec.ts, P/test/session.test.ts | 정상 복귀와 응답 유실 경로의 5초 목표 구별·OS 종료 복구 실측 #75, 타이머 복귀 제안 #123 | 미 |
 | NF-06 | 부분 | K/server/SmokeServer.kt LAN gate, P/src/host.ts 토큰, W/src/routes/HostRoom.svelte 경고; KT/server/M4ServerTest.kt, P/test/session.test.ts | 토큰은 random32 전체 hex로 **256비트**, 명세128비트와 불일치(보안 약화 아님). #44에서 명세 정합 결정 | — |
-| NF-07 | 완료 | W/scripts/generate-oss-notices.mjs·public/oss/NOTICE.txt·routes/License.svelte·fonts/attribution.ts; W/src/routes/License.test.ts·scripts/check-bundle.mjs, APK 자산 포함 검사 | lockfile/Gradle 런타임 기반 고지; 카드·폰트·자산 파일별 출처 유지 | — |
+| NF-07 | 완료 | W/scripts/generate-oss-notices.mjs·oss-notices.test.mjs·vite.config.ts 배포 모듈 목록·public/oss/NOTICE.txt·routes/License.svelte·fonts/attribution.ts; W/src/routes/License.test.ts·scripts/check-bundle.mjs, APK 자산 포함 검사 | 실제 Vite 번들+lockfile/Gradle 런타임 기반 고지·누락 게이트; 카드·폰트·자산 파일별 출처 유지 | — |
 | NF-08 | 부분 | W/src/ui/Card.svelte·Screen.svelte·styles/tokens.css; W/e2e/gallery.spec.ts axe·cards.spec.ts | 200% 확대·초점/색 외 표식·진동 개별 끄기 #51·#49·#115 | 미 |
 | NF-09 | 완료 | E/src/reduce.ts·rng.ts·replay.ts, A/src/rng.ts; E/test/api.test.ts·properties.test.ts, A/test/info-hiding.test.ts | AI 고정 반복 예산 기준 | — |
 | NF-10 | 미검증 | android/app/build.gradle.kts min33, AndroidManifest.xml NEARBY_WIFI_DEVICES·위치권한 없음, MainActivity.kt 이유 안내 | 서명 릴리스 APK≤15MB 실측·권한 UX #75; debug 크기를 릴리스 증거로 쓰지 않음 | 미 |
@@ -439,11 +439,11 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ### 요약·의도별 달성도
 
-고유 ID **86개 중 완료 42·부분 27·미구현 11·미검증 6**. 완료율은 **42/86 = 48.8%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **42/82 = 51.2%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
+고유 ID **86개 중 완료 45·부분 25·미구현 10·미검증 6**. 완료율은 **45/86 = 52.3%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
 
 - **기내 오프라인 1:1:** 아키텍처·M0 기내 모드 연결·자동20판 경로 확보, 현재 정식 UI 실기기 AC-08/09 미검증(#75).
 - **iPhone 무설치:** Safari HTTP 진입·QR 스모크 달성, 현재 게임/잠금복귀를 실기기로 다시 확인해야 함(#75).
-- **상용 규칙:** 확정 엔진 규칙·밀기/정산 회귀 확보, 24개 설정 UI와 미지원 P2 옵션 안내가 남음(#62).
+- **상용 규칙:** 확정 엔진 규칙·밀기/정산 회귀와 24행 설정 UI·미지원 옵션 안내 확보. 미션·가위바위보 엔진 및 자동치기 실행은 후속(#62).
 - **상용급 AI:** 탐색·공정성·과감성 구현, 승률63.35%/77.02%로 기준 미달이며 모바일 시간도 미검증(#66·#75).
 - **가상 머니·UI:** 원장/올인/저장·기본 플레이 가능, 프리셋별머니10,000판·스코어보드/손패 가림/힌트/음향 마무리 필요(#67·#79·#114·#115·#117).
 

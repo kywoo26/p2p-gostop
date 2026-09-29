@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-oss-notices.mjs && node scripts/check-font.mjs && vite build && node scripts/check-bundle.mjs",
+    "build": "node scripts/check-font.mjs && vite build && node scripts/generate-oss-notices.mjs && vite build && node --test scripts/oss-notices.test.mjs && node scripts/check-bundle.mjs",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
     "lint": "eslint . && prettier --check .",

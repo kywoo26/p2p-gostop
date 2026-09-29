@@ -12,7 +12,6 @@
     ORIGINAL_ART_LICENSE,
   } from '../cards/attribution.ts';
   import Screen from '../ui/Screen.svelte';
-  import notices from '../oss-notices.json';
   import fontLicense from '../styles/fonts/GostopSans-OFL.txt?raw';
   import {
     FONT_ATTRIBUTION_URLS,
@@ -77,30 +76,9 @@
   </section>
   <section aria-labelledby="lic-dependencies">
     <h2 id="lic-dependencies">배포 의존성</h2>
-    <p>
-      웹과 Android 앱에 포함되는 공개 소스 의존성입니다. 목록과 라이선스 원문은 앱에 함께 들어
-      있습니다.
-    </p>
+    <p>웹·Android 의존성 고지는 앱에 포함된 파일에서 확인할 수 있습니다.</p>
     <a class="button" href={`${import.meta.env.BASE_URL}oss/NOTICE.txt`}>전체 공개 소스 고지 읽기</a
     >
-    <details>
-      <summary>웹 의존성 ({notices.web.length})</summary>
-      <ul>
-        {#each notices.web as item (item.name)}<li>
-            {item.name}
-            {item.version} · {item.license}
-          </li>{/each}
-      </ul>
-    </details>
-    <details>
-      <summary>Android 의존성 ({notices.android.length})</summary>
-      <ul>
-        {#each notices.android as item (item.name)}<li>
-            {item.name}
-            {item.version} · {item.license}
-          </li>{/each}
-      </ul>
-    </details>
   </section>
   <section aria-labelledby="lic-pro">
     <h2 id="lic-pro">게임 자산</h2>

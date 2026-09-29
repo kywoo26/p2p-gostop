@@ -1,6 +1,7 @@
 // FR-21·FR-46·NF-07: 기기 설정과 새 세션 규칙의 경계를 실제 화면에서 확인한다.
 import { spawn, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { PRESETS } from '@p2p-gostop/engine';
 import { expect, test } from '@playwright/test';
 
 const relayCli = fileURLToPath(new URL('../../relay-dev/src/cli.ts', import.meta.url));
@@ -31,6 +32,7 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   await page.getByLabel('보너스 카드 구성').selectOption('2');
   await expect(page.getByText(/사용자 지정 · 기준 프리셋/)).toBeVisible();
   await page.getByLabel('국진 처리').selectOption('"ask"');
+  await page.getByLabel('나가리 배수 상한').selectOption('null');
   await page.getByLabel('시작 잔액 직접 입력').fill('12345');
   await page.getByLabel('시작 잔액 직접 입력').blur();
   await page.getByLabel('단위').selectOption('점');
@@ -57,6 +59,7 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   );
   expect(before.session.config.rules.bonusCards).toBe(2);
   expect(before.session.config.rules.gukjin).toBe('ask');
+  expect(before.session.config.rules.nagariCap).toBeNull();
   expect(before.session.config.startBalance).toBe(12345);
   const actionCount = before.session.actions.length;
   await page.getByTestId('game-menu').click();
@@ -70,8 +73,50 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   expect(after.session.config.rules).toEqual(before.session.config.rules);
   expect(after.session.actions.length).toBe(actionCount);
   await page.reload();
+  await expect(page.getByTestId('solo')).toBeVisible();
+  await expect(page.getByText(/저장된 세션 데이터가 손상/)).toHaveCount(0);
   await page.goto('./?speed=instant#/settings');
   await expect(hint).toHaveValue('off');
+});
+
+test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 초기화한다 (FR-21, FR-24)', async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  const server = await relay();
+  const guest = await browser.newPage();
+  const welcomes: { rules: unknown }[] = [];
+  guest.on('websocket', (socket) => {
+    socket.on('framereceived', ({ payload }) => {
+      const message = JSON.parse(typeof payload === 'string' ? payload : payload.toString()) as {
+        t?: string;
+        rules?: unknown;
+      };
+      if (message.t === 'welcome') welcomes.push({ rules: message.rules });
+    });
+  });
+  try {
+    const root = baseURL ?? 'http://127.0.0.1:4173';
+    const query = `?speed=instant&relay=127.0.0.1:${server.port}`;
+    await page.goto(`${root}/${query}&role=host#/settings`);
+    await page.getByLabel('국진 처리').selectOption('"ask"');
+    await page.goto(`${root}/${query}&role=host#/versus`);
+    await guest.goto(`${root}/${query}&role=guest`);
+    await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
+    await guest.getByRole('button', { name: '입장' }).click();
+    await expect.poll(() => welcomes.length).toBeGreaterThan(0);
+    for (const preset of ['traditional', 'standard', 'arcade'] as const) {
+      const before = welcomes.length;
+      await page.getByRole('combobox', { name: '규칙' }).selectOption(preset);
+      await expect.poll(() => welcomes.length).toBeGreaterThan(before);
+      expect(welcomes.at(-1)?.rules).toEqual(PRESETS[preset]);
+      await expect(page.getByText(/사용자 지정 규칙이 게스트에게 전달됩니다/)).toHaveCount(0);
+    }
+  } finally {
+    await guest.close();
+    server.proc.kill();
+  }
 });
 
 test('설정→P2P 로비: 사용자 지정 규칙이 방 설정으로 전달되고 복원된다', async ({ page }) => {

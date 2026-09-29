@@ -1,7 +1,6 @@
-// NF-07: npm lock의 웹 런타임 그래프와 Gradle releaseRuntimeClasspath의 실제 해석 결과로 고지를 생성한다.
+// NF-07: 실제 Vite 번들 모듈+lockfile과 Gradle releaseRuntimeClasspath로 고지를 생성한다.
 // 개발 이미지 안에서 실행한다. 라이선스 정보가 없는 새 배포 의존성은 생성에 실패시켜 수동 검토한다.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
@@ -9,37 +8,21 @@ import { homedir } from 'node:os';
 const root = resolve(import.meta.dirname, '../../..');
 const lock = JSON.parse(await readFile(join(root, 'package-lock.json'), 'utf8'));
 const packages = lock.packages;
-const webRuntime = new Map();
-function visit(name) {
-  if (name.startsWith('@p2p-gostop/')) {
-    const workspace = name.slice('@p2p-gostop/'.length);
-    const manifest = JSON.parse(
-      readFileSync(join(root, 'packages', workspace, 'package.json'), 'utf8'),
-    );
-    for (const dep of Object.keys(manifest.dependencies ?? {})) visit(dep);
-    return;
-  }
-  if (webRuntime.has(name)) return;
-  const key = `node_modules/${name}`;
-  const item = packages[key];
-  if (!item || item.dev === true) throw new Error(`배포 npm 잠금 항목 없음: ${name}`);
-  if (typeof item.license !== 'string') throw new Error(`npm 라이선스 누락: ${name}`);
-  webRuntime.set(name, item);
-  for (const dep of Object.keys(item.dependencies ?? {})) visit(dep);
-}
-// npm 의존 그래프는 lockfile이 정본이다. workspace 런타임 선언도 잠금 파일 안에 들어 있다.
-for (const name of Object.keys(packages['packages/web'].dependencies ?? {})) visit(name);
-// Svelte 런타임은 빌드 도구와 함께 devDependencies에 선언됐지만 결과 JS에 포함된다.
-const svelte = packages['node_modules/svelte'];
-if (!svelte || typeof svelte.license !== 'string') throw new Error('Svelte 런타임 고지 누락');
-webRuntime.set('svelte', svelte);
-const web = [...webRuntime]
-  .sort(([a], [b]) => a.localeCompare(b))
-  .map(([name, info]) => ({
-    name,
-    version: info.version,
-    license: info.license,
-  }));
+const bundled = JSON.parse(
+  await readFile(join(root, 'packages/web/dist/oss/bundled-packages.json'), 'utf8'),
+);
+if (
+  !Array.isArray(bundled) ||
+  bundled.length < 3 ||
+  bundled.some((name) => typeof name !== 'string')
+)
+  throw new Error('Vite 배포 모듈 목록이 없습니다');
+const web = bundled.map((name) => {
+  // devDependencies에 선언된 Svelte·clsx도 실제 배포 JS에 있으면 반드시 포함한다.
+  const item = packages[`node_modules/${name}`];
+  if (!item || typeof item.license !== 'string') throw new Error(`npm 잠금/라이선스 누락: ${name}`);
+  return { name, version: item.version, license: item.license };
+});
 
 const report = execFileSync(
   join(root, 'android/gradlew'),
@@ -97,8 +80,7 @@ if (unknown.length)
 const notice = [
   '# 배포 의존성 오픈소스 고지',
   '',
-  '웹: package-lock.json의 packages/web 런타임 의존 그래프. Android: Gradle releaseRuntimeClasspath 해석 결과와 캐시된 POM 라이선스 메타데이터.',
-  '이 목록은 개발·테스트·빌드 전용 도구를 제외합니다. 자산별 저작자 표시는 카드/ATTRIBUTION.md와 pro/NOTICE.md에 있습니다.',
+  '웹·Android 배포 의존성만 표시합니다. 카드·자산 출처: cards/ATTRIBUTION.md, pro/NOTICE.md.',
   '',
   '## 웹 런타임',
   ...web.map((item) => `${item.name} ${item.version} — ${item.license}`),

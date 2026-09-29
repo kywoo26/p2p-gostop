@@ -6,7 +6,7 @@
   import { hotspot } from '../p2p/hotspot.svelte.ts';
   import { hostConfigFrom, p2p } from '../p2p/store.svelte.ts';
   import { presetOf } from '../p2p/common.ts';
-  import { settings } from '../settings/settings.svelte.ts';
+  import { presetSettingsPatch, settings } from '../settings/settings.svelte.ts';
   import HostRoom, { type HostRoomRules } from './HostRoom.svelte';
 
   const bridge = getBridge();
@@ -29,8 +29,7 @@
 
   function changeRules(patch: Partial<HostRoomRules>) {
     const next = { ...settings.value };
-    if (patch.preset !== undefined)
-      Object.assign(next, { preset: patch.preset, customRules: null, startBalance: null });
+    if (patch.preset !== undefined) Object.assign(next, presetSettingsPatch(patch.preset));
     if (patch.perPoint !== undefined)
       Object.assign(next, { perPoint: patch.perPoint, startBalance: null });
     if (patch.hostName !== undefined) Object.assign(next, { playerName: patch.hostName });
