@@ -144,10 +144,14 @@ it('코드 참여 닉네임을 정리해 host에만 보내고 거절 시 pending
 
   const cases: { name?: string; nickname?: string }[] = [
     { name: '가나다', nickname: '가나다' },
-    { name: '나'.repeat(22), nickname: '나'.repeat(20) },
+    { name: `${'가'.repeat(19)} 끝`, nickname: '가'.repeat(19) },
     { name: 'A\u0000B\nC\rD\u007fE\u0085F\u2028G\u2029H', nickname: 'ABCDEFGH' },
     {},
     { name: '\n\u0000' },
+    { name: '  민수  ', nickname: '민수' },
+    { name: '   ' },
+    { name: `${' '.repeat(20)}민수`, nickname: '민수' },
+    { name: '\u00a0민\u2003\u3000수\u00a0', nickname: '민 수' },
   ];
   for (const item of cases) {
     const suffix = item.name === undefined ? '' : `&name=${encodeURIComponent(item.name)}`;

@@ -1,4 +1,4 @@
-# plan.md §2·§3-3 B1·§5. 같은 개발 이미지에서 검증을 두 잡으로 병렬 실행한다.
+# plan.md §2·§5. 러너에서 네이티브로 두 잡을 병렬 실행한다. 로컬과는 같은 버전 핀(.nvmrc·package-lock·Gradle 설정)으로 맞춘다.
 name: ci
 
 on:
@@ -28,20 +28,23 @@ jobs:
         with:
           fetch-depth: 0 # FR-31: APK versionCode·versionName에 전체 이력 사용
           persist-credentials: false
-      - uses: ./.github/actions/dev-image
-      - name: Dockerfile 변경 시 이미지 태그 갱신 확인
-        run: docker compose run --rm --user root dev bash docker/check-dev-image-tag.sh
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
       - name: lint (oxlint + oxfmt / ESLint + Prettier)
-        run: docker compose run --rm --user root dev npm run lint
+        run: npm run lint
       - name: check (tsc 7 / svelte-check + tsc 6 / knip)
-        run: docker compose run --rm --user root dev npm run check
+        run: npm run check
       - name: test (단위·속성·계약)
-        run: docker compose run --rm --user root dev npm test
+        run: npm test
       - name: build + 번들 예산·외부 URL 검사
-        run: docker compose run --rm --user root -e GITHUB_SHA dev npm run build -w packages/web
-      - name: Gradle 캐시 경로 설정
-        # Actions cache 버전은 저장 경로도 포함한다. setup-gradle의 기본 홈 경로를 유지한다.
-        run: echo "GRADLE_USER_HOME=$HOME/.gradle" >> "$GITHUB_ENV"
+        run: npm run build -w packages/web
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
       - uses: gradle/actions/setup-gradle@v6
         # 구성 캐시(android/.gradle/configuration-cache)는 암호화 키가 있을 때만 저장·복원된다.
         # PR 런에서 복원한 일부 엔트리가 EACCES(scandir)로 잡을 중단시켜(2026-09-30 #162 3회)
@@ -50,20 +53,13 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           cache-encryption-key: ${{ github.ref == 'refs/heads/main' && secrets.GRADLE_ENCRYPTION_KEY || '' }}
       - name: android (assembleDebug · test · lint)
-        # setup-gradle의 init script·구성 캐시 경로가 호스트/컨테이너에서 같아야 한다.
+        # 러너 내장 SDK($ANDROID_HOME)에 platforms;android-36·build-tools;36.0.0이 있다(runner-images Ubuntu 24.04).
         # copyWebDist는 위에서 검증한 웹 번들을 APK에 넣는다.
         run: |
           test -f packages/web/dist/index.html
-          mkdir -p "$RUNNER_TEMP/dev-home"
-          docker compose run --rm --user "$(id -u):$(id -g)" -e HOME="$RUNNER_TEMP/dev-home" \
-            -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE" \
-            -v "$RUNNER_TEMP:$RUNNER_TEMP" \
-            -v "$GRADLE_USER_HOME:$GRADLE_USER_HOME" \
-            -e GRADLE_USER_HOME -e GRADLE_ENCRYPTION_KEY -e GITHUB_WORKSPACE \
-            -e RUNNER_TEMP -e GITHUB_ACTION \
-            dev android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=2
+          android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=2
       - uses: actions/upload-artifact@v7
-        # main의 동일 SHA 릴리스에서 재사용. 용량 부족 시 릴리스의 격리 빌드로 fallback.
+        # main의 동일 SHA 릴리스에서 재사용. 용량 부족 시 릴리스의 격리 빌드 잡으로 fallback.
         continue-on-error: true
         with:
           name: web-dist
@@ -87,12 +83,18 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/dev-image
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Playwright 브라우저·시스템 라이브러리 (공식 CI 절차)
+        run: npx playwright install --with-deps chromium webkit
       - name: 컴포넌트 테스트 (Vitest 브라우저 모드)
-        run: docker compose run --rm --user root dev npm run test:browser
+        run: npm run test:browser
       - name: E2E (Playwright, Chromium + WebKit)
         # 2코어 러너에서 일반 테스트는 2 workers. timing 프로젝트의 workers: 1·dependencies는 유지.
-        run: docker compose run --rm --user root dev npm run e2e -w packages/web -- --workers=2
+        run: npm run e2e -w packages/web -- --workers=2
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true
