@@ -9,7 +9,7 @@
 | 수정 내용 | UI 문자 subset, WOFF2, 가변 축·OpenType 기능 보존, hinting 제거, family/PS 표시명 변경 |
 | 도구 | FontTools 4.61.1 / Brotli 1.2.0 / [고정 Docker 이미지·재생성 절차](README.md#확정-앱-산출물-재생성) |
 | 입력·OFL·코퍼스·출력 SHA-256 | [app-metrics.json](app-metrics.json) — 각 산출물 갱신 시 함께 검증 |
-| 크기 / 상한 | 142,800 B / 163,840 B |
+| 크기 / 상한 | 143,112 B / 163,840 B |
 | 라이선스 | SIL Open Font License 1.1, 수정본에도 동일 적용 |
 | 동봉 원문 | [GostopSans-OFL.txt](../../../packages/web/src/styles/fonts/GostopSans-OFL.txt), 원문 byte 그대로 |
 | 앱 내 고지 | 설정 → 오픈소스 고지 → 글꼴 → 폰트 라이선스 원문 |

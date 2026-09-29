@@ -275,8 +275,8 @@
   /* 메뉴 버튼 자리: 상대 정보 줄 오른쪽을 비운다 */
   .menu-button {
     position: absolute;
-    top: max(var(--space-1), env(safe-area-inset-top));
-    right: max(var(--space-2), env(safe-area-inset-right));
+    top: max(var(--space-2), env(safe-area-inset-top));
+    right: max(var(--space-3), env(safe-area-inset-right));
     display: grid;
     place-items: center;
     width: var(--touch-min);

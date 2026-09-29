@@ -46,7 +46,9 @@
 
   h1 {
     margin: 0;
-    font-size: 1.375rem;
+    font-size: var(--type-title-size);
+    line-height: var(--type-title-line);
+    letter-spacing: -0.04em;
   }
 
   .back {
@@ -120,7 +122,7 @@
   .screen :global(th),
   .screen :global(td) {
     padding: var(--space-1) 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-divider);
     text-align: left;
   }
 

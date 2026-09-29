@@ -23,7 +23,12 @@
 </script>
 
 <main class="home">
-  <h1>맞고 P2P</h1>
+  <header class="hero">
+    <h1>맞고 P2P</h1>
+    <div class="hero-art" aria-hidden="true">
+      <img src="cards/0.svg" alt="" /><img src="cards/28.svg" alt="" />
+    </div>
+  </header>
   <nav aria-label="메인 메뉴">
     {#if match}
       <button type="button" class="menu-button resume" onclick={() => onmatch?.()}>
@@ -40,10 +45,10 @@
     {#each menu as item (item.id)}
       <button
         type="button"
-        class={['menu-button', item.primary && 'primary']}
+        class={['menu-button', item.primary && 'primary', item.id === 'versus' && 'versus']}
         onclick={() => (location.hash = item.href)}
       >
-        {item.label}
+        {item.label}<span aria-hidden="true">↗</span>
       </button>
     {/each}
   </nav>
@@ -59,26 +64,66 @@
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     gap: var(--space-6);
-    padding: var(--space-6) var(--space-4);
+    padding: max(32px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
     max-width: 28rem;
     margin: 0 auto;
   }
 
+  .hero {
+    position: relative;
+    min-height: 320px;
+  }
+  .hero-art {
+    position: absolute;
+    right: 4px;
+    bottom: 10px;
+    width: 216px;
+    height: 216px;
+    border: 1px solid var(--color-divider);
+    border-radius: 50%;
+  }
+  .hero-art::before {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    border: 1px solid var(--color-divider);
+    border-radius: 50%;
+  }
+  .hero-art img {
+    position: absolute;
+    width: 74px;
+    bottom: 30px;
+    left: 36px;
+    transform: rotate(-18deg);
+    box-shadow: 0 12px 20px #0005;
+  }
+  .hero-art img + img {
+    left: 98px;
+    bottom: 26px;
+    transform: rotate(14deg);
+  }
   h1 {
     margin: 0;
-    text-align: center;
-    font-size: var(--font-size-title);
+    text-align: left;
+    padding-top: 12px;
+    font-size: var(--type-home-size);
+    line-height: var(--type-home-line);
     letter-spacing: 0.02em;
   }
 
   nav {
     display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-3);
   }
 
   .menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     min-height: var(--touch-min);
     padding: var(--space-3) var(--space-4);
     border: 1px solid var(--color-border);
@@ -86,10 +131,24 @@
     background: var(--color-surface);
     color: var(--color-text);
     font: inherit;
-    font-size: var(--font-size-l);
+    font-size: 14px;
     transition: background-color var(--dur-modal) ease-out;
   }
 
+  .menu-button.primary,
+  .menu-button.resume {
+    grid-column: 1 / -1;
+    min-height: 64px;
+    font-size: 18px;
+  }
+  .menu-button.primary:not(.versus) {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+  .menu-button:not(.primary):not(.resume) span {
+    display: none;
+  }
   .menu-button.primary {
     background: var(--color-accent);
     border-color: transparent;
@@ -111,7 +170,9 @@
 
   footer {
     display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: var(--space-2);
     color: var(--color-text-muted);
     font-size: var(--font-size-s);
@@ -119,6 +180,10 @@
   }
 
   footer a {
+    display: inline-grid;
+    place-items: center;
+    min-height: 48px;
+    min-width: 48px;
     color: var(--color-text-muted);
   }
 

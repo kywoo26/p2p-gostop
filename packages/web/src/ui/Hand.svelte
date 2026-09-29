@@ -11,6 +11,7 @@
   import { cardLabel, sortHand } from './cards.ts';
 
   interface Props {
+    compact?: boolean;
     cards: readonly CardId[];
     /** 지금 낼 수 있는 카드 */
     playable: readonly CardId[];
@@ -22,7 +23,7 @@
     onpreview?: ((id: CardId | null) => void) | undefined;
   }
 
-  let { cards, playable, matchable = [], onplay, onpreview }: Props = $props();
+  let { compact = false, cards, playable, matchable = [], onplay, onpreview }: Props = $props();
 
   const ONE_ROW_MAX = 5;
   const LONG_PRESS_MS = 400;
@@ -95,7 +96,7 @@
 </script>
 
 <div
-  class={['hand', { waiting: !myTurn }]}
+  class={['hand', { waiting: !myTurn, compact }]}
   role="group"
   aria-label="내 손패"
   onpointerdowncapture={press}
@@ -108,7 +109,7 @@
         <button
           type="button"
           class={['slot', { playable: canPlay, matchable: canMatch }]}
-          style:transform={fan(i, row.length)}
+          style:transform={compact ? 'none' : fan(i, row.length)}
           aria-label={`${cardLabel(id)}${canMatch ? ' (먹을 수 있음)' : ''} 내기`}
           disabled={!canPlay}
           data-slot={id}
@@ -184,5 +185,22 @@
 
   .slot:disabled {
     cursor: default;
+  }
+  .hand.compact {
+    --card-w-l: 56px;
+    --card-h-l: calc(56px / 0.614);
+    padding-bottom: 0;
+  }
+  .compact .slot {
+    background: var(--color-felt);
+  }
+  .compact .row {
+    gap: 8px;
+  }
+  .compact .row + .row {
+    margin-top: calc(56px - var(--card-h-l));
+  }
+  .compact .slot.playable > :global(.card) {
+    translate: none;
   }
 </style>

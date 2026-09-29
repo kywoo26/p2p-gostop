@@ -127,8 +127,9 @@
     display: grid;
     gap: var(--space-1);
     margin: 0;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-4);
     border: 0;
+    border-top: 1px solid var(--color-divider);
     border-radius: var(--radius-m);
     background: var(--color-surface);
   }
@@ -139,14 +140,15 @@
     margin-bottom: var(--space-2);
     padding: 0;
     color: var(--color-text-muted);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: var(--type-section-size);
   }
 
   .segmented {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
-    gap: 2px;
+    gap: 8px;
     padding: 2px;
     border-radius: var(--radius-m);
     background: var(--color-bg);
@@ -200,9 +202,38 @@
   }
 
   .switch input {
-    width: 2.75rem;
-    height: 1.5rem;
-    accent-color: var(--color-accent);
+    width: 48px;
+    height: 48px;
+    appearance: none;
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+    border-radius: 12px;
+  }
+  .switch input::before {
+    content: '';
+    position: absolute;
+    inset: 11px 2px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface-raised);
+  }
+  .switch input::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    top: 15px;
+    left: 6px;
+    border-radius: 50%;
+    background: var(--color-text);
+  }
+  .switch input:checked::before {
+    background: var(--color-accent);
+  }
+  .switch input:checked::after {
+    left: 24px;
+    background: var(--color-on-accent);
   }
 
   .help {

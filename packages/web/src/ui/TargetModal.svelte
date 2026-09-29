@@ -21,28 +21,33 @@
     <Card id={card} size="s" marks={false} />
     <span>{source === 'play' ? '낸 패' : '뒤집은 패'}: {cardLabel(card)}</span>
   </p>
-  <div class="options">
-    {#each options as id (id)}
-      <button
-        type="button"
-        aria-label={`${cardLabel(id)} 먹기`}
-        data-choice={`target-${id}`}
-        onclick={() => onchoose?.(id)}
-      >
-        <Card {id} size="m" />
-        <span aria-hidden="true">{cardLabel(id)}</span>
-      </button>
-    {/each}
-  </div>
+  {#snippet actions()}
+    <div class="options">
+      {#each options as id (id)}
+        <button
+          type="button"
+          aria-label={`${cardLabel(id)} 먹기`}
+          data-choice={`target-${id}`}
+          onclick={() => onchoose?.(id)}
+        >
+          <Card {id} size="m" />
+          <span aria-hidden="true">{cardLabel(id)}</span>
+        </button>
+      {/each}
+    </div>
+  {/snippet}
 </PromptPanel>
 
 <style>
   .played {
+    --card-w-s: 12px;
+    --card-h-s: 20px;
+    line-height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    margin: 0 0 var(--space-3);
+    margin: 0;
     color: var(--color-text-muted);
     font-size: var(--font-size-s);
   }
@@ -50,15 +55,20 @@
   .options {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
+    gap: 8px;
   }
 
   button {
-    display: grid;
-    justify-items: center;
+    --card-w-m: 44px;
+    --card-h-m: 72px;
+    min-width: 0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: var(--space-1);
     min-height: var(--touch-min);
-    padding: var(--space-1) var(--space-2) var(--space-2);
+    padding: 1px 2px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-m);
     background: var(--color-surface-raised);

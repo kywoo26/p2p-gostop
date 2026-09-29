@@ -29,21 +29,25 @@
       {#each cards as id (id)}<Card {id} size="s" />{/each}
     </p>
   {/if}
-  <div class="choices" style:--count={choices.length}>
-    {#each choices as choice (choice.id)}
-      <button
-        type="button"
-        class={{ primary: choice.primary }}
-        data-choice={choice.id}
-        onclick={() => onchoose?.(choice.id)}>{choice.label}</button
-      >
-    {/each}
-  </div>
+  {#snippet actions()}
+    <div class="choices" style:--count={choices.length}>
+      {#each choices as choice (choice.id)}
+        <button
+          type="button"
+          class={{ primary: choice.primary }}
+          data-choice={choice.id}
+          onclick={() => onchoose?.(choice.id)}>{choice.label}</button
+        >
+      {/each}
+    </div>
+  {/snippet}
 </PromptPanel>
 
 <style>
   .message {
-    margin: 0 0 var(--space-2);
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
     text-align: center;
     color: var(--color-text-muted);
   }
@@ -52,7 +56,7 @@
     display: flex;
     justify-content: center;
     gap: var(--space-1);
-    margin: 0 0 var(--space-3);
+    margin: 0;
   }
 
   .choices {

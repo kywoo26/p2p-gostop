@@ -21,6 +21,41 @@
   /* 게임판 바탕 */
   --color-felt: oklch(24% 0.025 170);
 
+  --color-felt-highlight: oklch(28% 0.025 170);
+  --board-background: var(--color-felt);
+  --color-board-toast: var(--color-surface);
+  --radius-pill: 999px;
+
+  /* HUD / FR-40, ui-spec §14. 메뉴 버튼은 Game.svelte(.1-B)가 예약 영역에 배치한다. */
+  --color-hud: oklch(22% 0.025 170);
+  --color-hud-text: oklch(96% 0.015 90);
+  --color-hud-muted: oklch(80% 0.025 160);
+  --color-hud-outline: oklch(67% 0.025 160);
+  --color-hud-mine: oklch(88% 0.08 90);
+  --color-hud-chip: oklch(25% 0.025 170);
+  --color-hud-complete: oklch(88% 0.1 160);
+  --color-hud-complete-bg: oklch(30% 0.05 170);
+  --color-hud-near: oklch(87% 0.09 90);
+  --color-hud-near-bg: oklch(29% 0.03 90);
+  --hud-menu-size: 48px;
+  --hud-menu-gap: 8px;
+  --hud-font-size: 0.875rem;
+  --hud-line-height: 20px;
+  --hud-score-font-size: 20px;
+  --hud-score-line-height: 24px;
+  --hud-score-font-weight: 750;
+  --hud-money-line-height: 18px;
+  /* 시각 스킨은 디자인 리드 결정 후 토큰으로 교체. 높이는 UX-H01a의 예산이다. */
+  --hud-height-compact: 56px;
+  --hud-height-wide: 60px;
+  --hud-height-expanded: 84px;
+  --hud-border-width: 1px;
+  --hud-border-style: solid;
+  --hud-border: var(--hud-border-width) var(--hud-border-style) var(--color-hud-outline);
+  --hud-near-border-style: dashed;
+  --hud-radius: var(--radius-panel);
+  --hud-chip-radius: var(--radius-panel);
+
   /* 이벤트 배너 색 (spec 6.5). 색만으로 구분하지 않고 문구를 함께 쓴다 (NF-08). */
   --color-event-ppeok: oklch(64% 0.21 27);
   --color-event-jjok: oklch(66% 0.16 255);

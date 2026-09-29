@@ -16,19 +16,21 @@
 
 <PromptPanel title="선 고르기">
   <p class="message">한 장을 고르세요. 높은 월이 선입니다.</p>
-  <div class="pool">
-    {#each slots as index (index)}
-      <button
-        type="button"
-        aria-label={`${index + 1}번째 패 고르기`}
-        data-choice={`pick-${index}`}
-        disabled={index === taken}
-        onclick={() => onpick?.(index)}
-      >
-        <Card id={null} size="m" />
-      </button>
-    {/each}
-  </div>
+  {#snippet actions()}
+    <div class="pool">
+      {#each slots as index (index)}
+        <button
+          type="button"
+          aria-label={`${index + 1}번째 패 고르기`}
+          data-choice={`pick-${index}`}
+          disabled={index === taken}
+          onclick={() => onpick?.(index)}
+        >
+          <Card id={null} size="m" />
+        </button>
+      {/each}
+    </div>
+  {/snippet}
 </PromptPanel>
 
 <style>

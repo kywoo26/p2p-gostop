@@ -4,7 +4,6 @@
   import { formatMoney } from '../lib/format.ts';
   import type { MoneyUnit, SettleStepView } from '../lib/view-types.ts';
   import PromptPanel from './PromptPanel.svelte';
-  import { stepLabel } from './settle-labels.ts';
 
   interface Props {
     score: number;
@@ -37,89 +36,66 @@
 </script>
 
 <PromptPanel title="고? 스톱?">
-  <p class="summary">
-    <strong>{score}점</strong>
-    {#if goCount > 0}<span>· {goCount}고 중</span>{/if}
-  </p>
-  {#if detail}
-    <p class="chain" aria-label="스톱하면 받을 점수">
-      {#each detail.steps as step, i (i)}
-        <span
-          >{i === 0 ? '' : step.op === 'add' ? ' + ' : ' × '}{stepLabel(step.kind)}
-          {step.value}</span
-        >
-      {/each}
-      <span> = <b>{detail.points}점</b></span>
+  {#snippet actions()}
+    <p class="risk">
+      <strong>{score}점</strong>{#if opponent}<span>상대 {opponent.score}점 · 피 {opponent.pi}</span
+        >{/if}{#if detail?.capped}<span>상한 적용</span>{/if}
     </p>
-  {/if}
-  <p class="hint">
-    지금 스톱하면 {formatMoney(stopAmount, unit)}{#if detail?.capped}
-      (상대 잔액까지){/if}
-  </p>
-  {#if opponent}
-    <p class="opponent">{opponent.name}: {opponent.score}점 · 피 {opponent.pi}</p>
-  {/if}
-  <div class="actions">
-    <button type="button" class="go" data-choice="go" onclick={() => ongo?.()}
-      >{goCount + 1}고</button
-    >
-    <button type="button" class="stop" data-choice="stop" onclick={() => onstop?.()}>스톱</button>
-  </div>
+    <div class="actions">
+      <button type="button" class="go" data-choice="go" onclick={() => ongo?.()}
+        >{goCount + 1}고</button
+      >
+      <button
+        type="button"
+        class="stop"
+        data-choice="stop"
+        aria-label="스톱"
+        onclick={() => onstop?.()}
+        ><span>스톱</span><strong>{formatMoney(stopAmount, unit)}</strong></button
+      >
+    </div>
+  {/snippet}
 </PromptPanel>
 
 <style>
-  .summary {
-    margin: 0;
-    text-align: center;
-    font-size: var(--font-size-l);
+  .risk {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 0 0 2px;
+    font-size: 14px;
+    line-height: 20px;
   }
-
-  .summary strong {
-    font-size: 1.75rem;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .chain {
-    margin: var(--space-1) 0 0;
-    text-align: center;
-    font-size: var(--font-size-s);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .hint {
-    margin: var(--space-1) 0 var(--space-2);
-    text-align: center;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-s);
-  }
-
-  .opponent {
-    margin: 0 0 var(--space-3);
-    text-align: center;
-    font-size: var(--font-size-s);
-  }
-
   .actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
+    gap: 8px;
   }
-
   button {
-    min-height: calc(var(--touch-min) + 8px);
+    min-width: 48px;
+    min-height: 48px;
+    padding: 2px;
     border: 0;
-    border-radius: var(--radius-m);
-    color: var(--color-banner-dark-text);
+    border-radius: 12px;
+    color: var(--color-on-accent);
     font: inherit;
-    font-size: 1.375rem;
-    font-weight: 800;
+    font-size: 18px;
+    font-weight: 750;
   }
-
   .go {
-    background: var(--color-event-go);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
   }
-
   .stop {
-    background: var(--color-event-stop);
+    display: grid;
+    align-content: center;
+    background: var(--color-accent);
+  }
+  .stop strong {
+    font-size: 14px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
   }
 </style>

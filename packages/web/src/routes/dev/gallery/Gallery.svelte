@@ -4,6 +4,7 @@
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
   import { DUR } from '../../../anim/durations.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
+  import { layoutFixture, layoutExtras } from '../../../lib/layout-fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
   import { bannerFor } from '../../../ui/banner.ts';
   import Board from '../../../ui/Board.svelte';
@@ -108,7 +109,18 @@
   });
 </script>
 
-{#if page === 'board'}
+{#if page === 'layout-event' || page === 'layout-event-target'}
+  <Board
+    view={layoutFixture(page.endsWith('target') ? 'target' : 'play')}
+    banner={{ kind: 'ppeok', text: '뻑 · 상대가 같은 월 세 장을 남겼습니다', seat: 1 }}
+    toast={{ id: 1, text: '피 1장 이동' }}
+  />
+{:else if page.startsWith('layout-')}
+  <Board
+    view={layoutFixture(page.split('-')[1] ?? 'target', page.endsWith('-expanded'))}
+    extras={layoutExtras(page.split('-')[1] ?? 'target')}
+  />
+{:else if page === 'board'}
   <Board view={fixtures.board.states.play} />
 {:else if page === 'board-target'}
   <Board view={fixtures.board.states.target} />
