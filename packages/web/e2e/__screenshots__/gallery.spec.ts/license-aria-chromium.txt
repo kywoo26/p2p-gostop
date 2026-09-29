@@ -45,3 +45,29 @@
   - region "앱 코드":
     - heading "앱 코드" [level=2]
     - paragraph: 앱 코드(엔진·UI)는 MIT 라이선스다. 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.
+  - region "게임 자산":
+    - heading "게임 자산" [level=2]
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/ui-pack-adventure
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/animal-pack
+    - paragraph: para · CC0-1.0
+    - code: https://opengameart.org/content/animated-particle-effects-1
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/particle-pack
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/casino-audio
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/impact-sounds
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/interface-sounds
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Fabric037
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Leather037
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Metal034
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Wood050
+    - link "파일별 출처 목록":
+      - /url: /pro/NOTICE.md

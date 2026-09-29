@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { PRO_CREDITS } from '../pro-assets/credits.ts';
   // 라이선스·저작자 표시 (spec 6.6·NF-07, code-refs.md 4.2). 설정 > 라이선스에서 연다.
   // 외부 주소는 글자로만 보여 준다(링크를 걸지 않음: 오프라인 앱, spec NF-01). 파일별 출처는 번들 안의 ATTRIBUTION.md.
   import {
@@ -72,6 +73,12 @@
   <section aria-labelledby="lic-code">
     <h2 id="lic-code">앱 코드</h2>
     <p>{CODE_LICENSE.scope} 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.</p>
+  </section>
+  <section aria-labelledby="lic-pro">
+    <h2 id="lic-pro">게임 자산</h2>
+    {#each PRO_CREDITS as item (item.source)}<p>{item.author} · {item.license}</p>
+      <code>{item.source}</code>{/each}
+    <a class="button" href="/pro/NOTICE.md">파일별 출처 목록</a>
   </section>
 </Screen>
 

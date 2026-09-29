@@ -51,6 +51,11 @@ RUN set -eux; \
     install -d -m 700 -o dev -g dev /home/dev/.claude; \
     git config --system --add safe.directory /work
 
+# PA-03: 자산 변환 전용 도구. 출력 미디어만 앱에 포함하고 실행 파일은 번들하지 않는다.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pil=10.2.0-1ubuntu1.3 ffmpeg=7:6.1.1-3ubuntu5 libavif-bin=1.0.4-1ubuntu3 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --chmod=755 dev-entrypoint.sh /usr/local/bin/dev-entrypoint
 ENTRYPOINT ["/usr/local/bin/dev-entrypoint"]
 WORKDIR /work

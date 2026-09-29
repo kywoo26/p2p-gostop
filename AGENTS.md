@@ -31,6 +31,7 @@
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
 | androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
+| 자산 변환(dev 전용, PA-03) | Ubuntu python3-pil 10.2.0-1ubuntu1.3 / ffmpeg 7:6.1.1-3ubuntu5 / libavif-bin 1.0.4-1ubuntu3. 앱 런타임 의존성 없음 |
 | Docker 이미지 | 단일 개발 이미지 `p2p-gostop-dev`(`docker/Dockerfile`, 태그는 `compose.yaml`): 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble` + JDK `eclipse-temurin:21.0.12.1_1-jdk-noble` + Android cmdline-tools 23.0(16111833, SHA-256 고정)로 설치한 `platforms;android-36`·`build-tools;36.0.0`·`platform-tools` |
 | GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(npm), gradle/actions/setup-gradle@v6, docker/setup-docker-action@v5, docker/setup-buildx-action@v4, docker/build-push-action@v7, softprops/action-gh-release@v3. 빌드·테스트는 개발 이미지 안에서 실행 |
 
