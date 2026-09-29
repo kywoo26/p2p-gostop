@@ -27,7 +27,7 @@
 | 순수 TS 린트·포맷 (Oxc) | oxlint 1.85.0 + oxlint-tsgolint 7.0.2003(type-aware, stable) / oxfmt 0.70.0 |
 | web 린트·포맷 | ESLint 10.11.0 / @eslint/js 10.0.1 / eslint-plugin-svelte 3.23.0 / typescript-eslint 8.70.1 / globals 17.12.0, Prettier 3.9.9 / prettier-plugin-svelte 4.1.1 |
 | knip / svgo / uqr / zod | 6.38.0 / 4.1.0 / 0.1.3 / 4.6.5 (`zod/mini`, TRIAL) |
-| Kotlin / AGP / Gradle / JDK | 2.4.20 / 9.4.1(내장 Kotlin, `org.jetbrains.kotlin.android` 플러그인 적용 금지) / 9.8.0 / JDK 21 (CI·릴리스 `actions/setup-java` Temurin 21, 호스트 Ubuntu `openjdk-21-jdk-headless`) |
+| Kotlin / AGP / Gradle / JDK | 2.4.20 / 9.4.1(내장 Kotlin, `org.jetbrains.kotlin.android` 플러그인 적용 금지) / 9.8.0 / JDK 21 (CI·릴리스 `actions/setup-java` Temurin 21, 호스트 Ubuntu `openjdk-21-jdk-headless`; 패치 버전이 같으면(2026-09-30 둘 다 21.0.12) 배포판 차이를 허용한다) |
 | compileSdk / targetSdk / minSdk | 36 / **36**(37 금지: LAN 인바운드 권한) / 33 |
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
