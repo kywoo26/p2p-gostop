@@ -33,6 +33,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: RP-03 Docker 컨텍스트 canary 검사
+        run: bash docker/relay/check-context.sh
       - name: lint (oxlint + oxfmt / ESLint + Prettier)
         run: npm run lint
       - name: check (tsc 7 / svelte-check + tsc 6 / knip)
@@ -74,11 +76,14 @@ jobs:
           retention-days: 3
 
   e2e:
-    name: browser · e2e (Chromium + WebKit)
-    # 기존 실행 범위 유지. AC-06 프로젝트 의존성·직렬 계측도 그대로 둔다.
+    name: browser · e2e (${{ matrix.project }})
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, webkit]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -88,18 +93,35 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Playwright 브라우저·시스템 라이브러리 (공식 CI 절차)
+      - name: Playwright 버전 (lockfile)
+        id: playwright-version
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+      - name: Playwright 브라우저 캐시
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          # P2P E2E는 프로젝트가 chromium이어도 게스트 WebKit을 직접 실행한다.
+          key: playwright-${{ runner.os }}-${{ matrix.project }}-${{ steps.playwright-version.outputs.version }}-both
+      - name: Playwright 브라우저·시스템 라이브러리 (캐시 미스)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium webkit
+      - name: Playwright 시스템 라이브러리 (캐시 히트)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
       - name: 컴포넌트 테스트 (Vitest 브라우저 모드)
-        run: npm run test:browser
-      - name: E2E (Playwright, Chromium + WebKit)
-        # 2코어 러너에서 일반 테스트는 2 workers. timing 프로젝트의 workers: 1·dependencies는 유지.
-        run: npm run e2e -w packages/web -- --workers=2
+        run: npm run test:browser -w packages/web -- --project=${{ matrix.project }}
+      - name: E2E (Playwright, ${{ matrix.project }})
+        # --no-deps로 다른 엔진 프로젝트의 교차 의존성을 건너뛰며, timing은 다음 단계에서 직렬 실행한다.
+        run: npm run e2e -w packages/web -- --project=${{ matrix.project }} --no-deps --workers=2
+      - name: E2E timing (${{ matrix.project }})
+        # 일반 테스트가 성공한 뒤 같은 러너에서 workers=1로 계측한다(AC-06).
+        run: npm run e2e -w packages/web -- --project=timing-${{ matrix.project }} --no-deps --workers=1
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: |
             packages/web/playwright-report
             packages/web/test-results

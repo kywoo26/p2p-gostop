@@ -446,6 +446,136 @@ it('FR-RP-01: close가 초대 등록 대기 중인 서버 방을 지우고 후�
   expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
 }, 15_000);
 
+it('FR-RP-01: DELETE 204 응답 유실 뒤 401 재시도로 pending을 종료한다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  let deletes = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method !== 'DELETE') return adapter.fetcher(input, init);
+      deletes++;
+      const response = await adapter.fetcher(input, init);
+      if (deletes === 1) {
+        expect(response.status).toBe(204);
+        throw new Error('DELETE response lost');
+      }
+      expect(response.status).toBe(401);
+      return response;
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {},
+  });
+  await host.createRoom();
+  await host.close();
+  expect(deletes).toBe(2);
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+  expect(host.snapshot.state).toBe('ended');
+}, 15_000);
+
+it('FR-RP-01: 저장된 pending의 401은 종료로 보고 새 방을 만든다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const staleId = 'R'.repeat(22);
+  storage.setItem(
+    'p2p-gostop.remote-room-pending.v1',
+    JSON.stringify([
+      { origin, roomId: staleId, hostToken: 'T'.repeat(43), expiresAt: Date.now() + 60_000 },
+    ]),
+  );
+  let staleDeletes = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'DELETE' && String(input).endsWith(staleId)) {
+        staleDeletes++;
+        return new Response(null, { status: 401 });
+      }
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {},
+  });
+  const room = await host.createRoom();
+  expect(room.roomId).not.toBe(staleId);
+  expect(staleDeletes).toBe(1);
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+  await host.close();
+}, 15_000);
+
+it('FR-RP-01: pending은 만료 시각이 지나면 자동 제거되어 새 방을 막지 않는다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const staleId = 'R'.repeat(22);
+  const expiresAt = Date.now() + 150;
+  storage.setItem(
+    'p2p-gostop.remote-room-pending.v1',
+    JSON.stringify([{ origin, roomId: staleId, hostToken: 'T'.repeat(43), expiresAt }]),
+  );
+  let staleDeletes = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'DELETE' && String(input).endsWith(staleId)) staleDeletes++;
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {},
+  });
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).not.toBeNull();
+  await new Promise((done) => setTimeout(done, Math.max(0, expiresAt - Date.now() + 50)));
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+  await host.createRoom();
+  expect(staleDeletes).toBe(0);
+  await host.close();
+}, 15_000);
+
+it('FR-RP-01: DELETE 네트워크 실패는 세 번만 재시도하고 pending을 보존한 채 새 방을 만든다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const staleId = 'R'.repeat(22);
+  const expiresAt = Date.now() + 60_000;
+  storage.setItem(
+    'p2p-gostop.remote-room-pending.v1',
+    JSON.stringify([{ origin, roomId: staleId, hostToken: 'T'.repeat(43), expiresAt }]),
+  );
+  let staleDeletes = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'DELETE' && String(input).endsWith(staleId)) {
+        staleDeletes++;
+        throw new Error('offline');
+      }
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {},
+  });
+  await host.createRoom();
+  expect(staleDeletes).toBe(3);
+  expect(JSON.parse(storage.getItem('p2p-gostop.remote-room-pending.v1')!)).toEqual([
+    { origin, roomId: staleId, hostToken: 'T'.repeat(43), expiresAt },
+  ]);
+  await host.close();
+}, 15_000);
+
 it('FR-RP-01: checkHealth의 외부 signal 취소는 fetch를 중단하고 snapshot을 바꾸지 않는다', async () => {
   const settings = memory();
   saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });

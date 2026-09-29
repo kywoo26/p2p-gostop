@@ -121,6 +121,8 @@ const ROOM_ID = /^[A-Za-z0-9_-]{22}$/;
 const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}(?:-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}){2}$/;
 const INVITE_MS = 15 * 60_000;
 const ROOM_MS = 6 * 60 * 60_000;
+const DELETE_ATTEMPTS = 3;
+const DELETE_BACKOFF_MS = 150;
 const empty: RemoteSnapshot = { state: 'idle', requests: [], peerPresent: false };
 
 interface HostRecord {
@@ -133,6 +135,7 @@ interface PendingRoom {
   readonly origin: string;
   readonly roomId: string;
   readonly hostToken: string;
+  readonly expiresAt: number;
 }
 
 interface GuestRecord {
@@ -252,7 +255,7 @@ function validHost(value: unknown, now: number): HostRecord | null {
   return item as HostRecord;
 }
 
-function validPendingRoom(value: unknown): PendingRoom | null {
+function validPendingRoom(value: unknown, now: number): PendingRoom | null {
   if (!value || typeof value !== 'object') return null;
   const item = value as Partial<PendingRoom>;
   if (
@@ -268,7 +271,16 @@ function validPendingRoom(value: unknown): PendingRoom | null {
   } catch {
     return null;
   }
-  return item as PendingRoom;
+  // 이전 단일 pending 레코드에는 만료 시간이 없었다. 한 번만 6시간으로 이행한다.
+  const expiresAt = item.expiresAt ?? now + ROOM_MS;
+  if (
+    typeof expiresAt !== 'number' ||
+    !Number.isFinite(expiresAt) ||
+    expiresAt <= now ||
+    expiresAt > now + ROOM_MS
+  )
+    return null;
+  return { origin: item.origin, roomId: item.roomId, hostToken: item.hostToken, expiresAt };
 }
 
 function validGuest(value: unknown, now: number): GuestRecord | null {
@@ -404,7 +416,8 @@ class HostController extends SnapshotSource implements RemoteHostController {
   private healthAbort: AbortController | null = null;
   private createAbort: AbortController | null = null;
   private generation = 0;
-  private pendingRoom: PendingRoom | null = null;
+  private pendingRooms: PendingRoom[] = [];
+  private pendingExpiry: ReturnType<typeof setTimeout> | null = null;
   private expiry: ReturnType<typeof setTimeout> | null = null;
   private readonly requestTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -413,6 +426,11 @@ class HostController extends SnapshotSource implements RemoteHostController {
     this.deps = deps;
     this.now = deps.now ?? Date.now;
     this.fetcher = deps.fetcher ?? fetch;
+    const stored = get(deps.storage, HOST_PENDING_KEY);
+    this.pendingRooms = (Array.isArray(stored) ? stored : [stored])
+      .map((item) => validPendingRoom(item, this.now()))
+      .filter((item): item is PendingRoom => item !== null);
+    this.persistPending();
   }
 
   async checkHealth(options?: { signal?: AbortSignal }): Promise<HealthResult> {
@@ -464,13 +482,8 @@ class HostController extends SnapshotSource implements RemoteHostController {
     this.update({ state: 'creating', error: undefined });
     let createdRoom: PendingRoom | null = null;
     try {
-      const pending =
-        this.pendingRoom ?? validPendingRoom(get(this.deps.storage, HOST_PENDING_KEY));
-      if (pending) {
-        this.pendingRoom = pending;
-        await this.deletePending(pending);
-        active();
-      }
+      await this.cleanupPending();
+      active();
       const stored = validHost(get(this.deps.storage, HOST_KEY), this.now());
       if (stored && stored.origin === settings.baseUrl) {
         active();
@@ -530,11 +543,11 @@ class HostController extends SnapshotSource implements RemoteHostController {
         origin: settings.baseUrl,
         roomId: created.roomId,
         hostToken: created.hostToken,
+        expiresAt: created.expiresAt,
       };
       createdRoom = provisional;
       active();
-      this.pendingRoom = provisional;
-      put(this.deps.storage, HOST_PENDING_KEY, provisional);
+      this.addPending(provisional);
       active();
       const invite = token32();
       const inviteExpires = Math.min(created.expiresAt, this.now() + INVITE_MS);
@@ -564,14 +577,16 @@ class HostController extends SnapshotSource implements RemoteHostController {
       this.record = record;
       put(this.deps.storage, HOST_KEY, record);
       createdRoom = null;
-      this.pendingRoom = null;
-      remove(this.deps.storage, HOST_PENDING_KEY);
+      this.removePending(provisional);
       this.update({ room });
       await this.waitReady(this.connect(record, false), abort.signal);
       active();
       return room;
     } catch (error) {
-      if (createdRoom) await this.deletePending(createdRoom).catch(() => {});
+      if (createdRoom) {
+        const pending = createdRoom;
+        await this.deletePending(pending).catch(() => this.addPending(pending));
+      }
       if (this.generation === generation && !abort.signal.aborted)
         this.update({ state: 'error', error: codeOf(error) });
       throw error;
@@ -580,18 +595,73 @@ class HostController extends SnapshotSource implements RemoteHostController {
     }
   }
 
+  private persistPending(): void {
+    if (this.pendingExpiry) clearTimeout(this.pendingExpiry);
+    this.pendingExpiry = null;
+    if (this.pendingRooms.length > 0) put(this.deps.storage, HOST_PENDING_KEY, this.pendingRooms);
+    else remove(this.deps.storage, HOST_PENDING_KEY);
+    const nextExpiry = Math.min(...this.pendingRooms.map((item) => item.expiresAt));
+    if (Number.isFinite(nextExpiry))
+      this.pendingExpiry = setTimeout(
+        () => {
+          this.pendingRooms = this.pendingRooms.filter((item) => item.expiresAt > this.now());
+          this.persistPending();
+        },
+        Math.max(1, nextExpiry - this.now()),
+      );
+  }
+
+  private addPending(pending: PendingRoom): void {
+    if (
+      !this.pendingRooms.some(
+        (item) => item.roomId === pending.roomId && item.origin === pending.origin,
+      )
+    )
+      this.pendingRooms.push(pending);
+    this.persistPending();
+  }
+
+  private removePending(pending: PendingRoom): void {
+    this.pendingRooms = this.pendingRooms.filter(
+      (item) => item.roomId !== pending.roomId || item.origin !== pending.origin,
+    );
+    this.persistPending();
+  }
+
+  private async cleanupPending(): Promise<void> {
+    const now = this.now();
+    this.pendingRooms = this.pendingRooms.filter((item) => item.expiresAt > now);
+    this.persistPending();
+    await Promise.allSettled(this.pendingRooms.map((item) => this.deletePending(item)));
+  }
+
   private async deletePending(pending: PendingRoom): Promise<void> {
-    const response = await this.fetcher(`${pending.origin}/api/rooms/${pending.roomId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${pending.hostToken}` },
-      credentials: 'omit',
-      redirect: 'error',
-      cache: 'no-store',
-    });
-    if (response.status !== 204 && response.status !== 404) throw new RemoteFailure('network');
-    if (this.pendingRoom?.roomId === pending.roomId) this.pendingRoom = null;
-    const stored = validPendingRoom(get(this.deps.storage, HOST_PENDING_KEY));
-    if (stored?.roomId === pending.roomId) remove(this.deps.storage, HOST_PENDING_KEY);
+    for (let attempt = 0; attempt < DELETE_ATTEMPTS; attempt++) {
+      if (pending.expiresAt <= this.now()) {
+        this.removePending(pending);
+        return;
+      }
+      try {
+        const response = await this.fetcher(`${pending.origin}/api/rooms/${pending.roomId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${pending.hostToken}` },
+          credentials: 'omit',
+          redirect: 'error',
+          cache: 'no-store',
+        });
+        if ([204, 401, 404, 410].includes(response.status)) {
+          this.removePending(pending);
+          return;
+        }
+      } catch {
+        // 응답 유실 뒤 방이 이미 종료되었을 수 있으므로 같은 자격으로 재시도한다.
+      }
+      if (attempt + 1 < DELETE_ATTEMPTS)
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.min(600, DELETE_BACKOFF_MS * 2 ** attempt)),
+        );
+    }
+    throw new RemoteFailure('network');
   }
 
   private connect(record: HostRecord, restored: boolean): WsTransport {
@@ -741,29 +811,15 @@ class HostController extends SnapshotSource implements RemoteHostController {
     this.createAbort?.abort();
     this.healthAbort?.abort();
     const record = this.record;
-    const pending = this.pendingRoom ?? validPendingRoom(get(this.deps.storage, HOST_PENDING_KEY));
-    this.end('room-ended');
-    if (pending) {
-      try {
-        await this.deletePending(pending);
-      } catch {
-        throw new RemoteFailure('network');
-      }
-    }
-    if (!record) return;
-    try {
-      const response = await this.fetcher(`${record.origin}/api/rooms/${record.room.roomId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${record.hostToken}` },
-        credentials: 'omit',
-        redirect: 'error',
-        cache: 'no-store',
+    if (record)
+      this.addPending({
+        origin: record.origin,
+        roomId: record.room.roomId,
+        hostToken: record.hostToken,
+        expiresAt: record.room.expiresAt,
       });
-      if (response.status !== 204 && response.status !== 404) throw new RemoteFailure('network');
-    } catch {
-      // 로컬 화면은 닫지만 서버 종료 실패는 호출자에게 알려 준다.
-      throw new RemoteFailure('network');
-    }
+    this.end('room-ended');
+    await this.cleanupPending();
   }
 }
 

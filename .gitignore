@@ -21,6 +21,8 @@ android/.kotlin/
 *.p12
 *.pem
 secrets/
+tools/relay/.funnel-owned
+tools/relay/relay-url.svg
 # IDE
 .idea/
 *.iml

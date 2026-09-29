@@ -14,6 +14,7 @@
   let errorCode = $state<RemoteErrorCode | null>(null);
   let wireVersion = $state<number | null>(null);
   let active = true;
+  let healthAbort: AbortController | null = null;
 
   const currentStep = $derived(phase === 'success' ? 3 : phase === 'idle' ? 1 : 2);
   const message = $derived(
@@ -22,11 +23,13 @@
 
   async function checkHealth(): Promise<void> {
     if (phase === 'checking') return;
+    const abort = new AbortController();
+    healthAbort = abort;
     phase = 'checking';
     errorCode = null;
     try {
-      const result = await controller.checkHealth();
-      if (!active) return;
+      const result = await controller.checkHealth({ signal: abort.signal });
+      if (!active || abort.signal.aborted) return;
       if (!result.ready || result.relay !== 'p2p-gostop') {
         errorCode = 'invalidResponse';
         phase = 'error';
@@ -40,10 +43,12 @@
       wireVersion = result.wireVersion;
       phase = 'success';
     } catch (error) {
-      if (!active) return;
+      if (!active || abort.signal.aborted) return;
       errorCode =
         error instanceof RelayHealthError ? error.code : (controller.snapshot.error ?? null);
       phase = 'error';
+    } finally {
+      if (healthAbort === abort) healthAbort = null;
     }
   }
 
@@ -51,6 +56,8 @@
     active = true;
     return () => {
       active = false;
+      healthAbort?.abort();
+      healthAbort = null;
     };
   });
 </script>
