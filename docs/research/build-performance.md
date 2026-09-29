@@ -116,7 +116,7 @@ continue-on-error). 릴리스는 이 경우 격리 웹 빌드를 반드시 실�
 
 ### PR #38 최종 병합본 동기화
 
-`origin/main`의 `c6a637e`(#38 병합 커밋 `f5df64f` 포함)를 일반 merge로 반영했다.
+`origin/main`의 `84e8248`(#38 병합 커밋 `f5df64f` 포함)를 일반 merge로 반영했다.
 개발 이미지 `p2p-gostop-dev:3`·진입점·이미지 태그 검사·소유권 복구 안내를 보존했다.
 plan의 단일 버전 표 원칙을 따르고, 삭제된 M4 실기기 문서 대신 통합 procedure.md를 사용한다.
 릴리스 링크도 procedure.md로 맞췄다. 캐시 정책·두 잡의 전체 검증·동일 SHA 웹 번들 복원과
