@@ -6,6 +6,7 @@ import { createConnection } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
+import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import { WebSocket, type RawData } from 'ws';
 import { writeArtifact } from './artifact.ts';
 
@@ -164,8 +165,8 @@ it('CLI가 현행·직전 artifact의 wire 버전을 각각 읽고 불일치 자
   directory = await mkdtemp(join(tmpdir(), 'relay-cli-'));
   const current = join(directory, 'current');
   const previous = join(directory, 'previous');
-  await writeArtifact(current, 2, { 'index.html': '<html>current</html>' });
-  await writeArtifact(previous, 1, { 'index.html': '<html>old</html>' });
+  await writeArtifact(current, PROTOCOL_VERSION, { 'index.html': '<html>current</html>' });
+  await writeArtifact(previous, PROTOCOL_VERSION - 1, { 'index.html': '<html>old</html>' });
   const port = await launch(['packages/relay-dev/src/cli.ts'], {
     RELAY_PUBLIC: '1',
     RELAY_CREATION_SECRET: secret,
@@ -187,8 +188,8 @@ it('CLI가 현행·직전 artifact의 wire 버전을 각각 읽고 불일치 자
   )
     throw new Error('version');
   expect(version.releases).toMatchObject([
-    { release: 'v2.0.0', wireVersion: 2, compatible: true },
-    { release: 'v1.0.0', wireVersion: 1, compatible: false },
+    { release: 'v2.0.0', wireVersion: PROTOCOL_VERSION, compatible: true },
+    { release: 'v1.0.0', wireVersion: PROTOCOL_VERSION - 1, compatible: false },
   ]);
   const releases: unknown[] = version.releases;
   for (const release of releases) {
