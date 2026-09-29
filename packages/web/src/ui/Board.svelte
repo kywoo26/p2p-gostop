@@ -1,6 +1,6 @@
 <script lang="ts">
   import Scene from '../pro-assets/Scene.svelte';
-  // 게임판 (spec 6.2, FR-40): 상단 양쪽 점수판·상대 획득패, 중앙 바닥·더미, 선택 영역, 내 획득패·현황·손패.
+  // 게임판 (spec 6.2, FR-40): 각 진영 점수판·상대 획득패, 중앙 바닥·더미, 선택 영역, 내 획득패·현황·손패.
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
   // 재생 중(busy)에는 입력을 받지 않고, 빈 바닥을 누르고 떼면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
@@ -348,7 +348,7 @@
 >
   <Scene scene="table" />
   <div class="hud" inert={landscape} data-testid="hud">
-    <div class="scoreboard" class:expanded={expandedHud} aria-label="양쪽 점수판">
+    <div class="scoreboard" class:expanded={expandedHud} aria-label="상대 점수판">
       <SeatBar
         who="상대"
         timerText={timerSeat !== null && timerSeat !== seat ? timerText : null}
@@ -358,18 +358,6 @@
         balance={opponent.balance}
         {unit}
         expanded={expandedHud}
-      />
-      <SeatBar
-        who="나"
-        timerText={timerSeat === seat ? timerText : null}
-        name={me.name}
-        score={me.score}
-        goCount={me.goCount}
-        balance={me.balance}
-        {unit}
-        expanded={expandedHud}
-        multiplier={view.multiplier}
-        stopPreview={view.pending?.kind === 'goStop' && view.pending.seat === seat}
       />
     </div>
     <div class="menu-reserved" data-testid="menu-reserved" aria-hidden="true"></div>
@@ -401,6 +389,7 @@
   <div class="decision-area" class:idle-slot={!selecting && !view.canFlipOnly} inert={landscape}>
     <div class="decision-content">
       {#if timeoutText && timerText}<p class="timer-prompt">{timerText} · {timeoutText}</p>{/if}
+      <span class="table-meta">{view.round}판</span>
       <EventRail
         {banner}
         {toast}
@@ -500,6 +489,23 @@
         infoDialog.showModal();
       }}>판 정보</button
     >
+  </div>
+  <div class="mine-hud" inert={landscape}>
+    <div class="scoreboard" class:expanded={expandedHud} aria-label="내 점수판">
+      <SeatBar
+        who="나"
+        timerText={timerSeat === seat ? timerText : null}
+        name={me.name}
+        score={me.score}
+        goCount={me.goCount}
+        balance={me.balance}
+        {unit}
+        expanded={expandedHud}
+        multiplier={view.multiplier}
+        estimatedAmount={pending?.kind === 'goStop' ? pending.stopAmount : null}
+        stopPreview={view.pending?.kind === 'goStop' && view.pending.seat === seat}
+      />
+    </div>
   </div>
   <div class="captured-zone mine">
     <CapturedPile stats={myStats} label="내 획득패" highlight={view.highlight ?? []} />

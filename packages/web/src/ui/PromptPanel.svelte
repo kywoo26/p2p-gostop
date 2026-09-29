@@ -14,12 +14,24 @@
   let { title, children, actions }: Props = $props();
   const titleId = $props.id();
   function scrollRegion(node: HTMLDivElement) {
-    const observer = new ResizeObserver(() => {
+    let active = true;
+    const update = () => {
+      if (!active) return;
       node.tabIndex = node.scrollHeight > node.clientHeight + 1 ? 0 : -1;
-    });
+    };
+    const observer = new ResizeObserver(update);
     observer.observe(node);
     if (node.firstElementChild) observer.observe(node.firstElementChild);
-    return { destroy: () => observer.disconnect() };
+    // WebKit은 첫 렌더와 글꼴 배치 사이에 스크롤 높이가 변해도 같은
+    // 관찰 크기를 보고할 수 있다. 초기 배치와 웹폰트 완료를 함께 반영한다.
+    queueMicrotask(update);
+    void document.fonts.ready.then(update);
+    return {
+      destroy: () => {
+        active = false;
+        observer.disconnect();
+      },
+    };
   }
 </script>
 

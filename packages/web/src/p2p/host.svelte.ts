@@ -263,7 +263,7 @@ export class HostGame implements GameController {
       const name = this.guestName ?? '상대';
       const since = this.offlineSince;
       const minutes = since === null ? 0 : Math.floor((Date.now() - since) / 60_000);
-      return `${name} 연결 끊김 — 돌아오기를 기다리는 중${minutes > 0 ? ` (${minutes}분)` : ''}`;
+      return `${name} 연결 끊김 · 돌아오기를 기다리는 중${minutes > 0 ? ` (${minutes}분)` : ''}`;
     }
     if (this.session?.decisionClock?.state === 'paused')
       return this.session.decisionClock.pauseReason === 'clockUnknown'

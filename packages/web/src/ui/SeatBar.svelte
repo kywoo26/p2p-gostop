@@ -14,6 +14,8 @@
     stopPreview?: boolean;
     expanded?: boolean;
     timerText?: string | null;
+    /** 공개 뷰가 제공한 스톱 예상액만 표시. 미제공은 대시. */
+    estimatedAmount?: number | null;
   }
 
   let {
@@ -27,6 +29,7 @@
     stopPreview = false,
     expanded = false,
     timerText = null,
+    estimatedAmount = null,
   }: Props = $props();
   const multiplierLabel = $derived(stopPreview ? '스톱 배수' : '누적 배수, 박 제외');
 </script>
@@ -37,10 +40,10 @@
 >
   <h2 class="identity" title={name}>
     <span class="who">{who}</span><span class="name">{name === who ? '' : name}</span>
-    {#if timerText}<span class="timer" data-testid="decision-timer" title={timerText}
-        >{timerText}</span
-      >{/if}
   </h2>
+  {#if timerText}<span class="timer" data-testid="decision-timer" title={timerText}
+      >{timerText}</span
+    >{/if}
   <span class="score" aria-label={`${who} 현재 족보 점수 ${score}점`}>
     <b data-testid={who === '나' ? 'my-score' : 'opponent-score'}>{score}</b><span>점</span>
   </span>
@@ -52,15 +55,23 @@
       : `${who} ${multiplierLabel} ×${multiplier}`}
     title={multiplierLabel}
   >
-    {#if multiplier === null}—{:else}×{multiplier}{/if}
+    {#if multiplier === null}미정{:else}×{multiplier}{/if}
   </span>
-  <span class="balance" aria-label={`${who} 잔액 ${formatMoney(balance, unit)}`} title="잔액"
-    >{formatMoney(balance, unit)}</span
-  >
+  <div class="money">
+    <span
+      class="estimate"
+      aria-label={`${who} 스톱 예상액 ${estimatedAmount === null ? '미제공' : formatMoney(estimatedAmount, unit)}`}
+      >스톱 {estimatedAmount === null ? '미정' : formatMoney(estimatedAmount, unit)}</span
+    >
+    <span class="balance" aria-label={`${who} 잔액 ${formatMoney(balance, unit)}`} title="잔액"
+      >{formatMoney(balance, unit)}</span
+    >
+  </div>
 </div>
 
 <style>
   .seat-bar {
+    position: relative;
     display: grid;
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
@@ -101,11 +112,22 @@
     color: var(--color-hud-muted);
   }
   .timer {
-    flex: 0 0 8ch;
+    position: absolute;
+    left: 8px;
+    bottom: 2px;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    font-size: 12px;
+    line-height: 14px;
     font-variant-numeric: tabular-nums;
+  }
+  .seat-bar:has(.timer) .identity {
+    align-self: start;
+    max-height: 14px;
+    overflow: hidden;
+  }
+  .expanded .timer {
+    bottom: 19px;
   }
   .me .who,
   .me .score {

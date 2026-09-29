@@ -29,7 +29,7 @@
     <p class="credit" lang="en">{CARD_ART_CREDIT}</p>
     <ul class="authors">
       {#each CARD_ART_AUTHORS as author (author.name)}
-        <li><strong>{author.name}</strong> — {author.role}</li>
+        <li><strong>{author.name}</strong> · {author.role}</li>
       {/each}
     </ul>
     <dl class="pairs">
