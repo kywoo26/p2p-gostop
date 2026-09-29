@@ -54,6 +54,146 @@
           }
         ]
       }
+    },
+    {
+      "files": ["packages/engine/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@p2p-gostop/*/**",
+                  "!@p2p-gostop/engine/testing",
+                  "!@p2p-gostop/web/net"
+                ],
+                "message": "공개 exports 경로만 사용한다 (plan §1.3, refactor R2)."
+              },
+              {
+                "regex": "^\\..*/(packages|tools|engine|ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "workspace 경계는 상대경로 대신 패키지 공개 API로 넘는다 (plan §1.3)."
+              },
+              {
+                "regex": "^@p2p-gostop/(ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "허용 의존 방향: engine ← ai/protocol, relay → protocol, sim → engine/ai (plan §1.3)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/ai/**/*.ts", "packages/protocol/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@p2p-gostop/*/**",
+                  "!@p2p-gostop/engine/testing",
+                  "!@p2p-gostop/web/net"
+                ],
+                "message": "공개 exports 경로만 사용한다 (plan §1.3, refactor R2)."
+              },
+              {
+                "regex": "^\\..*/(packages|tools|engine|ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "workspace 경계는 상대경로 대신 패키지 공개 API로 넘는다 (plan §1.3)."
+              },
+              {
+                "regex": "^@p2p-gostop/(ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "허용 의존 방향: engine ← ai/protocol, relay → protocol, sim → engine/ai (plan §1.3)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/relay-dev/src/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@p2p-gostop/*/**",
+                  "!@p2p-gostop/engine/testing",
+                  "!@p2p-gostop/web/net"
+                ],
+                "message": "공개 exports 경로만 사용한다 (plan §1.3, refactor R2)."
+              },
+              {
+                "regex": "^\\..*/(packages|tools|engine|ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "workspace 경계는 상대경로 대신 패키지 공개 API로 넘는다 (plan §1.3)."
+              },
+              {
+                "regex": "^@p2p-gostop/(engine|ai|web|relay-dev|sim)(/|$)",
+                "message": "허용 의존 방향: engine ← ai/protocol, relay → protocol, sim → engine/ai (plan §1.3)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/relay-dev/test/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@p2p-gostop/*/**",
+                  "!@p2p-gostop/engine/testing",
+                  "!@p2p-gostop/web/net"
+                ],
+                "message": "공개 exports 경로만 사용한다 (plan §1.3, refactor R2)."
+              },
+              {
+                "regex": "^\\..*/(packages|tools|engine|ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "workspace 경계는 상대경로 대신 패키지 공개 API로 넘는다 (plan §1.3)."
+              },
+              {
+                "regex": "^@p2p-gostop/(ai|web|relay-dev|sim)(/|$)",
+                "message": "허용 의존 방향: engine ← ai/protocol, relay → protocol, sim → engine/ai (plan §1.3)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["tools/sim/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@p2p-gostop/*/**",
+                  "!@p2p-gostop/engine/testing",
+                  "!@p2p-gostop/web/net"
+                ],
+                "message": "공개 exports 경로만 사용한다 (plan §1.3, refactor R2)."
+              },
+              {
+                "regex": "^\\..*/(packages|tools|engine|ai|protocol|web|relay-dev|sim)(/|$)",
+                "message": "workspace 경계는 상대경로 대신 패키지 공개 API로 넘는다 (plan §1.3)."
+              },
+              {
+                "regex": "^@p2p-gostop/(protocol|web|relay-dev|sim)(/|$)",
+                "message": "허용 의존 방향: engine ← ai/protocol, relay → protocol, sim → engine/ai (plan §1.3)."
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

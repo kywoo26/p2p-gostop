@@ -21,6 +21,27 @@ const bannedNavigatorProps = [
 const bannedCryptoProps = ['subtle', 'randomUUID'];
 const bannedFullscreen = ['requestFullscreen', 'webkitRequestFullscreen', 'webkitEnterFullscreen'];
 
+// workspace 내부 파일을 우회 참조하지 않는다. engine/testing·web/net은 명시된 공개 하위 경로다.
+const boundaryPatterns = [
+  '^@p2p-gostop/(relay-dev|sim)(/|$)',
+  '^@p2p-gostop/(?!(?:engine/testing|web/net)$)[^/]+/',
+  '^\\..*/(packages|tools|engine|ai|protocol|web|relay-dev|sim)(/|$)',
+];
+const boundaryMessage = 'web은 engine·ai·protocol의 공개 API만 참조한다 (plan §1.3, refactor R2).';
+// ESLint no-restricted-imports는 정적 import/export만 검사한다. 문자열 동적 import도 같은 경계로 검사한다.
+const boundarySelectors = boundaryPatterns.map((pattern) => ({
+  selector: `ImportExpression[source.value=/${pattern.replaceAll('/', '\\u002F')}/]`,
+  message: boundaryMessage,
+}));
+
+const importRestrictions = {
+  'no-restricted-imports': [
+    'error',
+    { patterns: boundaryPatterns.map((regex) => ({ regex, message: boundaryMessage })) },
+  ],
+  'no-restricted-syntax': ['error', ...boundarySelectors],
+};
+
 const webRestrictions = {
   'no-restricted-properties': [
     'error',
@@ -38,6 +59,7 @@ const webRestrictions = {
   ],
   'no-restricted-syntax': [
     'error',
+    ...boundarySelectors,
     {
       // window.navigator.share, globalThis.navigator.clipboard 같은 우회 접근
       selector: `MemberExpression[object.property.name='navigator'][property.name=/^(${bannedNavigatorProps.join('|')})$/]`,
@@ -69,6 +91,7 @@ export default defineConfig(
   svelte.configs.prettier,
   {
     rules: {
+      ...importRestrictions,
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

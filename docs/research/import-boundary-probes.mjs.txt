@@ -1,0 +1,60 @@
+// Docker에서만 실행: docker compose run --rm -T dev node --input-type=module < docs/research/import-boundary-probes.mjs.txt
+// 실제 패키지 위치의 일회 파일을 검사하고 finally에서 지운다. 제품 의존성·lint 예외를 추가하지 않는다.
+import { writeFileSync, unlinkSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+
+const cases = [];
+const add = (dir, source, banned) => cases.push({ dir, source, banned });
+for (const target of ['ai', 'protocol', 'web', 'relay-dev', 'sim'])
+  add('packages/engine/src', `import '@p2p-gostop/${target}';`, true);
+for (const dir of ['packages/ai/src', 'packages/protocol/src', 'tools/sim/src'])
+  add(dir, "import '@p2p-gostop/engine';", false);
+add('packages/ai/src', "import '@p2p-gostop/protocol';", true);
+add('packages/protocol/src', "import '@p2p-gostop/ai';", true);
+add('packages/relay-dev/src', "import '@p2p-gostop/protocol';", false);
+add('packages/relay-dev/src', "import '@p2p-gostop/engine';", true);
+add('packages/relay-dev/test', "import '@p2p-gostop/engine';", false);
+add('tools/sim/src', "import '@p2p-gostop/ai';", false);
+add('tools/sim/src', "import '@p2p-gostop/protocol';", true);
+for (const dir of ['packages/ai/src', 'packages/web/src/lib']) {
+  for (const target of ['@p2p-gostop/engine/src/index.ts', '@p2p-gostop/engine/testing/nested', '@p2p-gostop/engine/testing.ts', '../../engine/src/index.ts', '../../../packages/engine/src/index.ts', '../x/../../engine/src/index.ts', '../../engine']) {
+    add(dir, `import '${target}';`, true);
+    add(dir, `void import('${target}');`, true);
+  }
+  add(dir, "import type { Seat } from '@p2p-gostop/engine/src/index.ts'; export type { Seat };", true);
+  add(dir, "export type { Seat } from '@p2p-gostop/protocol';", dir === 'packages/ai/src');
+  add(dir, "export * from '@p2p-gostop/engine/src/index.ts';", true);
+  add(dir, "import '@p2p-gostop/engine/testing';", false);
+  add(dir, "void import('@p2p-gostop/engine/testing');", false);
+  add(dir, "import './index.ts';", false);
+}
+for (const target of ['engine', 'ai', 'protocol', 'web/net'])
+  add('packages/web/src/lib', `import '@p2p-gostop/${target}';`, false);
+for (const target of ['relay-dev', 'sim', 'protocol/net', 'ai/testing', 'engine/testing/nested']) {
+  add('packages/web/src/lib', `import '@p2p-gostop/${target}';`, true);
+  add('packages/web/src/lib', `void import('@p2p-gostop/${target}');`, true);
+}
+add('packages/web/src/lib', '<script lang="ts">import "@p2p-gostop/engine/src/index.ts";</script>', true);
+add('packages/web/src/lib', '<script lang="ts">import "@p2p-gostop/engine";</script>', false);
+add('packages/web/e2e', "void import('@p2p-gostop/engine/src/index.ts');", true);
+let passed = 0;
+for (const { dir, source, banned } of cases) {
+  const web = dir.startsWith('packages/web/');
+  const file = `${dir}/__boundary_probe__.${source.startsWith('<script') ? 'svelte' : 'ts'}`;
+  writeFileSync(file, source + '\n', { flag: 'wx' });
+  try {
+    const run = web
+      ? spawnSync('../../node_modules/.bin/eslint', [file.slice('packages/web/'.length), '--format', 'json'], { cwd: 'packages/web', encoding: 'utf8' })
+      : spawnSync('node_modules/.bin/oxlint', [file, '--format', 'json'], { encoding: 'utf8' });
+    if (run.error) throw run.error;
+    const report = JSON.parse(run.stdout);
+    const diagnostics = web ? report.flatMap((r) => r.messages) : report.diagnostics;
+    const found = diagnostics.some((d) => /no-restricted-(imports|syntax)/.test(d.ruleId ?? d.code ?? ''));
+    if (found !== banned || run.status !== (banned ? 1 : 0))
+      throw new Error(JSON.stringify({ file, source, banned, status: run.status, diagnostics, stderr: run.stderr }));
+    passed++;
+  } finally {
+    unlinkSync(file);
+  }
+}
+console.log(`import boundary probes: ${passed}/${cases.length} passed`);
