@@ -8,6 +8,9 @@
     ".": {},
     "packages/*": {},
     "tools/*": {},
+    "packages/relay-dev": {
+      "entry": ["test/remote-ui-server.ts"]
+    },
     "packages/web": {
       "entry": [
         "scripts/*.mjs",

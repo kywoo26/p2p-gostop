@@ -251,14 +251,16 @@
     status = sent > 0 ? `호스트로 ${sent}줄 보냈습니다` : '호스트와 연결되어 있지 않습니다';
   }
 
-  const menu: readonly MenuItem[] = [
+  const menu = $derived<readonly MenuItem[]>([
     { id: 'diagnostics', label: '진단·로그' },
     {
       id: 'leave',
       label: '나가기',
-      confirm: '게임에서 나갑니다. 같은 주소를 다시 열면 돌아올 수 있습니다',
+      confirm: activeController
+        ? '게임에서 나갑니다. 다시 참여하려면 새 초대나 방 코드가 필요합니다'
+        : '게임에서 나갑니다. 같은 주소를 다시 열면 돌아올 수 있습니다',
     },
-  ];
+  ]);
 
   function onmenu(id: string) {
     if (id === 'diagnostics') showDiagnostics = true;

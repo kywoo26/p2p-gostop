@@ -189,6 +189,7 @@ test.each(['게임 메뉴', '정산 종료'] as const)(
       if (exitPath === '게임 메뉴') {
         await screen.getByTestId('game-menu').click();
         await screen.getByRole('button', { name: '나가기' }).click();
+        expect(screen.getByRole('alert').element().textContent).toContain('새 초대나 방 코드');
         await screen.getByRole('button', { name: '나가기 (한 번 더 누르기)' }).click();
       } else {
         p2p.guest!.playback.settlement = {
