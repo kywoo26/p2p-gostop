@@ -81,7 +81,8 @@ export type CaptureReason =
   | 'bonus'
   | 'noFloorMatch'
   | 'unseenMonth'
-  | 'noUnseenMonth';
+  | 'opponentRevealedMonth'
+  | 'noOpponentMonth';
 
 export interface CaptureAssessment {
   readonly card: CardId;
@@ -90,7 +91,7 @@ export interface CaptureAssessment {
 }
 
 /**
- * 자기 손패의 합법 play마다 현재 바닥 짝과 미공개 월 카드 유무를 판정한다.
+ * 자기 손패의 합법 play마다 현재 바닥 짝과 상대 손패의 같은 월 카드 유무를 판정한다.
  * 확정은 지금 해당 월의 짝을 먹을 수 있다는 뜻이며 미래 소유·점수를 보장하지 않는다.
  */
 export function guaranteedCaptures(view: PlayerView): CaptureAssessment[] {
@@ -104,6 +105,8 @@ export function guaranteedCaptures(view: PlayerView): CaptureAssessment[] {
     view.legal.filter((action) => action.type === 'play').map((action) => action.card),
   );
   const unseen = new Set(unseenCards(view));
+  const opponent = view.viewer === 0 ? 1 : 0;
+  const opponentRevealed = view.seats[opponent].revealed;
   return [...new Set(hand)]
     .toSorted((a, b) => a - b)
     .map((card) => {
@@ -121,6 +124,9 @@ export function guaranteedCaptures(view: PlayerView): CaptureAssessment[] {
       if ([0, 1, 2, 3].some((offset) => unseen.has((month - 1) * 4 + offset))) {
         return { card, certainty: 'match', reason: 'unseenMonth' };
       }
-      return { card, certainty: 'guaranteed', reason: 'noUnseenMonth' };
+      if (opponentRevealed.some((id) => getCard(id).month === month)) {
+        return { card, certainty: 'match', reason: 'opponentRevealedMonth' };
+      }
+      return { card, certainty: 'guaranteed', reason: 'noOpponentMonth' };
     });
 }

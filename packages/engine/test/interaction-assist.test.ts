@@ -226,7 +226,7 @@ describe('guaranteedCaptures · C05/CF01~16 · #109', () => {
     ] as const) {
       expect(assessment(captureView([c('5열')], [c('5피b')], captured), c('5열'))).toMatchObject({
         certainty: 'guaranteed',
-        reason: 'noUnseenMonth',
+        reason: 'noOpponentMonth',
       });
     }
   });
@@ -269,14 +269,15 @@ describe('guaranteedCaptures · C05/CF01~16 · #109', () => {
     expect(assessment(last, c('5열')).certainty).toBe('match');
   });
 
-  it('CF09: 상대 공개 손패가 있어도 unseen에 같은 월이 없으면 확정이다', () => {
+  it('CF09: unseen에 같은 월이 없어도 상대 공개 손패에 있으면 먹을 수 있음이다', () => {
     const view = captureView([c('5열')], [c('5초')], [[], []], {
       hands: [[c('5열')], [c('5피a'), c('5피b')]],
       seats: [{}, { revealed: [c('5피a'), c('5피b')] }],
     });
+    expect(unseenCards(view).some((id) => CARDS[id]?.month === 5)).toBe(false);
     expect(assessment(view, c('5열'))).toMatchObject({
-      certainty: 'guaranteed',
-      reason: 'noUnseenMonth',
+      certainty: 'match',
+      reason: 'opponentRevealedMonth',
     });
   });
 
@@ -373,6 +374,57 @@ describe('guaranteedCaptures · C05/CF01~16 · #109', () => {
           expect(guaranteedCaptures(playerView(first, 0))).toEqual(
             guaranteedCaptures(playerView(swapped, 0)),
           );
+        },
+      ),
+    );
+  });
+
+  it('속성: 같은 월 두 장을 획득패에서 상대 공개 손패로 옮기면 확정이 match가 된다', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 12 }),
+        fc.constantFrom(0, 1),
+        fc.boolean(),
+        (month, viewer, reverse) => {
+          const ids = CARDS.filter((card) => card.month === month).map((card) => card.id);
+          const [played, floor, ...pair] = ids;
+          if (played === undefined || floor === undefined || pair.length !== 2) {
+            throw new Error('월 카드 누락');
+          }
+          const other = CARDS.find((card) => card.month !== null && card.month !== month);
+          if (other === undefined) throw new Error('다른 월 카드 누락');
+          const orderedPair = reverse ? pair.toReversed() : pair;
+          const publicCaptured = playerView(
+            createScenario({
+              hands: viewer === 0 ? [[played], [other.id]] : [[other.id], [played]],
+              floor: [floor],
+              captured: [orderedPair, []],
+              turn: viewer,
+            }),
+            viewer,
+          );
+          const opponentRevealed = playerView(
+            createScenario({
+              hands: viewer === 0 ? [[played], orderedPair] : [orderedPair, [played]],
+              floor: [floor],
+              seats:
+                viewer === 0 ? [{}, { revealed: orderedPair }] : [{ revealed: orderedPair }, {}],
+              turn: viewer,
+            }),
+            viewer,
+          );
+          for (const view of [publicCaptured, opponentRevealed]) {
+            expect(unseenCards(view).some((id) => CARDS[id]?.month === month)).toBe(false);
+            expect(matchPreview(view, viewer, played).floor).toEqual([floor]);
+          }
+          expect(assessment(publicCaptured, played)).toMatchObject({
+            certainty: 'guaranteed',
+            reason: 'noOpponentMonth',
+          });
+          expect(assessment(opponentRevealed, played)).toMatchObject({
+            certainty: 'match',
+            reason: 'opponentRevealedMonth',
+          });
         },
       ),
     );
