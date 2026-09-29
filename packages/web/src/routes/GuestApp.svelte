@@ -236,7 +236,8 @@
   }
 
   function leave() {
-    p2p.leave();
+    if (activeController) leaveRemote();
+    else p2p.leave();
     showDiagnostics = false;
   }
 

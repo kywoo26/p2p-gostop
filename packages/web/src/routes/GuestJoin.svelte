@@ -32,7 +32,7 @@
     denied: '호스트가 참여 요청을 거절했습니다.',
     timeout: '60초 안에 승인을 받지 못했습니다. 다시 요청하세요.',
     unavailable: '지금 참여할 수 없습니다. 코드와 방 상태를 확인하세요.',
-    invalid: '지금 참여할 수 없습니다. 코드와 방 상태를 확인하세요.',
+    invalid: '이 초대로 참여할 수 없습니다. 호스트에게 새 초대 링크를 요청하세요.',
     'room-ended': '방이 종료되었습니다. 새 초대를 요청하세요.',
     'host-absent': '호스트 응답을 기다리는 중입니다. 호스트 앱이 열려 있는지 확인하세요.',
     replaced: '다른 창에서 접속 중입니다.',
@@ -155,7 +155,11 @@
       : CONNECTION_LABEL[connection],
   );
 
-  const remoteMessage = $derived(remoteErrorMessage(remote?.error));
+  const remoteMessage = $derived(
+    remote?.error === 'invalid' && remote.mode === 'code'
+      ? '코드로 참여할 수 없습니다. 방 코드를 다시 확인하세요.'
+      : remoteErrorMessage(remote?.error),
+  );
 </script>
 
 <Screen title="게임 참가" back={null}>
@@ -209,7 +213,6 @@
                 autocapitalize="characters"
                 autocomplete="off"
                 spellcheck="false"
-                maxlength="14"
                 placeholder="XXXX-XXXX-XXXX"
                 required
               />
@@ -251,7 +254,7 @@
       {#if remoteMessage}<p class="warn" role="alert">{remoteMessage}</p>{/if}
       {#if remote.error === 'version' || remote.error === 'incompatible'}
         <button type="button" class="button" onclick={() => location.reload()}>새로고침</button>
-      {:else if remote.error !== 'expired' && remote.error !== 'room-ended' && (remote.state === 'error' || remote.state === 'reconnecting' || remote.error === 'host-absent')}
+      {:else if remote.error !== 'expired' && remote.error !== 'room-ended' && !(remote.error === 'invalid' && remote.mode === 'link') && (remote.state === 'error' || remote.state === 'reconnecting' || remote.error === 'host-absent')}
         <button
           type="button"
           class="button"
