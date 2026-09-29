@@ -201,6 +201,52 @@ const event = z.looseObject({
   type: z.string().check(z.maxLength(32)),
 });
 const errorCode = z.enum(ERROR_CODES);
+const time = z.number().check(z.int(), z.minimum(0), z.maximum(Number.MAX_SAFE_INTEGER));
+const timerSettings = z.object({
+  decisionMs: z.nullable(z.literal([5000, 10000, 20000, 30000, 60000])),
+  policy: z.literal('fixed-v1'),
+});
+const decisionKey = z.object({
+  epoch: z.string().check(z.regex(/^[0-9a-f]{16}$/)),
+  round,
+  decisionId: nat,
+  baseSeq: nat,
+});
+const decisionClock = z.object({
+  key: decisionKey,
+  seat,
+  timerRev: nat,
+  state: z.enum(['preparing', 'running', 'checking', 'paused', 'resolved']),
+  hostNowMs: time,
+  remainingMs: time,
+  deadlineMs: z.nullable(time),
+  confirmByMs: z.nullable(time),
+  attempt: nat,
+  resumeFloorUsed: z.boolean(),
+  recoveryGrantMs: time,
+  pauseReason: z.nullable(
+    z.enum([
+      'peer',
+      'hostBackground',
+      'guestBackground',
+      'hostGap',
+      'clockUnknown',
+      'recoveryLimit',
+    ]),
+  ),
+});
+const timeoutResult = z.object({
+  key: decisionKey,
+  actionIndex: nat,
+  seat,
+  baseSeq: nat,
+  toSeq: nat,
+  deadlineMs: time,
+  confirmedAtMs: time,
+  reason: z.literal('timeout'),
+  policy: z.literal('fixed-v1'),
+  action: actionSchema,
+});
 
 // 제어 문자 없는 이름 (리뷰 L-3)
 const name = z.string().check(z.minLength(1), z.maxLength(80), z.regex(/^[^\p{Cc}]+$/u));
@@ -214,7 +260,14 @@ export const guestSchema = z.union([
     lastSeq: z.optional(nat),
     epoch: z.optional(z.string().check(z.maxLength(64))),
   }),
-  z.object({ t: z.literal('action'), seq: nat, payload: actionSchema, requestId: z.optional(nat) }),
+  z.object({
+    t: z.literal('action'),
+    seq: nat,
+    payload: actionSchema,
+    requestId: z.optional(nat),
+    decisionKey: z.optional(decisionKey),
+    decisionAttempt: z.optional(nat),
+  }),
   z.object({ t: z.literal('push'), seq: nat, requestId: z.optional(nat) }),
   z.object({ t: z.literal('ping') }),
   z.object({ t: z.literal('log'), entries: z.array(z.string()) }),
@@ -223,6 +276,14 @@ export const guestSchema = z.union([
   z.object({ t: z.literal('ready'), round }),
   z.object({ t: z.literal('bankruptcy'), choice: z.enum(['recharge', 'end']) }),
   z.object({ t: z.literal('ledgerGet'), from: nat }),
+  z.object({ t: z.literal('decisionReady'), key: decisionKey, attempt: nat, renderedSeq: nat }),
+  z.object({ t: z.literal('expiryAck'), key: decisionKey, attempt: nat, renderedSeq: nat }),
+  z.object({
+    t: z.literal('decisionUnavailable'),
+    key: decisionKey,
+    reason: z.enum(['background', 'resync']),
+  }),
+  z.object({ t: z.literal('timeoutGet'), round, from: nat }),
 ]);
 
 export const hostSchema = z.union([
@@ -237,6 +298,7 @@ export const hostSchema = z.union([
     epoch: z.string().check(z.maxLength(64)),
     seq: nat,
     status,
+    timerSettings,
   }),
   z.object({
     t: z.literal('snapshot'),
@@ -246,6 +308,8 @@ export const hostSchema = z.union([
     settlement: z.optional(settlement),
     status,
     requestId: z.optional(nat),
+    decision: z.nullable(decisionClock),
+    timeoutResult: z.optional(timeoutResult),
   }),
   z.object({
     t: z.literal('events'),
@@ -257,6 +321,8 @@ export const hostSchema = z.union([
     settlement: z.optional(settlement),
     status,
     requestId: z.optional(nat),
+    decision: z.nullable(decisionClock),
+    timeoutResult: z.optional(timeoutResult),
   }),
   z.object({ t: z.literal('status'), seq: nat, status, requestId: z.optional(nat) }),
   z.object({
@@ -265,8 +331,18 @@ export const hostSchema = z.union([
     reason: errorCode,
     message: z.string().check(z.maxLength(200)),
     requestId: z.optional(nat),
+    decisionKey: z.optional(decisionKey),
   }),
   z.object({ t: z.literal('pong') }),
+  z.object({ t: z.literal('decisionDeadline'), clock: decisionClock }),
+  z.object({ t: z.literal('expiryCheck'), key: decisionKey, attempt: nat, confirmByMs: time }),
+  z.object({
+    t: z.literal('timeoutPage'),
+    round,
+    from: nat,
+    total: nat,
+    entries: z.array(timeoutResult).check(z.maxLength(400)),
+  }),
   z.object({ t: z.literal('commitHost'), round, hash: hex64 }),
   z.object({ t: z.literal('revealGuestRequest'), round, guestHash: hex64 }),
   z.object({ t: z.literal('roundAborted'), round, reason: abortReason }),
@@ -288,6 +364,8 @@ export const hostSchema = z.union([
       isNight: z.optional(z.boolean()),
     }),
     firstSeq: nat,
+    timeoutCount: nat,
+    timeoutDigest: hex64,
   }),
   z.object({
     t: z.literal('bankruptcyPrompt'),

@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
+import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import { WebSocket, type RawData } from 'ws';
 import { startRelay, type Relay } from '../src/index.ts';
 import { writeArtifact } from './artifact.ts';
@@ -25,7 +26,7 @@ afterEach(async () => {
 async function server(origins: string[]): Promise<string> {
   directory = await mkdtemp(join(tmpdir(), 'relay-cors-'));
   const dist = join(directory, 'dist');
-  await writeArtifact(dist, 2, { 'index.html': '<html>public</html>' });
+  await writeArtifact(dist, PROTOCOL_VERSION, { 'index.html': '<html>public</html>' });
   relay = await startRelay({
     publicMode: {
       creationSecret: secret,

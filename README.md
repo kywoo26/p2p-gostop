@@ -42,6 +42,8 @@ docker compose run --rm dev npm run sim -- 42       # 셀프플레이 시뮬레�
 docker compose run --rm dev bash                    # 컨테이너 셸
 ```
 
+- OSS 고지 갱신은 개발 이미지에서 `docker compose run --rm dev npm run oss:refresh -w packages/web`로 수동 실행해 생성물 2개를 커밋한다. 웹 빌드는 npm 고지만 대조하고 Android 빌드는 Gradle 런타임 의존성을 대조한다.
+
 - **Dev Container**: VS Code "Reopen in Container"(또는 Codespaces, devcontainer CLI)는 `.devcontainer/devcontainer.json`으로 같은 `dev` 서비스에 붙는다. Claude Code 공식 feature를 설치하고 컨테이너별 `/home/dev/.claude` 볼륨에 설정을 보존한다. 그 안에서는 앞의 `docker compose run --rm dev` 없이 `npm test`, `android/gradlew -p android assembleDebug`처럼 그대로 실행한다.
 - 이전 이미지에서 이미 생성된 Claude 설정 볼륨은 root 소유일 수 있다. Dev Container를 닫고 `docker volume ls --format '{{.Name}}'`에서 `p2p-gostop-claude-`로 시작하는 해당 컨테이너의 볼륨명을 확인한 뒤 `docker compose run --rm --user root -v <볼륨명>:/home/dev/.claude dev chown -R 1000:1000 /home/dev/.claude`로 복구하고 다시 연다. 새 이미지에서 처음 만든 볼륨은 dev 소유로 초기화된다.
 - 컨테이너는 uid 1000(`dev`)으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 소스와 함께 바인드 마운트되어 체크아웃(워크트리)마다 따로 있다. Gradle·npm 캐시와 디버그 서명 키(`~/.android`)는 이름이 고정된 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)이라 모든 체크아웃이 공유한다.

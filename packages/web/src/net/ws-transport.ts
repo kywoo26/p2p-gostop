@@ -418,6 +418,8 @@ export class WsTransport implements Transport {
     if (this.stateValue === 'disposed' || this.stateValue === 'stopped') return;
     if (this.authToken !== undefined && this.stateValue === 'connecting') return;
     const socket = this.socket;
+    // 최초 pageshow와 연결 시작이 겹쳐도 같은 역할의 소켓을 두 개 열지 않는다.
+    if (socket?.readyState === 0) return;
     if (socket === null || socket.readyState !== 1) {
       this.reconnect();
       return;

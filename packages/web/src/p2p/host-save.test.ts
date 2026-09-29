@@ -4,6 +4,20 @@ import { expect, onTestFinished, test, vi } from 'vitest';
 import legacy from './fixtures/host-v2-legacy-settled.json';
 import decision from './fixtures/host-v2-push-decision.json';
 import { clearHostSave, HostGame, loadHostSave, type HostSave } from './host.svelte.ts';
+import { loadTimerPreference, saveTimerPreference } from './host-save.ts';
+
+test('FR-51 방 제한시간은 별도 값으로 저장하고 부재·손상 값은 10초로 복원한다', () => {
+  const key = 'gostop.p2p-timer.v1';
+  localStorage.removeItem(key);
+  onTestFinished(() => localStorage.removeItem(key));
+  expect(loadTimerPreference()).toBe(10_000);
+  expect(saveTimerPreference(null)).toBe(true);
+  expect(loadTimerPreference()).toBeNull();
+  expect(saveTimerPreference(30_000)).toBe(true);
+  expect(loadTimerPreference()).toBe(30_000);
+  localStorage.setItem(key, '12000');
+  expect(loadTimerPreference()).toBe(10_000);
+});
 
 function restore(fixture: unknown): HostGame {
   const saved = fixture as HostSave;
@@ -33,9 +47,18 @@ test.each([
   expect(host.pushDecision !== null).toBe(pending);
   expect(host.playback.settlement !== null).toBe(!pending);
   expect(host.playback.board.seats[1].hand).toBeNull();
-  expect(loadHostSave()).toEqual({
+  expect(loadHostSave()).toMatchObject({
     ...saved,
-    state: { ...saved.state, pushes: 0, lastAbort: null, rev: saved.state.rev + 1 },
+    state: {
+      ...saved.state,
+      v: 2,
+      pushes: 0,
+      lastAbort: null,
+      rev: saved.state.rev + 1,
+      timerSettings: { decisionMs: null, policy: 'fixed-v1' },
+      decision: null,
+      timeoutHistory: [],
+    },
   });
   host.tick();
   expect(host.records).toEqual(saved.records);

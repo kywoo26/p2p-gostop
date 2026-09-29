@@ -31,6 +31,7 @@
           pointValue: info.ledger.perPoint,
           startBalance: info.ledger.startBalance,
           unit: settings.value.unit,
+          timerSettings: info.timerSettings,
         };
   });
   const playing = $derived(
