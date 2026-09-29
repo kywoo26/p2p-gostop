@@ -11,6 +11,13 @@
     ORIGINAL_ART_LICENSE,
   } from '../cards/attribution.ts';
   import Screen from '../ui/Screen.svelte';
+  import fontLicense from '../styles/fonts/GostopSans-OFL.txt?raw';
+  import {
+    FONT_ATTRIBUTION_URLS,
+    FONT_CREDIT,
+    FONT_ORIGINAL,
+    FONT_MODIFIED,
+  } from '../fonts/attribution.ts';
 
   const attributionHref = `${import.meta.env.BASE_URL}cards/ATTRIBUTION.md`;
 </script>
@@ -47,6 +54,21 @@
     </p>
   </section>
 
+  <section aria-labelledby="lic-font">
+    <h2 id="lic-font">글꼴</h2>
+    <p>{FONT_ORIGINAL} · {FONT_MODIFIED}</p>
+    <p lang="en">{FONT_CREDIT}</p>
+    <p>
+      SIL Open Font License 1.1. UI 문자 서브셋·WOFF2 변환·힌팅 제거·수정본 이름 변경. 가변 가중치와
+      등폭 숫자 기능 유지.
+    </p>
+    {#each FONT_ATTRIBUTION_URLS as url (url)}<code>{url}</code>{/each}
+    <details>
+      <summary>폰트 라이선스 원문</summary>
+      <pre lang="en">{fontLicense}</pre>
+    </details>
+  </section>
+
   <section aria-labelledby="lic-code">
     <h2 id="lic-code">앱 코드</h2>
     <p>{CODE_LICENSE.scope} 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.</p>
@@ -54,6 +76,17 @@
 </Screen>
 
 <style>
+  summary {
+    min-height: var(--touch-min);
+    padding-block: var(--space-3);
+    cursor: pointer;
+  }
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+    font-size: var(--font-size-s);
+  }
   p {
     margin: 0;
   }
