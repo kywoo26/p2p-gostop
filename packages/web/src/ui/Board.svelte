@@ -6,6 +6,7 @@
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
   import {
     getCard,
+    scoreCaptured,
     sameAction,
     type Action,
     type CardId,
@@ -34,7 +35,7 @@
   import PickFirstPrompt from './PickFirstPrompt.svelte';
   import SeatBar from './SeatBar.svelte';
   import SeatProgress from './SeatProgress.svelte';
-  import { seatStats, type SeatExtras } from './seat-stats.ts';
+  import { gukjinAsPiOf, seatStats, type SeatExtras } from './seat-stats.ts';
 
   type BoardSeat = SeatView & SeatExtras;
 
@@ -120,6 +121,11 @@
   const opponent = $derived(view.seats[seat === 0 ? 1 : 0]);
   const myStats = $derived(seatStats(me));
   const opponentStats = $derived(seatStats(opponent));
+  const jokboScores = $derived(
+    [0, 1].map((seat) =>
+      scoreCaptured(view.seats[seat as Seat].captured, gukjinAsPiOf(view.seats[seat as Seat])),
+    ) as [ReturnType<typeof scoreCaptured>, ReturnType<typeof scoreCaptured>],
+  );
   const expandedHud = $derived(
     [me.balance, opponent.balance].some((balance) => formatMoney(balance, unit).length > 10),
   );
@@ -379,6 +385,8 @@
         goCount={opponent.goCount}
         balance={opponent.balance}
         delta={roundChanges[seat === 0 ? 1 : 0]}
+        shakes={opponent.shakes}
+        ppeokCount={opponent.ppeokCount}
         {unit}
         expanded={expandedHud}
       />
@@ -408,6 +416,9 @@
         {banner}
         {toast}
         {actor}
+        round={view.round}
+        viewer={seat}
+        {jokboScores}
         blocked={selecting || view.canFlipOnly}
         idle={thinking
           ? '상대 차례 · 생각 중'

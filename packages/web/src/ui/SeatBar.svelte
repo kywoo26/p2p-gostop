@@ -49,21 +49,32 @@
       {#if who === '나' && dealer}<span class="dealer">선</span>{/if}
       <span class="who">{who}</span>
       {#if name !== who}<span class="name">{name}</span>{/if}
-      {#if who === '나'}
-        <span class="counters" role="img" aria-label={`뻑 ${ppeokCount}회, 흔들기 ${shakes}회`}>
-          <span class="counter" aria-hidden="true" title={`뻑 ${ppeokCount}회`}>
-            <svg viewBox="0 0 20 20" width="16" height="16"
-              ><path
-                d="M5 17C1 17 1 12 5 12C2 10 5 7 7 8C5 5 11 5 10 2C15 5 15 8 13 9C18 8 19 12 16 13C20 14 18 17 15 17Z"
-                fill="currentColor"
-              /></svg
-            >{ppeokCount}
-          </span>
-          <span class="counter" aria-hidden="true" title={`흔들기 ${shakes}회`}
-            ><img src="/skin/bell-illustrated.webp" width="16" height="16" alt="" />{shakes}</span
-          >
+      <span class="counters" role="img" aria-label={`뻑 ${ppeokCount}회, 흔들기 ${shakes}회`}>
+        <span class="counter" aria-hidden="true" title={`뻑 ${ppeokCount}회`}>
+          <svg
+            viewBox="0 0 20 20"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            aria-hidden="true"><path d="m3 4 4 4m10-4-4 4M2 13h5m11 0h-5m-3-3v7" /></svg
+          >{ppeokCount}
         </span>
-      {/if}
+        <span class="counter" aria-hidden="true" title={`흔들기 ${shakes}회`}
+          ><svg
+            viewBox="0 0 20 20"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            aria-hidden="true"><path d="M6 4h8l2 10H4L6 4Zm2 12h4m-2-14v2M3 7 1 9m16-2 2 2" /></svg
+          >{shakes}</span
+        >
+      </span>
       {#if timerText}<span class="timer" data-testid="decision-timer" title={timerText}
           >{timerText}</span
         >{/if}

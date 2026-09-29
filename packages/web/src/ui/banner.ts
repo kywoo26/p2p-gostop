@@ -1,5 +1,5 @@
 // 이벤트 배너 (spec 6.5): 문구와 색. 색만으로 구분하지 않도록 항상 문구를 함께 쓴다(NF-08).
-import type { EngineEvent, Seat } from '@p2p-gostop/engine';
+import type { EngineEvent, ScoreBreakdown, Seat } from '@p2p-gostop/engine';
 import type { UiEvent } from '../lib/view-types.ts';
 
 export type BannerKind =
@@ -35,6 +35,22 @@ const BANNER_TEXT: Readonly<Record<BannerKind, string>> = {
   nagari: '나가리',
   hudang: '허당',
 };
+
+const MILESTONES = [
+  ['chodan', '초단'],
+  ['hongdan', '홍단'],
+  ['cheongdan', '청단'],
+  ['godori', '고도리'],
+  ['gwang', '광'],
+] as const;
+
+/** 공개 획득패를 엔진 점수 함수로 계산한 전후 값에서 새로 완성된 족보만 알린다. */
+export function completedJokbo(before: ScoreBreakdown, after: ScoreBreakdown): string | null {
+  const names = MILESTONES.filter(([key]) => before[key] === 0 && after[key] > 0).map(
+    ([, name]) => name,
+  );
+  return names.length > 0 ? names.join('·') : null;
+}
 
 function simple(kind: BannerKind): Banner {
   return { kind, text: BANNER_TEXT[kind] };

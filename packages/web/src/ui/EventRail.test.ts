@@ -18,3 +18,14 @@ test('선택 중 배너·알림은 숨기고 해제 후 한 상태 메시지로 
     .toHaveTextContent('내 차례 · 상대 뻑 · 피 1장 이동');
   expect(screen.container.querySelectorAll('[role="status"]')).toHaveLength(1);
 });
+
+test('고 선언은 횟수와 주체를 예약 레일에 표시하고 원본 배너가 사라져도 잠시 유지한다', async () => {
+  const screen = await render(EventRail, {
+    idle: '상대 차례',
+    viewer: 0,
+    banner: { kind: 'go', text: '2고', seat: 1, id: 3 },
+  });
+  await expect.element(screen.getByRole('status')).toHaveTextContent('상대 2고!');
+  await screen.rerender({ banner: null });
+  await expect.element(screen.getByRole('status')).toHaveTextContent('상대 2고!');
+});
