@@ -1,7 +1,7 @@
 # p2p-gostop 개발 환경 (plan.md 2장). 모든 빌드·테스트는 이 서비스 하나에서 돈다.
 #   docker compose run --rm dev npm test
 #   docker compose run --rm dev android/gradlew -p android assembleDebug
-#   docker compose run --rm --service-ports dev npm run dev -w packages/web   (포트 게시가 필요할 때만)
+#   docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web   (포트 게시가 필요할 때만)
 # 저장소 루트의 compose.yaml은 Compose 기본 탐색 대상이라 -f 없이 저장소 어느 하위 폴더에서도 찾아진다.
 # 프로젝트 이름은 체크아웃 폴더 이름이 되므로 워크트리마다 컨테이너가 자연히 분리된다.
 # node_modules는 소스와 함께 바인드 마운트된다(체크아웃마다 따로, 호스트에서도 보인다).
@@ -9,7 +9,7 @@
 services:
   dev:
     build: docker
-    image: p2p-gostop-dev:1 # docker/Dockerfile을 바꾸면 이 태그를 올린다(없는 태그면 run이 자동으로 빌드)
+    image: p2p-gostop-dev:2 # docker/Dockerfile을 바꾸면 이 태그를 올린다(없는 태그면 run이 자동으로 빌드)
     user: '1000:1000' # dev(=WSL 사용자 uid 1000). 소스 트리 파일 소유자가 바뀌지 않는다.
     working_dir: /work
     init: true # Ctrl-C가 npm·vite·gradle까지 전달되도록
@@ -29,9 +29,6 @@ services:
       ANDROID_KEYSTORE_PASSWORD:
       ANDROID_KEY_ALIAS:
       ANDROID_KEY_PASSWORD:
-    ports: # --service-ports를 줄 때만 게시된다
-      - '5173:5173' # vite dev
-      - '17777:17777' # relay-dev
 
 volumes:
   gradle:

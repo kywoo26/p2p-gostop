@@ -4,7 +4,7 @@
 
 ## 1. 화면 지도
 
-역할은 주소로 정한다(`src/p2p/role.ts`): **루프백 origin**(Android WebView `http://127.0.0.1:17777/`, 개발 브라우저)은 호스트 앱(아래 해시 라우팅), **루프백이 아닌 origin**(iPhone이 QR로 연 `http://<핫스팟 IP>:17777/`)은 조작 없이 게스트 화면. `?role=host|guest`는 E2E·개발용 덮어쓰기, `?relay=host:port`는 개발 중계 주소(`docker compose run --rm --service-ports dev npm run start -w packages/relay-dev`)다.
+역할은 주소로 정한다(`src/p2p/role.ts`): **루프백 origin**(Android WebView `http://127.0.0.1:17777/`, 개발 브라우저)은 호스트 앱(아래 해시 라우팅), **루프백이 아닌 origin**(iPhone이 QR로 연 `http://<핫스팟 IP>:17777/`)은 조작 없이 게스트 화면. `?role=host|guest`는 E2E·개발용 덮어쓰기, `?relay=host:port`는 개발 중계 주소(`docker compose run --rm -p 17777:17777 dev npm run start -w packages/relay-dev`)다.
 
 ### 1.1 호스트 앱 (해시 라우팅, `src/App.svelte`)
 

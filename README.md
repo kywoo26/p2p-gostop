@@ -36,19 +36,20 @@ docker compose run --rm dev npm run test:browser    # 웹 컴포넌트 테스트
 docker compose run --rm dev npm run build -w packages/web   # 웹 빌드 + 번들 예산(≤1.5MB)·외부 URL 0건 검사
 docker compose run --rm dev npm run e2e -w packages/web     # Playwright E2E (Chromium + WebKit)
 docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint   # APK·단위 테스트·Lint
-docker compose run --rm --service-ports dev npm run dev -w packages/web          # Vite http://localhost:5173 (#/dev/gallery)
-docker compose run --rm --service-ports dev npm run start -w packages/relay-dev  # 중계 ws://localhost:17777/ws?role=host|guest
+docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web          # Vite http://localhost:5173 (#/dev/gallery)
+docker compose run --rm -p 17777:17777 dev npm run start -w packages/relay-dev  # 중계 ws://localhost:17777/ws?role=host|guest
 docker compose run --rm dev npm run sim -- 42       # 셀프플레이 시뮬레이션 CLI
 docker compose run --rm dev bash                    # 컨테이너 셸
 ```
 
-- **Dev Container**: VS Code "Reopen in Container"(또는 Codespaces, devcontainer CLI)는 `.devcontainer/devcontainer.json`으로 같은 `dev` 서비스에 붙는다. 그 안에서는 앞의 `docker compose run --rm dev` 없이 `npm test`, `android/gradlew -p android assembleDebug`처럼 그대로 실행한다.
+- **Dev Container**: VS Code "Reopen in Container"(또는 Codespaces, devcontainer CLI)는 `.devcontainer/devcontainer.json`으로 같은 `dev` 서비스에 붙는다. Claude Code 공식 feature를 설치하고 컨테이너별 `/home/dev/.claude` 볼륨에 설정을 보존한다. 그 안에서는 앞의 `docker compose run --rm dev` 없이 `npm test`, `android/gradlew -p android assembleDebug`처럼 그대로 실행한다.
 - 컨테이너는 uid 1000(`dev`)으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 소스와 함께 바인드 마운트되어 체크아웃(워크트리)마다 따로 있다. Gradle·npm 캐시와 디버그 서명 키(`~/.android`)는 이름이 고정된 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)이라 모든 체크아웃이 공유한다.
 - 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 망은 기본 `bridge`를 써서 워크트리가 늘어도 Docker 망이 쌓이지 않는다.
 - `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. 없는 태그면 다음 `run`이 자동으로 빌드한다(오프라인에서도 기존 이미지로 계속 작업할 수 있게 매번 빌드하지 않는다).
 - CI(`ci.yml`)는 같은 이미지를 러너에서 빌드해 위와 같은 명령을 돌린다.
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
 - 루트의 옛 셸 래퍼는 폐기되었다(새 명령을 안내하고 실패한다, M6에서 삭제).
+- 옛 Compose 볼륨(`*_node_modules`, `*_android-home`)이 필요 없으면 `docker volume ls --format '{{.Name}}'`로 이름을 확인한 뒤, 해당 볼륨을 쓰는 컨테이너를 내리고 `docker volume rm <확인한_볼륨_이름>`으로 개별 삭제한다. 새 공용 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)은 이 정리 대상이 아니다.
 
 ## 툴체인 (plan.md 1.8)
 

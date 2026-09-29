@@ -12,6 +12,10 @@
   "overrideCommand": true,
   "shutdownAction": "stopCompose",
   "forwardPorts": [5173, 17777],
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+  "mounts": ["source=p2p-gostop-claude-${devcontainerId},target=/home/dev/.claude,type=volume"],
   "postCreateCommand": "npm ci",
   "customizations": {
     "vscode": {

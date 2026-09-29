@@ -67,6 +67,6 @@ docker compose run --rm dev npm run build -w packages/web
 docker compose run --rm dev npm run e2e -w packages/web
 docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint
 ```
-- 그 밖: `docker compose run --rm --service-ports dev npm run dev -w packages/web`(Vite, 5173), `docker compose run --rm --service-ports dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸).
+- 그 밖: `docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web`(Vite, 5173), `docker compose run --rm -p 17777:17777 dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸).
 - `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다(없는 태그면 `run`이 자동으로 빌드한다).
 - 포맷은 편집할 때마다 돌리는 훅이 아니라 커밋 전 `docker compose run --rm dev npm run lint:fix`로 맞추고, `lint`(CI 포함)가 `oxfmt --check`·`prettier --check`로 검사한다.

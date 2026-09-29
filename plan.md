@@ -117,7 +117,7 @@ p2p-gostop/
 | QR | `uqr` 0.1.3 | |
 | 위생 | **knip 6.38.0**, 번들 ≤1.5MB·외부 URL 0건 검사 스크립트(의존성 0) | CI 게이트 |
 | 의존성 갱신 | Dependabot(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | |
-| 개발 환경 (2026-09-29) | 단일 개발 이미지 `docker/Dockerfile` + 루트 `compose.yaml` + `.devcontainer/`(2장). CI는 같은 이미지를 러너에서 빌드하고 Gradle 홈만 `actions/cache@v6`로 보존 | 자체 래퍼(옛 셸 래퍼) 대신 표준 도구. `actions/cache`는 컨테이너 안 Gradle에 setup-gradle을 쓸 수 없어 추가(첫 실행 Gradle 4분 8초) |
+| 개발 환경 (2026-09-29) | 단일 개발 이미지 `docker/Dockerfile` + 루트 `compose.yaml` + `.devcontainer/`(2장). CI는 같은 이미지를 러너에서 빌드하고 Gradle 홈만 `actions/cache@v6`로 보존 | 자체 셸 래퍼 대신 표준 도구. `actions/cache`는 컨테이너 안 Gradle에 setup-gradle을 쓸 수 없어 추가(첫 실행 Gradle 4분 8초) |
 | 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, 프로젝트 `.claude/`(서브에이전트 3종·스킬 3종·권한 규칙, 편집 훅 없음: 포맷은 `lint:fix`·CI `lint`로 강제, 근거 `docs/reviews/harness-audit.md`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 | Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
@@ -145,14 +145,15 @@ p2p-gostop/
 
 | 파일 | 역할 |
 |---|---|
-| `docker/Dockerfile` | 단일 개발 이미지 `p2p-gostop-dev`. 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`(Node 24.20.0, Chromium·WebKit) + Temurin JDK 21(`eclipse-temurin` 이미지에서 `COPY --from`) + Android SDK(cmdline-tools SHA-256 고정, `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`; 설치 후 sdkmanager 삭제). 사용자 `dev`(uid/gid 1000). 에뮬레이터 없음. 약 4.3GB(압축 1.2GB). `cimg/android`(11.9GB)와 `node:24-bookworm-slim`은 더 쓰지 않는다. |
+| `docker/Dockerfile` | 단일 개발 이미지 `p2p-gostop-dev`. 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`(Node 24.20.0, Chromium·WebKit) + Temurin JDK 21(`eclipse-temurin` 이미지에서 `COPY --from`) + Android SDK(cmdline-tools SHA-256 고정, `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`; 설치 후 sdkmanager 삭제). 2026-09-29 설치 개정은 platform-tools 37.0.1, android-36 revision 2, build-tools 36.0.0. 사용자 `dev`(uid/gid 1000). 에뮬레이터 없음. 약 4.3GB(압축 1.2GB). `cimg/android`(11.9GB)와 `node:24-bookworm-slim`은 더 쓰지 않는다. |
 | `compose.yaml`(저장소 루트) | 서비스 `dev` 하나. 루트에 두는 이유: Compose 기본 탐색 파일이라 `-f` 없이 저장소 어느 하위 폴더에서도 `docker compose run --rm dev …`가 된다. 저장소를 `/work`에 바인드 마운트(`node_modules` 포함, 볼륨·소유자 보정 없음), `user: 1000:1000`, `ipc: host`(Playwright), `init: true`, 기본 `bridge` 망. 이름 고정 볼륨 `p2p-gostop-gradle`·`p2p-gostop-npm`·`p2p-gostop-android`(디버그 서명 키)는 모든 체크아웃이 일부러 공유한다(동시 Gradle 빌드 2개로 공유 캐시 확인). |
-| `.devcontainer/devcontainer.json` | 같은 `dev` 서비스를 VS Code·Codespaces·devcontainer CLI가 쓴다(`workspaceFolder: /work`, `remoteUser: dev`, `updateRemoteUserUID`, `postCreateCommand: npm ci`). 안에서는 `npm`·`android/gradlew`를 그대로 실행한다. |
+| `.devcontainer/devcontainer.json` | 같은 `dev` 서비스를 VS Code·Codespaces·devcontainer CLI가 쓴다(`workspaceFolder: /work`, `remoteUser: dev`, `updateRemoteUserUID`, `postCreateCommand: npm ci`). Claude Code 공식 feature와 컨테이너별 `/home/dev/.claude` 볼륨을 추가한다. 안에서는 `npm`·`android/gradlew`를 그대로 실행한다. |
 | 루트 `package.json` | 옛 셸 래퍼에만 있던 태스크 중 남은 것은 `test:browser`(web 위임) 하나. Gradle은 감싸지 않고 `android/gradlew -p android <task>`를 그대로 쓴다. 포맷은 편집 훅 없이 `lint:fix`(PR #39 결정). |
 | `.claude/settings.json` | 권한 허용 규칙이 옛 셸 래퍼의 태스크 대신 위 `docker compose run --rm dev …` 명령을 가리킨다. |
 
 - 사용: `docker compose run --rm dev <명령>`(전체 목록은 AGENTS.md 5장). 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 프로젝트명 로직은 없다.
 - 이미지 갱신: `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다. 없는 태그면 `run`이 자동 빌드한다. 매번 빌드(`pull_policy: build`)는 쓰지 않는다: 실행마다 1~2초가 붙고, 베이스 이미지 메타데이터를 원격 조회해 오프라인(기내)에서 실패한다.
+- CI는 `docker/check-dev-image-tag.sh`로 Dockerfile 변경과 이미지 태그 갱신을 비교한다. `compose.yaml`에 기본 게시 포트는 두지 않고, 개발 서버를 열 때만 `run -p 5173:5173` 또는 `run -p 17777:17777`을 쓴다(Dev Container의 `forwardPorts`는 유지).
 - `npm ci` 측정(WSL2 ext4 바인드 마운트, 이 머신): 257개 패키지 캐시 없음 4초, 캐시 있음 3초. 명명 볼륨 대비 불리하지 않다.
 - 알려진 제약: 워크트리 안에서는 `.git`이 호스트 절대 경로의 공용 git 디렉터리를 가리키는데 컨테이너에 마운트되지 않아, 워크트리에서 만든 APK는 `versionName 0.0.0-dev`·`GIT_SHA unknown`이다(기존 옛 셸 래퍼와 같음, 메인 체크아웃과 CI는 정상). 웹 빌드 해시는 `.git`을 직접 읽어 워크트리에서도 나온다.
 - 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요해지면 이 이미지에 `emulator` 패키지를 더한 별도 태그를 만들고 `--device /dev/kvm`으로 쓴다. WebView 셸 스모크에만 사용.
