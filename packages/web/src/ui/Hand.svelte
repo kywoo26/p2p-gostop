@@ -8,7 +8,9 @@
   // 손가락을 떼기 전에 재생이 끝나 버튼이 풀릴 수 있다. 그 click은 건너뛰기용이었으므로 카드를 내지 않는다.
   import type { CardId } from '../lib/view-types.ts';
   import Card from './Card.svelte';
-  import { cardLabel, sortHand } from './cards.ts';
+  import { cardLabel } from './cards.ts';
+  import { handRows } from './hand-layout.ts';
+  import { getCard } from '@p2p-gostop/engine';
   import { HAND_CUES, type HandVisualGroup } from './hand-visual.ts';
 
   interface Props {
@@ -20,7 +22,8 @@
     matchable?: readonly CardId[];
     /** 시각 슬롯. 확정 획득 판정은 공개 보조 API가 전달하며 UI가 숨은 패를 읽지 않는다. */
     visualGroups?: readonly HandVisualGroup[];
-    /** 후속 사건 PR은 같은 group ID의 3개 data-slot을 이동 기준점으로 사용한다. */
+    cuesEnabled?: boolean;
+    /** 선택한 행동 묶음 ID. 2~4장 구성은 카드가 아닌 공개 계산 결과가 정한다. */
     selectedGroup?: string | null;
     /** 권위 뷰가 바뀌면 진행 중인 포인터를 무효화한다. */
     revision?: object;
@@ -39,6 +42,7 @@
     playable,
     matchable = [],
     visualGroups = [],
+    cuesEnabled = true,
     selectedGroup = null,
     revision,
     onplay,
@@ -47,28 +51,8 @@
     oninvalidate,
   }: Props = $props();
 
-  const ONE_ROW_MAX = 5;
   const LONG_PRESS_MS = 400;
-  const sorted = $derived(sortHand(cards));
-  const rows = $derived.by(() => {
-    if (sorted.length <= ONE_ROW_MAX) return [sorted];
-    const middle = Math.ceil(sorted.length / 2);
-    // compact는 최대 6열(360px에서 328px). 월 순서를 보존하며 행동 묶음 경계를 우선한다.
-    const split = compact
-      ? ([middle, middle + 1, middle - 1].find(
-          (at) =>
-            at <= 6 &&
-            sorted.length - at <= 6 &&
-            !visualGroups.some(
-              (group) =>
-                group.kind !== 'secured' &&
-                group.cards.includes(sorted[at - 1]!) &&
-                group.cards.includes(sorted[at]!),
-            ),
-        ) ?? middle)
-      : middle;
-    return [sorted.slice(0, split), sorted.slice(split)];
-  });
+  const rows = $derived(handRows(cards));
   const myTurn = $derived(playable.length > 0);
 
   /** 누르기 시작한 카드·시각, 그때 낼 수 있었는지 (반응형일 필요 없음) */
@@ -81,6 +65,11 @@
   } | null = null;
   let suppressClick = false;
   let previousRevision: object | undefined;
+  let handRoot: HTMLElement;
+
+  function moving(): boolean {
+    return handRoot.querySelector('.card[style*="will-change"]') !== null;
+  }
 
   /** 부채꼴: 가운데에서 멀수록 기울이고 조금 내린다 */
   function fan(index: number, count: number): string {
@@ -115,6 +104,10 @@
    */
   function press(event: PointerEvent) {
     suppressClick = false;
+    if (moving()) {
+      pressed = null;
+      return;
+    }
     const slot =
       event.target instanceof Element ? event.target.closest<HTMLElement>('[data-slot]') : null;
     const id = slot === null ? null : Number(slot.dataset['slot']);
@@ -142,7 +135,7 @@
     pressed = null;
     suppressClick = true;
     release();
-    if (current.armed && playable.includes(id) && bombCards.includes(id)) {
+    if (current.armed && playable.includes(id) && bombCards.includes(id) && !moving()) {
       onplay?.(id, current.at, true);
     }
   }
@@ -161,6 +154,7 @@
     const press = pressed;
     pressed = null;
     onpreview?.(null);
+    if (moving()) return;
     // 취소된 포인터의 합성 click만 막는다. 뒤따르는 click 없이 키보드가 눌리면 첫 입력부터 수락한다.
     if (suppressClick && event.detail !== 0) {
       suppressClick = false;
@@ -180,11 +174,12 @@
   function keydown(id: CardId, event: KeyboardEvent) {
     if (!event.shiftKey || event.key !== 'Enter' || !bombCards.includes(id)) return;
     event.preventDefault();
-    if (playable.includes(id)) onplay?.(id, performance.now(), true);
+    if (playable.includes(id) && !moving()) onplay?.(id, performance.now(), true);
   }
 </script>
 
 <div
+  bind:this={handRoot}
   class={['hand', { waiting: !myTurn, compact }]}
   role="group"
   aria-label="내 손패"
@@ -194,34 +189,48 @@
     <div class="row">
       {#each row as id, i (id)}
         {@const canPlay = playable.includes(id)}
-        {@const canMatch = canPlay && matchable.includes(id)}
-        {@const group = visualGroups.find(
-          (group) => group.kind !== 'secured' && group.cards.includes(id),
-        )}
-        {@const secured = visualGroups.some(
-          (group) => group.kind === 'secured' && group.cards.includes(id),
-        )}
-        {@const cue = secured ? 'secured' : canMatch ? 'matchable' : canPlay ? 'playable' : null}
-        {@const fragment = group ? row.filter((card) => group.cards.includes(card)) : []}
-        {@const groupStart = group && fragment[0] === id}
-        {@const firstFragment = group && sorted.find((card) => group.cards.includes(card)) === id}
+        {@const canMatch = cuesEnabled && canPlay && matchable.includes(id)}
+        {@const group = cuesEnabled
+          ? visualGroups.find((group) => group.kind !== 'secured' && group.cards.includes(id))
+          : undefined}
+        {@const secured =
+          cuesEnabled &&
+          visualGroups.some((group) => group.kind === 'secured' && group.cards.includes(id))}
+        {@const month = getCard(id).month}
+        {@const monthGroup =
+          cuesEnabled &&
+          month !== null &&
+          cards.filter((card) => getCard(card).month === month).length > 1}
         <button
           type="button"
           class={[
             'slot',
             {
               playable: canPlay,
-              matchable: canMatch,
               'group-selected': group && group.id === selectedGroup,
             },
           ]}
           style:transform={compact ? 'none' : fan(i, row.length)}
-          aria-label={`${cardLabel(id)}${secured ? ' (확정 획득 짝)' : canMatch ? ' (먹을 수 있음)' : ''}${group ? ` (${HAND_CUES[group.kind].label})` : ''}${bombCards.includes(id) ? ' 폭탄 내기, 한 장만 내기: 길게 누르거나 Shift+Enter' : ' 내기'}`}
+          aria-label={[
+            cardLabel(id),
+            secured ? '확정 획득 짝' : canMatch ? '먹을 수 있음' : null,
+            group ? HAND_CUES[group.kind].label : null,
+            bombCards.includes(id) ? '폭탄 내기, 한 장만 내기: 길게 누르거나 Shift+Enter' : null,
+            '내기',
+          ]
+            .filter(Boolean)
+            .join(', ')}
           aria-keyshortcuts={bombCards.includes(id) ? 'Shift+Enter' : undefined}
           disabled={!canPlay}
           data-slot={id}
-          data-hand-group={group?.id}
-          data-hand-cue={cue}
+          data-hand-group={monthGroup ? month : undefined}
+          data-hand-cue={cuesEnabled
+            ? secured
+              ? 'secured'
+              : canMatch
+                ? 'matchable'
+                : undefined
+            : undefined}
           data-hand-action={group?.kind}
           onpointerup={(e) => lift(id, e)}
           onpointercancel={abandon}
@@ -244,32 +253,13 @@
               markAt={rows.length > 1 && r === 0 ? 'top' : 'bottom'}
             />
           </span>
-          {#if compact}
-            <span class="hand-label" data-cue={cue} aria-hidden="true">
-              {#if !group && (cue === 'matchable' || cue === 'secured')}
-                <span class="match-mark"></span><span class="hand-cue">{HAND_CUES[cue].short}</span>
-              {/if}
-              {#if groupStart}
-                <span
-                  class="group-bracket"
-                  data-action={group.kind}
-                  style:width={`calc(${fragment.length} * var(--card-w-l) + ${(fragment.length - 1) * 8}px)`}
-                >
-                  {#if firstFragment}<span class="group-word">
-                      {#if cue === 'secured' || cue === 'matchable'}<span class="match-mark"
-                        ></span>{/if}
-                      {HAND_CUES[group.kind].short}
-                    </span>{/if}
-                </span>
-              {/if}
-            </span>
-          {/if}
         </button>
       {/each}
     </div>
   {/each}
 </div>
 
+<!-- svelte-ignore css_unused_selector (기존 카드 상태 CSS는 디자인 리드가 정리) -->
 <style>
   .hand {
     display: grid;
