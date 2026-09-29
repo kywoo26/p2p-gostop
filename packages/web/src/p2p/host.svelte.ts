@@ -11,13 +11,9 @@
 //   진행 중인 판까지 되살린다(MN-05, docs/protocol.md 7장).
 import {
   legalActions,
-  reduce,
-  redactEvent,
   type Action,
   type EngineEvent,
   type GameState,
-  type PresetId,
-  type RuleOptions,
   type Seat,
 } from '@p2p-gostop/engine';
 import {
@@ -26,23 +22,26 @@ import {
   summarizeLedger,
   type BoardView,
   type HostMessage,
-  type HostSessionState,
   type Message,
   type RelayNotice,
   type SessionStage,
   type Transport,
 } from '@p2p-gostop/protocol';
 import { getBridge } from '../bridge/bridge.ts';
-import { gukjinPlacements, pushOffer, toRecordRow, withSeatExtras } from '../game/adapter.ts';
+import { pushOffer, toRecordRow } from '../game/adapter.ts';
 import type { GameController, GameStats, PushDecision } from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
-import type { MoneyUnit, RecordRow } from '../lib/view-types.ts';
-import { readJson, removeKey, writeJson } from '../storage/local.ts';
-import { INSTANT_LABEL } from '../ui/settle-labels.ts';
+import type { RecordRow } from '../lib/view-types.ts';
 import { emptyBoard, random32, randomHex, vibrateFor } from './common.ts';
 import { openLink, type LinkState, type RelayPeer } from './link.ts';
 import type { RelayAddress } from './role.ts';
+import { HostSaveStore, type HostConfig, type HostSave } from './host-save.ts';
+import { hostBoard, hostEvents, hostSummary, type PendingAction } from './host-view.ts';
+import { SessionPort } from './session-port.ts';
+
+// 호출자의 공개 import 경로를 유지한다.
+export { loadHostSave, clearHostSave, type HostConfig, type HostSave } from './host-save.ts';
 
 const ME: Seat = 0;
 const GUEST: Seat = 1;
@@ -50,84 +49,8 @@ const GUEST: Seat = 1;
 const WAIT_PROMPT_MS = 3 * 60_000;
 /** NP-05 시계 주기 (60초 판정의 해상도) */
 const CLOCK_MS = 5_000;
-const HOST_SAVE_KEY = 'gostop.host.v2';
-
-export interface HostConfig {
-  readonly preset: PresetId;
-  readonly rules: RuleOptions;
-  readonly perPoint: number;
-  readonly startBalance: number;
-  readonly hostName: string;
-  readonly unit?: MoneyUnit;
-}
-
-/** localStorage 저장 (MN-05) */
-export interface HostSave {
-  readonly version: 2;
-  readonly config: HostConfig;
-  readonly state: HostSessionState;
-  readonly records: readonly RecordRow[];
-}
-
-export function loadHostSave(): HostSave | null {
-  const raw = readJson(HOST_SAVE_KEY);
-  if (typeof raw !== 'object' || raw === null) return null;
-  const o = raw as Partial<HostSave>;
-  if (
-    o.version !== 2 ||
-    typeof o.config?.rules !== 'object' ||
-    typeof o.state !== 'object' ||
-    o.state === null ||
-    o.state.v !== 1 ||
-    !Array.isArray(o.records)
-  )
-    return null;
-  return o as HostSave;
-}
-
-export function clearHostSave(): void {
-  removeKey(HOST_SAVE_KEY);
-}
 
 export type HostPhase = 'lobby' | 'playing' | 'ended';
-
-interface PendingAction {
-  readonly before: GameState;
-  readonly action: Action;
-  readonly tapAt: number | null;
-  readonly mine: boolean;
-}
-
-/** 한 HostSession이 쓰는 전송 창구. 세션을 다시 만들면 새 창구로 바꾸고 옛 처리기는 버린다 */
-class SessionPort implements Transport {
-  readonly messages = new Set<(raw: string) => void>();
-  readonly closes = new Set<() => void>();
-  readonly relays = new Set<(notice: RelayNotice) => void>();
-  private readonly out: (message: Message) => void;
-  private readonly again: () => void;
-  constructor(out: (message: Message) => void, reconnect: () => void) {
-    this.out = out;
-    this.again = reconnect;
-  }
-  send(message: Message): void {
-    this.out(message);
-  }
-  onMessage(handler: (raw: string) => void): () => void {
-    this.messages.add(handler);
-    return () => this.messages.delete(handler);
-  }
-  onClose(handler: () => void): () => void {
-    this.closes.add(handler);
-    return () => this.closes.delete(handler);
-  }
-  onRelay(handler: (notice: RelayNotice) => void): () => void {
-    this.relays.add(handler);
-    return () => this.relays.delete(handler);
-  }
-  reconnect(): void {
-    this.again();
-  }
-}
 
 export interface HostOptions {
   readonly config: HostConfig;
@@ -175,12 +98,10 @@ export class HostGame implements GameController {
   private readonly ws: { dispose(): void; reconnect(force?: boolean): void } | null;
   private readonly resume: HostSave | null;
   private readonly now: () => number;
-  private readonly persist: boolean;
+  private readonly saves: HostSaveStore;
   private lastHello: string | null = null;
   private pending: PendingAction | null = null;
   private settledRound = 0;
-  private savedRev = -1;
-  private savedSeq = -1;
   private clock: ReturnType<typeof setInterval> | null = null;
   private disposed = false;
 
@@ -188,7 +109,7 @@ export class HostGame implements GameController {
     this.config = $state.raw(options.resume?.config ?? options.config);
     this.resume = options.resume ?? null;
     this.now = options.now ?? (() => Date.now());
-    this.persist = options.persist ?? true;
+    this.saves = new HostSaveStore(options.persist ?? true);
     this.token = this.resume?.state.token ?? randomHex();
     this.balances = this.resume?.state.ledger.balances ?? [
       this.config.startBalance,
@@ -349,17 +270,8 @@ export class HostGame implements GameController {
     };
   }
 
-  /** 좌석 0 화면 + 표시용 좌석 값(국진 위치·폭탄 횟수) */
   private board(): BoardView | null {
-    const session = this.session;
-    const view = session?.hostView() ?? null;
-    const state = session?.state ?? null;
-    if (view === null || state === null) return null;
-    const stats = (seat: Seat) => ({
-      gukjinAsPi: state.seats[seat].score.gukjinAsPi,
-      bombs: state.seats[seat].bombs,
-    });
-    return withSeatExtras(view, [stats(0), stats(1)]);
+    return hostBoard(this.session);
   }
 
   // ---- 로비 ----
@@ -490,24 +402,16 @@ export class HostGame implements GameController {
 
   /** 좌석 0이 볼 이벤트 묶음: 같은 액션을 reduce로 다시 계산한다(순수 함수라 결과가 같다). 분배는 보낸 목록 그대로 */
   private onEventsSent(sent: readonly EngineEvent[], to: number): void {
-    let events: readonly EngineEvent[] = sent;
     const pending = this.pending;
-    if (pending !== null) {
-      const result = reduce(pending.before, pending.action);
-      if (result.ok) events = result.events;
-    }
+    const events = hostEvents(sent, pending);
     const board = this.board();
     if (board === null) return;
     this.seq = to;
     this.balances = [board.seats[0].balance, board.seats[1].balance];
-    this.playback.enqueue(
-      events.map((e) => redactEvent(e, ME)),
-      board,
-      {
-        action: pending?.mine ? pending.action : null,
-        tapAt: pending?.mine ? pending.tapAt : null,
-      },
-    );
+    this.playback.enqueue(events, board, {
+      action: pending?.mine ? pending.action : null,
+      tapAt: pending?.mine ? pending.tapAt : null,
+    });
   }
 
   private enqueueBoard(): void {
@@ -515,34 +419,8 @@ export class HostGame implements GameController {
     if (board !== null) this.playback.enqueue([], board);
   }
 
-  /** 판이 끝났다(settled·bankrupt): 정산 화면을 한 번 띄우고 기록한다 */
   private settlementSummary(): RoundSummary | null {
-    const session = this.session;
-    const view = session?.settlementView ?? null;
-    const settlement = session?.settlement ?? null;
-    const state = session?.state ?? null;
-    const board = this.board();
-    if (
-      session === null ||
-      view === null ||
-      settlement === null ||
-      state === null ||
-      board === null
-    )
-      return null;
-    const names = this.names;
-    return {
-      view: {
-        ...view,
-        gukjin: gukjinPlacements(settlement, [state.seats[0].captured, state.seats[1].captured]),
-      },
-      instant: settlement.instantPayouts.map((p) => ({
-        label: INSTANT_LABEL[p.kind] ?? p.kind,
-        name: names[p.to],
-        points: p.points,
-      })),
-      nextCarry: settlement.winner === null ? settlement.nextCarry : null,
-    };
+    return hostSummary(this.session);
   }
 
   private onSettled(): void {
@@ -715,21 +593,7 @@ export class HostGame implements GameController {
   }
 
   private save(): void {
-    const session = this.session;
-    if (!this.persist || session === null) return;
-    const rev = session.status.rev;
-    if (this.savedRev === rev && this.savedSeq === session.seq) return;
-    const save: HostSave = {
-      version: 2,
-      config: this.config,
-      state: session.toJSON(),
-      records: this.records,
-    };
-    if (!writeJson(HOST_SAVE_KEY, save)) log.warn('호스트 세션 저장 실패');
-    else {
-      this.savedRev = rev;
-      this.savedSeq = session.seq;
-    }
+    this.saves.write(this.session, this.config, this.records);
   }
 
   dispose(): void {
