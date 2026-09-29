@@ -13,40 +13,35 @@
 
 | 대상 | 확인 결과와 계획에 미치는 영향 |
 |---|---|
-| 이 작업 브랜치 | `plan/galaxy-solo-completeness`, 초기 코드 기준 `ebdd599`. 조사 후 최신 main `f697ff4` 위로 rebase했다. 직접 작성한 변경은 이 문서뿐이다. |
-| 최신 main | 최종 기준 `f697ff4`. [PR #54](https://github.com/kywoo26/p2p-gostop/pull/54)는 2026-09-29 병합됨. 밀기·뷰 필드·판 무효 계약을 **후속 구현의 기준**으로 삼는다. |
+| 이 작업 브랜치 | `plan/galaxy-solo-completeness`. 최초 계획 기준 `f697ff4`, PR #76 리뷰 반영 시 main `9651364`를 merge했다. 직접 작성한 변경은 이 문서뿐이다. |
+| 최신 main | `9651364`. [PR #54](https://github.com/kywoo26/p2p-gostop/pull/54)의 밀기·뷰 필드·판 무효 계약과 #59 응답 유실 복구를 후속 구현의 기준으로 삼는다. |
 | 디자인 | `git fetch origin design/ui-spec` 후 [PR #55](https://github.com/kywoo26/p2p-gostop/pull/55)의 `docs/design/ui-spec.md` 전체, `wireframes.html`, PNG 4종(360×780, 390×734, 430×822, 선택창)을 확인. 조사 중 02:40 UTC에 병합됨(디자인 내용 SHA `f19676d`). UX-01~25는 구현 목표이며 §12의 spec 개정은 아직 제안이다. |
 | 디자인 우선순위 충돌 | 디자인 문서의 리마스터 표현보다 최신 plan §3-2 D1이 우선: **Commons 기존 48장 유지**, 표식·테두리·선명도 개선, 보너스 3장·뒷면만 새 디자인. 기각된 A/B를 되살리지 않는다. |
 | 카드 작업 | 로컬 `design/cards-polish` 브랜치 존재(조회한 커밋 `02ac933`), 원격 동명 ref는 없음. 진행 중 작업으로 취급하며 다른 워크트리의 미커밋 파일을 가져오지 않는다. 준비된 PR·리뷰 후 통합한다. |
 | AI | [PR #56](https://github.com/kywoo26/p2p-gostop/pull/56) 열림: unchecked rollout, AI 밀기, 정통/아케이드 머니 산정. **AC-03 재도전 없음**, 각 프리셋 3,000판이므로 MN-03 미완. |
-| 연결 | [PR #59](https://github.com/kywoo26/p2p-gostop/pull/59) 열림(#40). 게스트 시계 연결 #60이 함께 있어야 실제 화면의 액션 무응답 복구가 작동한다. |
+| 연결 | [PR #59](https://github.com/kywoo26/p2p-gostop/pull/59)는 `9651364`로 병합됨. `fix/guest-clock`(.1-C)이 #60 시계 연결과 #78을 진행 중이다. |
 | 개발 환경 | [PR #38](https://github.com/kywoo26/p2p-gostop/pull/38) 열림. 현재 명령은 `./dev.sh`; 병합 뒤 해당 PR의 명령·AGENTS·허용 규칙으로 함께 갱신한다. B1은 조사 중 [PR #73](https://github.com/kywoo26/p2p-gostop/pull/73)으로 제출됨. #33과 CI 파일 소유권을 조율한다. |
 
-읽은 근거: spec 전체, intend 전체, plan 지정 절, [M0](reviews/M0-review.md)·[M1](reviews/M1-review.md)·[M3](reviews/M3-review.md)·[M4 protocol](reviews/M4-protocol-review.md) 리뷰, [MVP 감사](reviews/mvp-rush-audit.md), [harness 감사](reviews/harness-audit.md), [UI 구조](ui.md), [M4 실기기 절차](device-test/M4.md), [AI 조정](ai-tuning.md), `packages/web/src/{routes,ui,game,p2p,settings,bridge,storage}`, `android/app`, `packages/ai`, 기존 브라우저/E2E 테스트. GitHub open issue 목록은 `gh issue list --state open --limit 100`으로 조회했다. 아래 상태는 이 조회 시점 기준이다.
+읽은 근거: spec 전체, intend 전체, plan 지정 절, [M0](reviews/M0-review.md)·[M1](reviews/M1-review.md)·[M3](reviews/M3-review.md)·[M4 protocol](reviews/M4-protocol-review.md) 리뷰, [MVP 감사](reviews/mvp-rush-audit.md), [harness 감사](reviews/harness-audit.md), [UI 구조](ui.md), [M4 실기기 절차](device-test/M4.md), [AI 조정](ai-tuning.md), `packages/web/src/{routes,ui,game,p2p,settings,bridge,storage}`, `android/app`, `packages/ai`, 기존 브라우저/E2E 테스트. GitHub open issue 목록은 `gh issue list --state open --limit 100`으로 조회했다. 최초 조사 상태에 PR #76 리뷰의 진행 중 작업을 반영했다.
 
 ### 1.2 이미 있는 기능을 다시 만들지 않기
 
-- #6은 **닫힘**. Playback이 토스트를 지운다. #48은 선택 중 큐·겹침·층위라는 별도 미완이다. #4/#5/#7/#8/#9/#11/#20의 기존 수정·테스트를 보존한다.
-- #10은 **열림이나 부분 구현됨**. `Game.svelte`에 메뉴·종료 확인이 있고 `GameActivity`에 back 확인이 있다. 남은 일은 시스템 Back→웹 메뉴/모달 닫기 통일, 초점·라우팅·저장 회귀 검증이다.
-- 효과음은 `game/sound.ts`의 자체 Web Audio 합성이며, Android 진동은 `bridge.vibrate`와 `p2p/common.ts`에 있다. 누락은 설정 노출·사건별 강도·중복 억제·실물 검증이다. 소리까지 Kotlin으로 옮기지 않는다.
-- 서버 전용 시작/LAN 차단, 루프백 HostBridge, 로그 공유, 화면 유지, `onRenderProcessGone` 재생성도 있다. 새 셸을 만드는 대신 실패·취소·복구 경로를 완성한다.
-- #54로 #29/#32/#43은 해소됐다. #30의 “첫 Settled 사용”은 웹에서 이미 `findLast`로 수정됐으나 **선택 전에 원장 기록**, `nextPushes` 미전달은 남았다. #44의 “abortRound API 없음”도 오래된 설명이다.
-- #18/#19는 열려 있으나 p2p-mini 구현은 은퇴했다. 옛 코드 수정 대신 #58의 누락 단언과 북마크 호환을 확인해 닫는다. #33은 Android CI의 웹 번들 누락으로 여전히 유효하다.
+완료/부분 구현과 남은 범위는 [격차표](#gaps)의 G03/G06/G10/G17/G21~23/G27~28을 기준으로 한다. #4/#5/#7/#8/#9/#11/#20의 수정·테스트를 보존한다. Web Audio 합성(`game/sound.ts`)·`bridge.vibrate`와 기존 네이티브 셸을 확장한다. #54로 #29/#32/#43은 해소됐으며, #30의 첫 Settled 설명은 `findLast` 수정 전 내용이다. 은퇴한 p2p-mini는 복원하지 않는다.
 
-## 2. 격차 전수 목록
+## 2. 격차 전수 목록 <a id="gaps"></a>
 
 크기: S ≤1.5시간, M 약 1.5~4시간, L >4시간(분할 필요). 구현·관련 테스트의 추정이며 리뷰/CI 대기는 별도다. 위험 높음=머니·판 보존·오조작, 중간=상태/플랫폼 회귀, 낮음=표현·문서. `부분`은 기능이 있으나 요구/검증이 부족함, `검증`은 재현된 결함이라고 단정하지 않은 공백이다. 릴리스 칸의 `후속`은 v0.2.4+ 명시 이월이며 이슈를 열어 둔다.
 
 | ID / 상태 | 출처(이슈·리뷰·요구사항) | 사용자 영향 / 남은 격차 | 크기 / 위험 | 의존 / 배치 |
 |---|---|---|---|---|
-| G01 미완 | #46, M3 L-11, UX-04/08/09, FR-14 | 선택창이 내 점수·획득패를 가림. 선택 전용 행 필요 | M / 높음 | #55 규범 → .1 A |
+| G01 미완 | #46, M3 L-11, UX-04/08/09, FR-14 | 선택창이 내 점수·획득패를 가림. 선택 전용 행 필요 | M / 높음 | #83 → HUD 구현 병합 → .1 A |
 | G02 검증 | #47, M3 L-3/4, UX-01~06/25 | 10손패·12월 그룹·뻑·짧은 높이에서 잘림/스크롤/안전 영역 미보장 | M / 높음 | G01, 동일 레이아웃 PR .1 A |
 | G03 부분 | #48, #6(닫힘), UX-07/08/19 | 배너/토스트/이동 카드가 같은 층위에 갇히거나 선택을 가림. 긴 문구·동시 큐 | M / 중간 | G01 → .1 A; 효과 연결 .3 A |
 | G04 부분 | #51, NF-08, UX-23/24 | 노출된 터치 48px·8px 간격, 선택 초점/복귀·중복 낭독·대비 미검증 | M / 높음 | G01 → .1 A, 200% 확대 패널 .3/후속 |
 | G05 부분 | #52, #8(닫힘), M3 L-2, UX-10/16 | 판 전체 pointerdown 스킵. 빈 바닥/전용 버튼 pointerup으로 좁히고 고정 대기도 종료 | S / 높음 | G01, #8 회귀 보존 → .1 A |
 | G06 부분 | #10, M3 I-5, spec §2.5·§6 | 메뉴는 있으나 Android back이 웹 메뉴 상태를 모름. 설정/홈 왕복·종료 확인 일관성 | M / 높음 | 웹↔브리지 계약 → .1 B |
 | G07 부분 | #50, M3 L-5/L-12, UX-20/21 | 연결/교체/호스트 부재/파산/종료 복구 행동·초점, 솔로 종료 후 죽은 다음 판 | M / 중간 | G06, G08 → .1 B/C |
-| G08 미완 | #40/#60, PR #59, NP-03·NF-05 | 소켓은 살아도 액션 응답이 없으면 게스트가 기다리기만 함 | S / 높음 | #59 병합 → .1 C, 1초 로컬 시계·해제·복귀 |
+| G08 진행 중 | #40/#60/#78, PR #59, NP-03·NF-05 | 소켓은 살아도 액션 응답이 없으면 게스트가 기다리기만 함 | S / 높음 | #59 병합됨 → .1 C 시계·protocol 보완 |
 | G09 미완 | #44, FR-06, spec §2.4 | 로비 준비 토글/미준비 시작 경고, 3분 부재의 판 무효 UI 없음 | M / 중간 | abort는 #54로 가능 → .2 C; 로비 ready 계약은 .3/후속 |
 | G10 미완 | #30/#31, FR-16/18/20, AI-02 | 아케이드 밀기/받기·포기액·현재 배수·다음 판 연결 없음 | L / 높음 | #54 + #56 → .2 A; §4.2 계약 |
 | G11 미완 | #62(신규), FR-15/21/24, M3 L-1 | 개별 규칙·국진 묻기를 설정할 수 없음. 프리셋→사용자 지정·전파 필요 | M / 높음 | G10 활성화 후 .2 B, 24개 지도 §3 |
@@ -54,7 +49,7 @@
 | G13 미완 | #63(신규), #44, FR-19, M3 L-10 | 기록은 솔로만 연결, 배수 없음. 재충전 후 시작+순액 표기가 실제 잔액과 다름 | M / 높음 | G10, 원장 → .2 C |
 | G14 부분 | #63, M3 L-12, FR-18·MN-02 | 즉시 정산 실지급/상한·파산 좌석 불명확. 솔로 recharge 원장 항목 누락 | M / 높음 | G13에서 함께 처리; 즉시 파산 중단 규칙은 임의 추가 금지 |
 | G15 미완 | #64(신규), M3 L-6, MN-05 | 새 시작이 진행 판·한 슬롯 기록을 확인 없이 덮어씀 | S / 높음 | .1 B 확인; 기록 보존 정책 .2 C |
-| G16 부분 | #64, M3 §6, NF-05·MN-05 | 저장 실패는 로그뿐, 손상 저장 얕은 검사. 이어하기 실패가 사용자에게 불분명 | M / 높음 | .3 C 기본 안내; 전체 스키마 마이그레이션 후속 |
+| G16 부분 | #64, M3 §6, NF-05·MN-05 | 저장 실패는 로그뿐, 손상 저장 얕은 검사. 이어하기 실패가 사용자에게 불분명 | M / 높음 | .1 B 파싱 → .3 C 웹 안내([인계](#ownership)); 전체 마이그레이션 후속 |
 | G17 부분 | #49, M3 L-14, FR-23·spec §6.5 | 소리/진동 기반은 있음. 진동 끄기 UI·강도·사건 합성/중복 재생 억제 없음 | M / 중간 | G03 + 설정 소유권 인계 → .3 A |
 | G18 부분 | #65(신규), intend §4.3-1, AI-03/05, M3 L-7 | 난이도 설명은 있으나 기본 normal(의도는 상용급), 1500ms 저장값, 최대 약 6초 watchdog/300ms 인라인 정지 | M / 높음 | .3 B, 기본값 변경은 기존 선택 보존 |
 | G19 미달 | #66(신규), AI-04·AC-03, ai-tuning §5/6 | 상용급 보통 대비 61.4%/65%, 쉬움 대비 79.1%/80%. 상용급 충족 주장 불가 | L / 중간 | #56 → .3 재측정·한 번 후보 비교, 성공까지 후속 |
@@ -77,16 +72,16 @@
 
 ### 2.1 리뷰 경미 항목의 누락 방지
 
-| M3 항목 | 현재 분류와 추적 |
+| M3 항목 | [격차표](#gaps)의 추적 ID / 기존 회귀 |
 |---|---|
-| L-1 / L-2 | 국진 UI G11/#62 / 고정 대기 스킵 G05/#52·AI 대기 G18/#65 |
-| L-3 / L-4 | 현재 손패 줄 정책을 보존하고 실노출 사각형으로 재검증 G02/G04(#47/#51). 옛 “6장 고정 한 줄”을 새 결함으로 등록하지 않음 |
-| L-5 / L-6 / L-7 | 종료 화면 G07/#50 / 덮어쓰기 G15/#64 / CPU 대체 수 G18/#65 |
-| L-8 / L-9 | L-8은 S-2로 승격 후 #4에서 수정 / 솔로 timing 단언은 생김, P2P·기기 엄격 예산 G26/G27(#58/#70) |
-| L-10 / L-11 / L-12 | 기록 G13/#63 / 선택 가림 G01/#46 / 실제 지급·파산 좌석 G14/#63 |
-| L-13 / L-14 / L-15 | 현행 비활성 opacity 0.7 유지(#51) / 진동 G17·확정 지연 G32 / 점수·피 같은 시점은 기존 `Board.property.test.ts`를 유지하고 선택 중에도 G01 회귀로 확인 |
+| L-1 / L-2 | G11 / G05·G18 |
+| L-3 / L-4 | G02/G04. 현행 손패 줄 정책 유지, 옛 “6장 고정 한 줄” 재등록 금지 |
+| L-5 / L-6 / L-7 | G07 / G15 / G18 |
+| L-8 / L-9 | S-2 승격 뒤 #4 수정 / 기존 솔로 timing 유지 + G26/G27 |
+| L-10 / L-11 / L-12 | G13 / G01 / G14 |
+| L-13 / L-14 / L-15 | opacity 0.7 유지(G04) / G17·G32 / `Board.property.test.ts` + G01 |
 
-MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58의 종료 증거를 모으며 옛 최소 페이지를 복원하지 않는다. A-2(loopback/Origin), A-3(구성 변경), A-5(알림), A-13(설명)은 #68의 후속 점검 범위, A-4는 #69, A-14는 #66/#67, A-15는 #58/#70, A-16/17은 §7과 M4 문서 갱신이다. A-18의 CI 성공 릴리스 게이트는 유지하고 #33을 추가로 막는다. harness 감사는 반복 포맷 훅을 되살리지 않고, 격리된 작업 브랜치·명시적 파일 소유·리뷰 판정을 따른다.
+MVP 감사 A-1/A-6~12는 통합 후 G27로 재검증; A-2/3/5/13→G21/22, A-4→G23, A-14→G19/20, A-15→G26/27, A-16/17→G34, A-18→G28·[출시 게이트](#verification). harness 후속은 G30과 [파일 인계](#ownership)를 따른다.
 
 ## 3. FR-21: 24개 설정을 정확히 다루는 계약
 
@@ -125,7 +120,7 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 
 **FR-21 전체 완료는 선언하지 않는다.** 이번 목표는 구현된 규칙의 실제 사용 가능 UI와 24개 항목의 누락 없는 상태 표시다. 자동치기·미션·가위바위보 구현 또는 정식 범위 개정까지 #62를 열어 둔다.
 
-## 4. 우선순위 릴리스와 PR 작업 분해
+## 4. 우선순위 릴리스와 PR 작업 분해 <a id="releases"></a>
 
 한 릴리스는 **합산 구현 에이전트 작업 약 6~8시간**을 목표로 한다(동시 작업으로 사람시간을 숨기지 않음). 기존 #54와 공용 UI/테스트 기반을 재사용한 추정이다. 각 표의 시간에는 해당 단위 테스트 작성이 포함된다. 외부 PR 완료, Astra 리뷰, CI 다운로드, 사용자 기기 회차는 별도 대기다. 4시간 이상 걸릴 것으로 드러난 단일 작업은 착수 당일 재분할한다.
 
@@ -139,10 +134,10 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 
 | PR | 작업 / 추정 | Sol 파일 소유권(경로는 web/src 기준, 예외는 표기) | 선행 / Astra 중점 |
 |---|---|---|---|
-| .1-A | 6행·선택 예약·노출 타깃·스킵·알림 층위, #46~48/#51/#52 / 3h | `ui/Board.svelte`, `PromptPanel`, `Hand`, `Floor`, `SeatBar`, 선택 컴포넌트, `styles/tokens.css`의 레이아웃/층위만, `ui/Board*.test.ts`, 전용 `e2e/board-layout.spec.ts`(신규) | #55 목표 합의. 12그룹/10손패/모든 pending; 실제 페인트 순서·초점·엔진 숫자 |
-| .1-B | Back→메뉴/닫기, 새 게임 확인·종료 상태 / 1.5h | `routes/Game.svelte`, `SoloSetup.svelte`, `App.svelte`, `bridge/bridge.ts`, Android `GameActivity.kt`의 Back 부분, 신규 메뉴 테스트 | A의 레이아웃 뒤. #10/#50/#64, 홈 왕복 시 저장/AI 결과 보존 |
-| .1-C | #60 시계/응답 유실·교체·호스트 부재 상태 / 1h | `p2p/guest.svelte.ts`, `p2p/link.ts`, `routes/GuestApp.svelte`, `p2p/wiring.test.ts`, 전용 `e2e/reconnect.spec.ts`(신규) | #59 리뷰·병합 선행. 자동 hello, dispose 타이머 해제, 4001 재시도 폭주 없음 |
-| .1-D | #33 실제 웹 번들 APK CI, 통합 검증·절차 정정 / 1h + 예비 1h | `.github/workflows/ci.yml`(B1에 먼저 소유 확인), `e2e/gallery.spec.ts`·기준샷, `docs/ui.md`, `docs/device-test/M4.md` | A/B/C 뒤. 아티팩트 용량 실패에도 번들 누락을 성공 처리하지 않음 |
+| .1-A | 선택 예약·노출 타깃·스킵·알림, #46~48/#51/#52 / 3h | `ui/Board.svelte`, `PromptPanel`, `Hand`, `Floor`, `SeatBar`, 선택 컴포넌트, 레이아웃 CSS, `ui/Board*.test.ts`, `e2e/board-layout.spec.ts`(신규) | **HUD PR 병합 뒤** 상단 배치·층위 토큰을 인계. #46/#47을 그 위에서 검증, 속도 코드는 anim 담당 요청 |
+| .1-B 진행 중 | `feat/game-menu-back`: Back·새 게임 확인·종료 상태 / 1.5h | `routes/Game.svelte`, `SoloSetup.svelte`, `App.svelte`, `bridge/bridge.ts`, `game/session.ts` 파싱·테스트, Android Back, 메뉴 테스트 | #10/#64/#50 종료 상태. A와 독립 진행, session 파싱은 .2-A로 인계; 저장 실패 알림은 .3-C |
+| .1-C 진행 중 | `fix/guest-clock`: #60 시계·응답 유실 / 1h | `p2p/guest.svelte.ts`, `p2p/link.ts`, `routes/GuestApp.svelte`, **`packages/protocol/src/guest.ts`(#78)**, wiring·protocol 테스트, `e2e/reconnect.spec.ts` | #59는 main `9651364`에 병합됨. 자동 hello·dispose 해제·4001 재시도 억제 |
+| .1-D | #33 웹 번들 APK CI·통합 검증 / 1h + 예비 1h | `.github/workflows/ci.yml`은 #38/#73 인계 뒤, `e2e/gallery.spec.ts`·기준샷 | A/B/C 뒤. `docs/ui.md`·`M4.md` 직접 수정 삭제; 절차 정정은 docs/consolidation 병합 후 통합 문서에 반영 |
 
 합계 7.5h. 시스템 Back은 결정 프롬프트를 취소하지 않는다. 메뉴가 열려 있으면 닫고, 게임 화면이면 메뉴를 열며, 홈의 앱 종료는 별도 처리한다. 브리지가 아직 준비되지 않았으면 기존 네이티브 확인을 유지한다. 메뉴 초점은 닫은 뒤 원래 제어로 돌아간다. 게임·로비·설정의 back/홈 이동이 세션 종료와 혼동되지 않게 한다.
 
@@ -152,7 +147,7 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 2. 대상/고스톱/국진/흔들기/폭탄/총통에서 초점 진입·복귀, 읽기 이름, inert 잠금, 기존 `Board.prompts.test.ts`/`Board.property.test.ts`의 합법 수/점수 검사가 통과한다. 색 외 문구, 대비, axe를 검사한다. 가로 덮개로 입력 잠금 후 세로 복귀도 확인한다.
 3. 빈 바닥/전용 버튼만 스킵, 같은 포인터 연쇄에서 카드나 선택 액션 0. 기존 #8 회귀와 `Card.test.ts` 앞면 검사를 유지한다. 행 경계를 넘는 이동 카드의 실제 페인트 순서와 긴 알림 큐는 새 E2E에서 확인한다.
 4. 메뉴→설정→복귀, 홈→이어하기, 새 게임 취소, 종료→기록에 판/잔액 보존. `e2e/navigation.spec.ts`(신규)·브리지 mock 테스트로 웹 동작을 증명하고 Galaxy Back은 사람이 확인한다. #10은 이 증거까지 있어야 닫는다.
-5. `reconnect.spec.ts`는 응답 드롭 5초 감지→hello→snapshot→입력 복구를 **수동 join 없이** 검사한다. 1초 시계 해상도를 고려한 감지 시각과 전체 복구 시각을 분리한다. 4001은 자동 재접속 0, 연결 불가 중에도 메뉴 사용 가능. #59 지연 시 .1-C는 이월하되 해당 결함을 릴리스 노트에 남기고 친구 대전 개선 완료라고 주장하지 않는다.
+5. `reconnect.spec.ts`는 응답 드롭 5초 감지→hello→snapshot→입력 복구를 **수동 join 없이** 검사한다. 1초 시계 해상도를 고려한 감지 시각과 전체 복구 시각을 분리한다. 4001은 자동 재접속 0, 연결 불가 중에도 메뉴 사용 가능. #78 protocol 보완과 웹 시계 연결을 함께 검증한다.
 6. `gallery.spec.ts`/`p2p-screens.spec.ts` Chromium+WebKit 회귀·axe, 기존 솔로/P2P 20판, 웹 포함 APK 빌드/검사를 통과한다. Galaxy 신규 설치/덮어쓰기→권한 없는 솔로→메뉴→이어하기 스모크 절차를 전달한다.
 
 ### 4.2 v0.2.2 — 내 규칙으로 밀고 받고, 금액과 기록을 믿을 수 있게
@@ -161,10 +156,10 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 
 | PR | 작업 / 추정 | Sol 파일 소유권 | 선행 / Astra 중점 |
 |---|---|---|---|
-| .2-A | 솔로·호스트·게스트 밀기/받기·배수·AI 연결 / 3h | `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `adapter.ts`, `p2p/{host,guest}.svelte.ts`, `routes/Settlement.svelte`, `ui/settle-labels.ts`, `game/ai-core.ts`, `workers/ai.worker.ts`, `e2e/push.spec.ts`(신규) | 최신 main #54, #56. 정산 1회·복원·승자 권한. `Game.svelte` 연결 변경은 .1-B 종료 후 |
-| .2-B | §3 설정 24행 지도·구현 규칙 UI·금액 / 2h | `settings/**`, `routes/Settings.svelte`, 신규 `ui/RuleSettings.svelte`, `game/current.svelte.ts`, `p2p/common.ts`의 preset 판별, `routes/HostRoom.svelte` 규칙 입력, 신규 설정 테스트 | A의 밀기 활성화 뒤, 런타임 세션 규칙 불변·이전 저장 보존 |
-| .2-C | 원장 기반 기록/재충전·실지급, 판 무효 / 1.5h | `game/records.ts`, `lib/view-types.ts` 기록 타입, `routes/Records.svelte`, `e2e/records.spec.ts`(신규) | A 뒤 `session.ts`·`Settlement.svelte`·`p2p/host`·`App`·`Game` **소유권 인계**. #44의 기록·abort만 완료 |
-| .2-D | 정산/은닉/설정 통합 E2E·리뷰 대응 / 1h + 예비 0.5h | `e2e/p2p.spec.ts`, `solo.spec.ts`, 신규 `settings.spec.ts`, `docs/ui.md`, 테스트 fixture | A→C 완료 뒤 #58 A-9 단언·P2P timing |
+| .2-A | 솔로·호스트·게스트 밀기/받기·배수·AI 연결 / 3h | `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `adapter.ts`, `p2p/{host,guest}.svelte.ts`, `routes/Settlement.svelte`, `ui/settle-labels.ts`, `game/ai-core.ts`, `workers/ai.worker.ts`, `e2e/push.spec.ts`(신규) | #54·#56, .1-B 파싱/.1-C guest 병합 뒤 인계. 정산 1회·복원·승자 권한, Game 연결도 .1-B 뒤 |
+| .2-B | §3 설정 24행 지도·구현 규칙 UI·금액 / 2h | `settings/**`, `routes/Settings.svelte`, 신규 `ui/RuleSettings.svelte`, `game/current.svelte.ts`, `p2p/common.ts`의 preset 판별, `routes/HostRoom.svelte` 규칙 입력, 신규 설정 테스트 | A 뒤. 속도 기본값은 anim-pacing 병합값 보존; current 저장 오류 처리는 .3-C로 인계 |
+| .2-C | 원장 기반 기록/재충전·실지급, 판 무효 / 1.5h | `game/records.ts`, `lib/view-types.ts` 기록 타입, `routes/Records.svelte`, `e2e/records.spec.ts`(신규) | A 뒤 `session.ts`·`solo.svelte.ts`·`Settlement.svelte`·`p2p/host`·`App`·`Game` **소유권 인계**. #44의 기록·abort만 완료 |
+| .2-D | 정산/은닉/설정 통합 E2E·리뷰 대응 / 1h + 예비 0.5h | `e2e/p2p.spec.ts`, `solo.spec.ts`, 신규 `settings.spec.ts`, 테스트 fixture | A→C 뒤 #58 단언·P2P timing. 문서는 consolidation 병합 후 통합 경로만 수정 |
 
 합계 8h. #56 또는 정산 계약이 준비되지 않으면 .2는 시작하지 않는다. 승자 선택 대기/저장 계약을 새로 설계해야 하거나 시간 초과가 보이면 A를 “순수 세션+복원”과 “UI+E2E” 두 PR로 나누고 릴리스 후보 날짜를 다시 산정한다.
 
@@ -191,17 +186,17 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 
 | PR | 작업 / 추정 | Sol 파일 소유권 | 선행 / Astra 중점 |
 |---|---|---|---|
-| .3-A | 소리·진동 개별 설정/효과 강도/중복 억제 / 1.25h | `game/sound.ts`, `playback.svelte.ts`, `ui/banner.ts`, `p2p/common.ts` 진동, `settings`·`Settings`(B에서 인계), 전용 feedback 테스트 | .1 알림 레일. 엔진 이벤트 순서·700ms 유지·진동 없는 정보 동등성 |
-| .3-B | AI 기본값·시간·오류 대체 UX / 1.25h | `game/ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, `workers/ai.worker.ts`, `SoloSetup`, 전용 `e2e/ai-ux.spec.ts`(신규) | .2-A 종료 후. 1초 예산·이전 선택 보존·오래된 Worker 결과 무시 |
-| .3-C | 권한/알림 문구·화면 유지·renderer 재시도 상한/복구 / 2h | Android `GameActivity.kt`, `HotspotService.kt`, `MainActivity.kt`, `Diagnostics.kt`, `res/values/strings.xml`, 상태 정책 테스트; 웹 `routes/Diagnostics.svelte`의 표시 | .1 Back 계약 유지. 네이티브 변경은 이 PR 한 명이 소유. #64 저장 실패 기본 안내 포함 |
-| .3-D | 카드 PR 통합 검증·Galaxy 예산 절차·강도 재측정 보고 / 1.5h + 리뷰 대응 1h + 예비 1h | 카드 소유자는 별도 아래 §5, 통합자는 `e2e/gallery.spec.ts`·기준샷, `docs/device-test/Galaxy-solo.md`(신규), `docs/ai-tuning.md`(AI 담당 인계 후), `docs/ui.md` | 합계 8h. 후보 최적화는 준비된 경우 한 개만, 아니면 기준선+미달 기록으로 끝냄 |
+| .3-A | 소리·진동/효과 강도/중복 억제 / 1.25h | `game/sound.ts`, `playback.svelte.ts`, `ui/banner.ts`, `p2p/common.ts` 진동, `settings`·`Settings`(.2-B 인계), feedback 테스트 | **anim-pacing 병합 뒤 playback 착수**. 속도·`--dur-*`를 인계받고 이벤트 순서·700ms·정보 동등성 검증 |
+| .3-B | AI 기본값·시간·오류 대체 UX / 1.25h | `game/ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, `workers/ai.worker.ts`, `SoloSetup`, `e2e/ai-ux.spec.ts`(신규) | .1-B→.2-A/C 뒤 solo 인계, .3-A 뒤 설정 기본값. AI 변경 병합 후 **solo를 .3-C로 인계** |
+| .3-C | Galaxy 안내·화면 유지·장애 복구·#64 저장 실패 / 2h | Android `GameActivity.kt`, `HotspotService.kt`, `MainActivity.kt`, `Diagnostics.kt`, strings·정책 테스트; 웹 `game/{current.svelte.ts,solo.svelte.ts,session.ts}`, `storage/local.ts`, `routes/Diagnostics.svelte`, 저장복원 테스트 | .1-B 파싱→.2-A/C session·.2-B current→.3-B solo **모두 병합 후** 웹 저장 오류 전파/안내. Back 계약 유지 |
+| .3-D | 카드 통합·Galaxy 예산 절차·강도 보고 / 1.5h + 리뷰 대응 1h + 예비 1h | `e2e/gallery.spec.ts`·기준샷, consolidation의 통합 기기 절차, `docs/ai-tuning.md` | 합계 8h. 카드·#56 및 #38/#73→문서 통합 인계 뒤. 준비된 후보 한 개 또는 기준선+미달 기록 |
 
 수용 기준 / 증거:
 
 1. 효과 끔/절제(기본)/강조와 시스템 모션 감소를 `feedback.test.ts`(신규) 및 gallery E2E로 검증한다. 끔/감소 시 FLIP·flash·stagger 0, 문구/점수 동일. 동종 음 100ms 병합, 선택 중 알림 대기, 배너 최대 1개. 소리 끔은 Audio 재생 0, 진동 끔·일반 브라우저는 bridge 진동 0. 실제 소리/패턴은 Galaxy 사람이 확인한다.
 2. 난이도 쉬움/보통/상용급의 설명·선택 유지·신규 기본 상용급, 탐색과 애니메이션 속도의 분리를 확인한다. 상용급 상세 도움말에는 AC-03 검증 중을 표시한다. `ai-ux.spec.ts`/AI client 브라우저 테스트에서 Worker 오류·무응답·불법 수·늦은 응답을 주입해 보수적 합법 대체 1회, 메뉴 응답 가능, thinking 종료를 단언한다. Galaxy 검색 상한은 1000ms 이하, 1500ms 저장값은 호스트에서 낮춘다.
 3. 처음 실행은 근처 기기 권한 없이 홈→솔로. 대전 시 권한 설명→허용/거절/취소/설정 복귀가 각각 원래 화면에 반영된다. 알림은 1개, 서버 전용/방 열림/실패 상태와 중지 효과를 구별하고 같은 판으로 복귀한다. keep-screen-on은 게임 내 옵션으로 제어하며 홈/백그라운드/종료 해제·복귀를 사람 검증한다. 배터리 최적화 예외 설정을 필수로 강요하지 않는다.
-4. renderer gone은 1분 내 자동 복구 최대 2회, 초과 시 복구 화면·진단·재시도. 원장 중복 지급 0. 다음 실행에서 얻을 수 있는 ANR/OS 종료 원인·마지막 체크포인트를 로컬 로그에 합친다. ANR 중에 JS가 로그를 쓸 수 있다고 가정하지 않는다. 재시도 정책 JVM 테스트, 저장복원 브라우저 테스트, Galaxy 장애 절차를 각각 증거로 둔다. API 구현 전 공식 문서를 조회한다.
+4. renderer gone은 1분 내 자동 복구 최대 2회, 초과 시 복구 화면·진단·재시도. 원장 중복 지급 0. 다음 실행의 ANR/OS 종료 원인·체크포인트를 로컬 로그에 합친다. JVM 재시도 정책·Galaxy 장애 절차와 별도로, **웹 브라우저 테스트에서 quota/write 실패·손상 저장을 주입해 안내 노출·메모리 판 유지·잘못된 이어하기 방지**를 검증한다. .1-B 파싱 회귀를 보존한다. API 구현 전 공식 문서를 조회한다.
 5. 카드 PR이 리뷰 완료됐으면 기존 48장·CC BY-SA 고지 보존, 월/종류/光 무가림, 앞/뒷면 2x/3x 스냅샷, 40~48px 대비를 확인해 통합한다. 준비 안 됐으면 기존 자산으로 .3을 내고 D1/#53을 남긴다. 로비 준비(#44)·릴레이 경미 #61도 남는 범위를 명시하며 억지로 합치지 않는다.
 6. §6의 Galaxy 계측 절차/원본 로그 템플릿과 §4.4의 AI 재측정 결과표를 남긴다. 사람 결과 미도착은 “미실시”, AI 목표 미달은 “미달”. v0.2.3 성공을 AC-03/AC-09 완료로 확대하지 않는다.
 
@@ -223,22 +218,27 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 
 [#67](https://github.com/kywoo26/p2p-gostop/issues/67)은 최종 AI/밀기 정책을 고정한 뒤 프리셋별 ≥10,000판, 30판 세션 파산 ≤5%를 재산정한다. 평균·표준편차·p95/p99·최대·관측/추정 파산·실제 원본 판 수를 보존한다. #56의 3,000판 산정과 200,000 bootstrap 세션을 10,000판 실측으로 오인하지 않는다. `money-defaults.ts`, `START_BALANCE_TABLE`, 도움말, `money-model.md`를 함께 갱신한다. 이 완료는 .3의 필수 범위가 아니며 AC-10 부분 충족 상태를 유지한다.
 
-## 5. 파일 충돌을 피하는 운영
+## 5. 파일 충돌을 피하는 운영 <a id="ownership"></a>
+
+진행 중 브랜치의 소유권이 우선이다. 아래 화살표는 **앞 PR 병합→뒤 PR rebase·인계** 순서이며, 공유 파일을 병렬 수정하지 않는다(명시한 토큰/명세 절 예약만 분리). 구현 Sol·독립 리뷰 Astra가 기본이며 디자인/문서 선행 작업은 표의 실제 담당을 따른다.
 
 | 공유 경계 | 소유와 병합 순서 |
 |---|---|
-| `ui/Card.svelte`, `ui/cards.ts`, `public/cards/**`, `cards/map.json`, 카드 테스트·고지 | **design/cards-polish 담당 전용**. .1-A는 Hand/Floor의 컨테이너·히트 영역만 수정. 카드 비율/props 계약 변경은 먼저 알려 .1-A 뒤 리베이스. .3-D는 병합된 자산을 검증하며 재디자인하지 않음 |
-| `styles/tokens.css` | .1-A 레이아웃/층위 → .3-D 의미 색. 카드 담당은 카드 토큰 요청을 전달하며 동시 수정 금지 |
-| `App.svelte`, `routes/Game.svelte` | .1-B → .2-C 순서. 각 PR이 필요한 공용 연결은 현재 소유자에게 작은 diff로 요청 |
-| `settings/**`, `Settings.svelte` | .2-B → .3-A → .3-B 기본값. 하나의 PR만 저장 스키마를 변경 |
-| `session.ts`, `solo.svelte.ts`, `p2p/{host,guest}.svelte.ts`, 정산 | .1-C(guest) → .2-A(밀기) → .2-C(기록/무효) → .3-B(AI). 병렬 편집하지 않음 |
-| `packages/protocol/**` | #54를 소비. #59 담당이 우선. 로비 ready 추가가 필요하면 #44 전용 계약 PR로 분리하고 UI만 먼저 활성화하지 않음 |
-| `packages/ai/**`, `tools/sim/**`, `ai-tuning.md`, `money-model.md` | #56 → #66 → #67. 웹 담당은 공개 API만 사용, 가중치/기본값을 복제하지 않음 |
-| Android | .1-B Back 뒤 .3-C 셸. `server/SmokeServer.kt`·공유 relay 벡터는 #61 담당 전용으로 분리 |
-| CI·개발 진입점 | #33/.1-D는 B1 소유자와 선조율. #38의 Docker/진입점/AGENTS 수정과 중복하지 않음 |
-| 갤러리 스냅샷·공용 E2E | 기능 PR은 전용 파일/fixture를 추가, D 담당이 기능 PR 병합 뒤 공용 baseline 갱신·눈 검토. 잘못된 화면을 새 정답으로 승인하지 않음 |
+| HUD·`Board.svelte` 상단·점수판/현황판 | **Astra `design/hud-assist`([#83](https://github.com/kywoo26/p2p-gostop/pull/83))→`feat/hud-redesign`→Sol .1-A**. .1-A의 #46/#47은 HUD 병합 뒤, 새 플레이 보조 FR·ui-spec 새 절까지 인계 |
+| `anim/*`, playback, 속도 기본값 | **Sol `feat/anim-pacing`→.3-A**. anim 담당이 `--dur-*`, settings 속도 기본값, spec §6.4·ui-spec UX-15 소유. .1-A 스킵에 필요한 anim 변경도 담당에게 요청 |
+| `styles/tokens.css` | HUD: 층위 토큰, anim: `--dur-*` 예약. 양쪽 병합본을 .1-A가 소비→.3-D 의미 색. 카드 토큰은 담당에게 요청, 전체 파일 포맷 동시 변경 금지 |
+| 카드 컴포넌트·자산·테스트·고지 | **Astra `design/cards-polish` 전용**→.3-D 통합 검증. .1-A는 Hand/Floor 컨테이너·히트 영역만 소유; 비율/props 변경은 HUD/.1-A 담당과 먼저 합의 |
+| `App.svelte`, `routes/Game.svelte`, `SoloSetup.svelte`, `bridge/bridge.ts`, Android Back | **Sol `feat/game-menu-back`(.1-B)**→.2-A Game→.2-C 라우팅→.3-B SoloSetup / .3-C bridge·Android. #10/#64/#50 종료 상태·session 파싱은 현재 .1-B 범위 |
+| #64 웹 저장: `game/session.ts`, `solo.svelte.ts`, `current.svelte.ts`, `storage/local.ts` | session: **.1-B 파싱→.2-A 밀기→.2-C 원장→.3-C**; solo: .2-A→.2-C→**.3-B AI→.3-C**; current: .2-B→.3-C; local: **.3-C 전용**. .3-C가 네 파일의 저장 실패 전파·UI 안내·복원 테스트를 함께 소유; #64 전체 종료는 그 증거 뒤 |
+| guest·link·GuestApp·`protocol/src/guest.ts`·`e2e/reconnect.spec.ts` | **Sol `fix/guest-clock`(.1-C, #60/#78)** 우선. #59(`9651364`) 위에서 완료→.2-A guest 밀기→.2-C 정산. #44 ready 추가는 별도 protocol 계약 PR |
+| `settings/**`, `Settings.svelte` | anim 속도 기본값→.2-B 규칙→.3-A 피드백→.3-B AI 기본값. 저장 스키마 변경은 직렬 인계 |
+| `packages/ai/**`, `tools/sim/**` | #56→#66→#67. `ai-tuning.md`·`money-model.md`는 아래 문서 인계도 충족; 공개 API만 사용 |
+| Android 셸·릴레이 | .1-B Back→.3-C 셸. `server/SmokeServer.kt`·relay 벡터는 #61 담당에게 요청 |
+| CI·개발 진입점·공유 빌드 문서 | **Sol `build/unified-dev-env` #38→Astra `perf/build-pipeline` #73** 병합·인계→.1-D #33 잔여분. `ai-tuning.md`, `money-model.md`, `device-test/M4.md`, `research/tech-stack.md`도 같은 순서로 명령 갱신 |
+| 명세·문서 통합 | **Astra `docs/consolidation`**: HUD/anim 명세 병합본과 #38/#73 문서 인계 뒤 spec §6(ui-spec §12)·plan §3 압축, `docs/ui.md` 삭제, `device-test/*` 통합, 리서치 버전 표 제거. .1-D/.2-D/.3-D는 이후 확정 경로만 수정; 삭제 파일 재생성 금지 |
+| 공용 E2E·갤러리 | 전용 테스트는 기능 소유자, D 담당은 선행 기능 병합 뒤 공용 baseline 갱신·눈 검토 |
 
-## 6. 검증·출시 게이트와 Galaxy 성능 예산
+## 6. 검증·출시 게이트와 Galaxy 성능 예산 <a id="verification"></a>
 
 ### 6.1 자동 검증
 
@@ -250,7 +250,7 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 
 릴리스 노트는 이번 완성 동작, 남은 P0/P1(#66/#67/실기기), Galaxy 절차, iPhone 미검증을 적는다. 심각한 잘림·오입력·이중 정산·복원 데이터 유실이 있으면 해당 후보는 보류한다. .1/.2가 준비되면 .3의 카드/AI 연구를 기다리지 않고 각각 출시한다.
 
-### 6.2 Galaxy 사람 검증표 (새 `docs/device-test/Galaxy-solo.md`에 옮길 절차)
+### 6.2 Galaxy 사람 검증표 (consolidation 병합 후 통합 절차에 반영)
 
 | 항목 / 제품 예산 | 방법과 기록 | 자동화의 경계 |
 |---|---|---|
@@ -277,21 +277,17 @@ MVP 감사 A-1/A-6/A-7/A-8~12는 통합 후 코드가 바뀌었다. #18/#19/#58�
 | aA 확대·VoiceOver·실제 터치/장시간 누름 | 200% 텍스트/작은 viewport·키보드·초점·axe·접근성 이름·터치 이벤트 모사 | aA 200%, VoiceOver 읽기 순서·선택·닫기, 실제 손가락 48px 노출 |
 | GPU 카드 앞면·FLIP, 메모리 압박·배터리·발열 | WebKit 앞면 hit test·스크린샷·스킵·reduce motion·시간 회귀 | 실제 Safari 앞/뒷면·연속 5판·1시간 배터리/복귀. GPU·배터리 통과는 대체 불가 |
 
-AC-04(Chromium 호스트+WebKit 게스트 20판)와 AC-05 자동 UI 회귀는 계속 검증한다. **AC-08의 실제 Galaxy+iPhone 전 과정, AC-09, M5 두 기기 5판은 보류**다. 다른 LAN 기기가 있으면 Galaxy 호스트 서버/재접속 참고 시험은 가능하나 iPhone 성공으로 기록하지 않는다. M4 절차의 전체 화면 스킵·옛 back 확인·판 무효 없는 문구는 각 기능 PR에서 갱신하고, 결과 칸은 사람이 제공한 자료만 채운다.
+AC-04(Chromium 호스트+WebKit 게스트 20판)와 AC-05 자동 UI 회귀는 계속 검증한다. **AC-08의 실제 Galaxy+iPhone 전 과정, AC-09, M5 두 기기 5판은 보류**다. 다른 LAN 기기의 참고 시험을 iPhone 성공으로 기록하지 않는다. 옛 스킵·back·판 무효 문구는 consolidation 병합 뒤 통합 절차에서 정정하고, 결과는 사람이 제공한 자료만 채운다.
 
 ## 8. 이슈 등록과 즉시 착수 순서
 
-기존 #46~53/#10/#30/#31/#33/#44/#58/#60/#61은 중복 개설하지 않았다. 추적 공백은 다음 13개를 등록했다(ux/enhancement/bug 라벨): [#62 설정](https://github.com/kywoo26/p2p-gostop/issues/62), [#63 기록/원장](https://github.com/kywoo26/p2p-gostop/issues/63), [#64 세션 보존](https://github.com/kywoo26/p2p-gostop/issues/64), [#65 AI UX](https://github.com/kywoo26/p2p-gostop/issues/65), [#66 강도 재도전](https://github.com/kywoo26/p2p-gostop/issues/66), [#67 머니 표본](https://github.com/kywoo26/p2p-gostop/issues/67), [#68 Galaxy 셸](https://github.com/kywoo26/p2p-gostop/issues/68), [#69 장애 복구](https://github.com/kywoo26/p2p-gostop/issues/69), [#70 기기 예산](https://github.com/kywoo26/p2p-gostop/issues/70), [#71 리플레이](https://github.com/kywoo26/p2p-gostop/issues/71), [#72 확정 지연](https://github.com/kywoo26/p2p-gostop/issues/72), [#74 오픈소스 고지](https://github.com/kywoo26/p2p-gostop/issues/74), [#75 Safari 회차 재개](https://github.com/kywoo26/p2p-gostop/issues/75). 부분 구현 릴리스에서는 이슈 전체 자동 종료 문구를 쓰지 않는다.
+추적 공백 13개(#62~72/#74/#75)를 `[m6]`·ux/enhancement/bug로 등록했다. 범위·이월은 [35개 격차표](#gaps), 담당·선행 조건은 [파일 인계표](#ownership)를 따른다. 부분 구현으로 이슈 전체를 자동 종료하지 않는다.
 
-바로 시작할 5개:
-
-1. **.1-A 예약 선택 행+최악 화면 fixture** — #46/#47부터, #48/#51/#52를 같은 레이아웃 소유자가 수용. 사용자에게 보이는 가장 큰 결함이다.
-2. **.1-B 메뉴/Android Back/새 게임 보존** — #10/#50/#64. 기존 메뉴를 활용해 판을 잃거나 잘못 종료하는 흐름을 막는다.
-3. **#59 Astra 리뷰→.1-C #60 시계 연결** — 무응답 자동 복구를 실제 GuestGame에서 증명하고 #58의 수동 join을 제거한다.
-4. **.1-D #33 웹 포함 APK CI** — 릴리스 후보가 사용자가 설치할 앱과 같은 자산을 검증하게 한다. B1/#38과 소유권을 먼저 정한다.
-5. **#56 Astra 리뷰와 .2-A 밀기 계약 fixture 준비** — 병합된 #54 위에서 정산 보류·×2/×4·복원·AI 결정 경계를 고정한다. #62의 아케이드 설정 활성화 전제다.
-
-이후 #62→#63을 순서대로 구현하고, 카드/AI 담당과 통합 시점을 맞춘다. 리플레이·120ms 옵션·자동치기/미지원 규칙·전체 저장 마이그레이션·최종 1만판 산정은 이슈로 유지하며 다음 v0.2.x 증분에서 다룬다.
+1. 진행 중 .1-B 메뉴/Back·session 파싱 완료.
+2. 진행 중 .1-C 시계·#78 protocol 보완 완료(#59 병합됨).
+3. #83→HUD 구현 완료 뒤 .1-A 착수; 대기 중에는 최악 화면 fixture 준비.
+4. anim-pacing 완료와 .3-A playback 인계 계약 확정.
+5. #38→#73→문서 통합 순서 확정·.1-D #33 잔여분 배정. #56·카드 작업은 [릴리스 선행 조건](#releases)에 맞춰 통합.
 
 ## 9. 이 계획 PR의 검증 기록
 
@@ -305,6 +301,6 @@ AC-04(Chromium 호스트+WebKit 게스트 20판)와 AC-05 자동 UI 회귀는 �
 | `./dev.sh build:web` | 1007.1 KiB / 1536 KiB, 외부 URL 0건 |
 | `./dev.sh e2e` | 54개 통과·기존 2개 skipped |
 | `./dev.sh apk:debug` / `android:test` | 웹 dist 포함 빌드·JVM 테스트·Lint 통과. 기존 Gradle 10 deprecation 경고는 남음 |
-| 문서 정합 | Docker Node로 로컬 링크 13개 존재, G01~G35 중복 없음, 설정 1~24 누락 없음 확인. `git diff --check` 통과 |
+| 문서 정합 | 최초 로컬 링크 13개·G01~G35·설정 1~24 검사와 `git diff --check` 통과. 리뷰 반영 재검증은 아래 참조. |
 
-Galaxy/iPhone 실기기 결과는 이 작업에서 만들지 않았다. 새 수용 테스트·새 device-test 절차의 작성은 각 구현 PR 범위다. 이 문서는 formatter 제외 대상(`.oxfmtrc.json`의 `docs/**`, `**/*.md`)이며 코드 포맷 변경은 없다.
+리뷰 반영: main `9651364` merge 후 Docker 링크·앵커/표 검사와 `./dev.sh lint`, `git diff --check` 재실행 통과. Galaxy/iPhone 실기기 결과는 만들지 않았다. 새 수용 테스트·새 device-test 절차의 작성은 각 구현 PR 범위다. 이 문서는 formatter 제외 대상(`.oxfmtrc.json`의 `docs/**`, `**/*.md`)이며 코드 포맷 변경은 없다.
