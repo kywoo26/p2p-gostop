@@ -15,7 +15,7 @@
 | 고 | [go](pro-go.png) |
 | 정산 | [settlement](settlement.png) |
 
-`measurements.json` records desktop Chromium/WebKit rAF cadence (3×5s event bursts per DPR), per-screen resources and zero external requests. This is **not** physical Galaxy/iPhone FPS. `throttle.json` records the separate WebKit shared-bandwidth response-delay experiment; no real radio/packet loss/CPU throttle. See [research](../../../research/pro-assets.md) for budget exclusions and proposed NF-03 wording, [device procedure](../../../device-test/pro-assets.md) for unperformed physical checks.
+`../../../research/data/pro-measurements.json` records desktop Chromium/WebKit rAF cadence (3×5s event bursts per DPR), per-screen resources and zero external requests. This is **not** physical Galaxy/iPhone FPS. `../../../research/data/pro-throttle.json` records the separate WebKit shared-bandwidth response-delay experiment; no real radio/packet loss/CPU throttle. See [research](../../../research/pro-assets.md) for budget exclusions and proposed NF-03 wording, [device procedure](../../../device-test/pro-assets.md) for unperformed physical checks.
 
 [Art direction](../../art-direction.md): ink/paper/brass, own CSS frames, Met public-domain crane/pine crops and twelve CC BY-SA Hwatu-derived portraits. Kenney RPG frames and animal faces are removed. Original cards remain unchanged. #104 HUD structure/10-card minimum-state work is not included on this main-based branch.
 

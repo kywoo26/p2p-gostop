@@ -105,7 +105,7 @@ p2p-gostop/
 **PA-01~04 전문 자산 평가(2026-09-29, 예산 개정 승인 전):** NF-03의 전체1.5MiB·게스트 첫 로딩≤2초와 기존 카테고리 예산은 현행 유지한다. `design/pro-assets`의 명시적 `PRO_ASSET_REVIEW=1` 평가 빌드만 초과 자산을 포함한다. 기본/릴리스 빌드에는 평가 팩을 제외하고 기존 용량 gate를 적용한다. `docs/research/pro-assets.md`의 NF-03 개정안은 리뷰·사용자 승인 전 규범이 아니다. 원본은 `assets-src/`, 평가 변환물은 `public/pro/`에 둔다. Pillow 10.2.0-1ubuntu1.3(HPND), FFmpeg 7:6.1.1-3ubuntu5(Ubuntu GPL dev 도구), libavif-bin 1.0.4-1ubuntu3(BSD-2-Clause)을 개발 이미지4에 고정 추가해 WebP/AVIF·해상도 단계·atlas·ogg/m4a·고지를 생성한다. 앱 런타임 npm 의존성0, Pixi/GSAP 등 금지 유지. 아트 디렉션은 `docs/design/art-direction.md`로 통일하고 RPG UI/Animal 팩은 제외한다. Met CC0 원화·기존 Hwatu의 CC BY-SA 4.0 파생 초상을 구분 고지하며 Commons48 원본은 유지한다. Ogg는 bitexact/serial=0과 두 번 인코딩 해시 검사를 고정한다. FPS·메모리·배터리 NF 후보는 연구 문서에만 두고 리뷰 전 spec를 바꾸지 않는다.
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
-**A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/visual-direction.md`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
+**A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/art-direction.md#결정-이력`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
 | 선택 | 이유·범위 |
 |---|---|
@@ -150,21 +150,36 @@ p2p-gostop/
 
 ## 3. 마일스톤 상태
 
-코드 기준 main `9651364`(v0.2.0 + PR #54·#55·#59). 과거 검토의 결함·측정값은 리뷰 원문에 보존하며, 병합 자체를 수용 기준 통과로 간주하지 않는다.
+코드 기준 main `9651364`(v0.2.0 + PR #54·#55·#59). 과거 검토의 결함·측정값은 Git 이력과 리뷰 인덱스에 보존하며, 병합 자체를 수용 기준 통과로 간주하지 않는다.
 
 | 단계 | 현재 상태·남은 기준 | 근거 |
 |---|---|---|
-| M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월 | [M0 리뷰](docs/reviews/M0-review.md), [실기기 원문](docs/device-test/results.md) |
-| M1 엔진 | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28) | [M1 리뷰](docs/reviews/M1-review.md), [규칙 벡터](docs/rules-vectors.md) |
+| M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월 | [리뷰 인덱스](docs/reviews/README.md), [실기기 원문](docs/device-test/results.md) |
+| M1 엔진 | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28) | [M1 리뷰](docs/reviews/README.md), [규칙 벡터](docs/rules-vectors.md) |
 | M2 AI·머니 | 조건부 진행: AC-03 미달(61.4%/79.1%), MN-03·AC-10 부분(표준 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67 |
-| M3 솔로 UI | 구현·표시 수정 병합(#34); UX 규범 격차는 후속 | [M3 리뷰](docs/reviews/M3-review.md), [UI 규범](docs/design/ui-spec.md) |
-| M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54·#59); 웹 밀기·로비 준비·판 무효 UI 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/M4-protocol-review.md), #30·#44·#58·#60 |
+| M3 솔로 UI | 구현·표시 수정 병합(#34); UX 규범 격차는 후속 | [M3 리뷰](docs/reviews/README.md), [UI 규범](docs/design/ui-spec.md) |
+| M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54·#59); 웹 밀기·로비 준비·판 무효 UI 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/README.md), #30·#44·#58·#60 |
 | M5 실기기 | 현재 UI AC-08·AC-09 미검증, iPhone 확보 후 재개(#75) | [통합 절차](docs/device-test/procedure.md), [결과 로그](docs/device-test/results.md) |
-| M6 완성도 | Galaxy 호스트·솔로 우선, P1·AC 전부 충족해야 v1.0.0 | [Galaxy·솔로 세부 계획](https://github.com/kywoo26/p2p-gostop/pull/76) |
+| M6 완성도 | Galaxy 호스트·솔로 우선, P1·AC 전부 충족해야 v1.0.0 | [현재 트랙](#현재-트랙) |
 
 ### 현재 트랙
 
-- 제품 우선순위·PR별 소유권·완료 조건은 [Galaxy·솔로 세부 계획](https://github.com/kywoo26/p2p-gostop/pull/76)(PR #76)에만 둔다. 여기서 작업 목록을 복제하지 않는다. Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 보류한다.
+<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 `plan.md#현재-트랙#releases`·`#ownership`·`#verification`·`#gaps` 링크는 이 절로 이동한다.
+
+Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone 확보 후 #75에서 재개한다. 아래는 완료 항목을 제외한 v0.2.2/v0.2.3 PR 단위와 파일 소유권이다. 각 선행 작업의 병합본을 인계받아 충돌 파일을 직렬로 수정한다.
+
+| 트랙·PR 단위 | 남은 범위 / 이슈 | 파일 소유권·인계 |
+|---|---|---|
+| v0.2.2 .2-A | 솔로·호스트·게스트 밀기/받기·배수·AI 연결 #30 | Sol: `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `p2p/{host,guest}.svelte.ts`, `Settlement.svelte`, AI worker, `e2e/push.spec.ts`; 메뉴/guest 계약 인계 뒤 |
+| v0.2.2 .2-B | FR-21 설정 24항목·규칙/금액 UI #62 | Sol: `settings/**`, `Settings.svelte`, `RuleSettings.svelte`, `current.svelte.ts`, `HostRoom.svelte`; .2-A 뒤 |
+| v0.2.2 .2-C | 원장 기록·재충전·실지급·판 무효 #44/#63 | Sol: `records.ts`, `Records.svelte`, 기록 타입·E2E; .2-A의 session/solo/host와 Settlement 소유권 인계 |
+| v0.2.2 .2-D | 정산·은닉·설정·P2P 시간 통합 E2E #58 | Sol: `e2e/p2p.spec.ts`, `solo.spec.ts`, `settings.spec.ts`; .2-A~C 뒤 |
+| v0.2.3 .3-A | 효과음·진동·효과 강도·중복 억제 #117/#128 | Sol: `sound.ts`, `playback.svelte.ts`, `banner.ts`, 피드백 설정/테스트; anim 계약 인계 |
+| v0.2.3 .3-B | AI 기본값·생각 시간·오류 대체 UX #65/#66 | Sol: `ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, worker, SoloSetup/E2E; .2-A/C 뒤 |
+| v0.2.3 .3-C | Galaxy 안내·화면 유지·저장 실패·복구 #64/#68/#69 | Sol: Android Activity/Service/Diagnostics와 웹 session/solo/current/local/Diagnostics; .2-B·.3-B 저장 소유권 인계 |
+| v0.2.3 .3-D | 카드·Galaxy 예산·강도 보고 #66/#70 | Sol 통합: 갤러리/E2E 기준샷, device-test 절차, `ai-tuning.md`; 카드·AI 담당 산출물 인계 |
+
+`settings/**`는 .2-B→.3-A→.3-B, `solo.svelte.ts`는 .2-A→.2-C→.3-B→.3-C, `session.ts`는 .2-A→.2-C→.3-C 순으로 소유한다. 공용 갤러리 기준샷은 각 기능 병합 뒤 .3-D가 갱신한다. 규칙 항목의 정본은 [rules-commercial §12.7](docs/research/rules-commercial.md#127-사용자-설정으로-노출할-토글)과 [spec FR-21](spec.md)이다.
 - 진행 중: AI #56, 병합된 응답 유실 복구 #59의 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. 새 진입점은 체크아웃별 Compose 프로젝트로 컨테이너를 분리한다.
 - 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 끝난 리뷰·통합·수정 트랙은 위 상태 표와 리뷰 이력으로 대체한다.
 - 작업은 워크트리·브랜치·PR로 격리한다. 위임 시 Codex(Paseo)를 기본으로 판단·리뷰는 Astra, 구현은 Sol, 저위험 정리는 Luna를 배분하며 Claude 서브에이전트는 사용자 명시 때만 쓴다. 병합은 CI 녹색 + reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터만 수행한다.
@@ -233,7 +248,7 @@ p2p-gostop/
 
 ## 8. 초기 구축 이력
 
-M0 골격·스모크 작업은 완료되어 §3과 [M0 리뷰](docs/reviews/M0-review.md)로 대체한다. 당시에는 `docker/compose.yml`의 분리된 서비스·셸 래퍼를 썼으며, §2의 단일 이미지·루트 Compose로 교체했다.
+M0 골격·스모크 작업은 완료되어 §3과 [리뷰 인덱스](docs/reviews/README.md)로 대체한다. 당시에는 `docker/compose.yml`의 분리된 서비스·셸 래퍼를 썼으며, §2의 단일 이미지·루트 Compose로 교체했다.
 
 ---
 
@@ -260,7 +275,7 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 - v0.7 (2026-09-29): 1.1 중계 규칙을 최신 연결 우선(4001)·알림·위조 차단·1003/1009/1008로 확정(M4 프로토콜 리뷰 #15·#24).
 - v0.6 (2026-09-28): 3-2 재개 계획(사후 리뷰·통합·후속 트랙, 리뷰 필수 규칙).
 - v0.5 (2026-09-28): 3-1 병렬 라이프사이클(모델 배분 원칙, 워크트리·PR 격리) 추가.
-- v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).
+- v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/README.md).
 - v0.3 (2026-09-28): 하이브리드 Rust 툴체인 결정(순수 TS 패키지는 oxlint/oxfmt/TS 7, web은 ESLint/Prettier/TS 6). Svelte MCP를 로컬 stdio로 재채택.
 - v0.2 (2026-09-28): agent-era-stack.md 반영. 원칙 9 추가, 1.6 애니메이션·스타일·검증 구체화, 1.8 스택 확정 표, 테스트·CI 게이트 추가, TS 6.0.3 확정, 리스크 표 갱신.
 - v0.1 (2026-09-28): 초안.
