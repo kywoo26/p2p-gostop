@@ -1,9 +1,11 @@
-// NF-07: 실제 Vite 번들 모듈+lockfile과 Gradle releaseRuntimeClasspath로 고지를 생성한다.
-// 개발 이미지 안에서 실행한다. 라이선스 정보가 없는 새 배포 의존성은 생성에 실패시켜 수동 검토한다.
+// NF-07: 수동 oss:refresh 전용. 웹 build/check/test/lint에서는 실행하지 않는다.
+// 개발 이미지의 dev 사용자로 실행하고, 새 배포 의존성의 라이선스 누락은 수동 검토한다.
 import { execFileSync } from 'node:child_process';
-import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
+
+if (process.getuid?.() === 0) throw new Error('OSS 고지 갱신은 dev 사용자로 실행하세요');
 
 const root = resolve(import.meta.dirname, '../../..');
 const lock = JSON.parse(await readFile(join(root, 'package-lock.json'), 'utf8'));
@@ -24,19 +26,27 @@ const web = bundled.map((name) => {
   return { name, version: item.version, license: item.license };
 });
 
-const report = execFileSync(
-  join(root, 'android/gradlew'),
-  [
-    '-p',
-    join(root, 'android'),
-    ':app:dependencies',
-    '--configuration',
-    'releaseRuntimeClasspath',
-    '--console',
-    'plain',
-  ],
-  { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
-);
+const projectCache = await mkdtemp(join(tmpdir(), 'p2p-oss-gradle-'));
+let report;
+try {
+  report = execFileSync(
+    join(root, 'android/gradlew'),
+    [
+      '--project-cache-dir',
+      projectCache,
+      '-p',
+      join(root, 'android'),
+      ':app:dependencies',
+      '--configuration',
+      'releaseRuntimeClasspath',
+      '--console',
+      'plain',
+    ],
+    { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
+  );
+} finally {
+  await rm(projectCache, { recursive: true, force: true });
+}
 const coordinates = new Set();
 for (const line of report.split('\n')) {
   if (line.includes(' (c)')) continue;
