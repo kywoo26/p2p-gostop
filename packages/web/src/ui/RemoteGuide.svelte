@@ -28,13 +28,7 @@
     phase = 'checking';
     errorCode = null;
     try {
-      // RP-04B가 signal 옵션을 추가하는 동안에도 fake 계약으로 수명을 검증한다.
-      const abortable = controller as RemoteHostController & {
-        checkHealth(options: {
-          signal: AbortSignal;
-        }): ReturnType<RemoteHostController['checkHealth']>;
-      };
-      const result = await abortable.checkHealth({ signal: abort.signal });
+      const result = await controller.checkHealth({ signal: abort.signal });
       if (!active || abort.signal.aborted) return;
       if (!result.ready || result.relay !== 'p2p-gostop') {
         errorCode = 'invalidResponse';

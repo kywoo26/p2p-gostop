@@ -4,6 +4,7 @@ import { render } from 'vitest-browser-svelte';
 import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import {
   RelayHealthError,
+  saveRemoteHostSettings,
   type HealthResult,
   type RelayHealthErrorCode,
 } from '../net/public-transport.ts';
@@ -12,7 +13,7 @@ import {
   REMOTE_STEPS,
   UNKNOWN_REMOTE_ERROR,
 } from '../p2p/remote-messages.ts';
-import type { RemoteHostController } from '../p2p/remote.ts';
+import { createRemoteHost, type RemoteHostController } from '../p2p/remote.ts';
 import RemoteGuide from './RemoteGuide.svelte';
 
 const health = {
@@ -158,6 +159,48 @@ test('재시도 중복 클릭은 요청을 늘리지 않고 화면 종료는 요
   await screen.unmount();
   expect(signal?.aborted).toBe(true);
   expect(onAbort).toHaveBeenCalledTimes(1);
+});
+
+test('실제 원격 컨트롤러는 안내 종료 시 fetch를 취소하고 snapshot을 유지한다', async () => {
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
+    removeItem: (key: string) => {
+      values.delete(key);
+    },
+  };
+  saveRemoteHostSettings(storage, {
+    baseUrl: 'https://relay.example.test',
+    creationSecret: 'A'.repeat(43),
+  });
+  let fetchSignal: AbortSignal | null | undefined;
+  const fetchAborted = vi.fn();
+  const fetcher: typeof fetch = (_input, init) =>
+    new Promise<Response>((_resolve, reject) => {
+      fetchSignal = init?.signal;
+      fetchSignal?.addEventListener(
+        'abort',
+        () => {
+          fetchAborted();
+          reject(new DOMException('aborted', 'AbortError'));
+        },
+        { once: true },
+      );
+    });
+  const host = createRemoteHost({ settings: storage, storage, fetcher, onTransport: () => {} });
+  const initial = host.snapshot;
+  const screen = await render(RemoteGuide, { controller: host });
+  await screen.getByRole('button', { name: '연결 확인' }).click();
+  await expect.element(screen.getByText('중계 응답 확인 중…')).toBeVisible();
+  expect(fetchSignal).toBeDefined();
+  expect(fetchSignal?.aborted).toBe(false);
+  await screen.unmount();
+  expect(fetchSignal?.aborted).toBe(true);
+  expect(fetchAborted).toHaveBeenCalledTimes(1);
+  expect(host.snapshot).toEqual(initial);
 });
 
 test('health 코드마다 제목, 원인, 조치가 있고 문구에 em dash가 없다', () => {
