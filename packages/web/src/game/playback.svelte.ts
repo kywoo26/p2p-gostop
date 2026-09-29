@@ -19,7 +19,7 @@ import { sounds, type SoundKind } from './sound.ts';
 /** 탭 → 그 액션의 이벤트 재생 끝까지 걸린 시간 (spec AC-06, 6.4 "탭부터 턴 종료까지") */
 export interface TurnTiming {
   readonly action: Action['type'];
-  /** 이벤트 단계의 이동·정지 계획 합(ms). 벽시계 계측과 분리한다. */
+  /** 이벤트 단계의 이동·정지 계획 합(ms). 실측 시간과 분리한다. */
   readonly plannedMs: number;
   readonly ms: number;
   /** 재생 뒤 내 프롬프트(대상·고/스톱 등)가 떴는지: 이 경우 턴 종료가 아니라 프롬프트 표시까지 */
