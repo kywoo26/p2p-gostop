@@ -1,5 +1,7 @@
 <script lang="ts">
+  import Scene from '../pro-assets/Scene.svelte';
   // 일반 화면 틀: 제목 + 뒤로 가기 링크 + 본문 (한 손 세로 화면, spec 6.1)
+  import Sprite from '../pro-assets/Sprite.svelte';
   import type { Snippet } from 'svelte';
 
   interface Props {
@@ -14,9 +16,11 @@
 </script>
 
 <main class="screen">
+  <Scene scene={title === '정산' ? 'settlement' : 'screen'} />
   <header>
     {#if back !== null}<a class="back" href={back} aria-label="뒤로">←</a>{/if}
     <h1>{title}</h1>
+    {#if title === '정산'}<Sprite kind="settlement" />{/if}
   </header>
   <div class="body">
     {@render children()}

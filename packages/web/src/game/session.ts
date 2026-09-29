@@ -7,8 +7,10 @@ import {
   applyInstantPayout,
   applySettlement,
   createLedger,
+  legalActions,
   newRound,
   reduce,
+  settle,
   type Action,
   type CapturedPile,
   type EndReason,
@@ -21,7 +23,6 @@ import {
   type Seat,
   type Settlement,
 } from '@p2p-gostop/engine';
-import { PRESETS } from '@p2p-gostop/engine';
 
 export interface SessionConfig {
   readonly preset: PresetId;
@@ -54,7 +55,7 @@ export interface RoundRecord {
 /**
  * playing: 판 진행 중 / roundOver: 정산 화면(다음 판 대기) / bankrupt: 잔액 0 → 재충전·종료 선택(MN-02) / ended: 종료
  */
-export type SessionPhase = 'playing' | 'roundOver' | 'bankrupt' | 'ended';
+export type SessionPhase = 'playing' | 'pushDecision' | 'roundOver' | 'bankrupt' | 'ended';
 
 export interface SessionState {
   readonly version: 1;
@@ -114,6 +115,18 @@ function closeRound(session: SessionState, events: readonly EngineEvent[]): Sess
   const settled = events.findLast((e) => e.type === 'Settled');
   if (session.game.phase !== 'end' || settled?.type !== 'Settled') return session;
   const settlement = settled.settlement;
+  if (
+    settlement.winner !== null &&
+    legalActions(session.game, settlement.winner).some((action) => action.type === 'push')
+  ) {
+    return { ...session, phase: 'pushDecision' };
+  }
+  return commitSettlement(session, settlement);
+}
+
+/** 최종 정산만 원장과 기록에 한 번 넣는다. */
+function commitSettlement(session: SessionState, settlement: Settlement): SessionState {
+  if (session.records.at(-1)?.round === session.roundNumber) return session;
   const before = session.ledger;
   const ledger = applySettlement(before, settlement, session.config.rules);
   const amount = ledger.balances[0] - before.balances[0];
@@ -139,7 +152,10 @@ function closeRound(session: SessionState, events: readonly EngineEvent[]): Sess
 
 /** 액션 하나를 적용한다. 즉시 정산 이벤트는 바로 원장에 기록한다(FR-18) */
 export function sessionAct(session: SessionState, action: Action): SessionStep {
-  if (session.phase !== 'playing') {
+  if (
+    session.phase !== 'playing' &&
+    !(session.phase === 'pushDecision' && action.type === 'push')
+  ) {
     return { ok: false, reason: 'notPlaying', message: `판 진행 중이 아닙니다: ${session.phase}` };
   }
   const result = reduce(session.game, action);
@@ -163,6 +179,12 @@ export function sessionAct(session: SessionState, action: Action): SessionStep {
   return { ok: true, session: closeRound(next, result.events), events: result.events };
 }
 
+/** 승자가 밀지 않고 이번 판 정산을 받는다. */
+export function acceptRound(session: SessionState): SessionState {
+  if (session.phase !== 'pushDecision') return session;
+  return commitSettlement(session, settle(session.game));
+}
+
 /** 다음 판: 선은 직전 승자(나가리면 유지), 나가리 배수 이월 (R5·G9) */
 export function startNextRound(session: SessionState): {
   session: SessionState;
@@ -179,6 +201,7 @@ export function startNextRound(session: SessionState): {
     {
       dealer: last.settlement.nextDealer,
       carry: last.settlement.nextCarry,
+      pushes: last.settlement.nextPushes ?? 0,
       roundNumber,
     },
   );
@@ -215,13 +238,19 @@ export function refill(session: SessionState): SessionState {
 }
 
 export function endSession(session: SessionState): SessionState {
-  return { ...session, phase: 'ended' };
+  return { ...acceptRound(session), phase: 'ended' };
 }
 
 /** 지금 입력해야 하는 좌석들 (선 고르기는 아직 고르지 않은 좌석 모두) */
 export function actingSeats(game: GameState): readonly Seat[] {
   const p = game.pending;
-  if (game.phase === 'end' || p === null) return [];
+  if (game.phase === 'end') {
+    const winner = game.result?.winner;
+    return winner !== null && winner !== undefined && legalActions(game, winner).length > 0
+      ? [winner]
+      : [];
+  }
+  if (p === null) return [];
   return p.kind === 'pickFirst' ? p.seats : [p.seat];
 }
 
@@ -232,380 +261,5 @@ export function ledgerIsBalanced(session: SessionState): boolean {
   return a + b === session.config.startBalance * 2 + ra + rb;
 }
 
-// ---- 저장 (MN-05) ----
-
-function object(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function money(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
-}
-
-function integer(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value);
-}
-
-function seat(value: unknown): value is Seat {
-  return value === 0 || value === 1;
-}
-
-function nullable(value: unknown, check: (value: unknown) => boolean): boolean {
-  return value === null || check(value);
-}
-
-function list(value: unknown, check: (value: unknown) => boolean): boolean {
-  return Array.isArray(value) && value.every(check);
-}
-
-function tuple(value: unknown, check: (value: unknown) => boolean): boolean {
-  return Array.isArray(value) && value.length === 2 && value.every(check);
-}
-
-function oneOf(value: unknown, choices: readonly string[]): boolean {
-  return typeof value === 'string' && choices.includes(value);
-}
-
-function pair(value: unknown): value is [number, number] {
-  return tuple(value, money);
-}
-
-function cards(value: unknown): boolean {
-  return Array.isArray(value) && value.every((id) => Number.isInteger(id) && id >= 0 && id <= 50);
-}
-
-function validSeat(value: unknown): boolean {
-  if (!object(value) || !cards(value['hand']) || !object(value['captured'])) return false;
-  const captured = value['captured'];
-  return (
-    ['gwang', 'yeol', 'tti', 'pi'].every((key) => cards(captured[key])) &&
-    [
-      'goCount',
-      'lastGoScore',
-      'shakes',
-      'bombs',
-      'bombTokens',
-      'turnsTaken',
-      'noCaptureStreak',
-    ].every((key) => money(value[key])) &&
-    list(value['ppeokTurns'], money) &&
-    typeof value['gukjinAsPi'] === 'boolean' &&
-    validScore(value['score']) &&
-    cards(value['revealed'])
-  );
-}
-
-function validScore(value: unknown): boolean {
-  if (!object(value)) return false;
-  return (
-    [
-      'gwang',
-      'yeol',
-      'godori',
-      'tti',
-      'hongdan',
-      'cheongdan',
-      'chodan',
-      'pi',
-      'total',
-      'gwangCount',
-      'yeolCount',
-      'ttiCount',
-      'piCount',
-    ].every((key) => money(value[key])) && typeof value['gukjinAsPi'] === 'boolean'
-  );
-}
-
-function validRules(value: unknown, preset: PresetId): boolean {
-  if (!object(value)) return false;
-  return Object.entries(PRESETS[preset]).every(([key, example]) => {
-    const actual = value[key];
-    if (key === 'jackpotRound') {
-      return (
-        actual === null || (object(actual) && money(actual['every']) && money(actual['multiplier']))
-      );
-    }
-    return key in value && typeof actual === typeof example;
-  });
-}
-
-function validPending(value: unknown): boolean {
-  if (value === null) return true;
-  if (!object(value)) return false;
-  switch (value['kind']) {
-    case 'pickFirst':
-      return list(value['seats'], seat);
-    case 'chongtong':
-      return (
-        seat(value['seat']) &&
-        list(value['months'], money) &&
-        oneOf(value['resume'], ['deal', 'turn'])
-      );
-    case 'play':
-    case 'gukjin':
-      return seat(value['seat']);
-    case 'shake':
-      return seat(value['seat']) && money(value['card']) && money(value['month']);
-    case 'target':
-      return (
-        seat(value['seat']) &&
-        oneOf(value['source'], ['play', 'flip']) &&
-        money(value['card']) &&
-        cards(value['options'])
-      );
-    case 'goStop':
-      return seat(value['seat']) && money(value['score']);
-    default:
-      return false;
-  }
-}
-
-function validCtx(value: unknown): boolean {
-  if (value === null) return true;
-  if (!object(value)) return false;
-  return (
-    seat(value['seat']) &&
-    money(value['index']) &&
-    typeof value['lastTurn'] === 'boolean' &&
-    oneOf(value['mode'], ['card', 'bomb', 'flipOnly']) &&
-    ['played', 'playTarget', 'flipped', 'flipTarget'].every((key) => nullable(value[key], money)) &&
-    money(value['playBefore']) &&
-    cards(value['heldBonuses']) &&
-    typeof value['capturedAny'] === 'boolean' &&
-    typeof value['gukjinCaptured'] === 'boolean'
-  );
-}
-
-function validFirstPick(value: unknown): boolean {
-  return (
-    value === null ||
-    (object(value) &&
-      cards(value['pool']) &&
-      tuple(value['picks'], (pick) => nullable(pick, money)) &&
-      money(value['ties']) &&
-      list(value['nextPools'], cards) &&
-      typeof value['isNight'] === 'boolean')
-  );
-}
-
-const END_REASONS = [
-  'stop',
-  'autoStop',
-  'threePpeok',
-  'chongtong',
-  'floorChongtong',
-  'bothChongtong',
-  'hudang',
-  'exhausted',
-];
-const PAYOUT_KINDS = ['firstPpeok', 'secondPpeok', 'thirdPpeok', 'firstTtadak'];
-
-function validPayout(value: unknown): boolean {
-  return (
-    object(value) &&
-    oneOf(value['kind'], PAYOUT_KINDS) &&
-    seat(value['to']) &&
-    seat(value['from']) &&
-    money(value['points'])
-  );
-}
-
-function validResult(value: unknown): boolean {
-  return (
-    value === null ||
-    (object(value) &&
-      oneOf(value['reason'], END_REASONS) &&
-      nullable(value['winner'], seat) &&
-      (value['pushed'] === undefined || typeof value['pushed'] === 'boolean'))
-  );
-}
-
-function validGame(value: unknown, roundNumber: number, rules: unknown): boolean {
-  if (!object(value) || !object(value['round'])) return false;
-  const round = value['round'];
-  return (
-    oneOf(value['phase'], ['chooseFirst', 'turn', 'end']) &&
-    JSON.stringify(value['rules']) === JSON.stringify(rules) &&
-    Array.isArray(value['rng']) &&
-    value['rng'].length === 4 &&
-    value['rng'].every(integer) &&
-    nullable(value['dealer'], seat) &&
-    seat(value['turn']) &&
-    tuple(value['seats'], validSeat) &&
-    list(
-      value['floor'],
-      (group) =>
-        object(group) &&
-        money(group['month']) &&
-        cards(group['cards']) &&
-        oneOf(group['kind'], ['loose', 'ppeok', 'natural']) &&
-        nullable(group['owner'], seat),
-    ) &&
-    cards(value['deck']) &&
-    validPending(value['pending']) &&
-    validCtx(value['ctx']) &&
-    validFirstPick(value['firstPick']) &&
-    (value['phase'] !== 'chooseFirst' ||
-      (object(value['firstPick']) &&
-        Array.isArray(value['firstPick']['pool']) &&
-        value['firstPick']['pool'].length >= 2 &&
-        object(value['pending']) &&
-        value['pending']['kind'] === 'pickFirst')) &&
-    round['number'] === roundNumber &&
-    money(round['carry']) &&
-    money(round['pushes']) &&
-    nullable(round['fixedDeck'], cards) &&
-    list(value['instantPayouts'], validPayout) &&
-    validResult(value['result']) &&
-    money(value['eventSeq'])
-  );
-}
-
-function validSettlement(value: unknown): boolean {
-  if (!object(value)) return false;
-  return (
-    oneOf(value['reason'], END_REASONS) &&
-    nullable(value['winner'], seat) &&
-    nullable(value['loser'], seat) &&
-    list(
-      value['steps'],
-      (step) =>
-        object(step) &&
-        oneOf(step['kind'], [
-          'base',
-          'goBonus',
-          'goMultiplier',
-          'shake',
-          'bomb',
-          'piBak',
-          'gwangBak',
-          'meongtta',
-          'goBak',
-          'nagariCarry',
-          'jackpot',
-        ]) &&
-        oneOf(step['op'], ['add', 'mul']) &&
-        money(step['value']) &&
-        money(step['total']) &&
-        (step['origin'] === undefined || step['origin'] === 'push'),
-    ) &&
-    ['basePoints', 'multiplier', 'finalPoints', 'nextCarry'].every((key) => money(value[key])) &&
-    seat(value['nextDealer']) &&
-    list(value['instantPayouts'], validPayout) &&
-    tuple(value['gukjinAsPi'], (item) => typeof item === 'boolean') &&
-    (value['pushed'] === undefined || typeof value['pushed'] === 'boolean') &&
-    (value['forfeitedPoints'] === undefined || money(value['forfeitedPoints'])) &&
-    (value['nextPushes'] === undefined || money(value['nextPushes']))
-  );
-}
-
-function validRecord(value: unknown): boolean {
-  return (
-    object(value) &&
-    money(value['round']) &&
-    nullable(value['winner'], seat) &&
-    oneOf(value['reason'], END_REASONS) &&
-    money(value['points']) &&
-    pair(value['before']) &&
-    pair(value['after']) &&
-    money(value['amount']) &&
-    validSettlement(value['settlement']) &&
-    tuple(
-      value['captured'],
-      (pile) => object(pile) && ['gwang', 'yeol', 'tti', 'pi'].every((key) => cards(pile[key])),
-    )
-  );
-}
-
-function validAction(value: unknown): boolean {
-  if (!object(value) || !seat(value['seat'])) return false;
-  switch (value['type']) {
-    case 'pickFirst':
-      return money(value['index']);
-    case 'chongtong':
-      return oneOf(value['choice'], ['end', 'continue']);
-    case 'play':
-    case 'chooseTarget':
-      return money(value['card']);
-    case 'bomb':
-      return money(value['month']);
-    case 'shake':
-      return typeof value['accept'] === 'boolean';
-    case 'gukjin':
-      return typeof value['asPi'] === 'boolean';
-    case 'flipOnly':
-    case 'go':
-    case 'stop':
-    case 'push':
-      return true;
-    default:
-      return false;
-  }
-}
-
-function validEntry(value: unknown): boolean {
-  return (
-    object(value) &&
-    oneOf(value['kind'], ['round', 'instant']) &&
-    typeof value['label'] === 'string' &&
-    seat(value['from']) &&
-    seat(value['to']) &&
-    ['points', 'requested', 'amount'].every((key) => money(value[key])) &&
-    typeof value['capped'] === 'boolean'
-  );
-}
-
-/** v0(재충전 합계 필드 전) 저장은 잔액 합이 초기값일 때만 안전하게 보완한다. */
-function migrateSession(raw: Record<string, unknown>): Record<string, unknown> | null {
-  if (raw['version'] === 1) return raw;
-  if (raw['version'] !== 0 || !object(raw['config']) || !object(raw['ledger'])) return null;
-  const start = raw['config']['startBalance'];
-  const balances = raw['ledger']['balances'];
-  if (!money(start) || !pair(balances) || balances[0] + balances[1] !== start * 2) return null;
-  return { ...raw, version: 1, refilled: [0, 0], roundStart: raw['roundStart'] ?? balances };
-}
-
-/** localStorage에서 읽은 값(신뢰할 수 없음)을 검사한다. 모양이 다르면 null */
-export function parseSession(raw: unknown): SessionState | null {
-  if (!object(raw)) return null;
-  const o = migrateSession(raw);
-  if (o === null || !object(o['config']) || !object(o['ledger']) || !object(o['game'])) return null;
-  const config = o['config'];
-  const ledger = o['ledger'];
-  const game = o['game'];
-  const phases: readonly SessionPhase[] = ['playing', 'roundOver', 'bankrupt', 'ended'];
-  const preset = config['preset'];
-  const rules = config['rules'];
-  if (
-    o['version'] !== 1 ||
-    !Number.isSafeInteger(o['roundNumber']) ||
-    Number(o['roundNumber']) < 1 ||
-    !phases.includes(o['phase'] as SessionPhase) ||
-    typeof preset !== 'string' ||
-    !(preset in PRESETS) ||
-    !validRules(rules, preset as PresetId) ||
-    !money(config['seed']) ||
-    config['seed'] > 0xffffffff ||
-    !money(config['perPoint']) ||
-    !money(config['startBalance']) ||
-    !Array.isArray(config['names']) ||
-    config['names'].length !== 2 ||
-    !config['names'].every((name: unknown) => typeof name === 'string') ||
-    !pair(ledger['balances']) ||
-    !money(ledger['perPoint']) ||
-    !money(ledger['startBalance']) ||
-    !list(ledger['entries'], validEntry) ||
-    ledger['perPoint'] !== config['perPoint'] ||
-    ledger['startBalance'] !== config['startBalance'] ||
-    !pair(o['refilled']) ||
-    !pair(o['roundStart']) ||
-    ledger['balances'][0] + ledger['balances'][1] !==
-      config['startBalance'] * 2 + o['refilled'][0] + o['refilled'][1] ||
-    !validGame(game, Number(o['roundNumber']), rules) ||
-    !list(o['records'], validRecord) ||
-    !list(o['actions'], validAction)
-  ) {
-    return null;
-  }
-  return o as unknown as SessionState;
-}
+// 기존 호출자의 공개 경로를 유지한다. 저장 검증/마이그레이션은 storage 경계가 맡는다.
+export { parseSession } from '../storage/session-save.ts';

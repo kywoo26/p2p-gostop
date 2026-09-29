@@ -4,12 +4,14 @@
 import { PRESETS, type Action, type CardId } from '@p2p-gostop/engine';
 import {
   createMemoryTransportPair,
+  decode,
   type BoardView,
+  type HostMessage,
   type Message,
   type RelayNotice,
   type Transport,
 } from '@p2p-gostop/protocol';
-import { expect, test, vi } from 'vitest';
+import { expect, onTestFinished, test, vi } from 'vitest';
 import type { GameController } from '../game/controller.ts';
 import { GuestGame } from './guest.svelte.ts';
 import { clearHostSave, HostGame, loadHostSave, type HostConfig } from './host.svelte.ts';
@@ -40,6 +42,34 @@ function legalOf(c: GameController): readonly Action[] {
   return c.playback.board.legal;
 }
 
+/** 조작 전에 구독하고 대상 상태를 담은 수신 메시지를 기다린다. 타이머는 실패 상한뿐이다. */
+function receiveState(
+  wire: Transport,
+  matches: (message: HostMessage) => boolean,
+  act: () => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = wire.onMessage((raw) => {
+      const decoded = decode(raw, 'host');
+      if (!decoded.ok || !matches(decoded.message)) return;
+      clearTimeout(timeout);
+      unsubscribe();
+      resolve();
+    });
+    const timeout = setTimeout(() => {
+      unsubscribe();
+      reject(new Error('대상 상태 메시지를 받지 못했습니다'));
+    }, 5_000);
+    try {
+      act();
+    } catch (error) {
+      clearTimeout(timeout);
+      unsubscribe();
+      reject(error);
+    }
+  });
+}
+
 async function playOneRound(host: HostGame, guest: GuestGame): Promise<void> {
   expect(host.start()).toBe(true);
   await settle();
@@ -60,55 +90,104 @@ async function playOneRound(host: HostGame, guest: GuestGame): Promise<void> {
   throw new Error('한 판이 끝나지 않았습니다');
 }
 
-test('settled 저장본은 정산을 즉시 복원하고, 이어하기 전 hello도 다시 처리한다 (MN-05)', async () => {
-  clearHostSave();
-  const [hostWire, guestWire] = createMemoryTransportPair();
-  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false });
-  const guest = new GuestGame({
-    name: '민지',
-    transport: guestWire,
-    onTicket: () => {},
-    persist: false,
-  });
-  await settle();
-  await playOneRound(host, guest);
-  expect(guest.settlementNote).toContain('검증 통과');
-  const saved = loadHostSave();
-  expect(saved?.state.stage).toBe('settled');
-  expect(host.playback.settlement).not.toBeNull();
-  const records = host.records.length;
-  host.dispose();
-  guest.dispose();
+test.each([
+  { secretByte: 0, stage: 'playing' },
+  { secretByte: 128, stage: 'settled' },
+] as const)(
+  'settled 저장본 복원·hello 재처리 → 다음 판 $stage (MN-05·NP-03·NF-05)',
+  async ({ secretByte, stage }) => {
+    clearHostSave();
+    onTestFinished(clearHostSave);
+    const [hostWire, guestWire] = createMemoryTransportPair();
+    const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false });
+    onTestFinished(() => host.dispose());
+    const guest = new GuestGame({
+      name: '민지',
+      transport: guestWire,
+      onTicket: () => {},
+      persist: false,
+    });
+    onTestFinished(() => guest.dispose());
+    await settle();
+    await playOneRound(host, guest);
+    expect(guest.settlementNote).toContain('검증 통과');
+    const saved = loadHostSave();
+    expect(saved?.state.stage).toBe('settled');
+    expect(host.playback.settlement).not.toBeNull();
+    const records = host.records.length;
+    host.dispose();
+    guest.dispose();
 
-  const [restoredWire, rejoinedWire] = createMemoryTransportPair();
-  const resumed = new HostGame({
-    config: CONFIG,
-    resume: saved,
-    transport: restoredWire,
-    clock: false,
-    persist: false,
-  });
-  const rejoined = new GuestGame({
-    name: '민지',
-    token: saved?.state.token ?? null,
-    transport: rejoinedWire,
-    onTicket: () => {},
-    persist: false,
-  });
-  expect(rejoined.lobby).toBeNull();
-  expect(resumed.resumeSaved()).toBe(true);
-  await settle();
-  expect(resumed.playback.settlement?.view).toEqual(host.playback.settlement?.view);
-  expect(resumed.records).toHaveLength(records);
-  expect(rejoined.lobby?.names).toEqual(['호스트', '민지']);
-  expect(resumed.guestOnline).toBe(true);
-  resumed.nextRound();
-  expect(resumed.stats.round).toBe(2);
-  expect(resumed.stage).toBe('playing');
-  resumed.dispose();
-  rejoined.dispose();
-  clearHostSave();
-}, 30_000);
+    const [restoredWire, rejoinedWire] = createMemoryTransportPair();
+    const resumed = new HostGame({
+      config: CONFIG,
+      resume: saved,
+      transport: restoredWire,
+      clock: false,
+      persist: false,
+    });
+    onTestFinished(() => resumed.dispose());
+    const rejoined = new GuestGame({
+      name: '민지',
+      token: saved?.state.token ?? null,
+      transport: rejoinedWire,
+      onTicket: () => {},
+      persist: false,
+    });
+    onTestFinished(() => rejoined.dispose());
+    expect(rejoined.lobby).toBeNull();
+    await receiveState(
+      rejoinedWire,
+      (m) => m.t === 'snapshot' && m.status.round === 1 && m.status.stage === 'settled',
+      () => expect(resumed.resumeSaved()).toBe(true),
+    );
+    expect(resumed.playback.settlement?.view).toEqual(host.playback.settlement?.view);
+    expect(resumed.records).toHaveLength(records);
+    expect(rejoined.lobby?.names).toEqual(['호스트', '민지']);
+    expect(resumed.guestOnline).toBe(true);
+    // 다음 판은 비동기로 배달한다. 즉시 단언하면 handshake이며, 고정 sleep 대신 상태 수신을 기다려야 한다.
+    for (const wire of [restoredWire, rejoinedWire]) {
+      const send = wire.send.bind(wire);
+      wire.send = (message) => queueMicrotask(() => send(message));
+    }
+    // 32바이트 secret의 첫 바이트만 다르다. 0은 일반 분배, 128은 바닥 총통(R6)으로 즉시 정산한다.
+    const random = vi.spyOn(crypto, 'getRandomValues').mockImplementation((array) => {
+      if (array instanceof Uint8Array) {
+        array.fill(0);
+        array[0] = secretByte;
+      }
+      return array;
+    });
+    try {
+      await receiveState(
+        rejoinedWire,
+        (m) =>
+          (m.t === 'events' || m.t === 'snapshot') &&
+          m.status.round === 2 &&
+          m.status.stage === stage,
+        () => resumed.nextRound(),
+      );
+    } finally {
+      random.mockRestore();
+    }
+    expect(resumed.stats.round).toBe(2);
+    expect(resumed.stage).toBe(stage);
+    expect(rejoined.stage).toBe(stage);
+    expect(rejoined.stats.seq).toBe(resumed.stats.seq);
+    expect(resumed.records).toHaveLength(records + (stage === 'settled' ? 1 : 0));
+    if (stage === 'settled') {
+      expect(resumed.records.at(-1)).toMatchObject({ round: 2, winner: null, reason: 'nagari' });
+      expect(
+        restoredWire.sent.some(
+          (m) =>
+            m.t === 'events' &&
+            m.list.some((e) => e.type === 'Settled' && e.settlement.reason === 'floorChongtong'),
+        ),
+      ).toBe(true);
+    }
+  },
+  30_000,
+);
 
 test('bankrupt 저장본은 재충전 선택이 가능한 정산을 복원한다 (MN-02·MN-05)', async () => {
   clearHostSave();
@@ -493,8 +572,14 @@ test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고
   guestWire.reconnect();
   (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'joined' });
   // 실제 중계의 present 알림으로 GuestSession이 스스로 hello를 보낸다.
-  notifyRelay({ t: 'relay', peer: 'present' });
-  await settle();
+  await receiveState(
+    guestWire,
+    (m) =>
+      (m.t === 'snapshot' || m.t === 'events') &&
+      m.status.round === host.stats.round &&
+      guest.stats.seq === host.stats.seq,
+    () => notifyRelay({ t: 'relay', peer: 'present' }),
+  );
   expect(host.guestOnline).toBe(true);
   expect(guest.stats.seq).toBe(host.stats.seq);
   expect(host.stats.seq ?? 0).toBeGreaterThanOrEqual(before ?? 0);

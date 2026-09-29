@@ -45,10 +45,10 @@ const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   perPoint: DEFAULT_PER_POINT,
   startBalance: null,
   unit: '냥',
-  speed: 'fast',
+  speed: 'normal',
   sound: true,
   vibration: true,
-  difficulty: 'normal',
+  difficulty: 'commercial',
   aiTimeMs: 1000,
   playerName: '호스트',
 });

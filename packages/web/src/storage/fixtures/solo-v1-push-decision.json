@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "difficulty": "normal",
+  "session": {
+    "version": 1,
+    "config": {
+      "preset": "arcade",
+      "rules": {
+        "bonusCards": 3,
+        "bonusSteal": true,
+        "dealFloorBonusSteal": false,
+        "twoCardBomb": "off",
+        "ppeokPayout": "points",
+        "firstTtadakPayout": true,
+        "threePpeokPoints": 7,
+        "chongtongPoints": 10,
+        "chongtongContinue": true,
+        "bonusChongtong": "firstTurn",
+        "floorChongtong": "nagari",
+        "bothChongtong": "nagari",
+        "piBakThreshold": 7,
+        "piBakZeroExempt": true,
+        "lastTurnPpeokSteal": false,
+        "nagariCap": 8,
+        "goScoring": "plusNAndDouble",
+        "gukjin": "auto",
+        "push": true,
+        "jackpotRound": {
+          "every": 5,
+          "multiplier": 2
+        },
+        "missions": "off",
+        "firstDealer": "pickCard",
+        "naturalPpeokSteal": true,
+        "hudang": false,
+        "limitedLiability": false
+      },
+      "perPoint": 100,
+      "startBalance": 1000000,
+      "names": ["나", "컴퓨터"],
+      "seed": 1234
+    },
+    "phase": "pushDecision",
+    "roundNumber": 1,
+    "game": {
+      "phase": "end",
+      "rules": {
+        "bonusCards": 3,
+        "bonusSteal": true,
+        "dealFloorBonusSteal": false,
+        "twoCardBomb": "off",
+        "ppeokPayout": "points",
+        "firstTtadakPayout": true,
+        "threePpeokPoints": 7,
+        "chongtongPoints": 10,
+        "chongtongContinue": true,
+        "bonusChongtong": "firstTurn",
+        "floorChongtong": "nagari",
+        "bothChongtong": "nagari",
+        "piBakThreshold": 7,
+        "piBakZeroExempt": true,
+        "lastTurnPpeokSteal": false,
+        "nagariCap": 8,
+        "goScoring": "plusNAndDouble",
+        "gukjin": "auto",
+        "push": true,
+        "jackpotRound": {
+          "every": 5,
+          "multiplier": 2
+        },
+        "missions": "off",
+        "firstDealer": "pickCard",
+        "naturalPpeokSteal": true,
+        "hudang": false,
+        "limitedLiability": false
+      },
+      "rng": [3494494683, 3086332330, 2908879407, 4188360907],
+      "dealer": 0,
+      "turn": 0,
+      "seats": [
+        {
+          "hand": [48],
+          "captured": {
+            "gwang": [8, 28, 44],
+            "yeol": [12, 29, 45],
+            "tti": [37, 13, 17, 9],
+            "pi": [7, 38, 10, 14, 41, 42, 30, 31, 15, 50, 3, 18, 11]
+          },
+          "goCount": 0,
+          "lastGoScore": 0,
+          "shakes": 1,
+          "bombs": 0,
+          "bombTokens": 0,
+          "ppeokTurns": [],
+          "turnsTaken": 9,
+          "noCaptureStreak": 0,
+          "gukjinAsPi": false,
+          "score": {
+            "gwang": 2,
+            "yeol": 0,
+            "godori": 0,
+            "tti": 0,
+            "hongdan": 0,
+            "cheongdan": 0,
+            "chodan": 0,
+            "pi": 6,
+            "total": 8,
+            "gwangCount": 3,
+            "yeolCount": 3,
+            "ttiCount": 4,
+            "piCount": 15,
+            "gukjinAsPi": false
+          },
+          "revealed": []
+        },
+        {
+          "hand": [43, 40],
+          "captured": {
+            "gwang": [0],
+            "yeol": [4, 32, 24, 36],
+            "tti": [1, 25, 46, 5],
+            "pi": [27, 47, 23, 22, 49, 6, 34, 26, 39, 2]
+          },
+          "goCount": 0,
+          "lastGoScore": 0,
+          "shakes": 1,
+          "bombs": 0,
+          "bombTokens": 0,
+          "ppeokTurns": [],
+          "turnsTaken": 8,
+          "noCaptureStreak": 0,
+          "gukjinAsPi": false,
+          "score": {
+            "gwang": 0,
+            "yeol": 0,
+            "godori": 0,
+            "tti": 0,
+            "hongdan": 0,
+            "cheongdan": 0,
+            "chodan": 0,
+            "pi": 5,
+            "total": 5,
+            "gwangCount": 1,
+            "yeolCount": 3,
+            "ttiCount": 4,
+            "piCount": 14,
+            "gukjinAsPi": true
+          },
+          "revealed": []
+        }
+      ],
+      "floor": [
+        {
+          "month": 6,
+          "cards": [20],
+          "kind": "loose",
+          "owner": null
+        },
+        {
+          "month": 9,
+          "cards": [35],
+          "kind": "loose",
+          "owner": null
+        }
+      ],
+      "deck": [16, 21, 33, 19],
+      "pending": null,
+      "ctx": null,
+      "firstPick": null,
+      "round": {
+        "number": 1,
+        "carry": 1,
+        "pushes": 0,
+        "fixedDeck": null
+      },
+      "instantPayouts": [],
+      "result": {
+        "reason": "stop",
+        "winner": 0
+      },
+      "eventSeq": 117
+    },
+    "ledger": {
+      "perPoint": 100,
+      "startBalance": 1000000,
+      "balances": [1000000, 1000000],
+      "entries": []
+    },
+    "roundStart": [1000000, 1000000],
+    "records": [],
+    "actions": [
+      {
+        "type": "pickFirst",
+        "seat": 0,
+        "index": 0
+      },
+      {
+        "type": "pickFirst",
+        "seat": 1,
+        "index": 1
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 6
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 1
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 7
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 3
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 12
+      },
+      {
+        "type": "shake",
+        "seat": 0,
+        "accept": true
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 4
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 1,
+        "card": 47
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 14
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 22
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 15
+      },
+      {
+        "type": "chooseTarget",
+        "seat": 0,
+        "card": 30
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 32
+      },
+      {
+        "type": "shake",
+        "seat": 1,
+        "accept": true
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 24
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 34
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 29
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 35
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 39
+      },
+      {
+        "type": "play",
+        "seat": 1,
+        "card": 36
+      },
+      {
+        "type": "play",
+        "seat": 0,
+        "card": 44
+      },
+      {
+        "type": "stop",
+        "seat": 0
+      }
+    ],
+    "refilled": [0, 0]
+  }
+}

@@ -1,0 +1,2 @@
+# 원본 OFL byte 보존(SHA-256 검사), 원문의 행 끝 공백만 허용.
+*-OFL.txt whitespace=-blank-at-eol

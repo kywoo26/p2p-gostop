@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Policy } from '@p2p-gostop/ai';
+import type { GoStopRecord } from '../src/gostop.ts';
 import {
   DEFAULT_CONFIG,
   bankruptcy,
@@ -55,6 +56,49 @@ describe('명령행', () => {
 });
 
 describe('통계', () => {
+  it('고 횟수는 패자·나가리도 포함하고 선택 비율은 기회 수를 분모로 쓴다', () => {
+    const base = runPair(RANDOM, makePolicies(RANDOM), 0)[0];
+    if (base === undefined) throw new Error('판 기록 누락');
+    const decision: GoStopRecord = {
+      choice: 'stop',
+      goCount: 0,
+      score: 7,
+      turnsLeft: 3,
+      deckCount: 6,
+      opponentScore: 2,
+      opponentPotential: 4,
+      opponentPi: 5,
+      opponentGwang: 0,
+      ownBakRisk: false,
+      bakChance: true,
+    };
+    const records = [
+      {
+        ...base,
+        winner: 'B' as const,
+        netA: -10,
+        goA: 1,
+        goStopA: [{ ...decision, choice: 'go' as const }],
+      },
+      { ...base, winner: null, netA: 0, goA: 2, goStopA: [] },
+      { ...base, winner: 'A' as const, netA: 30, goA: 0, goStopA: [decision] },
+      {
+        ...base,
+        winner: 'A' as const,
+        netA: 20,
+        goA: 1,
+        goStopA: [{ ...decision, goCount: 1, score: 8 }],
+      },
+    ];
+    const s = summarize(records, RANDOM, 0);
+    expect(s.boldness.a.roundGoCounts).toEqual({ 0: 1, 1: 2, 2: 1 });
+    expect(s.boldness.a.firstSevenStop).toEqual({ stops: 1, opportunities: 2, rate: 0.5 });
+    expect(s.boldness.a.afterOneGoStop).toEqual({ stops: 1, opportunities: 1, rate: 1 });
+    expect(s.boldness.a.firstThreeStop).toEqual({ stops: 0, opportunities: 0, rate: null });
+    expect(s.boldness.a.stopScores).toEqual({ 7: 1, 8: 1 });
+    expect(s.meanNetMoneyA).toBe(1000);
+  });
+
   it('백분위·분포', () => {
     const sorted = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     expect(percentile(sorted, 0.5)).toBe(5);

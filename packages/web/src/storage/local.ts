@@ -29,14 +29,28 @@ export function storageAvailable(): boolean {
   }
 }
 
-export function readJson(key: string): unknown {
+export type JsonRead =
+  | { readonly status: 'missing' }
+  | { readonly status: 'invalid' }
+  | { readonly status: 'value'; readonly value: unknown };
+
+/** 이어하기 경계는 미저장과 접근/JSON 실패를 구분해 기존 오류 안내를 유지한다. */
+export function readJsonResult(key: string): JsonRead {
   try {
-    const raw = storage()?.getItem(key) ?? null;
-    return raw === null ? null : (JSON.parse(raw) as unknown);
+    const s = storage();
+    if (s === null) return { status: 'invalid' };
+    const raw = s.getItem(key);
+    return raw === null
+      ? { status: 'missing' }
+      : { status: 'value', value: JSON.parse(raw) as unknown };
   } catch {
-    // 접근 거부 또는 깨진 JSON
-    return null;
+    return { status: 'invalid' };
   }
+}
+
+export function readJson(key: string): unknown {
+  const result = readJsonResult(key);
+  return result.status === 'value' ? result.value : null;
 }
 
 /** 저장에 성공하면 true (용량 초과 등은 false) */

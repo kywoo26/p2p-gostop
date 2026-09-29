@@ -1,0 +1,288 @@
+/* PA-04: coherent ink/paper materials and original CSS frames; opt-in prototype. */
+[data-pro-scene] {
+  position: relative;
+  isolation: isolate;
+  --pro-felt: none;
+  --pro-wood: none;
+  --pro-gold: none;
+  --pro-leather: none;
+  --pro-key-art: none;
+  --pro-settlement-art: none;
+}
+.pro-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 30% 18%, #d7c49a18, #00110dcc 95%),
+    var(--pro-felt) repeat center / 380px;
+  border: 9px solid #39271e;
+  border-image: var(--pro-wood) 90 / 9px stretch;
+  box-shadow:
+    inset 0 0 0 2px #af8e47,
+    inset 0 0 35px #00100d;
+}
+.pro-scene::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 2px solid #b99b57;
+  border-image: var(--pro-gold) 35 / 2px stretch;
+  pointer-events: none;
+}
+.pro-loading {
+  position: fixed;
+  z-index: 80;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: #122821;
+  color: #fff5df;
+  font-size: 14px;
+  border: 1px solid #d6b36a;
+  border-radius: 0 0 10px 10px;
+  pointer-events: none;
+}
+.pro-loading progress {
+  display: block;
+  width: 100%;
+  height: 4px;
+  accent-color: #d6b36a;
+}
+.pro-loading button {
+  min-height: 48px;
+  pointer-events: auto;
+}
+html.pro-assets .home {
+  justify-content: center;
+  gap: 20px;
+  padding: 32px;
+}
+html.pro-assets .home h1 {
+  color: #f9e8bd;
+  font-size: 36px;
+  letter-spacing: -1.8px;
+  text-shadow: 0 3px 8px #0009;
+}
+.pro-home-art {
+  position: relative;
+  height: 238px;
+  display: grid;
+  place-items: center;
+  perspective: 600px;
+  background:
+    var(--pro-key-art) center / cover no-repeat,
+    #243b31;
+  border: 1px solid #a18d65;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 20px #0005;
+}
+.pro-home-art img {
+  position: absolute;
+  width: 52px;
+  height: 84px;
+  bottom: 12px;
+  left: 40px;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 9px 10px #0008;
+  transform: rotate(-17deg) translateX(-24px);
+}
+.pro-home-art img:nth-child(2) {
+  transform: translateY(-5px);
+  z-index: 1;
+}
+.pro-home-art img:nth-child(3) {
+  transform: rotate(17deg) translateX(24px);
+}
+html.pro-assets .home .menu-button {
+  border: 1px solid #8e805e;
+  border-radius: 10px;
+  background: #152b26;
+  color: #fff2d5;
+  font-weight: 700;
+  min-height: 56px;
+}
+html.pro-assets .home .menu-button.primary {
+  background: #e9d9b5;
+  border: 0;
+  color: #211e13;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px #0005;
+}
+html.pro-assets .home footer {
+  flex-wrap: wrap;
+  color: #e3d7bc;
+}
+html.pro-assets .home footer a {
+  color: #e3d7bc;
+}
+html.pro-assets .board {
+  background: transparent;
+  padding-inline: 16px;
+}
+html.pro-assets .board .center {
+  background: transparent;
+  box-shadow: none;
+}
+html.pro-assets .seat-bar {
+  position: relative;
+  padding: 7px 9px 7px 48px;
+  border-radius: 12px;
+  background:
+    linear-gradient(#101c19e8, #101c19e8),
+    var(--pro-leather) center / 160px;
+  border: 1px solid #947b4e;
+  box-shadow: 0 3px 7px #0005;
+}
+html.pro-assets .seat-bar::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 4px;
+  width: 38px;
+  height: 38px;
+  background:
+    var(--pro-avatar-10) center / cover no-repeat,
+    #28281d;
+  border-radius: 50%;
+  border: 1px solid #b7a077;
+}
+html.pro-assets .seat-bar.me::before {
+  background-image: var(--pro-avatar-01);
+}
+html.pro-assets .seat-bar .progress {
+  margin-left: -39px;
+  width: calc(100% + 39px);
+}
+html.pro-assets .seat-bar .stats {
+  gap: 4px 10px;
+  font-size: 14px;
+}
+html.pro-assets .seat-bar .stats dd {
+  color: #fff0c9;
+}
+html.pro-assets .seat-bar .stats dt {
+  color: #d1d5ca;
+}
+html.pro-assets .seat-bar .stats [data-testid$='score'] {
+  font-size: 24px;
+  line-height: 24px;
+}
+html.pro-assets .seat-bar .progress li {
+  color: #e5e9dd;
+  background: #244236;
+}
+html.pro-assets .card img {
+  box-shadow: 0 4px 5px #0009;
+}
+html.pro-assets .banner {
+  position: relative;
+  isolation: isolate;
+  background: #16261eea;
+  color: #f2e4c7;
+  border: 1px solid #b7a077;
+  border-radius: 12px;
+  font-size: 42px;
+  text-shadow: 0 2px 3px #000;
+}
+.pro-sprite {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+}
+html.pro-assets .screen[data-pro-scene] {
+  padding-inline: 24px;
+}
+html.pro-assets .screen[data-pro-scene] section {
+  background: #111e19eb;
+  border: 1px solid #8e774e;
+  color: #f8edd9;
+}
+html.pro-assets .screen[data-pro-scene] h2 {
+  color: #e1cda3;
+}
+html.pro-assets .screen[data-pro-scene] .button.primary {
+  background: #d9b675;
+  color: #1c2118;
+}
+html.pro-assets .screen[data-pro-scene='settlement'] .headline {
+  position: relative;
+  padding: 18px 12px;
+  min-height: 148px;
+  display: grid;
+  align-items: end;
+  text-shadow: 0 2px 3px #000;
+  border: 1px solid #b7a077;
+  border-radius: 12px;
+  background:
+    linear-gradient(0deg, #10271ff5, #10271f18 95%),
+    var(--pro-settlement-art) center / cover;
+  color: #ffe8a5;
+  font-size: 22px;
+}
+html.pro-assets .screen[data-pro-scene='settlement'] .amount {
+  color: #f2e4c7;
+}
+html.pro-assets .screen[data-pro-scene] header {
+  position: relative;
+}
+html.pro-assets :focus-visible {
+  outline: 3px solid #fff1ba;
+  outline-offset: 3px;
+}
+@media (max-height: 780px) {
+  html.pro-assets .home {
+    gap: 12px;
+    padding: 20px 28px;
+  }
+  .pro-home-art {
+    height: 180px;
+  }
+  html.pro-assets .home nav {
+    gap: 8px;
+  }
+  html.pro-assets .home .menu-button {
+    min-height: 48px;
+  }
+  html.pro-assets .seat-bar {
+    padding-block: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.pro-assets *,
+  html.pro-assets *::before,
+  html.pro-assets *::after {
+    scroll-behavior: auto;
+  }
+}
+
+.pro-sprite {
+  width: 240px;
+  height: 240px;
+}
+.pro-scene::after {
+  opacity: 0.6;
+}
+/* Reserve space for the review effect so the atlas never obscures a playable floor card. */
+html.pro-assets .board .center:has(.banner) {
+  padding-top: 144px;
+}
+html.pro-assets .board .banner-layer:has(.banner) {
+  inset: 0 0 auto;
+  height: 144px;
+  place-items: center;
+  overflow: clip;
+}
+html.pro-assets .board .pro-sprite {
+  width: 168px;
+  height: 168px;
+}

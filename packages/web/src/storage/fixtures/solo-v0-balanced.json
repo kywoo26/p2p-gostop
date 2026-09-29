@@ -1,0 +1,179 @@
+{
+  "version": 0,
+  "difficulty": "normal",
+  "session": {
+    "version": 0,
+    "config": {
+      "preset": "standard",
+      "rules": {
+        "bonusCards": 3,
+        "bonusSteal": true,
+        "dealFloorBonusSteal": false,
+        "twoCardBomb": "off",
+        "ppeokPayout": "points",
+        "firstTtadakPayout": true,
+        "threePpeokPoints": 7,
+        "chongtongPoints": 10,
+        "chongtongContinue": true,
+        "bonusChongtong": "firstTurn",
+        "floorChongtong": "nagari",
+        "bothChongtong": "nagari",
+        "piBakThreshold": 7,
+        "piBakZeroExempt": true,
+        "lastTurnPpeokSteal": false,
+        "nagariCap": 8,
+        "goScoring": "plusNAndDouble",
+        "gukjin": "auto",
+        "push": false,
+        "jackpotRound": null,
+        "missions": "off",
+        "firstDealer": "pickCard",
+        "naturalPpeokSteal": true,
+        "hudang": false,
+        "limitedLiability": false
+      },
+      "perPoint": 100,
+      "startBalance": 1000000,
+      "names": ["나", "컴퓨터"],
+      "seed": 1234
+    },
+    "phase": "playing",
+    "roundNumber": 1,
+    "game": {
+      "phase": "chooseFirst",
+      "rules": {
+        "bonusCards": 3,
+        "bonusSteal": true,
+        "dealFloorBonusSteal": false,
+        "twoCardBomb": "off",
+        "ppeokPayout": "points",
+        "firstTtadakPayout": true,
+        "threePpeokPoints": 7,
+        "chongtongPoints": 10,
+        "chongtongContinue": true,
+        "bonusChongtong": "firstTurn",
+        "floorChongtong": "nagari",
+        "bothChongtong": "nagari",
+        "piBakThreshold": 7,
+        "piBakZeroExempt": true,
+        "lastTurnPpeokSteal": false,
+        "nagariCap": 8,
+        "goScoring": "plusNAndDouble",
+        "gukjin": "auto",
+        "push": false,
+        "jackpotRound": null,
+        "missions": "off",
+        "firstDealer": "pickCard",
+        "naturalPpeokSteal": true,
+        "hudang": false,
+        "limitedLiability": false
+      },
+      "rng": [3048947410, 384060661, 3784417920, 3581274282],
+      "dealer": null,
+      "turn": 0,
+      "seats": [
+        {
+          "hand": [],
+          "captured": {
+            "gwang": [],
+            "yeol": [],
+            "tti": [],
+            "pi": []
+          },
+          "goCount": 0,
+          "lastGoScore": 0,
+          "shakes": 0,
+          "bombs": 0,
+          "bombTokens": 0,
+          "ppeokTurns": [],
+          "turnsTaken": 0,
+          "noCaptureStreak": 0,
+          "gukjinAsPi": false,
+          "score": {
+            "gwang": 0,
+            "yeol": 0,
+            "godori": 0,
+            "tti": 0,
+            "hongdan": 0,
+            "cheongdan": 0,
+            "chodan": 0,
+            "pi": 0,
+            "total": 0,
+            "gwangCount": 0,
+            "yeolCount": 0,
+            "ttiCount": 0,
+            "piCount": 0,
+            "gukjinAsPi": false
+          },
+          "revealed": []
+        },
+        {
+          "hand": [],
+          "captured": {
+            "gwang": [],
+            "yeol": [],
+            "tti": [],
+            "pi": []
+          },
+          "goCount": 0,
+          "lastGoScore": 0,
+          "shakes": 0,
+          "bombs": 0,
+          "bombTokens": 0,
+          "ppeokTurns": [],
+          "turnsTaken": 0,
+          "noCaptureStreak": 0,
+          "gukjinAsPi": false,
+          "score": {
+            "gwang": 0,
+            "yeol": 0,
+            "godori": 0,
+            "tti": 0,
+            "hongdan": 0,
+            "cheongdan": 0,
+            "chodan": 0,
+            "pi": 0,
+            "total": 0,
+            "gwangCount": 0,
+            "yeolCount": 0,
+            "ttiCount": 0,
+            "piCount": 0,
+            "gukjinAsPi": false
+          },
+          "revealed": []
+        }
+      ],
+      "floor": [],
+      "deck": [],
+      "pending": {
+        "kind": "pickFirst",
+        "seats": [0, 1]
+      },
+      "ctx": null,
+      "firstPick": {
+        "pool": [41, 2, 31, 50, 46, 11, 48, 3],
+        "picks": [null, null],
+        "ties": 0,
+        "nextPools": [],
+        "isNight": false
+      },
+      "round": {
+        "number": 1,
+        "carry": 1,
+        "pushes": 0,
+        "fixedDeck": null
+      },
+      "instantPayouts": [],
+      "result": null,
+      "eventSeq": 0
+    },
+    "ledger": {
+      "perPoint": 100,
+      "startBalance": 1000000,
+      "balances": [1000000, 1000000],
+      "entries": []
+    },
+    "records": [],
+    "actions": []
+  }
+}

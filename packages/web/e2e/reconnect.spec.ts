@@ -57,6 +57,17 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const host = await (await hostBrowser.newContext()).newPage();
     const guest = await (await guestBrowser.newContext()).newPage();
+    // 시스템 시각 보정이 응답 기한을 앞당기거나 늦추지 않도록 자동 진행하는 테스트 시계를 쓴다.
+    // pause/fastForward 없이 실제 5초를 기다리고, 경과 시간은 Node의 단조 시각으로 잰다 (#96).
+    await guest.clock.install({ time: new Date('2026-09-29T00:00:00Z') });
+    let receiveHello!: (at: number) => void;
+    let receiveSnapshot!: (at: number) => void;
+    const hello = new Promise<number>((resolve) => {
+      receiveHello = resolve;
+    });
+    const snapshot = new Promise<number>((resolve) => {
+      receiveSnapshot = resolve;
+    });
     let dropId: number | null = null;
     let actionAt = 0;
     let detectedAt = 0;
@@ -72,12 +83,15 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
           actionCount++;
           if (dropId === null) {
             dropId = message.requestId ?? null;
-            actionAt = Date.now();
+            actionAt = performance.now();
           }
         }
         if (message.t === 'hello') {
           helloCount++;
-          if (dropped && detectedAt === 0) detectedAt = Date.now();
+          if (dropped && detectedAt === 0) {
+            detectedAt = performance.now();
+            receiveHello(detectedAt);
+          }
         }
         server.send(raw);
       });
@@ -91,8 +105,10 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
           dropped = true;
           return;
         }
-        if (detectedAt !== 0 && message.t === 'snapshot' && snapshotAt === 0)
-          snapshotAt = Date.now();
+        if (detectedAt !== 0 && message.t === 'snapshot' && snapshotAt === 0) {
+          snapshotAt = performance.now();
+          receiveSnapshot(snapshotAt);
+        }
         ws.send(raw);
       });
     });
@@ -118,12 +134,12 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
     await expect(guest.getByTestId('match')).toHaveAttribute('data-can-act', 'true');
     const before = Number(await guest.getByTestId('match').getAttribute('data-seq'));
     expect(await step(guest)).toBe(true);
-    await expect.poll(() => dropped).toBe(true);
-    await expect.poll(() => detectedAt, { timeout: 7_000 }).toBeGreaterThan(0);
-    const detectMs = detectedAt - actionAt;
+    // 구독은 클릭보다 먼저 한다. 초기 hello나 응답을 버리기 전 snapshot은 성공 조건이 아니다.
+    const detectMs = (await hello) - actionAt;
+    expect(dropped).toBe(true);
     expect(detectMs).toBeGreaterThanOrEqual(4_000);
     expect(detectMs).toBeLessThan(6_000); // 5초 응답 기한 + 1초 시계 해상도
-    await expect.poll(() => snapshotAt, { timeout: 5_000 }).toBeGreaterThan(0);
+    await snapshot;
     // 첫 선 고르기처럼 이벤트 순번이 그대로인 합법 수도 있다. 스냅샷 뒤 입력 잠금 해제를 본다.
     await expect
       .poll(() =>
@@ -137,12 +153,12 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
     expect(
       Number(await guest.getByTestId('match').getAttribute('data-seq')),
     ).toBeGreaterThanOrEqual(before);
-    const recoveredAt = Date.now();
+    const recoveredAt = performance.now();
     expect(recoveredAt - actionAt).toBeLessThan(10_000);
     expect(snapshotAt).toBeGreaterThanOrEqual(detectedAt);
     expect(helloCount).toBeGreaterThanOrEqual(2); // 최초 입장 + 자동 재인증
     console.log(
-      `[NF-05] 응답 유실 감지 ${detectMs}ms · snapshot ${snapshotAt - actionAt}ms · 화면 복구 ${recoveredAt - actionAt}ms`,
+      `[NF-05] 응답 유실 감지 ${Math.round(detectMs)}ms · snapshot ${Math.round(snapshotAt - actionAt)}ms · 화면 복구 ${Math.round(recoveredAt - actionAt)}ms`,
     );
 
     // 복구 후 다음 게스트 입력이 다시 전송되는지 확인한다. 수동 join/다시 연결 버튼은 누르지 않는다.

@@ -196,7 +196,10 @@ function expectSettlement(session: SessionState) {
   const s = record.settlement;
   if (s.winner !== null && (s.reason === 'stop' || s.reason === 'autoStop')) {
     const base = s.steps.find((step) => step.kind === 'base');
-    expect(view.breakdown.reduce((n, row) => n + row.points, 0)).toBe(base?.value);
+    if (s.pushed) {
+      expect(base).toBeUndefined();
+      expect(view.breakdown.reduce((n, row) => n + row.points, 0)).toBeGreaterThan(0);
+    } else expect(view.breakdown.reduce((n, row) => n + row.points, 0)).toBe(base?.value);
   }
   const holders = ([0, 1] as const).filter((seat) =>
     record.captured[seat].yeol.includes(GUKJIN_ID),

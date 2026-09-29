@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { PRO_CREDITS } from '../pro-assets/credits.ts';
   // 라이선스·저작자 표시 (spec 6.6·NF-07, code-refs.md 4.2). 설정 > 라이선스에서 연다.
   // 외부 주소는 글자로만 보여 준다(링크를 걸지 않음: 오프라인 앱, spec NF-01). 파일별 출처는 번들 안의 ATTRIBUTION.md.
   import {
@@ -11,6 +12,13 @@
     ORIGINAL_ART_LICENSE,
   } from '../cards/attribution.ts';
   import Screen from '../ui/Screen.svelte';
+  import fontLicense from '../styles/fonts/GostopSans-OFL.txt?raw';
+  import {
+    FONT_ATTRIBUTION_URLS,
+    FONT_CREDIT,
+    FONT_ORIGINAL,
+    FONT_MODIFIED,
+  } from '../fonts/attribution.ts';
 
   const attributionHref = `${import.meta.env.BASE_URL}cards/ATTRIBUTION.md`;
 </script>
@@ -47,13 +55,46 @@
     </p>
   </section>
 
+  <section aria-labelledby="lic-font">
+    <h2 id="lic-font">글꼴</h2>
+    <p>{FONT_ORIGINAL} · {FONT_MODIFIED}</p>
+    <p lang="en">{FONT_CREDIT}</p>
+    <p>
+      SIL Open Font License 1.1. UI 문자 서브셋·WOFF2 변환·힌팅 제거·수정본 이름 변경. 가변 가중치와
+      등폭 숫자 기능 유지.
+    </p>
+    {#each FONT_ATTRIBUTION_URLS as url (url)}<code>{url}</code>{/each}
+    <details>
+      <summary>폰트 라이선스 원문</summary>
+      <pre lang="en">{fontLicense}</pre>
+    </details>
+  </section>
+
   <section aria-labelledby="lic-code">
     <h2 id="lic-code">앱 코드</h2>
     <p>{CODE_LICENSE.scope} 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.</p>
   </section>
+  <section aria-labelledby="lic-pro">
+    <h2 id="lic-pro">게임 자산</h2>
+    {#each PRO_CREDITS as item (item.source)}<p>{item.author} · {item.license}</p>
+      <code>{item.source}</code><code>{item.licenseUrl}</code>
+      <p>{item.changes}</p>{/each}
+    <a class="button" href="/pro/NOTICE.md">파일별 출처 목록</a>
+  </section>
 </Screen>
 
 <style>
+  summary {
+    min-height: var(--touch-min);
+    padding-block: var(--space-3);
+    cursor: pointer;
+  }
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+    font-size: var(--font-size-s);
+  }
   p {
     margin: 0;
   }

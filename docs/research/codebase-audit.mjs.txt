@@ -1,0 +1,52 @@
+// 재현 명령은 docs/refactor-plan.md §1.1. 문서 부록이며 제품 실행 진입점이 아니다.
+// stdin은 추적 파일 목록. 생성물·의존성·새 감사 문서는 분모에서 제외한다.
+import fs from 'node:fs';
+import path from 'node:path';
+import ts from 'typescript';
+const paths = fs.readFileSync(0, 'utf8').trim().split('\n').filter(Boolean);
+const roots = ['packages/engine', 'packages/ai', 'packages/protocol', 'packages/web', 'packages/relay-dev', 'tools/sim', 'android'];
+const owner = p => roots.find(r => p.startsWith(r + '/'));
+const code = /\.(ts|js|mjs|svelte|kt|kts)$/;
+const test = p => /(?:\/test\/|\/e2e\/|\.(?:test|spec)\.)/.test(p);
+const loc = s => s ? s.split('\n').length - Number(s.endsWith('\n')) : 0;
+const rows = paths.filter(p => code.test(p)).map(file => ({file, package:owner(file), lines:loc(fs.readFileSync(file,'utf8')), test:test(file)}));
+const quantile = (xs, q) => [...xs].sort((a,b)=>a-b)[Math.max(0,Math.ceil(xs.length*q)-1)] ?? 0;
+const functions = [], imports = [], declarations = [];
+for (const row of rows.filter(r => /\.(ts|js|mjs|svelte)$/.test(r.file))) {
+  const raw = fs.readFileSync(row.file,'utf8');
+  // Svelte의 script 본문만 TS로 읽고 원래 줄 번호를 유지한다. template expression은 제외.
+  const source = row.file.endsWith('.svelte') ? [...raw.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m => '\n'.repeat(loc(raw.slice(0,m.index + m[0].indexOf('>')+1))-1)+m[1]).join('\n') : raw;
+  const sf = ts.createSourceFile(row.file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  function visit(n) {
+    if ((ts.isFunctionDeclaration(n)||ts.isFunctionExpression(n)||ts.isArrowFunction(n)||ts.isMethodDeclaration(n)||ts.isConstructorDeclaration(n)||ts.isGetAccessorDeclaration(n)||ts.isSetAccessorDeclaration(n)) && n.body) {
+      const start = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line+1;
+      functions.push({file:row.file, name:n.name?.getText(sf) ?? (ts.isVariableDeclaration(n.parent) ? n.parent.name.getText(sf) : '<callback>'), line:start, lines:sf.getLineAndCharacterOfPosition(n.end).line+2-start, test:row.test});
+    }
+    if ((ts.isImportDeclaration(n)||ts.isExportDeclaration(n)) && n.moduleSpecifier && ts.isStringLiteral(n.moduleSpecifier)) imports.push({file:row.file, specifier:n.moduleSpecifier.text, typeOnly:!!(n.importClause?.isTypeOnly||n.isTypeOnly)});
+    if (ts.isCallExpression(n) && n.expression.kind===ts.SyntaxKind.ImportKeyword && n.arguments[0] && ts.isStringLiteral(n.arguments[0])) imports.push({file:row.file,specifier:n.arguments[0].text,typeOnly:false});
+    if (ts.isTypeAliasDeclaration(n)||ts.isInterfaceDeclaration(n)) declarations.push({file:row.file,name:n.name.text,body:n.getText(sf).replace(/\s+/g,' ')});
+    ts.forEachChild(n,visit);
+  }
+  visit(sf);
+}
+const manifests = roots.filter(r=>r!=='android').map(root=>({root,...JSON.parse(fs.readFileSync(root+'/package.json','utf8'))}));
+const names = new Map(manifests.map(m=>[m.name,m.root]));
+const edges = imports.flatMap(i => {
+  const manifest = manifests.find(m=>i.specifier===m.name||i.specifier.startsWith(m.name+'/'));
+  const subpath = manifest && (i.specifier===manifest.name ? '.' : '.'+i.specifier.slice(manifest.name.length));
+  const entry = manifest && (typeof manifest.exports==='string' ? manifest.exports : manifest.exports?.[subpath]);
+  const to = i.specifier.startsWith('.') ? path.posix.normalize(path.posix.join(path.posix.dirname(i.file),i.specifier)) : entry ? path.posix.join(manifest.root,entry) : '';
+  return owner(to) ? [{...i,to,fromPackage:owner(i.file),toPackage:owner(to)}] : [];
+});
+// 전체 파일 그래프의 강연결 성분(Tarjan). 타입 전용 간선도 포함한 보수적 탐색이다.
+function cycles(es) {
+ const adj = new Map(); for(const [a,b] of es) {if(!adj.has(a))adj.set(a,[]);adj.get(a).push(b);}
+ let next=0;const ids=new Map(),low=new Map(),stack=[],active=new Set(),out=[];
+ function visit(v){ids.set(v,next);low.set(v,next++);stack.push(v);active.add(v);for(const w of adj.get(v)??[]){if(!ids.has(w)){visit(w);low.set(v,Math.min(low.get(v),low.get(w)));}else if(active.has(w))low.set(v,Math.min(low.get(v),ids.get(w)));}if(low.get(v)===ids.get(v)){const group=[];let w;do{w=stack.pop();active.delete(w);group.push(w);}while(w!==v);if(group.length>1)out.push(group.sort());}}
+ for(const v of adj.keys())if(!ids.has(v))visit(v);return out;
+}
+const cross = edges.filter(e=>e.fromPackage!==e.toPackage);
+const packageImports = [...new Set(cross.map(e=>e.fromPackage+' -> '+e.toPackage))].sort().map(edge=>({edge,count:cross.filter(e=>e.fromPackage+' -> '+e.toPackage===edge).length,production:cross.filter(e=>e.fromPackage+' -> '+e.toPackage===edge&&!test(e.file)).length}));
+const duplicateTypes = [...new Set(declarations.map(d=>d.name))].map(name=>({name,files:declarations.filter(d=>d.name===name).map(d=>d.file)})).filter(d=>new Set(d.files).size>1);
+const vectors = paths.filter(p=>/^packages\/engine\/test\/vectors\/.*\.json$/.test(p)).map(file=>({file,count:JSON.parse(fs.readFileSync(file,'utf8')).length}));
+console.log(JSON.stringify({method:'physical LOC including comments/blank lines; code extensions ts/js/mjs/svelte/kt/kts; TS AST functions incl nested callbacks; Kotlin function lengths excluded',packages:roots.map(root=>{const rs=rows.filter(r=>r.package===root),ls=rs.map(r=>r.lines);return {package:root,trackedFiles:paths.filter(p=>owner(p)===root).length,codeFiles:rs.length,lines:ls.reduce((a,b)=>a+b,0),p50:quantile(ls,.5),p90:quantile(ls,.9),max:Math.max(...ls),testFiles:rs.filter(r=>r.test).length,testLines:rs.filter(r=>r.test).reduce((a,r)=>a+r.lines,0)};}),topFiles:[...rows].sort((a,b)=>b.lines-a.lines).slice(0,15),topProductionFiles:rows.filter(r=>!r.test).sort((a,b)=>b.lines-a.lines).slice(0,15),functionSummary:{count:functions.length,p50:quantile(functions.map(f=>f.lines),.5),p90:quantile(functions.map(f=>f.lines),.9)},topFunctions:functions.filter(f=>!f.test).sort((a,b)=>b.lines-a.lines).slice(0,20),packageImports,packageCycles:cycles(cross.map(e=>[e.fromPackage,e.toPackage])),fileCycles:cycles(edges.map(e=>[e.file,e.to])),crossRelativeImports:cross.filter(e=>e.specifier.startsWith('.')),duplicateTypes,vectors,vectorCount:vectors.reduce((n,v)=>n+v.count,0)},null,2));
