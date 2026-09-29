@@ -45,7 +45,7 @@
 | 단계 | 구현 / 규칙 |
 |---|---|
 | 입력 | `assets-src/manifest.json`, 선택 원본과 동봉 License.txt. 소스 해시 불일치면 변환 실패. 새 제공 이미지도 출처/권리/변경 허용 여부 등록 뒤 같은 파이프라인 사용 |
-| 실행 | `docker compose run --rm dev python3 packages/web/scripts/build-pro-assets.py`. Pillow 10.2.0, FFmpeg 6.1.1, libavif 1.0.4를 dev image4에만 설치. npm 런타임 의존성0 |
+| 실행 | `uv run packages/web/scripts/build-pro-assets.py`. Pillow 10.2.0, FFmpeg 6.1.1, libavif 1.0.4를 dev image4에만 설치. npm 런타임 의존성0 |
 | 이미지 | WebP quality88 + AVIF q20~30, 1x/2x/3x. texture 기준512px, art512px, avatar64px. **원본보다 확대해 품질이 늘었다고 하지 않음**: 1K 원본은 3x도1K,128px FX cell은2x/3x 동일 상한 |
 | 재질 | Fabric albedo 재색상화·normal 방향광 베이크. roughness 원본은 보관하되 현재 런타임 미사용. 가죽/나무/금도 먹/호두/무광 황동으로 재색상화. WebGL/Pixi 도입 없음 |
 | 스프라이트 | para 8×8,64프레임 유지하며 각 tier 리사이즈. Kenney 개별 광점은128px cell 가로 atlas+JSON으로 패킹. 투명 알파 보존 |
@@ -82,7 +82,7 @@ API 근거: [Pillow Image](https://pillow.readthedocs.io/en/stable/reference/Ima
 
 압축 전 로컬 이미지 레이어 크기 기준이다. registry 전송 압축 크기/호스트 공유 레이어 실제 추가 점유량/앱 dist 증가와 다르다. Dockerfile은 주석만 갱신해 동일 이미지 태그를 유지한다.
 
-[FFmpeg format flags / Ogg](https://ffmpeg.org/ffmpeg-formats.html#ogg) 근거로 `-flags +bitexact -fflags +bitexact -serial_offset 0`, 입력 metadata 제거를 고정했다. `pro-audio.py`를 생성/검증이 공유한다. `docker compose run --rm dev python3 packages/web/scripts/check-pro-assets.py`는 5개 Ogg를 각각 두 번 독립 인코딩해 SHA-256 상호 일치, 커밋 산출물 일치, Ogg 헤더 serial=0을 검사한다. 동일 입력·고정 도구 재현성을 보장하며 다른 인코더 버전의 동일 바이트까지 주장하지 않는다.
+[FFmpeg format flags / Ogg](https://ffmpeg.org/ffmpeg-formats.html#ogg) 근거로 `-flags +bitexact -fflags +bitexact -serial_offset 0`, 입력 metadata 제거를 고정했다. `pro-audio.py`를 생성/검증이 공유한다. `uv run packages/web/scripts/check-pro-assets.py`는 5개 Ogg를 각각 두 번 독립 인코딩해 SHA-256 상호 일치, 커밋 산출물 일치, Ogg 헤더 serial=0을 검사한다. 동일 입력·고정 도구 재현성을 보장하며 다른 인코더 버전의 동일 바이트까지 주장하지 않는다.
 
 ## 5. 측정과 승인
 
@@ -155,12 +155,12 @@ API 근거: [Pillow Image](https://pillow.readthedocs.io/en/stable/reference/Ima
 
 ```sh
 # 현행 본선 gate: 평가 팩 제외, ≤1.5MiB
- docker compose run --rm dev npm run build -w packages/web
+ npm run build -w packages/web
 # 평가 전용: 명시적으로 초과 허용, 기본/릴리스 빌드와 구분
- docker compose run --rm dev env PRO_ASSET_REVIEW=1 npm run build -w packages/web
- docker compose run --rm dev node packages/web/scripts/review-pro-assets.mjs
- docker compose run --rm dev node packages/web/scripts/throttle-pro-assets.mjs
- docker compose run --rm dev env PRO_ASSET_REVIEW=1 npm run e2e -w packages/web -- e2e/pro-assets.spec.ts
+ PRO_ASSET_REVIEW=1 npm run build -w packages/web
+ node packages/web/scripts/review-pro-assets.mjs
+ node packages/web/scripts/throttle-pro-assets.mjs
+ PRO_ASSET_REVIEW=1 npm run e2e -w packages/web -- e2e/pro-assets.spec.ts
 ```
 
 기본 production 빌드는 `?visual=pro`만 붙여도 평가 팩을 켤 수 없다. dev 또는명시적 평가 빌드에서만 활성화된다. 공식 APK/본선 전환은 이 PR의 자동 승인 대상이 아니다.
