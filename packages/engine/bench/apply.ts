@@ -1,5 +1,5 @@
 // 엔진 적용 경로 벤치마크 (CI 아님, 수동 측정용). ai-tuning.md §6-6 "검증 없는 적용 경로".
-// 사용: ./dev.sh npm run bench -w packages/engine [-- 판수]
+// 사용: docker compose run --rm dev npm run bench -w packages/engine [-- 판수]
 // 1) 무작위 합법 정책으로 판을 두며 (상태, 액션) 쌍을 모은 뒤, 같은 쌍을 reduce / applyUnchecked로 다시 적용해 처리량을 잰다.
 // 2) 롤아웃 전체(합법 수 열거 + 무작위 선택 + 적용)를 두 경로로 잰다(AI 롤아웃과 같은 모양).
 import * as engine from '../src/index.ts';

@@ -69,7 +69,9 @@ p2p-gostop/
 │  ├─ app/src/main/{kotlin,res,assets/web}
 │  ├─ gradle/libs.versions.toml
 │  └─ settings.gradle.kts
-├─ docker/                      # Dockerfile·compose, 실행 스크립트
+├─ docker/                      # 단일 개발 이미지 Dockerfile·진입점·태그 검사
+├─ compose.yaml                  # 개발 이미지의 dev 서비스
+├─ .devcontainer/               # 같은 dev 서비스의 VS Code 설정
 ├─ .github/workflows/           # ci.yml, release.yml
 ├─ docs/                        # research/, ai-tuning.md, money-model.md, device-test-log/
 ├─ intend.md · spec.md · plan.md
@@ -132,16 +134,11 @@ p2p-gostop/
 
 ## 2. 개발 환경 (Docker)
 
-| 서비스 | 이미지 | 용도 |
-|---|---|---|
-| `node` | `node:24-bookworm-slim` | 엔진·AI·프로토콜 단위 테스트, 웹 빌드, sim CLI |
-| `e2e` | `mcr.microsoft.com/playwright:v1.63.0-noble` | Playwright Chromium+WebKit E2E |
-| `android` | `cimg/android:2026.08.1-node` | Gradle 빌드(APK), Android 단위 테스트 |
-
-- `docker/compose.yml`에 세 서비스와 명명된 볼륨(`node_modules`, `gradle-cache`, `pw-browsers`)을 둔다. 소스는 바인드 마운트.
-- 실행 진입점 `./dev.sh <task>`: `install`, `test`, `test:watch`, `build:web`, `e2e`, `sim`, `apk:debug`, `apk:release`, `lint`. 내부적으로 `docker compose run --rm <svc> …`.
-- Docker Desktop이 꺼져 있으면 `dev.sh`가 즉시 안내하고 종료한다.
-- 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요 시 `--device /dev/kvm`으로 `cimg/android`에 `emulator` 패키지를 추가한 별도 이미지를 만든다. M4 이후 WebView 셸 스모크에만 사용.
+- `docker/Dockerfile`은 Playwright 공식 이미지(Node 24.20.0, Chromium·WebKit)에 Temurin 21과 Android SDK 36을 더한 단일 개발 이미지다. 루트 `compose.yaml`의 `dev` 서비스가 소스를 바인드 마운트한다. CI도 이 이미지를 빌드해 같은 명령을 실행한다(NF-06).
+- 저장소 루트에서 `docker compose run --rm dev <명령>`으로 실행한다. 새 체크아웃은 먼저 `npm ci`; lint·check·test·test:browser·웹 빌드·E2E·Android 명령은 [AGENTS.md §5](AGENTS.md)를 따른다. Dev Container는 같은 서비스를 쓰며, Claude Code 공식 feature와 dev(uid 1000) 소유 `/home/dev/.claude` 볼륨을 사용한다.
+- `node_modules`는 체크아웃마다 소스와 함께 바인드 마운트된다. 이전 환경의 root 소유 디렉터리가 남으면 진입점이 안내하고 종료한다. 비어 있으면 호스트에서 `rmdir node_modules`, 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 복구한다. 옛 명명 볼륨은 이름을 확인한 뒤 개별 제거한다(README 전환 절차).
+- `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. `docker/check-dev-image-tag.sh`가 커밋·스테이지·작업 트리의 Dockerfile 변경을 검사한다. 없는 태그는 첫 `run`에서 빌드한다.
+- 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요하면 Android SDK 에뮬레이터를 별도 이미지에 추가해 WebView 셸 스모크에만 쓴다.
 
 ---
 
@@ -162,7 +159,7 @@ p2p-gostop/
 ### 현재 트랙
 
 - 제품 우선순위·PR별 소유권·완료 조건은 [Galaxy·솔로 세부 계획](https://github.com/kywoo26/p2p-gostop/pull/76)(PR #76)에만 둔다. 여기서 작업 목록을 복제하지 않는다. Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 보류한다.
-- 진행 중: AI #56, 병합된 응답 유실 복구 #59의 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. `dev.sh`는 체크아웃별 compose 프로젝트명을 부여해 볼륨을 분리한다.
+- 진행 중: AI #56, 병합된 응답 유실 복구 #59의 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. 새 진입점은 체크아웃별 Compose 프로젝트로 컨테이너를 분리한다.
 - 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 끝난 리뷰·통합·수정 트랙은 위 상태 표와 리뷰 이력으로 대체한다.
 - 작업은 워크트리·브랜치·PR로 격리한다. 위임 시 Codex(Paseo)를 기본으로 판단·리뷰는 Astra, 구현은 Sol, 저위험 정리는 Luna를 배분하며 Claude 서브에이전트는 사용자 명시 때만 쓴다. 병합은 CI 녹색 + reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터만 수행한다.
 
@@ -188,7 +185,7 @@ p2p-gostop/
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (push/PR): Node 24 설정 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → Playwright(공식 컨테이너 잡: E2E, 갤러리 스냅샷, axe) → JDK 21 + Gradle 캐시 → `assembleDebug` + Android 테스트·Lint → APK 아티팩트.
+- `ci.yml` (push/PR): 단일 개발 이미지를 빌드해 `npm ci` → lint·check → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → 브라우저 테스트·Playwright E2E(Chromium·WebKit) → `assembleDebug` + Android 테스트·Lint를 같은 이미지에서 실행한다. Gradle 홈 캐시와 APK 아티팩트를 보존한다.
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
 - `release.yml`: 웹 빌드는 서명 잡 안에서 키스토어 복원 **전에**, 읽기 전용 마운트 + 비밀 없는 `docker run` 컨테이너에서 `npm ci --ignore-scripts`로 수행한다(계정 아티팩트 용량 초과로 잡 분리 대신 컨테이너 격리 채택). 빌드 후 추적 파일 변경이 있으면 실패. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, 태그 커밋이 main에 있어야 함(M0 리뷰 R-1/R-4~R-7).
@@ -225,7 +222,7 @@ p2p-gostop/
 
 ## 8. 초기 구축 이력
 
-M0 골격·스모크 작업은 완료되어 §3과 [M0 리뷰](docs/reviews/M0-review.md)로 대체한다. 당시 진입점 구성: `docker/compose.yml`, `docker/Dockerfile.android`(cimg 기반, 필요 시 최소 추가), `dev.sh`.
+M0 골격·스모크 작업은 완료되어 §3과 [M0 리뷰](docs/reviews/M0-review.md)로 대체한다. 당시에는 `docker/compose.yml`의 분리된 서비스·셸 래퍼를 썼으며, §2의 단일 이미지·루트 Compose로 교체했다.
 
 ---
 
@@ -235,7 +232,7 @@ D1·D2는 기존 트랙 ID를 유지하고, 나머지 확정 결정을 D3~D6으�
 
 | ID | 결정 | 근거·남은 일 |
 |---|---|---|
-| D1 | Commons 48장 유지·앱 렌더링 개선, 보너스 3장·뒷면만 같은 화풍으로 신규 제작 | 사용자 2026-09-29 결정. 시안 A/B·클래식 리마스터 기각, PR #37 닫힘 |
+| D1 | Commons 48장 유지·앱 렌더링 개선, 보너스 3장·뒷면만 같은 화풍으로 신규 제작 | 사용자 2026-09-29 결정. 시안 A/B·클래식 리마스터 기각, PR #37 닫힘. [구현 수치·검증 절차](docs/design/cards-polish.md) |
 | D2 | [UI 규범](docs/design/ui-spec.md) UX-01~25를 spec §6에 반영 | PR #55 설계 완료, 구현 격차 #46~#53 유지 |
 | D3 | 순수 TS 엔진 한 벌, Android는 셸·중계 전용 | §1.1·§1.4, spec FR-11·NF-09 |
 | D4 | 하이브리드 도구·Svelte·WAAPI·npm workspaces 유지 | §1.8, 버전 정본 AGENTS.md §2 |
@@ -247,6 +244,7 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 ---
 
 ## 10. 변경 이력
+- v0.9 (2026-09-29): §2를 단일 개발 이미지·루트 Compose·Dev Container로 교체하고, CI 명령과 기존 볼륨 전환 절차를 동기화(PR #38, NF-06).
 - v0.8 (2026-09-29): 마일스톤 이력을 상태 표로, 진행 계획을 현재 트랙으로 통합. 버전 표는 AGENTS.md로, 세부 증분은 Galaxy·솔로 계획으로 일원화.
 - v0.7 (2026-09-29): 1.1 중계 규칙을 최신 연결 우선(4001)·알림·위조 차단·1003/1009/1008로 확정(M4 프로토콜 리뷰 #15·#24).
 - v0.6 (2026-09-28): 3-2 재개 계획(사후 리뷰·통합·후속 트랙, 리뷰 필수 규칙).

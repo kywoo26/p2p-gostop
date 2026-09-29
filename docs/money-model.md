@@ -22,9 +22,9 @@
 - 정통·아케이드는 아래 명령으로 재현한다(표준도 `--preset standard`로 같은 방식). 아케이드는 먼저 기존 기본값 150,000냥에서 3,000판을 측정해 후보 200,000냥을 구했다. 잔액에 따라 밀기 결정이 달라지므로 **최종 표는 200,000냥을 실제 시작 잔액으로 지정한 두 번째 3,000판**을 사용한다.
 
 ```sh
-./dev.sh sim --mode session --a commercial --b commercial --rounds 3000 \
+docker compose run --rm dev npm run sim -- --mode session --a commercial --b commercial --rounds 3000 \
   --session-length 30 --per-point 100 --preset traditional --seed 11 --workers 20 --mc 200000
-./dev.sh sim --mode session --a commercial --b commercial --rounds 3000 \
+docker compose run --rm dev npm run sim -- --mode session --a commercial --b commercial --rounds 3000 \
   --session-length 30 --per-point 100 --start-balance 200000 \
   --preset arcade --seed 11 --workers 20 --mc 200000
 ```

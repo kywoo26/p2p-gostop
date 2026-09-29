@@ -1,7 +1,7 @@
 // 게임판 속성 테스트 (Vitest 브라우저 모드, M3 리뷰 S-2·I-6(b)): 화면에 그려진 숫자(획득패 칸 숫자·장수,
 // 족보 진행도, 점수, 뻑·폭탄 횟수, 국진 "쌍피" 표지)가 무작위 판의 액션마다 엔진 ScoreBreakdown과 같다.
 // 국진 자동(S5 기본)과 묻기 모드를 모두 돈다.
-import { GUKJIN_ID, PRESETS, scoreCaptured } from '@p2p-gostop/engine';
+import { PRESETS, scoreCaptured } from '@p2p-gostop/engine';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import Board from './Board.svelte';
@@ -72,8 +72,8 @@ describe('화면 숫자 = 엔진 ScoreBreakdown (DOM)', () => {
           `[data-testid="${mine ? 'my-score' : 'opponent-score'}"]`,
         );
         expect(score?.textContent, where).toBe(String(engine.score.total));
-        // 국진을 쌍피로 세면 피 칸에 "쌍피" 표지와 함께 있다
-        const gukjinInPi = pi.el.querySelector(`[data-card-id="${GUKJIN_ID}"] .badge`);
+        // 국진을 쌍피로 세면 피 칸 제목에 "국진 쌍피" 표지가 있다
+        const gukjinInPi = pi.el.querySelector('.pile-badge');
         expect(gukjinInPi !== null, where).toBe(expected.gukjinAsPi);
         if (expected.gukjinAsPi) asPiSeen += 1;
       }

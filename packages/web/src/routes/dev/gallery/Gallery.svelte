@@ -28,6 +28,7 @@
   /** 갤러리 페이지 목록 (e2e/gallery.spec.ts가 같은 이름을 쓴다) */
   const PAGES = [
     ['cards', '카드 앞면·뒷면 (세 크기)'],
+    ['card-sizes', '카드 크기·표식 배치'],
     ['board', '게임판: 카드 내기'],
     ['board-target', '게임판: 대상 고르기 모달'],
     ['board-gostop', '게임판: 고/스톱 모달'],
@@ -77,6 +78,17 @@
     { size: 's', label: '작게 (획득패)' },
     { size: 'm', label: '보통 (바닥)' },
     { size: 'l', label: '크게 (손패)' },
+  ];
+
+  /** 크기별 비교에 쓰는 카드: 광 5장, 홍단·청단, 국진, 쌍피 2장, 보너스 3장 (null = 뒷면) */
+  const SAMPLE_IDS = [0, 8, 28, 40, 44, 1, 33, 32, 43, 47, 48, 49, 50, null] as const;
+  const MONTH_CARD_IDS = ALL_CARD_IDS.filter((id) => id < 48);
+  /** 26·44·62px은 앱 토큰 그대로, 88px은 손패 크기 토큰을 덮어써 확대한다 */
+  const sampleSizes: { size: CardSize; label: string; style?: string }[] = [
+    { size: 's', label: '26px (획득패)' },
+    { size: 'm', label: '44px (바닥)' },
+    { size: 'l', label: '62px (손패)' },
+    { size: 'l', label: '88px (확대)', style: '--card-w-l: 88px; --card-h-l: 143px' },
   ];
 
   const banners = fixtures.board.events.flatMap((event) => {
@@ -163,6 +175,27 @@
               <li><Card {id} {size} /><span class="card-id">#{id}</span></li>
             {/each}
             <li><Card id={null} {size} /><span class="card-id">뒷면</span></li>
+          </ol>
+        </section>
+      {/each}
+    {:else if page === 'card-sizes'}
+      {#each sampleSizes as { size, label, style } (label)}
+        <section aria-label={`카드 ${label}`} {style}>
+          <h2>{label}</h2>
+          <ol class={['cards', 'felt', `cards-${size}`]}>
+            {#each SAMPLE_IDS as id (id ?? 'back')}
+              <li><Card {id} {size} marks={size !== 's'} /></li>
+            {/each}
+          </ol>
+        </section>
+      {/each}
+      {#each ['bottom', 'top'] as const as markAt (markAt)}
+        <section aria-label={`표식 ${markAt === 'top' ? '위' : '아래'} · 48장`}>
+          <h2>표식 {markAt === 'top' ? '위 (두 줄 손패의 윗줄)' : '아래 (기본)'} · 48장</h2>
+          <ol class={['cards', 'felt']}>
+            {#each MONTH_CARD_IDS as id (id)}
+              <li><Card {id} size="m" {markAt} /></li>
+            {/each}
           </ol>
         </section>
       {/each}
@@ -301,6 +334,12 @@
     display: grid;
     justify-items: center;
     gap: 2px;
+  }
+
+  .felt {
+    padding: var(--space-3);
+    border-radius: var(--radius-m);
+    background: var(--color-felt);
   }
 
   .card-id {

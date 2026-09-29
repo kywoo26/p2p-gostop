@@ -1,0 +1,617 @@
+{
+  "method": "physical LOC including comments/blank lines; code extensions ts/js/mjs/svelte/kt/kts; TS AST functions incl nested callbacks; Kotlin function lengths excluded",
+  "packages": [
+    {
+      "package": "packages/engine",
+      "trackedFiles": 47,
+      "codeFiles": 36,
+      "lines": 6146,
+      "p50": 119,
+      "p90": 417,
+      "max": 593,
+      "testFiles": 11,
+      "testLines": 2525
+    },
+    {
+      "package": "packages/ai",
+      "trackedFiles": 31,
+      "codeFiles": 28,
+      "lines": 3202,
+      "p50": 88,
+      "p90": 240,
+      "max": 419,
+      "testFiles": 9,
+      "testLines": 876
+    },
+    {
+      "package": "packages/protocol",
+      "trackedFiles": 24,
+      "codeFiles": 20,
+      "lines": 5762,
+      "p50": 181,
+      "p90": 693,
+      "max": 1171,
+      "testFiles": 6,
+      "testLines": 2030
+    },
+    {
+      "package": "packages/web",
+      "trackedFiles": 214,
+      "codeFiles": 105,
+      "lines": 14303,
+      "p50": 88,
+      "p90": 331,
+      "max": 712,
+      "testFiles": 24,
+      "testLines": 3661
+    },
+    {
+      "package": "packages/relay-dev",
+      "trackedFiles": 7,
+      "codeFiles": 4,
+      "lines": 650,
+      "p50": 139,
+      "p90": 335,
+      "max": 335,
+      "testFiles": 2,
+      "testLines": 474
+    },
+    {
+      "package": "tools/sim",
+      "trackedFiles": 11,
+      "codeFiles": 9,
+      "lines": 1217,
+      "p50": 58,
+      "p90": 401,
+      "max": 401,
+      "testFiles": 2,
+      "testLines": 223
+    },
+    {
+      "package": "android",
+      "trackedFiles": 56,
+      "codeFiles": 39,
+      "lines": 4042,
+      "p50": 60,
+      "p90": 394,
+      "max": 431,
+      "testFiles": 16,
+      "testLines": 1176
+    }
+  ],
+  "topFiles": [
+    {
+      "file": "packages/protocol/test/session.test.ts",
+      "package": "packages/protocol",
+      "lines": 1171,
+      "test": true
+    },
+    {
+      "file": "packages/protocol/src/host.ts",
+      "package": "packages/protocol",
+      "lines": 1009,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/p2p/host.svelte.ts",
+      "package": "packages/web",
+      "lines": 712,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/guest.ts",
+      "package": "packages/protocol",
+      "lines": 693,
+      "test": false
+    },
+    {
+      "file": "packages/engine/src/turn.ts",
+      "package": "packages/engine",
+      "lines": 593,
+      "test": false
+    },
+    {
+      "file": "packages/engine/test/step-checks.ts",
+      "package": "packages/engine",
+      "lines": 554,
+      "test": true
+    },
+    {
+      "file": "packages/web/src/p2p/wiring.test.ts",
+      "package": "packages/web",
+      "lines": 503,
+      "test": true
+    },
+    {
+      "file": "packages/web/src/p2p/guest.svelte.ts",
+      "package": "packages/web",
+      "lines": 469,
+      "test": false
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/GameActivity.kt",
+      "package": "android",
+      "lines": 431,
+      "test": false
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/server/SmokeServer.kt",
+      "package": "android",
+      "lines": 427,
+      "test": false
+    },
+    {
+      "file": "packages/engine/test/api.test.ts",
+      "package": "packages/engine",
+      "lines": 425,
+      "test": true
+    },
+    {
+      "file": "packages/ai/src/policies/ismcts.ts",
+      "package": "packages/ai",
+      "lines": 419,
+      "test": false
+    },
+    {
+      "file": "packages/engine/test/vector-harness.ts",
+      "package": "packages/engine",
+      "lines": 417,
+      "test": true
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/MainActivity.kt",
+      "package": "android",
+      "lines": 416,
+      "test": false
+    },
+    {
+      "file": "tools/sim/src/stats.ts",
+      "package": "tools/sim",
+      "lines": 401,
+      "test": false
+    }
+  ],
+  "topProductionFiles": [
+    {
+      "file": "packages/protocol/src/host.ts",
+      "package": "packages/protocol",
+      "lines": 1009,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/p2p/host.svelte.ts",
+      "package": "packages/web",
+      "lines": 712,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/guest.ts",
+      "package": "packages/protocol",
+      "lines": 693,
+      "test": false
+    },
+    {
+      "file": "packages/engine/src/turn.ts",
+      "package": "packages/engine",
+      "lines": 593,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/p2p/guest.svelte.ts",
+      "package": "packages/web",
+      "lines": 469,
+      "test": false
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/GameActivity.kt",
+      "package": "android",
+      "lines": 431,
+      "test": false
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/server/SmokeServer.kt",
+      "package": "android",
+      "lines": 427,
+      "test": false
+    },
+    {
+      "file": "packages/ai/src/policies/ismcts.ts",
+      "package": "packages/ai",
+      "lines": 419,
+      "test": false
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/MainActivity.kt",
+      "package": "android",
+      "lines": 416,
+      "test": false
+    },
+    {
+      "file": "tools/sim/src/stats.ts",
+      "package": "tools/sim",
+      "lines": 401,
+      "test": false
+    },
+    {
+      "file": "android/app/src/main/kotlin/com/kywoo26/p2pgostop/HotspotService.kt",
+      "package": "android",
+      "lines": 394,
+      "test": false
+    },
+    {
+      "file": "packages/engine/src/state.ts",
+      "package": "packages/engine",
+      "lines": 377,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/net/ws-transport.ts",
+      "package": "packages/web",
+      "lines": 371,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/game/playback.svelte.ts",
+      "package": "packages/web",
+      "lines": 364,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/routes/HostRoom.svelte",
+      "package": "packages/web",
+      "lines": 360,
+      "test": false
+    }
+  ],
+  "functionSummary": {
+    "count": 2404,
+    "p50": 4,
+    "p90": 24
+  },
+  "topFunctions": [
+    {
+      "file": "packages/web/src/game/display.ts",
+      "name": "applyEvent",
+      "line": 117,
+      "lines": 124,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/bridge/bridge.ts",
+      "name": "createNativeBridge",
+      "line": 154,
+      "lines": 119,
+      "test": false
+    },
+    {
+      "file": "tools/sim/src/config.ts",
+      "name": "parseArgs",
+      "line": 114,
+      "lines": 114,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/guest.ts",
+      "name": "receive",
+      "line": 596,
+      "lines": 97,
+      "test": false
+    },
+    {
+      "file": "packages/relay-dev/src/index.ts",
+      "name": "startRelay",
+      "line": 61,
+      "lines": 91,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/host.ts",
+      "name": "receive",
+      "line": 786,
+      "lines": 87,
+      "test": false
+    },
+    {
+      "file": "packages/engine/src/turn.ts",
+      "name": "resolve",
+      "line": 426,
+      "lines": 80,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/transport.ts",
+      "name": "createQueuedTransportPair",
+      "line": 120,
+      "lines": 78,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/game/playback.svelte.ts",
+      "name": "onEvent",
+      "line": 291,
+      "lines": 73,
+      "test": false
+    },
+    {
+      "file": "packages/ai/src/match.ts",
+      "name": "playRound",
+      "line": 79,
+      "lines": 70,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/anim/choreo.ts",
+      "name": "runStep",
+      "line": 159,
+      "lines": 70,
+      "test": false
+    },
+    {
+      "file": "tools/sim/src/stats.ts",
+      "name": "toMarkdown",
+      "line": 332,
+      "lines": 70,
+      "test": false
+    },
+    {
+      "file": "packages/ai/src/policies/ismcts.ts",
+      "name": "iterate",
+      "line": 329,
+      "lines": 67,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/verify.ts",
+      "name": "checkRound",
+      "line": 163,
+      "lines": 62,
+      "test": false
+    },
+    {
+      "file": "packages/web/src/net/ws-transport.ts",
+      "name": "connect",
+      "line": 163,
+      "lines": 62,
+      "test": false
+    },
+    {
+      "file": "packages/relay-dev/src/index.ts",
+      "name": "<callback>",
+      "line": 73,
+      "lines": 60,
+      "test": false
+    },
+    {
+      "file": "tools/sim/src/runner.ts",
+      "name": "playOne",
+      "line": 94,
+      "lines": 58,
+      "test": false
+    },
+    {
+      "file": "tools/sim/src/stats.ts",
+      "name": "bankruptcy",
+      "line": 86,
+      "lines": 58,
+      "test": false
+    },
+    {
+      "file": "packages/ai/src/policies/ismcts.ts",
+      "name": "analyzeGoStop",
+      "line": 86,
+      "lines": 56,
+      "test": false
+    },
+    {
+      "file": "packages/protocol/src/view.ts",
+      "name": "toSettlementView",
+      "line": 259,
+      "lines": 56,
+      "test": false
+    }
+  ],
+  "packageImports": [
+    {
+      "edge": "packages/ai -> packages/engine",
+      "count": 23,
+      "production": 16
+    },
+    {
+      "edge": "packages/protocol -> packages/engine",
+      "count": 12,
+      "production": 7
+    },
+    {
+      "edge": "packages/relay-dev -> packages/engine",
+      "count": 1,
+      "production": 0
+    },
+    {
+      "edge": "packages/relay-dev -> packages/protocol",
+      "count": 4,
+      "production": 2
+    },
+    {
+      "edge": "packages/web -> packages/ai",
+      "count": 8,
+      "production": 8
+    },
+    {
+      "edge": "packages/web -> packages/engine",
+      "count": 33,
+      "production": 24
+    },
+    {
+      "edge": "packages/web -> packages/protocol",
+      "count": 13,
+      "production": 11
+    },
+    {
+      "edge": "tools/sim -> packages/ai",
+      "count": 4,
+      "production": 2
+    },
+    {
+      "edge": "tools/sim -> packages/engine",
+      "count": 3,
+      "production": 3
+    }
+  ],
+  "packageCycles": [],
+  "fileCycles": [],
+  "crossRelativeImports": [],
+  "duplicateTypes": [
+    {
+      "name": "PlayedRound",
+      "files": [
+        "packages/ai/src/match.ts",
+        "packages/engine/test/helpers.ts"
+      ]
+    },
+    {
+      "name": "CardId",
+      "files": [
+        "packages/engine/src/cards.ts",
+        "packages/protocol/src/view-types.ts"
+      ]
+    },
+    {
+      "name": "Month",
+      "files": [
+        "packages/engine/src/cards.ts",
+        "packages/protocol/src/view-types.ts"
+      ]
+    },
+    {
+      "name": "Seat",
+      "files": [
+        "packages/engine/src/state.ts",
+        "packages/protocol/src/view-types.ts"
+      ]
+    },
+    {
+      "name": "SettleStepKind",
+      "files": [
+        "packages/engine/src/state.ts",
+        "packages/protocol/src/view-types.ts"
+      ]
+    },
+    {
+      "name": "EventBase",
+      "files": [
+        "packages/engine/src/state.ts",
+        "packages/protocol/src/view-types.ts"
+      ]
+    },
+    {
+      "name": "SeatView",
+      "files": [
+        "packages/engine/src/view.ts",
+        "packages/protocol/src/view-types.ts"
+      ]
+    },
+    {
+      "name": "GuestConnection",
+      "files": [
+        "packages/protocol/src/guest.ts",
+        "packages/web/src/routes/GuestJoin.svelte"
+      ]
+    },
+    {
+      "name": "RoundRecord",
+      "files": [
+        "packages/protocol/src/host.ts",
+        "packages/web/src/game/session.ts",
+        "tools/sim/src/runner.ts"
+      ]
+    },
+    {
+      "name": "SettlementInput",
+      "files": [
+        "packages/protocol/src/view.ts",
+        "packages/web/src/game/records.ts"
+      ]
+    },
+    {
+      "name": "Step",
+      "files": [
+        "packages/relay-dev/test/relay.test.ts",
+        "packages/web/src/anim/flip.ts"
+      ]
+    },
+    {
+      "name": "LogLevel",
+      "files": [
+        "packages/web/src/bridge/bridge.ts",
+        "packages/web/src/game/log.svelte.ts"
+      ]
+    },
+    {
+      "name": "Props",
+      "files": [
+        "packages/web/src/p2p/QrCode.svelte",
+        "packages/web/src/routes/Diagnostics.svelte",
+        "packages/web/src/routes/Game.svelte",
+        "packages/web/src/routes/GuestJoin.svelte",
+        "packages/web/src/routes/Home.svelte",
+        "packages/web/src/routes/HostRoom.svelte",
+        "packages/web/src/routes/Records.svelte",
+        "packages/web/src/routes/Settings.svelte",
+        "packages/web/src/routes/Settlement.svelte",
+        "packages/web/src/routes/dev/gallery/Gallery.svelte",
+        "packages/web/src/ui/Board.svelte",
+        "packages/web/src/ui/CapturedPile.svelte",
+        "packages/web/src/ui/Card.svelte",
+        "packages/web/src/ui/ChoicePrompt.svelte",
+        "packages/web/src/ui/EventBanner.svelte",
+        "packages/web/src/ui/Floor.svelte",
+        "packages/web/src/ui/GoStopModal.svelte",
+        "packages/web/src/ui/Hand.svelte",
+        "packages/web/src/ui/PickFirstPrompt.svelte",
+        "packages/web/src/ui/PromptPanel.svelte",
+        "packages/web/src/ui/Screen.svelte",
+        "packages/web/src/ui/SeatBar.svelte",
+        "packages/web/src/ui/TargetModal.svelte"
+      ]
+    }
+  ],
+  "vectors": [
+    {
+      "file": "packages/engine/test/vectors/bonus.json",
+      "count": 21
+    },
+    {
+      "file": "packages/engine/test/vectors/deal.json",
+      "count": 20
+    },
+    {
+      "file": "packages/engine/test/vectors/events.json",
+      "count": 71
+    },
+    {
+      "file": "packages/engine/test/vectors/gostop.json",
+      "count": 40
+    },
+    {
+      "file": "packages/engine/test/vectors/pi.json",
+      "count": 9
+    },
+    {
+      "file": "packages/engine/test/vectors/push.json",
+      "count": 13
+    },
+    {
+      "file": "packages/engine/test/vectors/score.json",
+      "count": 30
+    },
+    {
+      "file": "packages/engine/test/vectors/settle.json",
+      "count": 11
+    },
+    {
+      "file": "packages/engine/test/vectors/view.json",
+      "count": 12
+    }
+  ],
+  "vectorCount": 227
+}

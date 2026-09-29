@@ -1,0 +1,330 @@
+- main:
+  - heading "개발 갤러리" [level=1]
+  - paragraph:
+    - link "홈으로":
+      - /url: "#/"
+    - text: ·
+    - link "목차":
+      - /url: "#/dev/gallery"
+  - region "카드 26px (획득패)":
+    - heading "26px (획득패)" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+      - listitem:
+        - img "3월 광"
+      - listitem:
+        - img "8월 광"
+      - listitem:
+        - img "11월 광"
+      - listitem:
+        - img "12월 비광"
+      - listitem:
+        - img "1월 홍단"
+      - listitem:
+        - img "9월 청단"
+      - listitem:
+        - img "9월 국진"
+      - listitem:
+        - img "11월 쌍피"
+      - listitem:
+        - img "12월 쌍피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 3피"
+      - listitem:
+        - img "카드 뒷면"
+  - region "카드 44px (바닥)":
+    - heading "44px (바닥)" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+      - listitem:
+        - img "3월 광"
+      - listitem:
+        - img "8월 광"
+      - listitem:
+        - img "11월 광"
+      - listitem:
+        - img "12월 비광"
+      - listitem:
+        - img "1월 홍단"
+      - listitem:
+        - img "9월 청단"
+      - listitem:
+        - img "9월 국진"
+      - listitem:
+        - img "11월 쌍피"
+      - listitem:
+        - img "12월 쌍피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 3피"
+      - listitem:
+        - img "카드 뒷면"
+  - region "카드 62px (손패)":
+    - heading "62px (손패)" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+      - listitem:
+        - img "3월 광"
+      - listitem:
+        - img "8월 광"
+      - listitem:
+        - img "11월 광"
+      - listitem:
+        - img "12월 비광"
+      - listitem:
+        - img "1월 홍단"
+      - listitem:
+        - img "9월 청단"
+      - listitem:
+        - img "9월 국진"
+      - listitem:
+        - img "11월 쌍피"
+      - listitem:
+        - img "12월 쌍피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 3피"
+      - listitem:
+        - img "카드 뒷면"
+  - region "카드 88px (확대)":
+    - heading "88px (확대)" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+      - listitem:
+        - img "3월 광"
+      - listitem:
+        - img "8월 광"
+      - listitem:
+        - img "11월 광"
+      - listitem:
+        - img "12월 비광"
+      - listitem:
+        - img "1월 홍단"
+      - listitem:
+        - img "9월 청단"
+      - listitem:
+        - img "9월 국진"
+      - listitem:
+        - img "11월 쌍피"
+      - listitem:
+        - img "12월 쌍피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 2피"
+      - listitem:
+        - img "보너스 3피"
+      - listitem:
+        - img "카드 뒷면"
+  - region "표식 아래 · 48장":
+    - heading "표식 아래 (기본) · 48장" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+      - listitem:
+        - img "1월 홍단"
+      - listitem:
+        - img "1월 피"
+      - listitem:
+        - img "1월 피"
+      - listitem:
+        - img "2월 고도리"
+      - listitem:
+        - img "2월 홍단"
+      - listitem:
+        - img "2월 피"
+      - listitem:
+        - img "2월 피"
+      - listitem:
+        - img "3월 광"
+      - listitem:
+        - img "3월 홍단"
+      - listitem:
+        - img "3월 피"
+      - listitem:
+        - img "3월 피"
+      - listitem:
+        - img "4월 고도리"
+      - listitem:
+        - img "4월 초단"
+      - listitem:
+        - img "4월 피"
+      - listitem:
+        - img "4월 피"
+      - listitem:
+        - img "5월 열끗"
+      - listitem:
+        - img "5월 초단"
+      - listitem:
+        - img "5월 피"
+      - listitem:
+        - img "5월 피"
+      - listitem:
+        - img "6월 열끗"
+      - listitem:
+        - img "6월 청단"
+      - listitem:
+        - img "6월 피"
+      - listitem:
+        - img "6월 피"
+      - listitem:
+        - img "7월 열끗"
+      - listitem:
+        - img "7월 초단"
+      - listitem:
+        - img "7월 피"
+      - listitem:
+        - img "7월 피"
+      - listitem:
+        - img "8월 광"
+      - listitem:
+        - img "8월 고도리"
+      - listitem:
+        - img "8월 피"
+      - listitem:
+        - img "8월 피"
+      - listitem:
+        - img "9월 국진"
+      - listitem:
+        - img "9월 청단"
+      - listitem:
+        - img "9월 피"
+      - listitem:
+        - img "9월 피"
+      - listitem:
+        - img "10월 열끗"
+      - listitem:
+        - img "10월 청단"
+      - listitem:
+        - img "10월 피"
+      - listitem:
+        - img "10월 피"
+      - listitem:
+        - img "11월 광"
+      - listitem:
+        - img "11월 피"
+      - listitem:
+        - img "11월 피"
+      - listitem:
+        - img "11월 쌍피"
+      - listitem:
+        - img "12월 비광"
+      - listitem:
+        - img "12월 열끗"
+      - listitem:
+        - img "12월 비띠"
+      - listitem:
+        - img "12월 쌍피"
+  - region "표식 위 · 48장":
+    - heading "표식 위 (두 줄 손패의 윗줄) · 48장" [level=2]
+    - list:
+      - listitem:
+        - img "1월 광"
+      - listitem:
+        - img "1월 홍단"
+      - listitem:
+        - img "1월 피"
+      - listitem:
+        - img "1월 피"
+      - listitem:
+        - img "2월 고도리"
+      - listitem:
+        - img "2월 홍단"
+      - listitem:
+        - img "2월 피"
+      - listitem:
+        - img "2월 피"
+      - listitem:
+        - img "3월 광"
+      - listitem:
+        - img "3월 홍단"
+      - listitem:
+        - img "3월 피"
+      - listitem:
+        - img "3월 피"
+      - listitem:
+        - img "4월 고도리"
+      - listitem:
+        - img "4월 초단"
+      - listitem:
+        - img "4월 피"
+      - listitem:
+        - img "4월 피"
+      - listitem:
+        - img "5월 열끗"
+      - listitem:
+        - img "5월 초단"
+      - listitem:
+        - img "5월 피"
+      - listitem:
+        - img "5월 피"
+      - listitem:
+        - img "6월 열끗"
+      - listitem:
+        - img "6월 청단"
+      - listitem:
+        - img "6월 피"
+      - listitem:
+        - img "6월 피"
+      - listitem:
+        - img "7월 열끗"
+      - listitem:
+        - img "7월 초단"
+      - listitem:
+        - img "7월 피"
+      - listitem:
+        - img "7월 피"
+      - listitem:
+        - img "8월 광"
+      - listitem:
+        - img "8월 고도리"
+      - listitem:
+        - img "8월 피"
+      - listitem:
+        - img "8월 피"
+      - listitem:
+        - img "9월 국진"
+      - listitem:
+        - img "9월 청단"
+      - listitem:
+        - img "9월 피"
+      - listitem:
+        - img "9월 피"
+      - listitem:
+        - img "10월 열끗"
+      - listitem:
+        - img "10월 청단"
+      - listitem:
+        - img "10월 피"
+      - listitem:
+        - img "10월 피"
+      - listitem:
+        - img "11월 광"
+      - listitem:
+        - img "11월 피"
+      - listitem:
+        - img "11월 피"
+      - listitem:
+        - img "11월 쌍피"
+      - listitem:
+        - img "12월 비광"
+      - listitem:
+        - img "12월 열끗"
+      - listitem:
+        - img "12월 비띠"
+      - listitem:
+        - img "12월 쌍피"

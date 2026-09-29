@@ -28,7 +28,7 @@
     position: absolute;
     left: var(--space-3);
     right: var(--space-3);
-    bottom: calc(var(--card-w-l) * 1.63 + var(--space-6));
+    bottom: calc(var(--card-h-l) + var(--space-6));
     width: auto;
     max-width: 22rem;
     margin: 0 auto;
