@@ -104,6 +104,8 @@ Context7 도구가 노출되지 않아 [Svelte effect/lifecycle](https://svelte.
 | `packages/web/e2e/__screenshots__/gallery.spec.ts/settings-chromium.png` | #151 국진 처리 ‘매번 묻기’ 토글·자동 최적 선택 설명 추가. #104 A 패널/버튼 외관과 함께 Chromium에서 다시 렌더 |
 | `packages/web/e2e/__screenshots__/gallery.spec.ts/settings-webkit.png` | 같은 #151 국진 토글·설명을 #104 A 외관과 함께 WebKit에서 다시 렌더 |
 
-`Game.auto-info.test.ts`는 #104 도입 전 임시로 추가하던 동일 이름 dialog를 제거하고 실제 ‘판 정보’ 버튼/대화상자를 사용한다. 중복 주입이 실제 닫힌 dialog를 먼저 조회하게 만들어 병합 검사6개가 실패한 테스트 통합 문제이며, 런타임 변경 없이 실제 열람 중 자동 진행 보류·닫은 뒤 최신 액션1회 검사를 유지했다.
+`Game.auto-info.test.ts`와 `e2e/auto-choices.spec.ts`는 #104 도입 전 임시로 추가하던 동일 이름 dialog를 제거하고 실제 ‘판 정보’ 버튼/대화상자를 사용한다. 중복 주입이 실제 닫힌 dialog를 먼저 조회하게 만들어 컴포넌트6개와 E2E2개가 실패한 테스트 통합 문제이며, 런타임 변경 없이 실제 열람 중 자동 진행 보류·닫은 뒤 최신 액션1회 검사를 유지했다.
 
 재검증 리뷰 5352748604의 비차단 회전 후 inert 소유 충돌은 [#155](https://github.com/kywoo26/p2p-gostop/issues/155)로 분리했다. HUD/손패의 속성 충돌은 남아 있으나 리뷰어 재현에서는 action0·선택 초점·취소 복귀가 유지됐다. 가로/선택 잠금을 한 소유자로 합성하고 회전 전후 hit-test를 검사하는 후속이며, 이번 병합에서 수정 완료로 표시하지 않는다. 실제 기기 회전 결과는 미검증이다.
+
+최종 Docker 검증(main daa5e7d 병합): npm ci/lint/check 통과, Node519/27파일·브라우저420/64파일, 기본dist **1,283.1/1,536KiB**·외부URL0·폰트140.8KiB/누락0. E2E **265통과/19제외(기존6+#151 교차브라우저 중복1+평가 전용12)/실패·재시도0**, 기준샷 갱신 없이3.2분. Android assembleDebug/testDebugUnitTest/lint 성공. 이번 통합의 새 런타임 수정은 없고, 실제 기기 검증을 주장하지 않는다.
