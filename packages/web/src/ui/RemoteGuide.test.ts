@@ -2,8 +2,16 @@
 import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
-import { RelayHealthError, type RelayHealthErrorCode } from '../net/public-transport.ts';
-import { REMOTE_ERROR_MESSAGES, REMOTE_STEPS } from '../p2p/remote-messages.ts';
+import {
+  RelayHealthError,
+  type HealthResult,
+  type RelayHealthErrorCode,
+} from '../net/public-transport.ts';
+import {
+  REMOTE_ERROR_MESSAGES,
+  REMOTE_STEPS,
+  UNKNOWN_REMOTE_ERROR,
+} from '../p2p/remote-messages.ts';
 import type { RemoteHostController } from '../p2p/remote.ts';
 import RemoteGuide from './RemoteGuide.svelte';
 
@@ -78,6 +86,78 @@ test('게임 버전이 다르면 초대 단계로 진행하지 않는다', async
   expect(screen.container.querySelectorAll('ol > li')[1]?.getAttribute('aria-current')).toBe(
     'step',
   );
+});
+
+test('health 코드 7개와 원인 미확인을 각각 화면에 표시한다', async () => {
+  const codes: RelayHealthErrorCode[] = [
+    'cancelled',
+    'timeout',
+    'cors',
+    'network',
+    'http',
+    'invalidResponse',
+    'incompatible',
+  ];
+  for (const code of codes) {
+    const screen = await render(RemoteGuide, {
+      controller: controller(async () => {
+        throw new RelayHealthError(code);
+      }),
+    });
+    await screen.getByRole('button', { name: '연결 확인' }).click();
+    const message = REMOTE_ERROR_MESSAGES[code];
+    await expect.element(screen.getByText(`연결 확인 실패. ${message.title}.`)).toBeVisible();
+    await expect.element(screen.getByText(`${message.detail} ${message.action}`)).toBeVisible();
+    await screen.unmount();
+  }
+
+  const screen = await render(RemoteGuide, {
+    controller: controller(async () => {
+      throw new Error('unclassified');
+    }),
+  });
+  await screen.getByRole('button', { name: '연결 확인' }).click();
+  await expect
+    .element(screen.getByText(`연결 확인 실패. ${UNKNOWN_REMOTE_ERROR.title}.`))
+    .toBeVisible();
+  await expect
+    .element(screen.getByText(`${UNKNOWN_REMOTE_ERROR.detail} ${UNKNOWN_REMOTE_ERROR.action}`))
+    .toBeVisible();
+  await screen.unmount();
+});
+
+test('재시도 중복 클릭은 요청을 늘리지 않고 화면 종료는 요청을 취소한다', async () => {
+  let signal: AbortSignal | undefined;
+  const onAbort = vi.fn();
+  let attempts = 0;
+  const checkHealth = vi.fn((options?: { signal?: AbortSignal }): Promise<HealthResult> => {
+    attempts += 1;
+    if (attempts === 1) return Promise.reject(new RelayHealthError('cors'));
+    signal = options?.signal;
+    return new Promise((_resolve, reject) => {
+      signal?.addEventListener(
+        'abort',
+        () => {
+          onAbort();
+          reject(new RelayHealthError('cancelled'));
+        },
+        { once: true },
+      );
+    });
+  });
+  const screen = await render(RemoteGuide, { controller: controller(checkHealth) });
+  await screen.getByRole('button', { name: '연결 확인' }).click();
+  await expect.element(screen.getByText(/접속 허용 설정 확인/)).toBeVisible();
+  const retry = screen.getByRole('button', { name: '다시 확인' }).element() as HTMLButtonElement;
+  retry.click();
+  retry.click();
+  await expect.element(screen.getByText('중계 응답 확인 중…')).toBeVisible();
+  expect(checkHealth).toHaveBeenCalledTimes(2);
+  expect(signal).toBeDefined();
+  expect(signal?.aborted).toBe(false);
+  await screen.unmount();
+  expect(signal?.aborted).toBe(true);
+  expect(onAbort).toHaveBeenCalledTimes(1);
 });
 
 test('health 코드마다 제목, 원인, 조치가 있고 문구에 em dash가 없다', () => {
