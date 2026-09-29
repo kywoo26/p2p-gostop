@@ -24,7 +24,7 @@ for (const [width, height] of [
     'event',
     'event-target',
   ]) {
-    test(`${width}×${height} ${state}: 6행·12월/뻑·손패10·입력 무가림`, async ({ page }, info) => {
+    test(`${width}×${height} ${state}: 7행·12월/뻑·손패10·입력 무가림`, async ({ page }, info) => {
       await page.setViewportSize({ width, height });
       await page.goto(`./#/dev/gallery/layout-${state}`);
       await page.evaluate(() => document.fonts.ready);
@@ -44,6 +44,7 @@ for (const [width, height] of [
           '.captured-zone',
           '.center',
           '.decision-area',
+          '.mine-hud',
           '.captured-zone.mine',
           '.hand-zone',
         ];
@@ -53,6 +54,72 @@ for (const [width, height] of [
           for (let j = i + 1; j < areas.length; j++)
             if (intersects(areas[i]!, areas[j]!))
               collisions.push(`${selectors[i]} / ${selectors[j]}`);
+        // UX-H01/05: 구역끼리뿐 아니라 패널 내부 이름/점수/잔액·칩·선택 내용도 검사.
+        const panelContentIssues: string[] = [];
+        for (const selector of [
+          '.seat-bar',
+          '.identity',
+          '.progress',
+          '.prompt',
+          '.risk',
+          '.actions',
+        ]) {
+          for (const parent of document.querySelectorAll(selector)) {
+            const children = [...parent.children].filter((el) => {
+              const r = el.getBoundingClientRect();
+              return r.width > 0 && r.height > 0;
+            });
+            for (let i = 0; i < children.length; i++) {
+              for (const other of children.slice(i + 1)) {
+                if (
+                  [...children[i]!.getClientRects()].some((a) =>
+                    [...other.getClientRects()].some((b) => intersects(a, b)),
+                  )
+                )
+                  panelContentIssues.push(
+                    `${selector}: ${children[i]!.textContent} / ${other.textContent}`,
+                  );
+              }
+            }
+          }
+        }
+        for (const name of document.querySelectorAll('.identity .name')) {
+          const range = document.createRange();
+          range.selectNodeContents(name);
+          const identity = name.parentElement!.getBoundingClientRect();
+          if (
+            [...range.getClientRects()].some(
+              (r) =>
+                r.bottom > identity.bottom + 1 ||
+                r.left < identity.left - 1 ||
+                r.right > identity.right + 1,
+            )
+          )
+            panelContentIssues.push(`name clipped: ${name.textContent}`);
+        }
+        for (const selector of [
+          '.seat-bar .score',
+          '.seat-bar .go',
+          '.seat-bar .multiplier',
+          '.seat-bar .balance',
+          '.milestone',
+          '.captured-zone .name',
+          '.risk > *',
+          '.prompt h2',
+          '.info-button',
+        ]) {
+          for (const el of document.querySelectorAll(selector)) {
+            const r = el.getBoundingClientRect();
+            if (
+              r.width > 0 &&
+              r.height > 0 &&
+              (el.scrollWidth > el.clientWidth + 1 ||
+                (getComputedStyle(el).overflowY !== 'visible' &&
+                  el.scrollHeight > el.clientHeight + 1))
+            )
+              panelContentIssues.push(`${selector}: clipped ${el.textContent}`);
+          }
+        }
         const floor = box('.floor');
         const groups = [...document.querySelectorAll('.floor .group')].map((el) =>
           el.getBoundingClientRect(),
@@ -90,6 +157,7 @@ for (const [width, height] of [
         });
         return {
           collisions,
+          panelContentIssues,
           small,
           clipped,
           marks,
@@ -121,6 +189,7 @@ for (const [width, height] of [
         };
       });
       expect(report.collisions).toEqual([]);
+      expect(report.panelContentIssues).toEqual([]);
       expect(report.small).toEqual([]);
       expect(report.clipped).toEqual([]);
       expect(report.marks.every(Boolean)).toBe(true);

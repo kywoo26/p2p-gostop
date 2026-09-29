@@ -1,0 +1,17 @@
+/* 검토 전용: 바닥 월별 슬롯 폭 활용. 본선 import 없음. */
+:root .board .floor .group {
+  --skin-pile-count: 1;
+  width: 100%;
+}
+:root .board .floor .group:has(> .card:nth-child(2)) {
+  --skin-pile-count: 2;
+}
+:root .board .floor .group:has(> .card:nth-child(3)) {
+  --skin-pile-count: 3;
+}
+:root .board .floor .group:has(> .card:nth-child(4)) {
+  --skin-pile-count: 4;
+}
+:root .board .floor .group > .card + .card {
+  margin-left: calc((100% - var(--card-w-m)) / (var(--skin-pile-count) - 1) - var(--card-w-m));
+}

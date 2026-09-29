@@ -26,7 +26,34 @@ for (const [width, height] of [
         const slots = [...document.querySelectorAll('.hand .slot')].map((el) =>
           el.getBoundingClientRect(),
         );
+        const board = document.querySelector('.board')!;
+        const boardRect = board.getBoundingClientRect();
+        const frame = getComputedStyle(board, '::after');
+        const frameTop = boardRect.top + parseFloat(frame.top) + parseFloat(frame.borderTopWidth);
+        const frameLeft =
+          boardRect.left + parseFloat(frame.left) + parseFloat(frame.borderLeftWidth);
+        const frameRight =
+          boardRect.right - parseFloat(frame.right) - parseFloat(frame.borderRightWidth);
+        const frameBottom =
+          boardRect.bottom - parseFloat(frame.bottom) - parseFloat(frame.borderBottomWidth);
+        const panelsInsideFrame = [
+          ...document.querySelectorAll('.scoreboard, .decision-area, .captured-zone, .hand-zone'),
+        ].every((el) => {
+          const r = el.getBoundingClientRect();
+          // 1px 외곽선까지 포함하고 프레임 안쪽과 최소2px 분리한다.
+          return (
+            r.top - 1 >= frameTop + 2 &&
+            r.left - 1 >= frameLeft + 2 &&
+            r.right + 1 <= frameRight - 2 &&
+            r.bottom + 1 <= frameBottom - 2
+          );
+        });
         return {
+          panelsInsideFrame,
+          cardSizes: [...document.querySelectorAll('.hand .card')].map((el) => {
+            const r = el.getBoundingClientRect();
+            return { width: r.width, height: r.height };
+          }),
           windows: windows.map((r) => ({ width: r.width, height: r.height })),
           addOnNodes: document.querySelectorAll(
             '.hand .hand-label, .hand .match-mark, .hand .action-mark',
@@ -34,6 +61,69 @@ for (const [width, height] of [
           slotOverlap: slots.some((r, i) => slots.slice(i + 1).some((other) => overlap(r, other))),
           monthMarks: document.querySelectorAll('.hand .mark').length,
           actionMarks: document.querySelectorAll('.hand [data-hand-action]').length,
+          stateStyles: [
+            ...document.querySelectorAll(
+              '.slot[data-hand-cue="matchable"], .slot[data-hand-cue="secured"]',
+            ),
+          ].map((el) => {
+            const style = getComputedStyle(el.querySelector('.art-window')!);
+            return {
+              cue: el.getAttribute('data-hand-cue'),
+              action: el.getAttribute('data-hand-action'),
+              lift: style.translate,
+              line: style.outlineStyle,
+            };
+          }),
+          actionIcons: [
+            ...document.querySelectorAll(
+              '.slot[data-hand-action="bomb"], .slot[data-hand-action="shake"]',
+            ),
+          ].map((el) => {
+            const art = el.querySelector('.art-window')!;
+            const rect = art.getBoundingClientRect();
+            const style = getComputedStyle(art, '::after');
+            const w = parseFloat(style.width),
+              h = parseFloat(style.height);
+            const x =
+              style.left === 'auto'
+                ? rect.right - parseFloat(style.right) - w
+                : rect.left + parseFloat(style.left);
+            const y = rect.top + parseFloat(style.top);
+            const icon = new DOMRect(x, y, w, h);
+            return {
+              action: el.getAttribute('data-hand-action'),
+              image: style.backgroundImage,
+              width: w,
+              height: h,
+              monthOverlap: overlap(icon, el.querySelector('.mark')!.getBoundingClientRect()),
+              inside:
+                x >= rect.left && x + w <= rect.right && y >= rect.top && y + h <= rect.bottom,
+              otherCardOverlap: windows.some(
+                (other) => other.left !== rect.left && overlap(icon, other),
+              ),
+            };
+          }),
+          groupFrames: ['bomb', 'shake'].map((action) => {
+            const members = [
+              ...document.querySelectorAll(`.hand .slot[data-hand-action="${action}"]`),
+            ];
+            const first = members[0]!;
+            const plate = getComputedStyle(first, '::before');
+            const left = first.getBoundingClientRect().left + parseFloat(plate.left);
+            const right = left + parseFloat(plate.width);
+            const last = members.at(-1)!.getBoundingClientRect();
+            const neighbor = first.parentElement!.querySelector('.slot:not([data-hand-action])');
+            return {
+              action,
+              count: members.length,
+              border: parseFloat(plate.borderTopWidth),
+              color: plate.borderTopColor,
+              background: plate.backgroundColor,
+              joined: right >= last.right + 2,
+              separate: !neighbor || right < neighbor.getBoundingClientRect().left,
+              content: plate.content,
+            };
+          }),
           inside: slots.every(
             (r) => r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
           ),
@@ -43,6 +133,15 @@ for (const [width, height] of [
         };
       });
       expect(report.windows).toHaveLength(10);
+      for (const r of report.cardSizes) {
+        expect(r.width).toBeCloseTo(report.cardSizes[0]!.width, 2);
+        expect(r.height).toBeCloseTo(report.cardSizes[0]!.height, 2);
+      }
+      for (const r of report.windows) {
+        expect(r.width).toBeCloseTo(report.cardSizes[0]!.width, 2);
+        expect(r.height).toBeCloseTo(report.cardSizes[0]!.height, 2);
+      }
+      expect(report.panelsInsideFrame).toBe(true);
       expect(
         report.windows
           .slice(0, 5)
@@ -55,6 +154,48 @@ for (const [width, height] of [
       expect(report.monthMarks).toBe(10);
       expect(report.actionMarks).toBe(6);
       await expect(page.locator('.hand')).not.toContainText(/먹기|확정|폭탄|흔들/);
+      expect(
+        report.stateStyles
+          .filter((s) => s.cue === 'matchable' && !s.action)
+          .every((s) => s.lift === '0px -2px' && s.line === 'solid'),
+      ).toBe(true);
+      expect(
+        report.stateStyles
+          .filter((s) => s.cue === 'secured' && !s.action)
+          .every((s) => s.lift === '0px -4px' && s.line === 'double'),
+      ).toBe(true);
+      expect(report.actionIcons).toHaveLength(6);
+      for (const icon of report.actionIcons) {
+        expect(icon.image).toContain(
+          icon.action === 'bomb' ? '/skin/bomb-illustrated.webp' : '/skin/bell-illustrated.webp',
+        );
+        expect(icon.width).toBe(22);
+        expect(icon.height).toBe(22);
+        expect(icon.monthOverlap).toBe(false);
+        expect(icon.otherCardOverlap).toBe(false);
+        expect(icon.inside).toBe(true);
+      }
+      expect(report.groupFrames).toHaveLength(2);
+      expect(report.groupFrames.every((f) => f.count === 3 && f.border === 2)).toBe(true);
+      expect(report.groupFrames.every((f) => f.content !== 'none' && f.joined && f.separate)).toBe(
+        true,
+      );
+      expect(report.groupFrames[0]!.color).not.toBe(report.groupFrames[1]!.color);
+      expect(report.groupFrames[0]!.background).not.toBe(report.groupFrames[1]!.background);
+      const actionArt = page.locator('.hand .slot[data-hand-action="bomb"] .art-window').first();
+      const animation = () =>
+        actionArt.evaluate((el) => getComputedStyle(el, '::after').animationName);
+      expect(await animation()).toBe('none');
+      await page
+        .locator('html')
+        .evaluate((el) => el.setAttribute('data-effect-intensity', 'strong'));
+      expect(await animation()).toBe('skin-action-breath');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      expect(await animation()).toBe('none');
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.locator('html').evaluate((el) => el.setAttribute('data-effect-intensity', 'off'));
+      expect(await animation()).toBe('none');
+      await expect(page.locator('.hand')).not.toContainText(/대기|폭3|흔3/);
       expect(report.inside).toBe(true);
       expect(report.scoreSize).toBe('24px');
       expect(report.secondarySize).toBe('14px');

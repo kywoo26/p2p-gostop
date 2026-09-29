@@ -26,6 +26,19 @@ for (const kind of ['target', 'gostop', 'gukjin', 'shake', 'chongtong', 'first']
     for (const selector of ['.hud', '.hand-zone', '.center', '.info-button']) {
       expect(screen.container.querySelector(selector)!.closest('[inert]')).not.toBeNull();
     }
+    // 글꼴 배치와 ResizeObserver의 스크롤 영역 tabindex 결정 뒤 순환을 검증한다.
+    // 압축된 선택 행에서는 초기 버튼 순서가 첫 렌더 직후 바뀔 수 있다.
+    await document.fonts.ready;
+    await Promise.all(
+      [...dialog.querySelectorAll('img')].map((image) =>
+        image.complete ? Promise.resolve() : image.decode(),
+      ),
+    );
+    const content = dialog.querySelector<HTMLElement>('.prompt-content');
+    if (content)
+      await vi.waitFor(() =>
+        expect(content.tabIndex).toBe(content.scrollHeight > content.clientHeight + 1 ? 0 : -1),
+      );
     // 설명이 넘치면 스크롤 영역도 Tab 순서에 포함된다.
     buttons.at(-1)!.focus();
     await userEvent.keyboard('{Tab}');

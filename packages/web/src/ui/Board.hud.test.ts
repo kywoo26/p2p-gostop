@@ -27,7 +27,15 @@ for (const [label, view] of Object.entries({ play, target, goStop })) {
     const screen = await render(Board, { view });
     const reserved = screen.getByTestId('menu-reserved').element().getBoundingClientRect();
     const scoreboard = screen.container.querySelector('.scoreboard')!.getBoundingClientRect();
-    expect(scoreboard.height).toBe(60);
+    expect(scoreboard.height).toBe(48);
+    const mineHud = screen.container.querySelector('.mine-hud')!.getBoundingClientRect();
+    const opponentCards = screen.container
+      .querySelector('.captured-zone:not(.mine)')!
+      .getBoundingClientRect();
+    const myCards = screen.container.querySelector('.captured-zone.mine')!.getBoundingClientRect();
+    expect(scoreboard.bottom).toBeLessThanOrEqual(opponentCards.top);
+    expect(mineHud.bottom).toBeLessThanOrEqual(myCards.top);
+    expect(mineHud.top).toBeGreaterThan(opponentCards.bottom);
     expect(reserved.width).toBeGreaterThanOrEqual(48);
     expect(reserved.height).toBeGreaterThanOrEqual(48);
     expect(reserved.left - scoreboard.right).toBeGreaterThanOrEqual(8);
@@ -46,10 +54,7 @@ for (const [label, view] of Object.entries({ play, target, goStop })) {
     await expect
       .element(screen.getByTestId('my-score'))
       .toHaveTextContent(String(view.seats[view.viewer].score));
-    const scoreCells = [...screen.container.querySelectorAll('.score')].map((el) =>
-      el.getBoundingClientRect(),
-    );
-    expect(scoreCells[0]!.left).toBe(scoreCells[1]!.left);
+    expect(screen.container.querySelectorAll('.scoreboard')).toHaveLength(2);
   });
 }
 
@@ -68,7 +73,9 @@ test('좌석 1에서도 내/상대 수치, 미제공 배수·0고·0잔액이 �
     .toHaveTextContent(String(play.seats[0].score));
   expect(screen.container.querySelector('[aria-label="나 잔액 0냥"]')).not.toBeNull();
   expect(screen.container.querySelector('[aria-label="나 고 0회"]')).not.toBeNull();
-  expect(screen.container.querySelector('[aria-label="상대 배수 미제공"]')?.textContent).toBe('—');
+  expect(screen.container.querySelector('[aria-label="상대 배수 미제공"]')?.textContent).toBe(
+    '미정',
+  );
   expect(screen.container.querySelector('.scoreboard')?.textContent).not.toContain('null');
 });
 
@@ -141,18 +148,15 @@ test('첫 족보 기준 미달·한 장 남음·달성 칩은 공개 획득패�
   }
 });
 
-// UX-H01a: HUD 자체의 높이 상한과 추가 높이 회수만 검증한다.
-// #46/#47의 12무더기·손패10장·6행 최소 화면 fixture 완료를 대신하지 않는다.
+// UX-H01a: 각 진영 HUD와 긴 금액 두 행. 최소 화면의 7구역 검증은 layout E2E.
 for (const width of [360, 390, 430]) {
   for (const [label, view] of Object.entries({ target, goStop })) {
-    test(`${width}px ${label}: 긴 금액 HUD 84px·공통 열·바닥 높이 보존`, async () => {
+    test(`${width}px ${label}: 각 진영 HUD·긴 금액·입력과 바닥 보존`, async () => {
       await page.viewport(width, 915);
       const screen = await render(Board, { view });
       const box = (selector: string) =>
         screen.container.querySelector(selector)!.getBoundingClientRect();
-      expect(box('.scoreboard').height).toBe(width >= 410 ? 60 : 56);
-      const floorHeight = box('.center').height;
-      const promptHeight = box('.prompt').height;
+      expect(box('.scoreboard').height).toBe(48);
       const name = '긴 이름 가나다라 마바사아 자차카타';
       await screen.rerender({
         view: {
@@ -163,13 +167,12 @@ for (const width of [360, 390, 430]) {
           ],
         },
       });
-      expect(box('.scoreboard').height).toBe(84);
-      expect(box('.center').height).toBeCloseTo(floorHeight, 1);
-      expect(promptHeight - box('.prompt').height).toBe(width >= 410 ? 24 : 28);
+      expect(box('.scoreboard').height).toBe(48);
+      expect(box('.mine-hud .scoreboard').height).toBe(46);
+      expect(box('.center').height).toBeGreaterThanOrEqual(208);
       const reserved = box('.menu-reserved');
       for (const field of ['score', 'go', 'multiplier', 'balance']) {
         const cells = [...screen.container.querySelectorAll(`.seat-bar .${field}`)];
-        expect(cells[0]!.getBoundingClientRect().x).toBe(cells[1]!.getBoundingClientRect().x);
         for (const cell of cells) {
           expect(cell.scrollWidth, `${field}: ${cell.textContent}`).toBeLessThanOrEqual(
             cell.clientWidth,

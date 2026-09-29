@@ -1,8 +1,6 @@
 - region "게임판":
-  - heading "상대 컴퓨터 · 상용급" [level=2]
-  - text: 0 점 0고 — 48,800냥
-  - heading "나" [level=2]
-  - text: 9 점 1고 ×2 51,200냥
+  - heading "상대컴퓨터 · 상용급" [level=2]
+  - text: 0 점 0고 미정 스톱 미정 48,800냥
   - list "상대 획득패":
     - listitem "광 1":
       - img "3월 광"
@@ -49,6 +47,8 @@
       - text: 스톱
       - strong: 2,000냥
   - button "판 정보"
+  - heading "나" [level=2]
+  - text: 9 점 1고 ×2 스톱 2,000냥 51,200냥
   - list "내 획득패":
     - listitem "광 1":
       - img "1월 광"
