@@ -10,9 +10,9 @@
 <script lang="ts">
   // 게임 화면 (spec 2.3·6.2): 솔로·호스트·게스트 공통. 게임판 + 판이 끝나면 정산을 위에 덮는다.
   // 게임판은 정산 중에도 마운트된 채로 둔다(다음 판 분배 애니메이션의 기준점, src/anim/choreo.ts).
-  // 오른쪽 위 메뉴(이슈 #10)에서 계속·설정·홈·세션 종료(확인). Android 뒤로 가기는 브리지 gameActive로 확인 창이 된다.
+  // 오른쪽 위 메뉴(이슈 #10)에서 계속·설정·홈·세션 종료(확인). Android Back은 메뉴를 연다/닫는다.
   // data-* 속성은 E2E 자동 플레이·원장 검사·턴 시간 계측(spec AC-04·AC-06)이 읽는다.
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import type { GameController } from '../game/controller.ts';
   import { settings } from '../settings/settings.svelte.ts';
   import Board from '../ui/Board.svelte';
@@ -34,6 +34,8 @@
     onwait?: (() => void) | undefined;
     /** 호스트: LAN 전체에 열린 주소만 표시 경고 (NF-06, 브리지 hotspot.warning) */
     warning?: string | null;
+    backToken?: number;
+    onrecords?: (() => void) | undefined;
   }
 
   let {
@@ -47,6 +49,8 @@
     waiting = false,
     onwait,
     warning = null,
+    backToken = 0,
+    onrecords,
   }: Props = $props();
 
   const pb = $derived(controller.playback);
@@ -81,16 +85,33 @@
   // ---- 메뉴 (이슈 #10) ----
   let menuDialog = $state<HTMLDialogElement | null>(null);
   let confirming = $state<MenuItem | null>(null);
+  let menuOpen = $state(false);
+  let previousFocus: HTMLElement | null = null;
 
   function openMenu() {
+    if (menuDialog?.open) return;
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     confirming = null;
+    menuOpen = true;
     menuDialog?.showModal();
   }
 
   function closeMenu() {
     menuDialog?.close();
+    menuOpen = false;
     confirming = null;
+    const target = previousFocus;
+    previousFocus = null;
+    void tick().then(() => {
+      if (target?.isConnected) target.focus();
+    });
   }
+
+  $effect(() => {
+    if (backToken === 0) return;
+    if (menuDialog?.open) closeMenu();
+    else openMenu();
+  });
 
   function choose(item: MenuItem) {
     if (item.confirm !== undefined && confirming?.id !== item.id) {
@@ -124,7 +145,7 @@
   data-can-act={controller.canAct}
   data-play-timings={playTimings}
 >
-  <div class="board-wrap" inert={pb.settlement !== null}>
+  <div class="board-wrap" inert={pb.settlement !== null || menuOpen || ended}>
     <Board
       view={pb.board}
       {extras}
@@ -160,12 +181,23 @@
     <button type="button" class="reconnect" onclick={() => onreconnect?.()}>다시 연결</button>
   {/if}
 
-  {#if ended && pb.settlement === null}
+  {#if ended && controller.mode !== 'solo' && pb.settlement === null}
     <button type="button" class="fresh" onclick={() => onfresh?.()}>새로 참가</button>
   {/if}
 
-  {#if pb.settlement}
-    <div class="overlay">
+  {#if ended && controller.mode === 'solo'}
+    <div class="overlay ended" data-testid="session-ended">
+      <h1>세션 종료</h1>
+      <p>{stats.roundsPlayed}판 진행 · 최종 잔액 {stats.balances[0]}냥 / {stats.balances[1]}냥</p>
+      <button type="button" class="item primary" data-choice="fresh" onclick={() => onfresh?.()}
+        >새 게임</button
+      >
+      <button type="button" class="item" data-choice="records" onclick={() => onrecords?.()}
+        >기록 보기</button
+      >
+    </div>
+  {:else if pb.settlement}
+    <div class="overlay" inert={menuOpen}>
       <Settlement
         view={pb.settlement.view}
         instant={pb.settlement.instant}
@@ -186,7 +218,14 @@
     class="sheet"
     bind:this={menuDialog}
     aria-labelledby="game-menu-title"
-    onclose={() => (confirming = null)}
+    oncancel={(event) => {
+      event.preventDefault();
+      closeMenu();
+    }}
+    onclose={() => {
+      menuOpen = false;
+      confirming = null;
+    }}
   >
     <h2 id="game-menu-title">메뉴</h2>
     {#if confirming}
@@ -231,14 +270,10 @@
   }
 
   /* 메뉴 버튼 자리: 상대 정보 줄 오른쪽을 비운다 */
-  .game :global([data-anchor='opp-hand']) {
-    padding-right: calc(var(--touch-min) + var(--space-1));
-  }
-
   .menu-button {
     position: absolute;
     top: max(var(--space-1), env(safe-area-inset-top));
-    right: var(--space-2);
+    right: max(var(--space-2), env(safe-area-inset-right));
     display: grid;
     place-items: center;
     width: var(--touch-min);
@@ -249,7 +284,7 @@
     background: oklch(20% 0.03 160 / 0.8);
     color: var(--color-text);
     font-size: 1.25rem;
-    z-index: 15;
+    z-index: 70;
   }
 
   .notice {
@@ -289,6 +324,19 @@
     overflow: auto;
     background: var(--color-bg);
     z-index: 20;
+  }
+
+  .ended {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    text-align: center;
+  }
+
+  .ended p {
+    margin: 0;
   }
 
   .sheet {

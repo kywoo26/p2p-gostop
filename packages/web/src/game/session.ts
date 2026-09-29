@@ -21,6 +21,7 @@ import {
   type Seat,
   type Settlement,
 } from '@p2p-gostop/engine';
+import { PRESETS } from '@p2p-gostop/engine';
 
 export interface SessionConfig {
   readonly preset: PresetId;
@@ -233,26 +234,108 @@ export function ledgerIsBalanced(session: SessionState): boolean {
 
 // ---- 저장 (MN-05) ----
 
+function object(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function money(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function pair(value: unknown): value is [number, number] {
+  return Array.isArray(value) && value.length === 2 && value.every(money);
+}
+
+function cards(value: unknown): boolean {
+  return Array.isArray(value) && value.every((id) => Number.isInteger(id) && id >= 0 && id <= 50);
+}
+
+function validSeat(value: unknown): boolean {
+  if (!object(value) || !cards(value['hand']) || !object(value['captured'])) return false;
+  const captured = value['captured'];
+  return ['gwang', 'yeol', 'tti', 'pi'].every((key) => cards(captured[key]));
+}
+
+/** v0(재충전 합계 필드 전) 저장은 잔액 합이 초기값일 때만 안전하게 보완한다. */
+function migrateSession(raw: Record<string, unknown>): Record<string, unknown> | null {
+  if (raw['version'] === 1) return raw;
+  if (raw['version'] !== 0 || !object(raw['config']) || !object(raw['ledger'])) return null;
+  const start = raw['config']['startBalance'];
+  const balances = raw['ledger']['balances'];
+  if (!money(start) || !pair(balances) || balances[0] + balances[1] !== start * 2) return null;
+  return { ...raw, version: 1, refilled: [0, 0], roundStart: raw['roundStart'] ?? balances };
+}
+
 /** localStorage에서 읽은 값(신뢰할 수 없음)을 검사한다. 모양이 다르면 null */
 export function parseSession(raw: unknown): SessionState | null {
-  if (typeof raw !== 'object' || raw === null) return null;
-  const o = raw as Partial<SessionState>;
+  if (!object(raw)) return null;
+  const o = migrateSession(raw);
+  if (o === null || !object(o['config']) || !object(o['ledger']) || !object(o['game'])) return null;
+  const config = o['config'];
+  const ledger = o['ledger'];
+  const game = o['game'];
   const phases: readonly SessionPhase[] = ['playing', 'roundOver', 'bankrupt', 'ended'];
+  const preset = config['preset'];
+  const rules = config['rules'];
+  const seats = game['seats'];
+  const floor = game['floor'];
   if (
-    o.version !== 1 ||
-    typeof o.roundNumber !== 'number' ||
-    !phases.includes(o.phase as SessionPhase) ||
-    typeof o.config?.seed !== 'number' ||
-    !Array.isArray(o.config?.names) ||
-    typeof o.config?.rules !== 'object' ||
-    !Array.isArray(o.game?.seats) ||
-    !Array.isArray(o.ledger?.balances) ||
-    !Array.isArray(o.records) ||
-    !Array.isArray(o.actions) ||
-    !Array.isArray(o.refilled) ||
-    !Array.isArray(o.roundStart)
+    o['version'] !== 1 ||
+    !Number.isSafeInteger(o['roundNumber']) ||
+    Number(o['roundNumber']) < 1 ||
+    !phases.includes(o['phase'] as SessionPhase) ||
+    typeof preset !== 'string' ||
+    !(preset in PRESETS) ||
+    !object(rules) ||
+    !Object.entries(PRESETS[preset as PresetId]).every(
+      ([key, value]) =>
+        key in rules &&
+        (value === null
+          ? rules[key] === null || object(rules[key])
+          : typeof rules[key] === typeof value),
+    ) ||
+    !money(config['seed']) ||
+    config['seed'] > 0xffffffff ||
+    !money(config['perPoint']) ||
+    !money(config['startBalance']) ||
+    !Array.isArray(config['names']) ||
+    config['names'].length !== 2 ||
+    !config['names'].every((name: unknown) => typeof name === 'string') ||
+    !pair(ledger['balances']) ||
+    !money(ledger['perPoint']) ||
+    !money(ledger['startBalance']) ||
+    !Array.isArray(ledger['entries']) ||
+    ledger['perPoint'] !== config['perPoint'] ||
+    ledger['startBalance'] !== config['startBalance'] ||
+    !pair(o['refilled']) ||
+    !pair(o['roundStart']) ||
+    ledger['balances'][0] + ledger['balances'][1] !==
+      config['startBalance'] * 2 + o['refilled'][0] + o['refilled'][1] ||
+    !Array.isArray(seats) ||
+    seats.length !== 2 ||
+    !seats.every(validSeat) ||
+    !cards(game['deck']) ||
+    !Array.isArray(floor) ||
+    !floor.every(
+      (group: unknown) =>
+        object(group) && cards(group['cards']) && Number.isInteger(group['month']),
+    ) ||
+    !object(game['round']) ||
+    game['round']['number'] !== o['roundNumber'] ||
+    !Array.isArray(game['instantPayouts']) ||
+    !Array.isArray(o['records']) ||
+    !o['records'].every(
+      (record: unknown) =>
+        object(record) &&
+        money(record['round']) &&
+        pair(record['before']) &&
+        pair(record['after']) &&
+        object(record['settlement']) &&
+        Array.isArray(record['captured']),
+    ) ||
+    !Array.isArray(o['actions'])
   ) {
     return null;
   }
-  return o as SessionState;
+  return o as unknown as SessionState;
 }

@@ -129,6 +129,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.zxing.core)
     implementation(libs.androidx.webkit)
+    implementation(libs.androidx.activity)
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

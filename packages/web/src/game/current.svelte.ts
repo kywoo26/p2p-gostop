@@ -28,10 +28,18 @@ class CurrentGame {
   solo = $state.raw<SoloSession | null>(null);
   /** 저장소에만 있는 세션(아직 이어하지 않음): 홈의 "이어하기"와 기록 화면 */
   saved = $state.raw<SoloSave | null>(null);
+  saveError = $state<string | null>(null);
   private ai: AiClient | null = null;
 
   constructor() {
-    this.saved = SoloSession.load();
+    const loaded = SoloSession.loadResult();
+    this.saved = loaded.save;
+    this.saveError = loaded.error;
+  }
+
+  discardCorruptSave(): void {
+    SoloSession.clearSaved();
+    this.saveError = null;
   }
 
   private client(): AiClient {
@@ -64,7 +72,10 @@ class CurrentGame {
   /** 저장된 세션 이어하기 */
   resumeSolo(settings: AppSettings): SoloSession | null {
     if (this.solo !== null && this.solo.state.phase !== 'ended') return this.solo;
-    const saved = this.saved ?? SoloSession.load();
+    const loaded =
+      this.saved === null ? SoloSession.loadResult() : { save: this.saved, error: null };
+    if (loaded.error !== null) this.saveError = loaded.error;
+    const saved = loaded.save;
     if (saved === null || saved.session.phase === 'ended') return null;
     log.info(`저장된 세션 이어하기: ${saved.session.roundNumber}판째`);
     this.solo = new SoloSession(saved.session, {
