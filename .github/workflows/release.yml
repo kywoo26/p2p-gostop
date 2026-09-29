@@ -41,7 +41,6 @@ jobs:
       APK_NAME: p2p-gostop-${{ github.ref_name }}.apk
       # 릴리스 키 인증서 지문(공개 정보, APK에서 누구나 읽을 수 있다). 키를 바꾸면 이 값도 바꾼다.
       EXPECTED_CERT_SHA256: c83292d046a6419f76666f102cbc573dab822a78897b4c2d37a66d96fdef5944
-      WEB_BUILD_IMAGE: p2p-gostop-dev:1
     steps:
       - uses: actions/checkout@v7
         with:
@@ -72,10 +71,11 @@ jobs:
           fi
 
       - uses: ./.github/actions/dev-image
+        id: image
         with:
           install: 'false' # npm은 서명 단계와 분리된 읽기 전용 컨테이너에서만 실행
       - name: Gradle 캐시 경로 설정
-        run: echo "GRADLE_USER_HOME=$RUNNER_TEMP/gradle-home" >> "$GITHUB_ENV"
+        run: echo "GRADLE_USER_HOME=$HOME/.gradle" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true # 태그에서 main 공유 캐시를 갱신하지 않는다.
@@ -89,6 +89,8 @@ jobs:
       # ---- 웹 앱: 캐시가 없으면 기존 격리 빌드 (비밀 없음, 읽기 전용, 설치 스크립트 없음) ----
       - name: 웹 빌드 (격리 컨테이너)
         if: steps.web.outputs.reused != 'true'
+        env:
+          WEB_BUILD_IMAGE: ${{ steps.image.outputs.image }}
         run: |
           out="$RUNNER_TEMP/web-dist"
           rm -rf "$out" && mkdir -p "$out"
@@ -152,6 +154,7 @@ jobs:
           docker compose run --rm --user "$(id -u):$(id -g)" -e HOME="$RUNNER_TEMP/dev-home" \
             -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE" \
             -v "$RUNNER_TEMP:$RUNNER_TEMP" \
+            -v "$GRADLE_USER_HOME:$GRADLE_USER_HOME" \
             -e GRADLE_USER_HOME -e GRADLE_ENCRYPTION_KEY -e GITHUB_WORKSPACE \
             -e RUNNER_TEMP -e GITHUB_ACTION \
             dev android/gradlew -p android testDebugUnitTest assembleRelease --max-workers=2

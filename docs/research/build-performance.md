@@ -44,6 +44,38 @@ startedAt/completedAt 차이. 잡 시간에는 준비·후처리를 포함하고
 둘 다 `1 executed, 51 up-to-date`. 구성 캐시 첫 저장은 10.63초였다. 따라서 이 단일 모듈의
 반복 구성 이득은 약 2초이며 최초 저장 비용을 별도로 보아야 한다.
 
+배포 없는 릴리스 경로 검증도 개발 이미지에서 수행했다. 읽기 전용 소스 + 임시 빌드
+디렉터리 + `npm ci --ignore-scripts` 웹 빌드는 5.39초. 임시 RSA-2048 키로
+`testDebugUnitTest assembleRelease`는 최초 43.10초, 구성 캐시 저장 7.93초,
+재사용 5.77초였다(최초는 release variant 작업이 필요하므로 전후 가속률로 쓰지 않음).
+`apksigner sign` 자체는 0.303초이며 인증서 SHA-256이 생성한 임시 키와 일치했다.
+실제 릴리스 키·태그·업로드를 사용하지 않아 **운영 릴리스의 변경 후 전체 시간은 아직 미측정**이다.
+
+구성 캐시를 재사용한 상태에서 웹 자산 파일을 추가하고 제거해 APK를 두 번 생성했으며,
+APK 안의 추가·삭제가 반영되는 것도 확인했다. 캐시 때문에 이전 번들이 남지 않는다.
+
+### 첫 CI 실험과 조정
+
+[36514356603](https://github.com/kywoo26/p2p-gostop/actions/runs/36514356603)은 전체 성공했지만
+599초(Android 포함 잡) / 484초(브라우저 잡)로 느려졌다. image+install은 263/257초,
+Gradle은 캐시가 없어서 252초였다. 이 수치를 개선으로 포장하지 않는다.
+
+브라우저 잡 로그에서 docker-container builder의 이미지 export/load 96.6초와 초기 GHA
+캐시 export 51.5초를 확인했다(Android 잡의 cache export는 120.9초). 그래서 공식
+`setup-docker-action`으로 containerd 저장소를 켜고 `docker` driver를 사용한다. 기존 main의
+`android` job ID도 유지하여 setup-gradle 캐시를 이어받는다. PR의 읽기 전용 정책을 풀어
+벤치마크만 빠르게 만드는 방법은 쓰지 않았다.
+
+[36515213933](https://github.com/kywoo26/p2p-gostop/actions/runs/36515213933)은 383초 / 317초로
+전체 성공했다. 이미지+설치는 75/88초로 줄었지만 Gradle 홈이 여전히 비어 234초를 썼다.
+기존 main은 기본 `~/.gradle`, 초기 구현은 `$RUNNER_TEMP/gradle-home`을 사용했다.
+Actions 캐시 버전은 경로도 포함하므로 기본 홈을 유지하고 그 절대 경로를 컨테이너에도
+같이 마운트하도록 수정했다. 이후 실행에서 실제 복원 여부를 확인한다.
+
+이 실행의 Playwright 로그는 `Running 56 tests using 1 worker`였다. 2코어 러너에서 일반
+테스트는 `--workers=2`로 실행하고, timing 프로젝트의 `workers: 1`·직렬 의존성은 유지한다.
+이미지 이름은 `docker compose config --images dev`에서 읽어 CI·릴리스·로컬의 태그를 일치시킨다.
+
 ## 2. 수단 비교와 우선순위
 
 아래 예상치는 실측 전 가설이며 합산하지 않는다. 캐시 적중·러너 부하에 따라 달라진다.
@@ -112,7 +144,10 @@ CI debug APK를 그대로 재서명하는 것은 release variant와 같지 않�
 - [Gradle Actions 설정·캐시 정책·암호화](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md), [v6 입력 계약](https://github.com/gradle/actions/blob/v6/setup-gradle/action.yml)
 - [Gradle build cache](https://docs.gradle.org/current/userguide/build_cache.html), [configuration cache](https://docs.gradle.org/current/userguide/configuration_cache.html), [활성화·암호화](https://docs.gradle.org/current/userguide/configuration_cache_enabling.html), [daemon](https://docs.gradle.org/current/userguide/gradle_daemon.html)
 - [Android 빌드 최적화](https://developer.android.com/build/optimize-your-build), [Kotlin incremental/cache](https://kotlinlang.org/docs/gradle-compilation-and-caches.html)
+- [KSP incremental processing](https://kotlinlang.org/docs/ksp-incremental.html), [kapt → KSP](https://kotlinlang.org/docs/ksp-kapt-migration.html)
 - [Docker Actions 캐시](https://docs.docker.com/build/ci/github-actions/cache/), [GHA backend·scope](https://docs.docker.com/build/cache/backends/gha/), [build-push-action](https://github.com/docker/build-push-action)
 - [docker driver의 containerd 캐시 지원](https://docs.docker.com/build/cache/backends/), [공식 setup-docker 설정](https://docs.docker.com/build/ci/github-actions/multi-platform/)
 - [npm ci](https://docs.npmjs.com/cli/v11/commands/npm-ci/), [Playwright CI](https://playwright.dev/docs/ci), [sharding](https://playwright.dev/docs/test-sharding)
 - [아티팩트 다운로드](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts), [자체 러너](https://docs.github.com/en/actions/concepts/runners/self-hosted-runners), [러너 보안](https://docs.github.com/en/actions/reference/security/secure-use)
+- [ephemeral 러너·업데이트·외부 로그 보관](https://docs.github.com/en/actions/reference/runners/self-hosted-runners)
+- [Actions 캐시 버전·경로·브랜치 범위](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)

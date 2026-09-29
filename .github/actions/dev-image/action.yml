@@ -4,9 +4,17 @@ inputs:
   install:
     description: 릴리스는 읽기 전용 컨테이너에서 별도로 설치한다.
     default: 'true'
+outputs:
+  image:
+    description: Compose dev 서비스의 이미지 이름 (태그의 단일 근거).
+    value: ${{ steps.compose.outputs.image }}
 runs:
   using: composite
   steps:
+    - name: Compose 이미지 이름
+      id: compose
+      shell: bash
+      run: echo "image=$(docker compose config --images dev)" >> "$GITHUB_OUTPUT"
     # docker driver의 GHA 캐시는 containerd 저장소가 필요하다(Docker 공식 지원 조합).
     # 별도 builder 컨테이너의 tar export → docker load 왕복을 피한다.
     - uses: docker/setup-docker-action@v5
@@ -20,7 +28,7 @@ runs:
       with:
         context: docker
         load: true
-        tags: p2p-gostop-dev:1
+        tags: ${{ steps.compose.outputs.image }}
         cache-from: type=gha,scope=dev-image
         cache-to: type=gha,scope=dev-image,mode=max
       env:

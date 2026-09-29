@@ -38,7 +38,8 @@ jobs:
       - name: build + 번들 예산·외부 URL 검사
         run: docker compose run --rm --user root -e GITHUB_SHA dev npm run build -w packages/web
       - name: Gradle 캐시 경로 설정
-        run: echo "GRADLE_USER_HOME=$RUNNER_TEMP/gradle-home" >> "$GITHUB_ENV"
+        # Actions cache 버전은 저장 경로도 포함한다. 기존 main의 기본 홈 경로를 유지한다.
+        run: echo "GRADLE_USER_HOME=$HOME/.gradle" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -52,6 +53,7 @@ jobs:
           docker compose run --rm --user "$(id -u):$(id -g)" -e HOME="$RUNNER_TEMP/dev-home" \
             -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" -w "$GITHUB_WORKSPACE" \
             -v "$RUNNER_TEMP:$RUNNER_TEMP" \
+            -v "$GRADLE_USER_HOME:$GRADLE_USER_HOME" \
             -e GRADLE_USER_HOME -e GRADLE_ENCRYPTION_KEY -e GITHUB_WORKSPACE \
             -e RUNNER_TEMP -e GITHUB_ACTION \
             dev android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=2
@@ -84,7 +86,8 @@ jobs:
       - name: 컴포넌트 테스트 (Vitest 브라우저 모드)
         run: docker compose run --rm --user root dev npm run test:browser
       - name: E2E (Playwright, Chromium + WebKit)
-        run: docker compose run --rm --user root dev npm run e2e -w packages/web
+        # 2코어 러너에서 일반 테스트는 2 workers. timing 프로젝트의 workers: 1·dependencies는 유지.
+        run: docker compose run --rm --user root dev npm run e2e -w packages/web -- --workers=2
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true
