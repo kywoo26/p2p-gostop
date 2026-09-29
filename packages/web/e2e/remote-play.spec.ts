@@ -483,6 +483,16 @@ test('AC-RP-03 @full @paired 진행 중 호스트 부재는 판을 멈추고 복
       .toBe(false);
     await expect.poll(async () => (await gameState(run.guest)).seq).toBe(before.seq);
     expect((await gameState(run.guest)).balances).toEqual(before.balances);
+    await expect
+      .poll(
+        async () => {
+          await run.host.evaluate(playStep);
+          await run.guest.evaluate(playStep);
+          return (await gameState(run.guest)).seq;
+        },
+        { timeout: 20_000 },
+      )
+      .toBeGreaterThan(before.seq);
     await run.restart();
     await run.guest.reload();
     await expect(run.guest.getByRole('heading', { name: '방으로 돌아가기' })).toBeVisible();
