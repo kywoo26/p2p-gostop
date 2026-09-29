@@ -20,7 +20,7 @@
   in:fade={{ duration: durationMs('modal') }}
   out:fade={{ duration: durationMs('modal') }}
 >
-  {#if actor}<span class="actor">{actor}</span>{' '}{/if}<strong>{text}!</strong>
+  {#if actor}<span class="actor">{`${actor} `}</span>{/if}<strong>{text}!</strong>
 </div>
 
 <style>
@@ -28,10 +28,10 @@
     --mark: var(--skin-brass);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     max-width: 100%;
     min-height: 32px;
-    padding: 4px 10px;
+    padding: 4px 6px;
     border: 1px solid var(--skin-brass);
     border-radius: 4px;
     background: var(--skin-paper);
@@ -57,11 +57,19 @@
   .actor {
     font-size: 14px;
     font-weight: 400;
+    line-height: 16px;
   }
   .kind-go {
+    flex-direction: column;
+    gap: 0;
+    min-width: 72px;
     font-size: 24px;
     line-height: 28px;
-    min-height: 40px;
+    min-height: 52px;
+    padding: 4px;
+  }
+  .kind-go::before {
+    display: none;
   }
   .kind-ppeok {
     --mark: var(--color-event-ppeok);
@@ -89,6 +97,9 @@
   }
   :global([data-effect-intensity='strong']) .banner {
     padding: 6px 12px;
+  }
+  :global([data-effect-intensity='strong']) .kind-go {
+    padding: 4px;
   }
   :global([data-effect-intensity='off']) .banner {
     --mark: var(--color-hud);

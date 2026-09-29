@@ -34,14 +34,26 @@
   let previous: { round: number; scores: readonly [ScoreBreakdown, ScoreBreakdown] } | null = null;
   let sequence = 0;
   const shown = $derived(banner ?? latched ?? milestone);
+  const shownActor = $derived(
+    shown?.seat === undefined || shown.seat === null
+      ? actor
+      : shown.seat === viewer
+        ? '나'
+        : '상대',
+  );
   $effect(() => {
     if (blocked) {
       latched = null;
       return;
     }
-    if (banner === null) return;
-    latched = banner;
-    const timer = window.setTimeout(() => (latched = null), 1200);
+    if (banner !== null) latched = banner;
+  });
+  $effect(() => {
+    if (latched === null) return;
+    const id = latched.id;
+    const timer = window.setTimeout(() => {
+      if (latched?.id === id) latched = null;
+    }, 1200);
     return () => window.clearTimeout(timer);
   });
   $effect(() => {
@@ -68,7 +80,7 @@
   });
   $effect(() => {
     if (blocked && (shown || toast)) {
-      deferred = [shown ? `${actor ?? ''} ${shown.text}`.trim() : '', toast?.text]
+      deferred = [shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '', toast?.text]
         .filter(Boolean)
         .join(' · ');
     } else if (!blocked && (shown || toast)) deferred = '';
@@ -80,12 +92,8 @@
     {#if shown}
       <EventBanner
         kind={shown.kind}
-        text={[shown.text, toast?.text].filter(Boolean).join(' · ')}
-        actor={shown.seat === undefined || shown.seat === null
-          ? actor
-          : shown.seat === viewer
-            ? '나'
-            : '상대'}
+        text={shown.text.split(' · ')[0] ?? shown.text}
+        actor={shownActor}
       />
     {:else}<p role="status" class:quiet={!toast && !deferred}>
         {toast?.text ?? (deferred ? `${idle} · ${deferred}` : idle)}
@@ -95,10 +103,17 @@
 
 <style>
   .event-rail {
+    display: flex;
+    justify-content: flex-end;
     min-width: 0;
     max-height: 100%;
     overflow: hidden;
     pointer-events: none;
+  }
+  @media (min-height: 900px) {
+    .event-rail {
+      justify-content: center;
+    }
   }
   .quiet {
     position: absolute;
@@ -123,10 +138,19 @@
     max-width: 100%;
     overflow: hidden;
   }
-  .event-rail :global(.actor) {
-    display: inline;
-    font-size: inherit;
-    line-height: inherit;
-    opacity: 1;
+  @media (max-height: 899px) {
+    .event-rail :global(.banner) {
+      flex-direction: column;
+      gap: 0;
+      max-width: 82px;
+      padding: 4px;
+    }
+    .event-rail :global(.banner::before) {
+      display: none;
+    }
+    .event-rail :global(.banner strong) {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
   }
 </style>

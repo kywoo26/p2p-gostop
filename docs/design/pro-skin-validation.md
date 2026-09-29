@@ -157,3 +157,9 @@ main **b9bd84b**(원격 대전·#181 CI 분할 포함)를 **26b97c6**으로 통�
 - `PLAYWRIGHT_PORT=4193 npm run e2e:smoke -w packages/web -- --workers=4`: **312/312 통과**(Chromium 기능 전체+WebKit guest/layout/fonts, Chromium 직렬 계측). 같은 포트의 `npm run e2e -w packages/web -- --workers=4`: **380통과·기존20skip**(양 엔진 full 및 직렬 계측). Chromium 빠름 p50 381ms·보통 매칭1740ms, WebKit 빠름381ms·보통 매칭1745ms이며 각 테스트의 선언 범위 안이다. 이 두 실행은 별도 게이트이며 수치를 합산하지 않는다.
 - #171 P2 재발 방지: 손패 저장 fixture의 주/보조 버튼·같은 카드/영역 밖 놓기·pointercancel·키보드, aria-hidden 카운터 fixed 교차·display:none 반례, 5×3 기본 격자·월 인접·회전 경계 셀 포함을 Chromium/WebKit 게이트에서 확인했다. 최신 앱의5크기×2엔진×13상태 130화면 재감사 위반0. PNG·JSON·README 링크 인덱스는 `packages/web/test-results/pro-skin/`; E2E가 이 디렉터리를 청소하므로 full 종료 뒤 재생성해 최종 산출물로 둔다. 실기기 결과로 확장하지 않는다.
 - CI는 최종 SHA 기준의 녹색 결과를 별도 확인하고, 그 SHA로 리뷰어의 P2 3건만 좁게 재검토한다. 현재 문서 수치는 로컬 호스트 검증이다.
+
+## PA-06 사건 시각 분할
+
+- 한지/먹색 콜아웃은 사건·N고·새 족보에 1.2초 표시한다. 5크기×2엔진 사건/선택 20건과 기존 130화면 겹침 감사 위반0; 손패·획득패·제한시간 가림0.
+- 콜아웃 없는 게임판 기준샷 8건은 픽셀 그대로 통과했다. `banners` 기준샷 2장만 한지/먹색 표현과 작은 글자 크기 때문에 갱신했다.
+- 빌드 1,523.6/1,536KiB, 외부 요청0. 피박/광박 상시 스탬프는 공개 `PlayerView`에 진행 중 양쪽 위험/확정 필드가 없어 보류한다. `stopPreview.steps`는 선택 순간만 제공한다.

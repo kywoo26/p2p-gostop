@@ -385,8 +385,6 @@
         goCount={opponent.goCount}
         balance={opponent.balance}
         delta={roundChanges[seat === 0 ? 1 : 0]}
-        shakes={opponent.shakes}
-        ppeokCount={opponent.ppeokCount}
         {unit}
         expanded={expandedHud}
       />
