@@ -153,11 +153,13 @@ export class HostSession {
   guestConfirmed = false;
   /**
    * 지금 게스트 소켓이 인증됐는지: 이 소켓에서 받아들인 hello(토큰이 생긴 뒤에는 토큰 hello)가 있어야 true.
-   * 중계 알림(joined·left·present·absent)과 전송 끊김에서 false로 되돌린다. false인 동안에는 hello·ping만
+   * 중계 알림 joined·left와 전송 끊김에서 false로 되돌린다(absent는 되돌리지 않는다, #40). false인 동안에는 hello·ping만
    * 처리하고 나머지는 응답 없이 버린다: 최신 우선 중계에서 LAN의 다른 기기가 게스트 자리를 밀어내도
    * 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다(재검토 중요 2, NF-06).
    */
   authenticated = false;
+  /** 중계가 마지막으로 알려 준 게스트 소켓 상태 (알림이 없는 전송이면 null) */
+  peer: RelayNotice['peer'] | null = null;
   guestLogs: string[] = [];
   ended = false;
   settlement: Settlement | null = null;
@@ -359,8 +361,19 @@ export class HostSession {
       return false;
     }
   }
-  private reject(reason: ErrorCode, seq = this.seq, message: string = reason): void {
-    this.send({ t: 'reject', seq, reason, message: message.slice(0, 200) });
+  private reject(
+    reason: ErrorCode,
+    seq = this.seq,
+    message: string = reason,
+    requestId?: number,
+  ): void {
+    this.send({
+      t: 'reject',
+      seq,
+      reason,
+      message: message.slice(0, 200),
+      ...(requestId === undefined ? {} : { requestId }),
+    });
   }
   private changed(): void {
     for (const handler of this.changeHandlers) {
@@ -400,10 +413,10 @@ export class HostSession {
         }
       : view;
   }
-  private snapshot(): void {
+  private snapshot(requestId?: number): void {
     const view = this.viewFor(1);
     if (view === null) {
-      this.sendStatus();
+      this.sendStatus(requestId);
       return;
     }
     const sent = this.send({
@@ -413,16 +426,22 @@ export class HostSession {
       ledger: summarizeLedger(this.ledger),
       ...(this.settlementView ? { settlement: this.settlementView } : {}),
       status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
     });
-    if (!sent) this.sendStatus();
+    if (!sent) this.sendStatus(requestId);
   }
-  private sendStatus(): void {
-    this.send({ t: 'status', seq: this.seq, status: this.status });
+  private sendStatus(requestId?: number): void {
+    this.send({
+      t: 'status',
+      seq: this.seq,
+      status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
+    });
   }
-  private publish(events: readonly EngineEvent[]): void {
+  private publish(events: readonly EngineEvent[], requestId?: number): void {
     if (this.state === null) return;
     if (events.length === 0) {
-      this.snapshot();
+      this.snapshot(requestId);
       return;
     }
     const from = this.seq + 1;
@@ -439,8 +458,9 @@ export class HostSession {
       ledger: summarizeLedger(this.ledger),
       ...(this.settlementView ? { settlement: this.settlementView } : {}),
       status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
     });
-    if (!sent) this.snapshot();
+    if (!sent) this.snapshot(requestId);
   }
 
   // ---- 판 흐름 ----
@@ -494,7 +514,7 @@ export class HostSession {
   private seedOf(round: RoundRecord): readonly [number, number, number, number] {
     return combineSeed(fromHex(round.hostSecret)!, fromHex(round.guestSecret ?? '')!);
   }
-  private finishRound(): void {
+  private finishRound(requestId?: number): void {
     const round = this.current;
     if (
       this.state?.phase !== 'end' ||
@@ -524,7 +544,7 @@ export class HostSession {
     this.bankrupt = ([0, 1] as const).filter((seat) => this.ledger.balances[seat] <= 0);
     const bankrupt = this.bankrupt.length > 0;
     this.setStage(bankrupt ? 'bankrupt' : 'settled');
-    this.snapshot();
+    this.snapshot(requestId);
     if (round.guestSecret !== null && round.guestHash !== null) {
       this.lastReveal = {
         t: 'revealHost',
@@ -571,7 +591,7 @@ export class HostSession {
     this.sendStatus();
     this.send({ t: 'sessionEnd', reason, seat });
   }
-  private applyAction(action: Action): boolean {
+  private applyAction(action: Action, requestId?: number): boolean {
     if (
       this.state === null ||
       this.current === null ||
@@ -587,12 +607,12 @@ export class HostSession {
     this.current.actions.push(action);
     for (const payout of this.state.instantPayouts.slice(oldCount))
       this.ledger = withInstantPayout(this.ledger, payout, this.rules);
-    this.publish(result.events);
-    if (action.type === 'push') this.finishRound();
-    else if (this.state.phase === 'end') this.endRound();
+    this.publish(result.events, requestId);
+    if (action.type === 'push') this.finishRound(requestId);
+    else if (this.state.phase === 'end') this.endRound(requestId);
     return true;
   }
-  private endRound(): void {
+  private endRound(requestId?: number): void {
     if (this.state === null) return;
     const winner = this.state.result?.winner;
     if (
@@ -601,15 +621,15 @@ export class HostSession {
       legalActions(this.state, winner).some((a) => a.type === 'push')
     ) {
       this.setStage('settled');
-      this.snapshot();
-    } else this.finishRound();
+      this.snapshot(requestId);
+    } else this.finishRound(requestId);
   }
 
   // ---- 수신 ----
 
   private acceptAction(message: Extract<GuestMessage, { t: 'action' }>): void {
     if (message.seq !== this.seq) {
-      this.reject('STALE_SEQ', message.seq);
+      this.reject('STALE_SEQ', message.seq, 'STALE_SEQ', message.requestId);
       this.snapshot();
       return;
     }
@@ -619,11 +639,11 @@ export class HostSession {
       this.state === null ||
       (this.state.phase === 'end' && message.payload.type !== 'push')
     ) {
-      this.reject('ROUND_NOT_READY', message.seq);
+      this.reject('ROUND_NOT_READY', message.seq, 'ROUND_NOT_READY', message.requestId);
       return;
     }
-    if (message.payload.seat !== 1 || !this.applyAction(message.payload))
-      this.reject('ILLEGAL_ACTION', message.seq);
+    if (message.payload.seat !== 1 || !this.applyAction(message.payload, message.requestId))
+      this.reject('ILLEGAL_ACTION', message.seq, 'ILLEGAL_ACTION', message.requestId);
   }
   /** 재접속 hello: 단계마다 게스트에게 빠졌을 수 있는 것을 모두 다시 보낸다(멱등, #13) */
   private resync(lastSeq: number | undefined): void {
@@ -754,8 +774,12 @@ export class HostSession {
     this.send({ t: 'ledgerPage', from, total: this.ledger.entries.length, entries });
   }
   private relayNotice(notice: RelayNotice): void {
-    // 게스트 소켓이 바뀌었거나(joined·present) 없어졌다(left·absent): 새 소켓은 hello로 다시 인증해야 한다.
-    this.authenticated = false;
+    this.peer = notice.peer;
+    // 게스트 소켓이 바뀌었거나(joined) 없어졌을 때(left)만 인증을 되돌린다. present는 호스트 자신의 새 소켓에서만 오고
+    // 그 전에 끊김(onClose)으로 이미 되돌렸다. absent는 중계가 프레임 하나를 전달하지 못했다는 뜻일 뿐 게스트 소켓은
+    // 그대로일 수 있다(Android RelayRoles.forward): 여기서 인증을 되돌리면 게스트는 hello를 다시 보낼 계기가 없어
+    // 이후 액션이 말없이 버려진다(#40). 상대 상태만 기록한다.
+    if (notice.peer === 'joined' || notice.peer === 'left') this.authenticated = false;
     if (notice.peer === 'left' || notice.peer === 'absent') this.connected = false;
     this.changed();
   }
@@ -796,7 +820,12 @@ export class HostSession {
         this.acceptAction(message);
         break;
       case 'push':
-        this.acceptAction({ t: 'action', seq: message.seq, payload: { type: 'push', seat: 1 } });
+        this.acceptAction({
+          t: 'action',
+          seq: message.seq,
+          payload: { type: 'push', seat: 1 },
+          ...(message.requestId === undefined ? {} : { requestId: message.requestId }),
+        });
         break;
       case 'ping':
         this.send({ t: 'pong' });
@@ -822,7 +851,11 @@ export class HostSession {
             this.bump();
           }
           this.sendStatus();
-        } else this.diag(`ready 무시 (단계 ${this.stageValue}, 판 ${message.round})`);
+        } else {
+          // 무시하더라도 현재 단계를 알려 준다: 게스트의 응답 감시(advanceTime)가 요청을 되풀이하지 않게.
+          this.diag(`ready 무시 (단계 ${this.stageValue}, 판 ${message.round})`);
+          this.sendStatus();
+        }
         break;
       case 'bankruptcy':
         if (this.stageValue !== 'bankrupt' || !this.bankrupt.includes(1)) {
