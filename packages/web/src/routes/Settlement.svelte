@@ -74,33 +74,34 @@
   );
 </script>
 
-<Screen title="정산" back={null}>
+<Screen title="정산" back={null} scrollBody>
   <p class="headline" data-testid="settlement-headline">{headline}</p>
 
   {#if view?.pushed}
-    <p data-testid="push-forfeit">
-      정산 0{view.unit} · {view.forfeitedPoints ?? 0}점 포기 · 다음 판 ×{2 **
-        (view.nextPushes ?? 0)}
+    <p class="push-result" data-testid="push-forfeit">
+      정산 0{view.unit} · {view.forfeitedPoints ?? 0}점 포기 ·
+      <span class="next-factor">다음 판 ×{2 ** (view.nextPushes ?? 0)}</span>
     </p>
   {/if}
 
   {#if decision}
     {#if decision.winner}
-      <p role="status">
+      <p class="decision-summary" role="status">
         {#if decision.acceptAmount !== null}
           받기 {formatMoney(decision.acceptAmount, view?.unit ?? '냥')} · 밀면 {decision.forfeitedPoints ??
-            0}점 포기, 정산 0{view?.unit ?? '냥'} · 다음 판 ×{decision.nextMultiplier}
+            0}점 포기, 정산 0{view?.unit ?? '냥'} ·
+          <span class="next-factor">다음 판 ×{decision.nextMultiplier}</span>
         {:else}
           이번 판을 받고 정산하거나 포기하고 다음 판 ×{decision.nextMultiplier}로 밉니다.
         {/if}
       </p>
     {:else}
-      <p role="status">승자의 받기·밀기 선택을 기다리는 중</p>
+      <p class="decision-summary" role="status">승자의 받기·밀기 선택을 기다리는 중</p>
     {/if}
   {/if}
 
   {#if view && view.breakdown.length > 0}
-    <section aria-labelledby="settle-score">
+    <section class="settlement-section" aria-labelledby="settle-score">
       <h2 id="settle-score">점수</h2>
       <table>
         <tbody>
@@ -117,7 +118,7 @@
   {/if}
 
   {#if view && view.steps.length > 0}
-    <section aria-labelledby="settle-chain">
+    <section class="settlement-section" aria-labelledby="settle-chain">
       <h2 id="settle-chain">배수</h2>
       <ol class="chain">
         {#each view.steps as step, i (i)}
@@ -132,7 +133,7 @@
   {/if}
 
   {#if view && view.winner !== null}
-    <section aria-labelledby="settle-amount">
+    <section class="settlement-section amount-section" aria-labelledby="settle-amount">
       <h2 id="settle-amount">금액</h2>
       <p class="amount">
         {view.finalPoints}점 × {formatMoney(view.pointValue, view.unit)} =
@@ -145,7 +146,7 @@
   {/if}
 
   {#if instant.length > 0}
-    <section aria-labelledby="settle-instant">
+    <section class="settlement-section" aria-labelledby="settle-instant">
       <h2 id="settle-instant">즉시 정산</h2>
       <ul class="instant">
         {#each instant as row, i (i)}
@@ -156,7 +157,7 @@
   {/if}
 
   {#if view}
-    <section aria-labelledby="settle-balance">
+    <section class="settlement-section balance-section" aria-labelledby="settle-balance">
       <h2 id="settle-balance">잔액</h2>
       <table>
         <thead>
@@ -236,8 +237,76 @@
 <style>
   .headline {
     margin: 0;
-    font-size: var(--font-size-l);
+    padding-block: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-divider);
+    font-size: var(--type-score-size);
+    line-height: 1.35;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+  }
+
+  .settlement-section {
+    border: 1px solid var(--color-divider);
+    min-width: 0;
+  }
+
+  .push-result,
+  .decision-summary {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-accent);
+    border-radius: var(--radius-m);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-m);
+    line-height: 1.65;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .push-result {
+    border-style: dashed;
+    border-left-style: solid;
+  }
+
+  .next-factor {
+    display: inline-block;
     font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .button[data-choice][type='button'] {
+    min-width: 0;
+    min-height: 56px;
+    padding-inline: var(--space-3);
+    font-size: var(--font-size-m);
+    line-height: 1.5;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .button[data-choice][type='button']:disabled {
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+  }
+
+  .balance-section table {
+    table-layout: fixed;
+    font-size: var(--font-size-m);
+  }
+
+  .balance-section th,
+  .balance-section td {
+    overflow-wrap: anywhere;
+    vertical-align: top;
+    padding-block: var(--space-2);
+  }
+
+  .balance-section th:first-child {
+    width: 22%;
   }
 
   .total th,
@@ -261,17 +330,29 @@
   }
 
   .op {
-    color: var(--color-event-go);
+    color: var(--color-accent);
     font-weight: 700;
   }
 
   .amount {
     margin: 0;
-    font-size: var(--font-size-l);
+    font-size: var(--font-size-m);
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 
   .amount strong {
-    color: var(--color-event-go);
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--color-accent);
+    font-size: var(--type-amount-size);
+    font-weight: 750;
+    line-height: var(--type-amount-line);
+  }
+
+  .amount-section {
+    border-color: var(--color-border);
   }
 
   .gukjin {

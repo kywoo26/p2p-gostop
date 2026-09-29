@@ -44,3 +44,25 @@
 | 확대·실기기 | #51/사람 수용 대기 | 200% 동등 행동의 완전 수용은 여전히 #51. [실기기 절차](../device-test/procedure.md) 갱신, 결과는 기록하지 않음 |
 
 각 PR 본문의 KEEP-01~18·명령별 결과·실제 dist 바이트를 최종 제출 기록으로 사용한다.
+
+## #100 병합 후 정산 마감 (main 1287e7f)
+
+main을 병합했다. 충돌은 폰트 코퍼스/메타/CSS/WOFF2 재생성과 Chromium 로비 기준샷 재렌더로 해소했다. `Settlement.svelte`의 script·분기·onclick 값은 main 그대로이며 class·표시 span·Screen의 상세 스크롤 옵션만 추가했다. `game/*`·`p2p/*`·`anim/*`·solo timing은 main과 diff0이다.
+
+| 상태 | 표시/접근성 | 검사 |
+|---|---|---|
+| 승자 받기/밀기 | 제공 예상액·포기 점수·0냥·다음 배수, 받기 한지색/밀기 윤곽 | 버튼 하단56px·가림0·hit-test |
+| 게스트/null view | #100의 받기·다음 판 준비 라벨/×4 유지 | view가 아직 없어도 오류/가짜 잔액 없음 |
+| 민 판 | 정산0·포기20점·다음×2, 점선 면, 잔액 유지값 | 읽기 문구와 다음/종료 버튼, 카운트업 없음 |
+| 승자 선택 대기/밀기 불가 | status만/받기만, 조건은 #100 제공값 | 불가능한 밀기 버튼 없음 |
+| 나가리·파산·장문 | 다음판 배수·재충전, 장문 이름/큰 잔액 줄바꿈 | 가로 넘침0, 키보드로 마지막 잔액에 도달 |
+
+`settlement-layout.spec.ts`: 7상태×4viewport×Chromium/WebKit = 56개 화면 조합, axe·문서/상세 가로 넘침·하단 버튼48 이상·상세 영역과 교차0·실제 hit-test·키보드 End 검사. 받기/밀기와 민 판은16개 PNG 기준을 추가했다. 기존 정산 gallery PNG2는 48px 금액·읽기 면·하단 행동 고정·상세 region 때문에 갱신했다. 카드/Board 기준은 이번 정산 마감에서 변경하지 않는다. 실제 선택·저장·다음판은 main의 `push.spec.ts`로 별도 검증한다.
+
+스크롤 region의 `tabindex=0`은 [MDN overflow 접근성 지침](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/overflow#accessibility)을 따른다. 일반 비대화형 div 경고는 이 요소에만 이유를 달아 억제했고 이름 있는 region·키보드 접근을 두 엔진에서 검사한다. Context7 미노출로 공식 문서를 직접 확인했다.
+
+## #104 / #147 통합 순서
+
+**#104 구조·표식·HUD 정보 설계 + 기본 A 외관·정산을 먼저 병합 가능하게 하고, [#147 아트 디렉션](https://github.com/kywoo26/p2p-gostop/pull/147) 확정 후 별도 스킨 PR로 전문 질감·프레임·일러스트를 입힌다.** #104에는 전문 자산·평가 플래그·예산 예외가 없다. 후속 스킨은 6행/선택예약/손패 표식/문턱칩/48px/가림0 계약을 재검증한다. 본선1.5MiB는 유지한다.
+
+최종 Docker 검증(main1287e7f 병합 후): npm ci/lint/check 통과(경고0), Node519·브라우저330, build1,228.1KiB/1,536KiB·외부URL0·폰트140.8KiB, 전체 E2E254통과/기존6skip, Android assembleDebug/testDebugUnitTest/lint 통과. 이번 실행은 기준샷 갱신 없이 통과했다. 정산14장 및 손패 피드백6장은 `packages/web/test-results/design-a-settlement/`·`design-a-feedback/`에 별도 복사했다.

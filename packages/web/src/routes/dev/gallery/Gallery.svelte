@@ -4,6 +4,7 @@
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
   import { DUR } from '../../../anim/durations.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
+  import { settlementFixture } from '../../../lib/settlement-fixtures.ts';
   import {
     layoutFixture,
     layoutExtras,
@@ -141,6 +142,8 @@
   <Board view={fixtures.board.states.target} />
 {:else if page === 'board-gostop'}
   <Board view={fixtures.board.states.goStop} />
+{:else if page.startsWith('settlement-')}
+  <Settlement {...settlementFixture(page.slice('settlement-'.length))} />
 {:else if page === 'settlement'}
   <Settlement view={fixtures.settlement} />
 {:else if page === 'home'}

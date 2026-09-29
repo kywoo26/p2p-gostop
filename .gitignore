@@ -34,3 +34,7 @@ coverage/
 # Claude Code 개인 설정(공유하지 않음)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# 디자인 조사/자산 작업 캐시 (앱 소스·배포물 아님)
+.visual-source/
+__pycache__/

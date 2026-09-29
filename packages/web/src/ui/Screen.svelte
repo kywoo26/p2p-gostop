@@ -8,17 +8,25 @@
     back?: string | null;
     children: Snippet;
     actions?: Snippet;
+    /** 정산 상세만 스크롤하고 하단 행동 버튼은 화면 안에 유지한다. */
+    scrollBody?: boolean;
   }
 
-  let { title, back = '#/', children, actions }: Props = $props();
+  let { title, back = '#/', children, actions, scrollBody = false }: Props = $props();
 </script>
 
-<main class="screen">
+<main class="screen" class:scroll-body={scrollBody}>
   <header>
     {#if back !== null}<a class="back" href={back} aria-label="뒤로">←</a>{/if}
     <h1>{title}</h1>
   </header>
-  <div class="body">
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex (스크롤 상세 영역의 키보드 탐색을 위한 초점) -->
+  <div
+    class="body"
+    tabindex={scrollBody ? 0 : undefined}
+    role={scrollBody ? 'region' : undefined}
+    aria-label={scrollBody ? `${title} 내용` : undefined}
+  >
     {@render children()}
   </div>
   {#if actions}
@@ -74,6 +82,25 @@
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     gap: var(--space-3);
+  }
+
+  .scroll-body {
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .scroll-body .body {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: var(--space-2);
+    padding: var(--space-1);
+  }
+
+  .scroll-body .actions {
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--space-2);
   }
 
   /* 화면 공통 버튼·표·구역 (자식 화면에서 쓴다) */
