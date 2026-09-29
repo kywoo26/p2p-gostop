@@ -101,6 +101,7 @@ export function viewDigest(view: BoardView): string {
         goCount: s.goCount,
         shakes: s.shakes,
         bombs: s.bombs,
+        bombTokens: s.bombTokens,
         gukjinAsPi: s.gukjinAsPi,
         revealed: s.revealed,
         ppeokCount: s.ppeokCount,
