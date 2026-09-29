@@ -6,7 +6,8 @@
 // - 호스트 메시지는 게스트로, 게스트 메시지는 호스트로 그대로 전달한다(내용은 해석하지 않는다).
 //   단, 클라이언트가 보낸 relay 모양 프레임은 알림 위조가 되므로 전달하지 않는다.
 // - 텍스트만(바이너리 1003), 64KB 초과 1009, 호스트 역할은 루프백 주소에서만(1008).
-import type { IncomingMessage } from 'node:http';
+import { createServer, type IncomingMessage } from 'node:http';
+import { RoomAuth, validToken } from './auth.ts';
 import {
   RELAY_CLOSE_POLICY,
   RELAY_CLOSE_REPLACED,
@@ -34,6 +35,10 @@ export interface RelayOptions {
   readonly log?: (line: string) => void;
   /** 원격 주소 판정 (테스트 주입용, 기본은 소켓 원격 주소) */
   readonly remoteAddress?: (request: IncomingMessage) => string | undefined;
+  readonly publicMode?: {
+    readonly creationSecret: string;
+    readonly allowedOrigins: readonly string[];
+  };
 }
 
 export interface Relay {
@@ -59,6 +64,7 @@ function notify(socket: WebSocket | undefined, peer: RelayPeerState): void {
 }
 
 export function startRelay(options: RelayOptions = {}): Promise<Relay> {
+  if (options.publicMode) return startPublicRelay(options);
   const log = options.log ?? (() => {});
   const remote = options.remoteAddress ?? ((request) => request.socket.remoteAddress);
   const sockets: Partial<Record<Role, WebSocket>> = {};
@@ -144,6 +150,177 @@ export function startRelay(options: RelayOptions = {}): Promise<Relay> {
               client.terminate();
             }
             wss.close((error) => (error ? fail(error) : done()));
+          }),
+      });
+    });
+  });
+}
+
+/** 공개 모드는 별도 HTTP 서버와 방별 인증된 소켓을 사용한다. LAN 분기는 그대로 둔다. */
+function startPublicRelay(options: RelayOptions): Promise<Relay> {
+  const config = options.publicMode!;
+  const auth = new RoomAuth(config.creationSecret);
+  const seats = new Map<string, Partial<Record<Role, WebSocket>>>();
+  const absence = new Set<WebSocket>();
+  const allowed = new Set(config.allowedOrigins);
+  if (allowed.size === 0 || [...allowed].some((origin) => !origin.startsWith('https://')))
+    throw new Error('HTTPS allowed origins required');
+  const server = createServer(async (request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('Content-Type', 'application/json; charset=utf-8');
+    const url = new URL(request.url ?? '/', 'http://relay.invalid');
+    if (request.method === 'POST' && url.pathname === '/api/rooms') {
+      const credential = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
+      if (!auth.canCreate(credential)) {
+        response.writeHead(401).end('{"error":"unauthorized"}');
+        return;
+      }
+      const { room, hostToken } = auth.create();
+      response.writeHead(201).end(JSON.stringify({ roomId: room.id, hostToken }));
+      return;
+    }
+    const match = /^\/api\/rooms\/([A-Za-z0-9_-]{22})\/credentials$/.exec(url.pathname);
+    if (request.method === 'POST' && match) {
+      const room = auth.rooms.get(match[1]!);
+      const hostToken = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
+      if (!room || !auth.isHost(room, hostToken)) {
+        response.writeHead(401).end('{"error":"unauthorized"}');
+        return;
+      }
+      let body = '';
+      try {
+        for await (const chunk of request) {
+          body += String(chunk);
+          if (body.length > 2048) throw new Error('too large');
+        }
+        const data: unknown = JSON.parse(body);
+        if (!data || typeof data !== 'object') throw new Error('invalid');
+        const { token, permission, expiresAt } = data as {
+          token?: unknown;
+          permission?: unknown;
+          expiresAt?: unknown;
+        };
+        if (
+          (permission !== 'invite' && permission !== 'resume') ||
+          typeof expiresAt !== 'number' ||
+          !auth.register(room, hostToken, token, permission, expiresAt)
+        )
+          throw new Error('invalid');
+        response.writeHead(201).end('{"ok":true}');
+      } catch {
+        response.writeHead(400).end('{"error":"invalid request"}');
+      }
+      return;
+    }
+    response.writeHead(404).end('{"error":"not found"}');
+  });
+  const wss = new WebSocketServer({
+    noServer: true,
+    maxPayload: options.maxPayload ?? RELAY_MAX_PAYLOAD_BYTES,
+  });
+  server.on('upgrade', (request, socket, head) => {
+    const url = new URL(request.url ?? '/', 'http://relay.invalid');
+    if (url.pathname !== RELAY_PATH || !allowed.has(request.headers.origin ?? '')) {
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
+  });
+  wss.on('connection', (socket, request) => {
+    const url = new URL(request.url ?? '/', 'http://relay.invalid');
+    const role = url.searchParams.get('role');
+    const roomId = url.searchParams.get('room');
+    if ((role !== 'host' && role !== 'guest') || !roomId || !auth.rooms.has(roomId)) {
+      socket.close(CLOSE_INVALID_ROLE);
+      return;
+    }
+    const room = auth.rooms.get(roomId)!;
+    let authenticated = false;
+    let timer: ReturnType<typeof setTimeout> | undefined = setTimeout(
+      () => socket.close(CLOSE_INVALID_ROLE),
+      5000,
+    );
+    socket.on('message', (data, binary) => {
+      if (binary) {
+        socket.close(CLOSE_UNSUPPORTED);
+        return;
+      }
+      const text = toText(data);
+      if (!authenticated) {
+        let token: unknown;
+        try {
+          const frame: unknown = JSON.parse(text);
+          if (frame && typeof frame === 'object' && (frame as { t?: unknown }).t === 'relay-auth')
+            token = (frame as { token?: unknown }).token;
+        } catch {
+          /* invalid auth */
+        }
+        if (!validToken(token) || auth.authenticate(room, role, token) === null) {
+          socket.close(CLOSE_INVALID_ROLE);
+          return;
+        }
+        authenticated = true;
+        if (timer) {
+          clearTimeout(timer);
+          timer = undefined;
+        }
+        const pair = seats.get(room.id) ?? {};
+        const old = pair[role];
+        pair[role] = socket;
+        seats.set(room.id, pair);
+        if (old) {
+          absence.delete(old);
+          old.close(CLOSE_REPLACED, 'replaced');
+        }
+        const peer = pair[other(role)];
+        if (!peer) absence.add(socket);
+        else absence.delete(peer);
+        notify(socket, peer ? 'present' : 'absent');
+        notify(peer, 'joined');
+        return;
+      }
+      const pair = seats.get(room.id);
+      if (pair?.[role] !== socket || isRelayFrame(text)) return;
+      const peer = pair[other(role)];
+      if (!peer || peer.readyState !== WebSocket.OPEN) {
+        if (!absence.has(socket)) {
+          absence.add(socket);
+          notify(socket, 'absent');
+        }
+        return;
+      }
+      absence.delete(socket);
+      peer.send(text);
+    });
+    socket.on('close', () => {
+      if (timer) clearTimeout(timer);
+      absence.delete(socket);
+      const pair = seats.get(room.id);
+      if (pair?.[role] !== socket) return;
+      delete pair[role];
+      notify(pair[other(role)], 'left');
+    });
+    socket.on('error', () => {});
+  });
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(options.port ?? 0, options.host ?? '127.0.0.1', () => {
+      server.off('error', reject);
+      resolve({
+        port: (() => {
+          const address = server.address();
+          return typeof address === 'object' && address !== null ? address.port : 0;
+        })(),
+        close: () =>
+          new Promise<void>((done, fail) => {
+            for (const ws of wss.clients) ws.terminate();
+            wss.close((error) => {
+              if (error) {
+                fail(error);
+                return;
+              }
+              server.close((serverError) => (serverError ? fail(serverError) : done()));
+            });
           }),
       });
     });

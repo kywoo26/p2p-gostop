@@ -1,4 +1,5 @@
 // 사용: node packages/relay-dev/src/cli.ts --port 17777  (환경변수 PORT, HOST도 지원)
+import { readFileSync } from 'node:fs';
 import { RELAY_PATH, RELAY_PORT } from '@p2p-gostop/protocol';
 import { startRelay } from './index.ts';
 
@@ -15,8 +16,22 @@ if (
   throw new RangeError('--port는 0~65535 정수여야 합니다');
 }
 const host = process.env['HOST'] ?? '0.0.0.0';
-const relay = await startRelay({ port, host, log: (line) => console.log(`[relay] ${line}`) });
-console.log(`[relay] listening on ws://${host}:${relay.port}${RELAY_PATH}?role=host|guest`);
+const publicEnabled = args.includes('--public') || process.env['RELAY_PUBLIC'] === '1';
+const secret =
+  process.env['RELAY_CREATION_SECRET'] ??
+  (process.env['RELAY_CREATION_SECRET_FILE']
+    ? readFileSync(process.env['RELAY_CREATION_SECRET_FILE'], 'utf8').trim()
+    : '');
+const origins = (process.env['RELAY_ALLOWED_ORIGINS'] ?? '').split(',').filter(Boolean);
+const relay = await startRelay({
+  port,
+  host,
+  ...(publicEnabled ? { publicMode: { creationSecret: secret, allowedOrigins: origins } } : {}),
+  log: (line) => console.log(`[relay] ${line}`),
+});
+console.log(
+  `[relay] listening on ${publicEnabled ? 'public' : 'LAN'} ${host}:${relay.port}${RELAY_PATH}`,
+);
 
 const shutdown = () => {
   void relay.close().then(() => process.exit(0));
