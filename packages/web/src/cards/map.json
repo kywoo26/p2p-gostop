@@ -488,7 +488,9 @@
       "kind": "bonus",
       "piValue": 2,
       "source": "original",
-      "file": "bonus-2pi-a.svg"
+      "file": "bonus-2pi-a.svg",
+      "title": "보너스 2피 · 먹 언덕",
+      "license": "CC0-1.0"
     },
     {
       "id": 49,
@@ -496,7 +498,9 @@
       "kind": "bonus",
       "piValue": 2,
       "source": "original",
-      "file": "bonus-2pi-b.svg"
+      "file": "bonus-2pi-b.svg",
+      "title": "보너스 2피 · 물결",
+      "license": "CC0-1.0"
     },
     {
       "id": 50,
@@ -504,11 +508,15 @@
       "kind": "bonus",
       "piValue": 3,
       "source": "original",
-      "file": "bonus-3pi.svg"
+      "file": "bonus-3pi.svg",
+      "title": "보너스 3피 · 주홍 땅",
+      "license": "CC0-1.0"
     }
   ],
   "back": {
     "source": "original",
-    "file": "back.svg"
+    "file": "back.svg",
+    "title": "카드 뒷면 · 붉은 격자와 매화 원문",
+    "license": "CC0-1.0"
   }
 }

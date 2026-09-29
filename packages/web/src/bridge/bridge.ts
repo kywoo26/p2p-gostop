@@ -9,7 +9,8 @@
 //   lanEnabled, warning}. 권한이 없으면 startHotspot → error{message:"permissionRequired"} 후 앱이 권한 안내를 띄우고,
 //   허용·거절 결과를 같은 id의 hotspot/error로 다시 보낸다(구독자에게 hotspot 알림으로 도착한다).
 // - share{text,title?,filename?} → share{shared} / log{role?,level?,message?,entries?} → log{accepted}
-// - keepScreenOn{bool} / gameActive{bool}(뒤로 가기 확인·화면 켜짐) / vibrate{pattern}(총 2초 상한)
+// - keepScreenOn{bool} / gameActive{bool}(웹 Back 처리 활성화) / vibrate{pattern}(총 2초 상한)
+// - 앱 → 페이지: back (id 없는 이벤트). 게임 화면의 메뉴와 설정 복귀를 웹이 처리한다.
 // - openDiagnostics / getDeviceInfo → deviceInfo{device,version,gitSha,buildTime}
 // - LAN 노출은 명시적으로 연다(NF-06): startHotspot이 LAN을 열고, "주소만 표시"는 enableLan{bool} → lan{enabled}.
 //   stopHotspot → stopHotspot{stopped}은 서버를 유지한 채 주소만 표시로 내린다. LAN이 열리면 hotspot.warning을 보여 준다.
@@ -60,8 +61,9 @@ export interface BridgePlugin {
   /** 게스트가 올린 로그를 앱의 게스트 버퍼에 넣는다 (NP-09, 앱 진단의 로그 공유에 포함) */
   guestLog(entries: readonly string[]): Promise<void>;
   keepScreenOn(options: { enabled: boolean }): Promise<void>;
-  /** 게임 중: 뒤로 가기를 확인 창으로 바꾸고 화면을 켜 둔다 (이슈 #10) */
+  /** 게임·설정에서 Android Back을 웹 이벤트로 받도록 알린다 (이슈 #10) */
   gameActive(options: { active: boolean }): Promise<void>;
+  addBackListener(listener: () => void): Promise<PluginListenerHandle>;
   /** ms 단위 [진동, 쉼, 진동, …] (앱이 총 2초로 자른다) */
   vibrate(pattern: readonly number[]): Promise<void>;
   openDiagnostics(): Promise<void>;
@@ -98,6 +100,7 @@ const webBridge: BridgePlugin = {
   guestLog: async () => {},
   keepScreenOn: async () => {},
   gameActive: async () => {},
+  addBackListener: async () => ({ remove: async () => {} }),
   vibrate: async () => {},
   openDiagnostics: async () => {},
   getDeviceInfo: async () => null,
@@ -155,6 +158,7 @@ export function createNativeBridge(host: HostBridgeObject): BridgePlugin {
   let nextId = 1;
   const pending = new Map<string, (reply: Reply | null) => void>();
   const listeners = new Set<(info: HotspotInfo) => void>();
+  const backListeners = new Set<() => void>();
   let last: HotspotInfo | null = null;
 
   host.onmessage = (event) => {
@@ -163,6 +167,9 @@ export function createNativeBridge(host: HostBridgeObject): BridgePlugin {
     if (reply.type === 'hotspot') {
       last = parseHotspot(reply);
       for (const listener of listeners) listener(last);
+    }
+    if (reply.type === 'back' && reply['id'] === undefined) {
+      for (const listener of backListeners) listener();
     }
     const id = reply['id'];
     if (typeof id === 'string' || typeof id === 'number') {
@@ -236,6 +243,14 @@ export function createNativeBridge(host: HostBridgeObject): BridgePlugin {
     gameActive: async ({ active }) => {
       await request('gameActive', { bool: active });
     },
+    addBackListener: async (listener) => {
+      backListeners.add(listener);
+      return {
+        remove: async () => {
+          backListeners.delete(listener);
+        },
+      };
+    },
     vibrate: async (pattern) => {
       await request('vibrate', { pattern: [...pattern] });
     },
@@ -267,6 +282,7 @@ export function createNativeBridge(host: HostBridgeObject): BridgePlugin {
     },
     removeAllListeners: async () => {
       listeners.clear();
+      backListeners.clear();
     },
   };
 }

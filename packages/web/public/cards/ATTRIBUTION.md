@@ -67,14 +67,14 @@ Hwatu card art by Spenĉjo and Marcus Richert, based on Hanafuda graphics by Lou
 
 ## 48~50번과 back.svg: 자체 제작 — CC0 1.0
 
-보너스 카드 3장(48~50번)과 카드 뒷면은 p2p-gostop 기여자가 직접 그렸다. [Creative Commons Zero v1.0 Universal (퍼블릭 도메인 헌정)](https://creativecommons.org/publicdomain/zero/1.0/)로 공개한다. 사람이 읽는 원본은 저장소의 `packages/web/cards-src/`에 있다.
+보너스 카드 3장(48~50번: 2피·2피·3피)과 카드 뒷면은 p2p-gostop 기여자가 Commons 세트와 같은 판형·테두리·색으로 직접 그렸다(Commons 그림을 옮기거나 변형하지 않음). [Creative Commons Zero v1.0 Universal (퍼블릭 도메인 헌정)](https://creativecommons.org/publicdomain/zero/1.0/)로 공개한다. 사람이 읽는 원본은 저장소의 `packages/web/cards-src/`에 있다.
 
-| ID | 카드 | 파일 | 원본 |
-|---:|---|---|---|
-| 48 | 보너스 보너스 2피 | 48.svg | cards-src/bonus-2pi-a.svg |
-| 49 | 보너스 보너스 2피 | 49.svg | cards-src/bonus-2pi-b.svg |
-| 50 | 보너스 보너스 3피 | 50.svg | cards-src/bonus-3pi.svg |
-| — | 카드 뒷면 | back.svg | cards-src/back.svg |
+| ID | 카드 | 그림 | 파일 | 원본 | 라이선스 |
+|---:|---|---|---|---|---|
+| 48 | 보너스 2피 | 보너스 2피 · 먹 언덕 | 48.svg | cards-src/bonus-2pi-a.svg | CC0-1.0 |
+| 49 | 보너스 2피 | 보너스 2피 · 물결 | 49.svg | cards-src/bonus-2pi-b.svg | CC0-1.0 |
+| 50 | 보너스 3피 | 보너스 3피 · 주홍 땅 | 50.svg | cards-src/bonus-3pi.svg | CC0-1.0 |
+| — | 카드 뒷면 | 카드 뒷면 · 붉은 격자와 매화 원문 | back.svg | cards-src/back.svg | CC0-1.0 |
 
 ## 코드
 

@@ -13,7 +13,9 @@ FROM mcr.microsoft.com/playwright:v1.63.0-noble
 # (SHA-1 e025545c…는 저장소 XML과 일치 확인, 아래는 같은 파일의 SHA-256)
 ARG ANDROID_CMDLINE_TOOLS_BUILD=16111833
 ARG ANDROID_CMDLINE_TOOLS_SHA256=0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8
-# compileSdk/targetSdk 36(37 금지), build-tools는 AGP 9.4.1 기본값
+# compileSdk/targetSdk 36(37 금지), build-tools는 AGP 9.4.1 기본값.
+# 2026-09-29 이미지 빌드 실측: platform-tools 37.0.1, platforms;android-36 revision 2, build-tools 36.0.0.
+# platform-tools는 sdkmanager의 최신 개정을 설치하므로 이미지 재빌드 때 source.properties의 개정을 확인한다.
 ARG ANDROID_PACKAGES="platforms;android-36 build-tools;36.0.0 platform-tools"
 
 ENV JAVA_HOME=/opt/java/openjdk \
@@ -46,6 +48,9 @@ RUN set -eux; \
     groupmod -n dev ubuntu; \
     usermod -l dev -d /home/dev -m -c dev ubuntu; \
     install -d -o dev -g dev /work /home/dev/.gradle /home/dev/.npm /home/dev/.android; \
+    install -d -m 700 -o dev -g dev /home/dev/.claude; \
     git config --system --add safe.directory /work
 
+COPY --chmod=755 dev-entrypoint.sh /usr/local/bin/dev-entrypoint
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint"]
 WORKDIR /work

@@ -4,17 +4,8 @@ import type { LedgerSummary, SessionLedgerEntry } from './ledger.ts';
 import type { BoardView, SettlementView } from './view-types.ts';
 
 export type Role = 'host' | 'guest';
-export type ErrorCode =
-  | 'MALFORMED'
-  | 'TOO_LARGE'
-  | 'VERSION_MISMATCH'
-  | 'TOKEN_INVALID'
-  | 'STALE_SEQ'
-  | 'ILLEGAL_ACTION'
-  | 'COMMIT_INVALID'
-  | 'ROUND_NOT_READY'
-  | 'BANKRUPT';
-export const ERROR_CODES: readonly ErrorCode[] = [
+/** NP-02: 거부 코드 목록을 타입과 수신 스키마가 함께 사용한다. */
+export const ERROR_CODES = [
   'MALFORMED',
   'TOO_LARGE',
   'VERSION_MISMATCH',
@@ -24,7 +15,8 @@ export const ERROR_CODES: readonly ErrorCode[] = [
   'COMMIT_INVALID',
   'ROUND_NOT_READY',
   'BANKRUPT',
-];
+] as const;
+export type ErrorCode = (typeof ERROR_CODES)[number];
 
 /**
  * 세션 단계 (#26). 판과 판 사이에 명시적 대기(settled)를 둔다.
@@ -58,7 +50,13 @@ export type GuestMessage =
       /** 게스트가 마지막으로 본 호스트 세대 (호스트 복원 감지용, 진단) */
       readonly epoch?: string;
     }
-  | { readonly t: 'action'; readonly seq: number; readonly payload: Action }
+  | {
+      readonly t: 'action';
+      readonly seq: number;
+      readonly payload: Action;
+      readonly requestId?: number;
+    }
+  | { readonly t: 'push'; readonly seq: number; readonly requestId?: number }
   | { readonly t: 'ping' }
   | { readonly t: 'log'; readonly entries: readonly string[] }
   | { readonly t: 'commitGuest'; readonly round: number; readonly hash: string }
@@ -91,6 +89,8 @@ export type HostMessage =
       readonly ledger: LedgerSummary;
       readonly settlement?: SettlementView;
       readonly status: RoundStatus;
+      /** 해당 action/push 요청의 응답일 때만 포함 */
+      readonly requestId?: number;
     }
   | {
       readonly t: 'events';
@@ -101,18 +101,26 @@ export type HostMessage =
       readonly ledger: LedgerSummary;
       readonly settlement?: SettlementView;
       readonly status: RoundStatus;
+      readonly requestId?: number;
     }
   /** 뷰는 그대로이고 단계·준비·파산 상태만 바뀜 */
-  | { readonly t: 'status'; readonly seq: number; readonly status: RoundStatus }
+  | {
+      readonly t: 'status';
+      readonly seq: number;
+      readonly status: RoundStatus;
+      readonly requestId?: number;
+    }
   | {
       readonly t: 'reject';
       readonly seq: number;
       readonly reason: ErrorCode;
       readonly message: string;
+      readonly requestId?: number;
     }
   | { readonly t: 'pong' }
   | { readonly t: 'commitHost'; readonly round: number; readonly hash: string }
   | { readonly t: 'revealGuestRequest'; readonly round: number; readonly guestHash: string }
+  | { readonly t: 'roundAborted'; readonly round: number; readonly reason: string }
   | {
       readonly t: 'revealHost';
       readonly round: number;

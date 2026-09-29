@@ -3,6 +3,7 @@
   // 호스트 앱, 루프백이 아닌 origin(iPhone이 QR로 연 `http://<핫스팟 IP>:17777/`)이나 `?role=guest`는 게스트 화면.
   // 호스트 앱은 해시 라우팅(SvelteKit 아님, AGENTS.md 3장): 홈 / 혼자 연습 / 게임 / 친구와 대전(방 열기·대전) / 기록 /
   // 설정 / 진단 / 라이선스 / 개발 갤러리. 게스트는 GuestApp 안의 상태로 움직인다(프래그먼트는 세션 토큰 자리).
+  import { onMount } from 'svelte';
   import { getBridge } from './bridge/bridge.ts';
   import { current } from './game/current.svelte.ts';
   import { diagnosticsView } from './game/diagnostics.ts';
@@ -34,6 +35,9 @@
 
   let hash = $state(location.hash);
   const route = $derived(hash.replace(/^#/, '') || '/');
+  let returnFromSettings = $state<string | null>(null);
+  let backToken = $state(0);
+  let backListenerReady = $state(false);
   const galleryPage = $derived(
     route === GALLERY || route.startsWith(`${GALLERY}/`)
       ? route.slice(GALLERY.length).replace(/^\//, '')
@@ -66,11 +70,40 @@
         (route === '/match' && host !== null && host.phase === 'playing')),
   );
 
-  // Android: 게임 중이면 뒤로 가기를 확인 창으로 바꾸고 화면을 켜 둔다 (이슈 #10, 브리지 gameActive·keepScreenOn)
+  const nativeBackActive = $derived(
+    inGame || (route === '/game' && current.solo !== null) || route === '/settings',
+  );
+
+  // Android Back은 웹 메뉴와 설정 복귀로 전달한다. 홈에서는 네이티브 종료 확인을 유지한다.
   $effect(() => {
-    const active = inGame;
-    void bridge.gameActive({ active });
-    void bridge.keepScreenOn({ enabled: active || (host !== null && host.phase !== 'ended') });
+    void bridge.gameActive({ active: nativeBackActive && backListenerReady });
+    void bridge.keepScreenOn({ enabled: inGame || (host !== null && host.phase !== 'ended') });
+  });
+
+  onMount(() => {
+    let disposed = false;
+    let remove: (() => Promise<void>) | null = null;
+    void bridge
+      .addBackListener(() => {
+        if (route === '/settings') {
+          location.hash = returnFromSettings ?? '#/';
+          returnFromSettings = null;
+        } else if (route === '/game' || route === '/match') {
+          backToken += 1;
+        }
+      })
+      .then((handle) => {
+        if (disposed) void handle.remove();
+        else {
+          remove = () => handle.remove();
+          backListenerReady = true;
+        }
+      });
+    return () => {
+      disposed = true;
+      backListenerReady = false;
+      if (remove !== null) void remove();
+    };
   });
 
   const resume = $derived.by(() => {
@@ -110,7 +143,11 @@
   const SOLO_MENU: readonly MenuItem[] = [
     { id: 'settings', label: '설정' },
     { id: 'home', label: '홈으로' },
-    { id: 'end', label: '세션 종료', confirm: '이 세션을 끝내고 기록을 봅니다' },
+    {
+      id: 'end',
+      label: '세션 종료',
+      confirm: '이 세션을 끝냅니다. 종료 후 기록을 볼 수 있습니다.',
+    },
   ];
   const HOST_MENU: readonly MenuItem[] = [
     { id: 'settings', label: '설정' },
@@ -119,14 +156,17 @@
     { id: 'end', label: '대전 끝내기', confirm: '대전을 끝냅니다. 상대의 연결도 끊깁니다' },
   ];
 
-  function endSolo() {
+  function endSolo(showRecords = false) {
     current.solo?.end();
-    location.hash = '#/records';
+    if (showRecords) location.hash = '#/records';
   }
 
   function soloMenu(id: string) {
     if (id === 'end') endSolo();
-    else location.hash = id === 'settings' ? '#/settings' : '#/';
+    else {
+      if (id === 'settings') returnFromSettings = '#/game';
+      location.hash = id === 'settings' ? '#/settings' : '#/';
+    }
   }
 
   function endMatch() {
@@ -138,16 +178,26 @@
   function hostMenu(id: string) {
     if (id === 'end') endMatch();
     else if (id === 'diagnostics') location.hash = '#/diagnostics';
-    else location.hash = id === 'settings' ? '#/settings' : '#/';
+    else {
+      if (id === 'settings') returnFromSettings = '#/match';
+      location.hash = id === 'settings' ? '#/settings' : '#/';
+    }
   }
 
   function onError(message: string) {
     log.error(message);
   }
+
+  function onHashChange() {
+    const previous = route;
+    hash = location.hash;
+    if (previous === '/settings' || location.hash === '#/' || location.hash === '')
+      returnFromSettings = null;
+  }
 </script>
 
 <svelte:window
-  onhashchange={() => (hash = location.hash)}
+  onhashchange={onHashChange}
   onpointerdown={() => sounds.unlock()}
   onerror={(e) => onError(`오류: ${e instanceof ErrorEvent ? e.message : e.type}`)}
   onunhandledrejection={(e) => onError(`처리되지 않은 Promise 거부: ${String(e.reason)}`)}
@@ -166,10 +216,19 @@
   <SoloSetup />
 {:else if route === '/game'}
   {#if current.solo !== null}
-    <Game controller={current.solo} menu={SOLO_MENU} onmenu={soloMenu} onend={endSolo} />
+    <Game
+      controller={current.solo}
+      menu={SOLO_MENU}
+      onmenu={soloMenu}
+      onend={() => endSolo(true)}
+      ended={current.solo.state.phase === 'ended'}
+      onfresh={() => (location.hash = '#/solo')}
+      onrecords={() => (location.hash = '#/records')}
+      {backToken}
+    />
   {:else}
     <Screen title="혼자 연습">
-      <p>진행 중인 게임이 없습니다.</p>
+      <p>{current.saveError ?? '진행 중인 게임이 없습니다.'}</p>
       {#snippet actions()}
         <a class="button primary" href="#/solo">새 게임</a>
       {/snippet}
@@ -188,6 +247,7 @@
       waiting={host.waitPrompt}
       onwait={() => host.keepWaiting()}
       warning={hotspot.info.warning}
+      {backToken}
     />
   {:else}
     <Screen title="친구와 대전">
@@ -204,6 +264,7 @@
     settings={settings.value}
     sessionActive={current.resumable !== null || match !== null}
     onchange={(patch) => settings.update(patch)}
+    back={returnFromSettings ?? '#/'}
   />
 {:else if route === '/diagnostics'}
   <Diagnostics
@@ -234,5 +295,17 @@
     status={shareStatus}
   />
 {:else}
+  {#if current.saveError}<p role="alert" class="storage-error">
+      {current.saveError} <a href="#/solo">저장 상태 확인</a>
+    </p>{/if}
   <Home {resume} onresume={resumeSolo} {match} onmatch={() => (location.hash = '#/match')} />
 {/if}
+
+<style>
+  .storage-error {
+    margin: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-surface-raised);
+    color: var(--color-event-go);
+  }
+</style>

@@ -2,7 +2,6 @@ package com.kywoo26.p2pgostop
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.Context
@@ -18,8 +17,6 @@ import android.provider.Settings
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowManager
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -30,6 +27,8 @@ import android.widget.FrameLayout
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import com.kywoo26.p2pgostop.log.LogReport
 import com.kywoo26.p2pgostop.log.Utf8
 import com.kywoo26.p2pgostop.server.SERVER_PORT
@@ -48,27 +47,34 @@ import org.json.JSONObject
 /** HostBridge 계약의 정본은 plan.md §1.7. 게임 로직은 루프백 WebView 번들에만 있다. */
 // WEB_MESSAGE_LISTENER는 onCreate에서 검사한다. JS는 번들된 루프백 페이지만 실행한다.
 // onRenderProcessGone은 createWebView의 WebViewClient에서 구현한다.
-@SuppressLint("RequiresFeature", "SetJavaScriptEnabled", "MissingOnRenderProcessGone")
-class GameActivity : Activity() {
+@SuppressLint("RequiresFeature", "SetJavaScriptEnabled", "MissingOnRenderProcessGone", "UseKtx")
+class GameActivity : ComponentActivity() {
     private lateinit var web: WebView
     private lateinit var container: FrameLayout
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var replyProxy: JavaScriptReplyProxy? = null
     private var gameActive = true
     private var pageLoaded = false
-    private var backRegistered = false
     private var pendingHotspotStart = false
     private var pendingHotspotId: Any? = null
     private var awaitingHotspotSettings = false
     private var fallingBack = false
-    private val backCallback = OnBackInvokedCallback {
-        AlertDialog.Builder(this).setMessage(R.string.exit_game_confirm)
-            .setPositiveButton(R.string.exit_game) { _, _ -> finish() }
-            .setNegativeButton(R.string.stay_game, null).show()
-    }
+    private lateinit var backCallback: OnBackPressedCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        backCallback = registerGameBack(
+            onBackPressedDispatcher,
+            pageLoaded = { pageLoaded },
+            bridgeReady = { replyProxy != null },
+            gameActive = { gameActive },
+            sendWeb = { send(it) },
+            confirmNativeExit = {
+                AlertDialog.Builder(this).setMessage(R.string.exit_game_confirm)
+                    .setPositiveButton(R.string.exit_game) { _, _ -> finish() }
+                    .setNegativeButton(R.string.stay_game, null).show()
+            },
+        )
         // 웹 브리지가 준비되기 전에도 호스트 화면이 잠기지 않게 한다(I-7).
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
@@ -112,12 +118,11 @@ class GameActivity : Activity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                     pageLoaded = false
-                    updateBackCallback()
+                    replyProxy = null
                 }
 
                 override fun onPageFinished(view: WebView, url: String?) {
                     pageLoaded = url?.startsWith(ORIGIN) == true
-                    updateBackCallback()
                 }
 
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
@@ -158,7 +163,6 @@ class GameActivity : Activity() {
 
     private fun destroyWebView(view: WebView) {
         pageLoaded = false
-        updateBackCallback()
         replyProxy = null
         WebViewCompat.removeWebMessageListener(view, "HostBridge")
         container.removeView(view)
@@ -279,18 +283,6 @@ class GameActivity : Activity() {
 
     private fun setGameActive(active: Boolean) {
         gameActive = active
-        updateBackCallback()
-    }
-
-    private fun updateBackCallback() {
-        val confirm = pageLoaded && gameActive
-        if (confirm && !backRegistered) {
-            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback)
-            backRegistered = true
-        } else if (!confirm && backRegistered) {
-            onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
-            backRegistered = false
-        }
     }
 
     private fun sendPermissionResult(message: JSONObject) {
@@ -298,7 +290,7 @@ class GameActivity : Activity() {
         send(message)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != REQ_HOTSPOT_PERMISSION || !pendingHotspotStart) return
         pendingHotspotStart = false
@@ -411,8 +403,8 @@ class GameActivity : Activity() {
     }
 
     override fun onDestroy() {
+        if (::backCallback.isInitialized) backCallback.remove()
         scope.cancel()
-        if (backRegistered) onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
         if (::web.isInitialized) {
             destroyWebView(web)
         }

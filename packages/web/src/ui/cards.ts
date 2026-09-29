@@ -35,21 +35,37 @@ export function cardLabel(id: CardId): string {
   }
 }
 
-/** 카드 모서리 표식: 월 숫자 + 종류 한 글자 (보너스는 +2·+3) */
-export function cardMark(id: CardId): string {
+/** 모서리 표식의 종류 기호 (NF-08: 색이 아니라 모양으로 구분). 일반 피는 기호 없이 월 숫자만 */
+export type MarkKind = 'gwang' | 'yeol' | 'tti' | 'pi' | 'ssangpi';
+
+export interface CardIndex {
+  readonly month: number;
+  readonly kind: MarkKind;
+}
+
+/**
+ * 카드 모서리 표식: 월 숫자 + 종류 기호. 보너스 카드는 그림에 가치(2피·3피)가 크게 쓰여 있어 표식이 없다(null).
+ * 9월 국진은 열끗 기호다(쌍피로 셀 때는 획득패의 "쌍피" 표지가 알린다).
+ */
+export function cardIndex(id: CardId): CardIndex | null {
   const card = getCard(id);
-  if (card.month === null) return `+${card.piValue}`;
-  const kind =
-    card.kind === 'gwang'
-      ? '광'
-      : card.kind === 'yeol'
-        ? '열'
-        : card.kind === 'tti'
-          ? '띠'
-          : card.piValue === 2
-            ? '쌍'
-            : '피';
-  return `${card.month}${kind}`;
+  if (card.month === null || card.kind === 'bonus') return null;
+  const kind: MarkKind = card.kind === 'pi' && card.piValue === 2 ? 'ssangpi' : card.kind;
+  return { month: card.month, kind };
+}
+
+/**
+ * 표식을 오른쪽 모서리에 두는 카드 (plan.md D1). 기본은 왼쪽이다.
+ * Commons 그림(viewBox 103.2×168.2)의 光 원·띠 글자·주요 도상이 있는 쪽을 피한다.
+ * 12/16px 색인의 실제 보호 영역 교차는 CardArt.test.ts에서 바닥·손패 크기별로 검사한다.
+ * - 위: 11월 광(봉황 머리), 12월 광(光 원 x 11~46, y 9~44), 8월 열끗(기러기)
+ * - 아래: 3월 광·8월 광(光 원 x 12~48, y 119~156), 5월 열끗(다리), 10월 열끗(사슴 다리), 12월 광(개구리)
+ */
+const RIGHT_TOP: ReadonlySet<CardId> = new Set([29, 40, 44]);
+const RIGHT_BOTTOM: ReadonlySet<CardId> = new Set([8, 16, 28, 36, 44]);
+
+export function markSide(id: CardId, at: 'top' | 'bottom'): 'left' | 'right' {
+  return (at === 'top' ? RIGHT_TOP : RIGHT_BOTTOM).has(id) ? 'right' : 'left';
 }
 
 const KIND_ORDER = { gwang: 0, yeol: 1, tti: 2, pi: 3, bonus: 4 } as const;

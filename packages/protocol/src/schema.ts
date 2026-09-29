@@ -2,6 +2,7 @@
 // z.object는 모르는 필드를 지우므로 게스트가 붙인 여분 필드가 호스트 상태(액션 열·revealHost)로 들어가지 않는다(#23).
 // 엔진 이벤트는 종류마다 필드가 달라 이벤트만 z.looseObject로 두고, 나머지는 모두 모양을 끝까지 검사한다.
 import * as z from 'zod/mini';
+import { ERROR_CODES } from './messages.ts';
 
 const nat = z.number().check(z.int(), z.minimum(0));
 const seat = z.literal([0, 1]);
@@ -11,6 +12,7 @@ const cards = z.array(card).check(z.maxLength(51));
 const hex64 = z.string().check(z.regex(/^[0-9a-f]{64}$/));
 const round = z.number().check(z.int(), z.minimum(1));
 const shortText = z.string().check(z.maxLength(80));
+const abortReason = z.string().check(z.minLength(1), z.maxLength(80));
 const money = z.number();
 
 const actionSchema = z.union([
@@ -24,6 +26,7 @@ const actionSchema = z.union([
   z.object({ type: z.literal('gukjin'), seat, asPi: z.boolean() }),
   z.object({ type: z.literal('go'), seat }),
   z.object({ type: z.literal('stop'), seat }),
+  z.object({ type: z.literal('push'), seat }),
 ]);
 
 const balances = z.tuple([money, money]);
@@ -65,6 +68,9 @@ const seatView = z.object({
   score: z.number(),
   goCount: nat,
   shakes: nat,
+  bombs: z.optional(z.nullable(nat)),
+  gukjinAsPi: z.optional(z.boolean()),
+  revealed: z.optional(cards),
   ppeokCount: nat,
   balance: money,
   progress: z.object({ gwang: nat, godori: nat, dan: nat, pi: nat }),
@@ -118,6 +124,7 @@ const steps = z
       op: z.enum(['add', 'mul']),
       value: z.number(),
       total: z.number(),
+      origin: z.optional(z.literal('push')),
     }),
   )
   .check(z.maxLength(32));
@@ -131,6 +138,7 @@ const boardSchema = z.object({
   pending: z.nullable(prompt),
   playable: cards,
   round,
+  pushes: z.optional(nat),
   eventSeq: nat,
   legal: z.array(actionSchema).check(z.maxLength(64)),
   firstPick: z.nullable(z.object({ poolSize: nat, taken: z.nullable(nat) })),
@@ -165,6 +173,10 @@ const settlement = z.object({
     .check(z.maxLength(8)),
   steps,
   finalPoints: z.number(),
+  gukjinAsPi: z.optional(z.tuple([z.boolean(), z.boolean()])),
+  pushed: z.optional(z.boolean()),
+  forfeitedPoints: z.optional(z.number()),
+  nextPushes: z.optional(nat),
   pointValue: money,
   amount: money,
   unit: z.enum(['냥', '원', '점']),
@@ -186,17 +198,7 @@ const event = z.looseObject({
   cards: z.array(card).check(z.maxLength(51)),
   type: z.string().check(z.maxLength(32)),
 });
-const errorCode = z.enum([
-  'MALFORMED',
-  'TOO_LARGE',
-  'VERSION_MISMATCH',
-  'TOKEN_INVALID',
-  'STALE_SEQ',
-  'ILLEGAL_ACTION',
-  'COMMIT_INVALID',
-  'ROUND_NOT_READY',
-  'BANKRUPT',
-]);
+const errorCode = z.enum(ERROR_CODES);
 
 // 제어 문자 없는 이름 (리뷰 L-3)
 const name = z.string().check(z.minLength(1), z.maxLength(80), z.regex(/^[^\p{Cc}]+$/u));
@@ -210,7 +212,8 @@ export const guestSchema = z.union([
     lastSeq: z.optional(nat),
     epoch: z.optional(z.string().check(z.maxLength(64))),
   }),
-  z.object({ t: z.literal('action'), seq: nat, payload: actionSchema }),
+  z.object({ t: z.literal('action'), seq: nat, payload: actionSchema, requestId: z.optional(nat) }),
+  z.object({ t: z.literal('push'), seq: nat, requestId: z.optional(nat) }),
   z.object({ t: z.literal('ping') }),
   z.object({ t: z.literal('log'), entries: z.array(z.string()) }),
   z.object({ t: z.literal('commitGuest'), round, hash: hex64 }),
@@ -240,6 +243,7 @@ export const hostSchema = z.union([
     ledger: ledgerSummary,
     settlement: z.optional(settlement),
     status,
+    requestId: z.optional(nat),
   }),
   z.object({
     t: z.literal('events'),
@@ -250,17 +254,20 @@ export const hostSchema = z.union([
     ledger: ledgerSummary,
     settlement: z.optional(settlement),
     status,
+    requestId: z.optional(nat),
   }),
-  z.object({ t: z.literal('status'), seq: nat, status }),
+  z.object({ t: z.literal('status'), seq: nat, status, requestId: z.optional(nat) }),
   z.object({
     t: z.literal('reject'),
     seq: nat,
     reason: errorCode,
     message: z.string().check(z.maxLength(200)),
+    requestId: z.optional(nat),
   }),
   z.object({ t: z.literal('pong') }),
   z.object({ t: z.literal('commitHost'), round, hash: hex64 }),
   z.object({ t: z.literal('revealGuestRequest'), round, guestHash: hex64 }),
+  z.object({ t: z.literal('roundAborted'), round, reason: abortReason }),
   z.object({
     t: z.literal('revealHost'),
     round,
@@ -274,6 +281,7 @@ export const hostSchema = z.union([
     options: z.object({
       roundNumber: z.optional(round),
       carry: z.optional(nat),
+      pushes: z.optional(nat),
       dealer: z.optional(seat),
       isNight: z.optional(z.boolean()),
     }),

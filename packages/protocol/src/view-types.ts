@@ -4,21 +4,21 @@
 // 엔진에 없는 값(이름, 잔액, 족보 진행도, 현재 배수)은 view.ts의 toBoardView가 계산한다.
 // packages/web/fixtures/*.json(개발 갤러리·스크린샷 입력)이 BoardViewCore를 따른다(web src/lib/fixtures.test.ts가 검사).
 
-import type { Action } from '@p2p-gostop/engine';
+import type {
+  Action,
+  CapturedPile,
+  CardId,
+  Month,
+  Phase,
+  Seat,
+  SettleStep,
+} from '@p2p-gostop/engine';
 
-/** 카드 ID 0~50 (엔진 카탈로그). 0~47 기본, 48·49 보너스 2피, 50 보너스 3피 */
-export type CardId = number;
-/** 좌석 인덱스. 이름(human/computer)을 쓰지 않는다 (AGENTS.md 3장) */
-export type Seat = 0 | 1;
-export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+// 같은 도메인 값은 엔진의 공개 계약을 재사용한다(NP-02, plan.md §1.3·§1.4).
+export type { CardId, Month, Seat, SettleStepKind } from '@p2p-gostop/engine';
 
-export interface CapturedView {
-  readonly gwang: readonly CardId[];
-  readonly yeol: readonly CardId[];
-  readonly tti: readonly CardId[];
-  /** 일반피·쌍피·보너스 */
-  readonly pi: readonly CardId[];
-}
+/** 획득패의 기존 화면 이름을 유지하되 카드 분류는 엔진 계약을 따른다. */
+export type CapturedView = CapturedPile;
 
 /** 족보 진행도 (spec 6.1: 광 n/3, 고도리 n/3, 단 n/3, 피 n/10) */
 export interface JokboProgress {
@@ -40,6 +40,10 @@ export interface SeatView {
   readonly score: number;
   readonly goCount: number;
   readonly shakes: number;
+  readonly bombs?: number | null;
+  readonly gukjinAsPi?: boolean;
+  /** 규칙상 이미 공개되어 상대도 아는 손패 */
+  readonly revealed?: readonly CardId[];
   readonly ppeokCount: number;
   /** 가상 머니 잔액 (MN-01, 단위는 설정) */
   readonly balance: number;
@@ -91,6 +95,8 @@ export interface BoardViewCore {
   /** 보는 좌석이 지금 낼 수 있는 손패 (FR-12 하이라이트, legal의 play에서 뽑은 중복 없는 목록) */
   readonly playable: readonly CardId[];
   readonly round: number;
+  /** 이번 판에 적용되는 연속 밀기 횟수 */
+  readonly pushes?: number;
   /** 마지막으로 반영한 이벤트 순번 (NP-03) */
   readonly eventSeq: number;
 }
@@ -124,7 +130,7 @@ export interface GoStopDetail {
 }
 
 /** 엔진 판 단계 (선 고르기 → 턴 → 종료) */
-export type RoundPhase = 'chooseFirst' | 'turn' | 'end';
+export type RoundPhase = Phase;
 
 /** M3 BoardExtras·inFlightOf를 흡수한 상세 입력 정보 (#12). 게스트는 이것만으로 한 판을 끝낼 수 있어야 한다 */
 export interface BoardViewDetail {
@@ -196,26 +202,8 @@ export type UiEventType = UiEvent['type'];
 
 // ---- 정산 (spec 6.2 "점수 분해 표, 배수 체인, 금액, 잔액 변화") ----
 
-export type SettleStepKind =
-  | 'base'
-  | 'goBonus'
-  | 'goMultiplier'
-  | 'shake'
-  | 'bomb'
-  | 'piBak'
-  | 'gwangBak'
-  | 'meongtta'
-  | 'goBak'
-  | 'nagariCarry'
-  | 'jackpot';
-
-export interface SettleStepView {
-  readonly kind: SettleStepKind;
-  readonly op: 'add' | 'mul';
-  readonly value: number;
-  /** 이 단계까지 적용한 점수 */
-  readonly total: number;
-}
+/** 배수 종류·연산·누적 점수·밀기 출처는 엔진 정산 단계와 같다(FR-18). */
+export type SettleStepView = SettleStep;
 
 export type ScoreRowKind =
   | 'gwang'
@@ -236,6 +224,10 @@ export interface SettlementView {
   readonly breakdown: readonly { readonly kind: ScoreRowKind; readonly points: number }[];
   readonly steps: readonly SettleStepView[];
   readonly finalPoints: number;
+  readonly gukjinAsPi?: readonly [boolean, boolean];
+  readonly pushed?: boolean;
+  readonly forfeitedPoints?: number;
+  readonly nextPushes?: number;
   /** 점당 금액 */
   readonly pointValue: number;
   readonly amount: number;

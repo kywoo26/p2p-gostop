@@ -13,7 +13,6 @@ import {
   reduce,
   replay,
   sameAction,
-  settle,
   type Action,
   type EngineEvent,
   type GameState,
@@ -59,6 +58,7 @@ export interface HostSessionOptions {
   readonly roundNumber?: number;
   readonly dealer?: Seat;
   readonly carry?: number;
+  readonly pushes?: number;
   /** 첫 hello에 첫 판을 자동으로 시작한다(기본 true). 로비 화면이 있으면 false로 두고 start()를 부른다 */
   readonly autoStart?: boolean;
   readonly unit?: MoneyUnit;
@@ -92,6 +92,7 @@ export interface HostSessionState {
   readonly roundNumber: number;
   readonly dealer: Seat | null;
   readonly carry: number;
+  readonly pushes?: number;
   readonly ledger: SessionLedger;
   readonly stage: SessionStage;
   readonly rev: number;
@@ -114,11 +115,19 @@ export interface HostSessionState {
   } | null;
   readonly settlementView: SettlementView | null;
   readonly lastReveal: RevealHostMessage | null;
+  readonly lastAbort?: { readonly round: number; readonly reason: string } | null;
 }
 
 const RESYNC_EVENT_LIMIT = 40;
 const LEDGER_PAGE_BYTES = 56 * 1024;
 const DIAGNOSTIC_LIMIT = 200;
+
+/** 엔진은 밀기 때 Settled를 재발행하므로 리플레이의 마지막 정산만 유효하다. */
+function lastSettlement(events: readonly EngineEvent[]): Settlement {
+  const event = events.findLast((item) => item.type === 'Settled');
+  if (event?.type !== 'Settled') throw new Error('종료 판에 Settled 이벤트가 없습니다');
+  return event.settlement;
+}
 
 export class HostSession {
   readonly transport: Transport;
@@ -135,6 +144,7 @@ export class HostSession {
   roundNumber: number;
   dealer: Seat | undefined;
   carry: number;
+  pushes: number;
   guestName: string | null = null;
   /**
    * 게스트가 토큰을 받았음이 확인됐는지: 토큰을 실은 hello나 welcome 뒤에만 보낼 수 있는 메시지를 받으면 true.
@@ -143,11 +153,13 @@ export class HostSession {
   guestConfirmed = false;
   /**
    * 지금 게스트 소켓이 인증됐는지: 이 소켓에서 받아들인 hello(토큰이 생긴 뒤에는 토큰 hello)가 있어야 true.
-   * 중계 알림(joined·left·present·absent)과 전송 끊김에서 false로 되돌린다. false인 동안에는 hello·ping만
+   * 중계 알림 joined·left와 전송 끊김에서 false로 되돌린다(absent는 되돌리지 않는다, #40). false인 동안에는 hello·ping만
    * 처리하고 나머지는 응답 없이 버린다: 최신 우선 중계에서 LAN의 다른 기기가 게스트 자리를 밀어내도
    * 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다(재검토 중요 2, NF-06).
    */
   authenticated = false;
+  /** 중계가 마지막으로 알려 준 게스트 소켓 상태 (알림이 없는 전송이면 null) */
+  peer: RelayNotice['peer'] | null = null;
   guestLogs: string[] = [];
   ended = false;
   settlement: Settlement | null = null;
@@ -170,6 +182,7 @@ export class HostSession {
   private readonly logLine: (line: string) => void;
   private current: RoundRecord | null = null;
   private lastReveal: RevealHostMessage | null = null;
+  private lastAbort: { round: number; reason: string } | null = null;
   /** 현재 판의 가린 이벤트(세션 순번). 재동기화 차분용(L-8: 판이 바뀌면 비운다) */
   private events: EngineEvent[] = [];
   private readonly changeHandlers = new Set<(host: HostSession) => void>();
@@ -188,6 +201,7 @@ export class HostSession {
     this.roundNumber = options.roundNumber ?? 1;
     this.dealer = options.dealer;
     this.carry = options.carry ?? 1;
+    this.pushes = options.pushes ?? 0;
     this.autoStart = options.autoStart ?? true;
     this.unit = options.unit ?? '냥';
     transport.onMessage((raw) => this.receive(raw));
@@ -254,8 +268,57 @@ export class HostSession {
   applyHost(action: Action): boolean {
     return this.apply(action);
   }
+  /** 정산 전 settled 단계에서 호스트 승자가 밀기를 고른다 */
+  push(): boolean {
+    const ok = this.applyAction({ type: 'push', seat: 0 });
+    if (ok) this.changed();
+    return ok;
+  }
+  /** 승자가 밀지 않고 정산을 받는다. 게스트 승자 대리 수락은 3분 부재 뒤에만 가능하다. */
+  acceptRound(options?: { readonly forSeat: 1; readonly reason: 'absent' }): boolean {
+    if (this.stageValue !== 'settled' || this.state?.phase !== 'end' || this.settlement !== null)
+      return false;
+    const winner = this.state.result?.winner;
+    if (winner === 0 && options !== undefined) return false;
+    if (
+      winner === 1 &&
+      (options?.forSeat !== 1 ||
+        options.reason !== 'absent' ||
+        this.connected ||
+        this.logicalTime - this.lastGuestActivity < 180_000)
+    )
+      return false;
+    if (winner === null || winner === undefined) return false;
+    this.finishRound();
+    this.changed();
+    return true;
+  }
+  /** 3분 이상 게스트가 부재한 진행 중 판을 무효로 한다 */
+  abortRound(reason: string): boolean {
+    if (
+      this.stageValue !== 'playing' ||
+      this.state?.phase !== 'turn' ||
+      this.connected ||
+      this.logicalTime - this.lastGuestActivity < 180_000 ||
+      reason.length === 0 ||
+      reason.length > 80
+    )
+      return false;
+    this.lastAbort = { round: this.roundNumber, reason };
+    this.guestReady = false;
+    this.setStage('settled');
+    this.send({ t: 'roundAborted', ...this.lastAbort });
+    this.snapshot();
+    this.changed();
+    return true;
+  }
   /** settled에서 다음 판을 시작한다 (#26). 게스트 ready 없이도 호스트가 시작할 수 있다 */
   nextRound(): boolean {
+    if (this.stageValue !== 'settled') return false;
+    if (this.state?.phase === 'end' && this.settlement === null) {
+      if (this.state.result?.winner === 1) return false;
+      this.finishRound();
+    }
     if (this.stageValue !== 'settled') return false;
     this.roundNumber++;
     this.beginRound();
@@ -298,8 +361,19 @@ export class HostSession {
       return false;
     }
   }
-  private reject(reason: ErrorCode, seq = this.seq, message: string = reason): void {
-    this.send({ t: 'reject', seq, reason, message: message.slice(0, 200) });
+  private reject(
+    reason: ErrorCode,
+    seq = this.seq,
+    message: string = reason,
+    requestId?: number,
+  ): void {
+    this.send({
+      t: 'reject',
+      seq,
+      reason,
+      message: message.slice(0, 200),
+      ...(requestId === undefined ? {} : { requestId }),
+    });
   }
   private changed(): void {
     for (const handler of this.changeHandlers) {
@@ -319,18 +393,30 @@ export class HostSession {
   }
   private viewFor(seat: Seat): BoardView | null {
     if (this.state === null) return null;
-    return {
+    const view: BoardView = {
       ...toBoardView(playerView(this.state, seat, { ledger: engineLedger(this.ledger) }), {
         names: this.names,
         ledger: this.ledger,
       }),
       eventSeq: this.seq,
     };
+    return this.lastAbort?.round === view.round
+      ? {
+          ...view,
+          legal: [],
+          playable: [],
+          pending: null,
+          firstPick: null,
+          goStop: null,
+          bombMonths: [],
+          canFlipOnly: false,
+        }
+      : view;
   }
-  private snapshot(): void {
+  private snapshot(requestId?: number): void {
     const view = this.viewFor(1);
     if (view === null) {
-      this.sendStatus();
+      this.sendStatus(requestId);
       return;
     }
     const sent = this.send({
@@ -340,16 +426,22 @@ export class HostSession {
       ledger: summarizeLedger(this.ledger),
       ...(this.settlementView ? { settlement: this.settlementView } : {}),
       status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
     });
-    if (!sent) this.sendStatus();
+    if (!sent) this.sendStatus(requestId);
   }
-  private sendStatus(): void {
-    this.send({ t: 'status', seq: this.seq, status: this.status });
+  private sendStatus(requestId?: number): void {
+    this.send({
+      t: 'status',
+      seq: this.seq,
+      status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
+    });
   }
-  private publish(events: readonly EngineEvent[]): void {
+  private publish(events: readonly EngineEvent[], requestId?: number): void {
     if (this.state === null) return;
     if (events.length === 0) {
-      this.snapshot();
+      this.snapshot(requestId);
       return;
     }
     const from = this.seq + 1;
@@ -366,8 +458,9 @@ export class HostSession {
       ledger: summarizeLedger(this.ledger),
       ...(this.settlementView ? { settlement: this.settlementView } : {}),
       status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
     });
-    if (!sent) this.snapshot();
+    if (!sent) this.snapshot(requestId);
   }
 
   // ---- 판 흐름 ----
@@ -403,6 +496,7 @@ export class HostSession {
     const options: RoundOptions = {
       roundNumber: this.roundNumber,
       carry: this.carry,
+      pushes: this.pushes,
       ...(this.dealer === undefined ? {} : { dealer: this.dealer }),
     };
     round.options = options;
@@ -415,16 +509,23 @@ export class HostSession {
     this.events = [];
     this.setStage('playing');
     this.publish(start.events);
-    if (this.state.phase === 'end') this.finishRound();
+    if (this.state.phase === 'end') this.endRound();
   }
   private seedOf(round: RoundRecord): readonly [number, number, number, number] {
     return combineSeed(fromHex(round.hostSecret)!, fromHex(round.guestSecret ?? '')!);
   }
-  private finishRound(): void {
+  private finishRound(requestId?: number): void {
     const round = this.current;
-    if (this.state?.phase !== 'end' || this.stageValue !== 'playing' || round === null) return;
-    const result = settle(this.state);
+    if (
+      this.state?.phase !== 'end' ||
+      !['playing', 'settled'].includes(this.stageValue) ||
+      round === null ||
+      this.settlement !== null
+    )
+      return;
+    const result = lastSettlement(this.events);
     this.settlement = result;
+    this.lastAbort = null;
     const applied = withSettlement(this.ledger, result, this.rules);
     this.ledger = applied.ledger;
     this.settlementView = toSettlementView({
@@ -439,10 +540,11 @@ export class HostSession {
     });
     this.dealer = result.nextDealer;
     this.carry = result.nextCarry;
+    this.pushes = result.nextPushes ?? 0;
     this.bankrupt = ([0, 1] as const).filter((seat) => this.ledger.balances[seat] <= 0);
     const bankrupt = this.bankrupt.length > 0;
     this.setStage(bankrupt ? 'bankrupt' : 'settled');
-    this.snapshot();
+    this.snapshot(requestId);
     if (round.guestSecret !== null && round.guestHash !== null) {
       this.lastReveal = {
         t: 'revealHost',
@@ -480,6 +582,8 @@ export class HostSession {
     this.snapshot();
   }
   private finishSession(reason: 'bankruptcy' | 'host', seat: Seat | null): void {
+    if (this.stageValue === 'settled' && this.state?.phase === 'end' && this.settlement === null)
+      this.finishRound();
     this.ended = true;
     this.endReason = reason;
     this.bankrupt = [];
@@ -487,8 +591,14 @@ export class HostSession {
     this.sendStatus();
     this.send({ t: 'sessionEnd', reason, seat });
   }
-  private applyAction(action: Action): boolean {
-    if (this.state === null || this.stageValue !== 'playing' || this.current === null) return false;
+  private applyAction(action: Action, requestId?: number): boolean {
+    if (
+      this.state === null ||
+      this.current === null ||
+      (this.stageValue !== 'playing' &&
+        !(this.stageValue === 'settled' && action.type === 'push' && this.settlement === null))
+    )
+      return false;
     if (!legalActions(this.state, action.seat).some((a) => sameAction(a, action))) return false;
     const result = reduce(this.state, action);
     if (!result.ok) return false;
@@ -497,25 +607,43 @@ export class HostSession {
     this.current.actions.push(action);
     for (const payout of this.state.instantPayouts.slice(oldCount))
       this.ledger = withInstantPayout(this.ledger, payout, this.rules);
-    this.publish(result.events);
-    if (this.state.phase === 'end') this.finishRound();
+    this.publish(result.events, requestId);
+    if (action.type === 'push') this.finishRound(requestId);
+    else if (this.state.phase === 'end') this.endRound(requestId);
     return true;
+  }
+  private endRound(requestId?: number): void {
+    if (this.state === null) return;
+    const winner = this.state.result?.winner;
+    if (
+      winner !== null &&
+      winner !== undefined &&
+      legalActions(this.state, winner).some((a) => a.type === 'push')
+    ) {
+      this.setStage('settled');
+      this.snapshot(requestId);
+    } else this.finishRound(requestId);
   }
 
   // ---- 수신 ----
 
   private acceptAction(message: Extract<GuestMessage, { t: 'action' }>): void {
     if (message.seq !== this.seq) {
-      this.reject('STALE_SEQ', message.seq);
+      this.reject('STALE_SEQ', message.seq, 'STALE_SEQ', message.requestId);
       this.snapshot();
       return;
     }
-    if (this.stageValue !== 'playing' || this.state === null || this.state.phase === 'end') {
-      this.reject('ROUND_NOT_READY', message.seq);
+    if (
+      (this.stageValue !== 'playing' &&
+        !(this.stageValue === 'settled' && message.payload.type === 'push')) ||
+      this.state === null ||
+      (this.state.phase === 'end' && message.payload.type !== 'push')
+    ) {
+      this.reject('ROUND_NOT_READY', message.seq, 'ROUND_NOT_READY', message.requestId);
       return;
     }
-    if (message.payload.seat !== 1 || !this.applyAction(message.payload))
-      this.reject('ILLEGAL_ACTION', message.seq);
+    if (message.payload.seat !== 1 || !this.applyAction(message.payload, message.requestId))
+      this.reject('ILLEGAL_ACTION', message.seq, 'ILLEGAL_ACTION', message.requestId);
   }
   /** 재접속 hello: 단계마다 게스트에게 빠졌을 수 있는 것을 모두 다시 보낸다(멱등, #13) */
   private resync(lastSeq: number | undefined): void {
@@ -526,6 +654,7 @@ export class HostSession {
         if (this.state !== null) this.snapshot();
         else this.sendStatus();
         if (this.lastReveal) this.send(this.lastReveal);
+        if (this.lastAbort) this.send({ t: 'roundAborted', ...this.lastAbort });
         this.sendCommit();
         if (this.current?.guestHash)
           this.send({
@@ -538,10 +667,15 @@ export class HostSession {
         this.resyncEvents(lastSeq);
         return;
       case 'settled':
+        this.snapshot();
+        if (this.lastAbort) this.send({ t: 'roundAborted', ...this.lastAbort });
+        else if (this.lastReveal) this.send(this.lastReveal);
+        return;
       case 'bankrupt':
       case 'ended':
         this.snapshot();
-        if (this.lastReveal) this.send(this.lastReveal);
+        if (this.lastAbort) this.send({ t: 'roundAborted', ...this.lastAbort });
+        else if (this.lastReveal) this.send(this.lastReveal);
         if (this.stageValue === 'bankrupt') this.sendBankruptcyPrompt();
         if (this.stageValue === 'ended' && this.endReason !== null)
           this.send({ t: 'sessionEnd', reason: this.endReason, seat: null });
@@ -640,8 +774,12 @@ export class HostSession {
     this.send({ t: 'ledgerPage', from, total: this.ledger.entries.length, entries });
   }
   private relayNotice(notice: RelayNotice): void {
-    // 게스트 소켓이 바뀌었거나(joined·present) 없어졌다(left·absent): 새 소켓은 hello로 다시 인증해야 한다.
-    this.authenticated = false;
+    this.peer = notice.peer;
+    // 게스트 소켓이 바뀌었거나(joined) 없어졌을 때(left)만 인증을 되돌린다. present는 호스트 자신의 새 소켓에서만 오고
+    // 그 전에 끊김(onClose)으로 이미 되돌렸다. absent는 중계가 프레임 하나를 전달하지 못했다는 뜻일 뿐 게스트 소켓은
+    // 그대로일 수 있다(Android RelayRoles.forward): 여기서 인증을 되돌리면 게스트는 hello를 다시 보낼 계기가 없어
+    // 이후 액션이 말없이 버려진다(#40). 상대 상태만 기록한다.
+    if (notice.peer === 'joined' || notice.peer === 'left') this.authenticated = false;
     if (notice.peer === 'left' || notice.peer === 'absent') this.connected = false;
     this.changed();
   }
@@ -681,6 +819,14 @@ export class HostSession {
       case 'action':
         this.acceptAction(message);
         break;
+      case 'push':
+        this.acceptAction({
+          t: 'action',
+          seq: message.seq,
+          payload: { type: 'push', seat: 1 },
+          ...(message.requestId === undefined ? {} : { requestId: message.requestId }),
+        });
+        break;
       case 'ping':
         this.send({ t: 'pong' });
         break;
@@ -694,12 +840,22 @@ export class HostSession {
         break;
       case 'ready':
         if (this.stageValue === 'settled' && message.round === this.roundNumber) {
+          if (
+            this.state?.phase === 'end' &&
+            this.settlement === null &&
+            this.state.result?.winner === 1
+          )
+            this.finishRound();
           if (!this.guestReady) {
             this.guestReady = true;
             this.bump();
           }
           this.sendStatus();
-        } else this.diag(`ready 무시 (단계 ${this.stageValue}, 판 ${message.round})`);
+        } else {
+          // 무시하더라도 현재 단계를 알려 준다: 게스트의 응답 감시(advanceTime)가 요청을 되풀이하지 않게.
+          this.diag(`ready 무시 (단계 ${this.stageValue}, 판 ${message.round})`);
+          this.sendStatus();
+        }
         break;
       case 'bankruptcy':
         if (this.stageValue !== 'bankrupt' || !this.bankrupt.includes(1)) {
@@ -737,6 +893,7 @@ export class HostSession {
       roundNumber: this.roundNumber,
       dealer: this.dealer ?? null,
       carry: this.carry,
+      pushes: this.pushes,
       ledger: this.ledger,
       stage: this.stageValue,
       rev: this.rev,
@@ -762,6 +919,7 @@ export class HostSession {
             },
       settlementView: this.settlementView,
       lastReveal: this.lastReveal,
+      lastAbort: this.lastAbort,
     };
   }
 
@@ -785,6 +943,7 @@ export class HostSession {
       roundNumber: data.roundNumber,
       ...(data.dealer === null ? {} : { dealer: data.dealer }),
       carry: data.carry,
+      ...(data.pushes === undefined ? {} : { pushes: data.pushes }),
       autoStart: data.autoStart,
       unit: data.unit,
       ...(options.log ? { log: options.log } : {}),
@@ -804,6 +963,7 @@ export class HostSession {
     this.ended = data.stage === 'ended';
     this.settlementView = data.settlementView;
     this.lastReveal = data.lastReveal;
+    this.lastAbort = data.lastAbort ?? null;
     const round = data.round;
     this.current =
       round === null
@@ -834,14 +994,15 @@ export class HostSession {
       }));
       if (this.current!.firstSeq + result.events.length - 1 !== this.seq)
         throw new Error('저장된 순번과 리플레이 이벤트 수가 맞지 않습니다');
-      if (this.state.phase === 'end') this.settlement = settle(this.state);
+      if (this.state.phase === 'end' && data.settlementView !== null)
+        this.settlement = lastSettlement(result.events);
     } else if (this.lastReveal !== null) {
       // 핸드셰이크 중이면 방금 끝난 판을 화면에 남긴다.
       const last = this.lastReveal;
       const result = replay(this.rules, last.seed, last.actions, last.options);
       if (result.ok) {
         this.state = result.state;
-        this.settlement = settle(result.state);
+        this.settlement = lastSettlement(result.events);
       }
     }
   }

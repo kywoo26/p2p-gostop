@@ -18,7 +18,7 @@ env:
   CI: true
 
 jobs:
-  # 기존 main의 Android 잡 ID를 유지해 setup-gradle 캐시의 연속성을 보존한다.
+  # #38 이전 main의 Android 잡 ID를 유지해 기존 setup-gradle 캐시를 복원한다.
   android:
     name: lint · check · test · build · android
     runs-on: ubuntu-24.04
@@ -29,6 +29,8 @@ jobs:
           fetch-depth: 0 # FR-31: APK versionCode·versionName에 전체 이력 사용
           persist-credentials: false
       - uses: ./.github/actions/dev-image
+      - name: Dockerfile 변경 시 이미지 태그 갱신 확인
+        run: docker compose run --rm --user root dev bash docker/check-dev-image-tag.sh
       - name: lint (oxlint + oxfmt / ESLint + Prettier)
         run: docker compose run --rm --user root dev npm run lint
       - name: check (tsc 7 / svelte-check + tsc 6 / knip)
@@ -38,7 +40,7 @@ jobs:
       - name: build + 번들 예산·외부 URL 검사
         run: docker compose run --rm --user root -e GITHUB_SHA dev npm run build -w packages/web
       - name: Gradle 캐시 경로 설정
-        # Actions cache 버전은 저장 경로도 포함한다. 기존 main의 기본 홈 경로를 유지한다.
+        # Actions cache 버전은 저장 경로도 포함한다. setup-gradle의 기본 홈 경로를 유지한다.
         run: echo "GRADLE_USER_HOME=$HOME/.gradle" >> "$GITHUB_ENV"
       - uses: gradle/actions/setup-gradle@v6
         with:

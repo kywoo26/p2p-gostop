@@ -146,9 +146,10 @@
     gap: var(--space-1);
   }
 
-  /* 두 번째 줄은 첫 줄 아래쪽 절반을 덮는다 */
+  /* 두 번째 줄은 첫 줄 아래쪽 절반을 덮는다: 윗줄은 위쪽 55px(표식 포함)만 보인다.
+     55px 노출 영역 안에 16px 월 표식과 최소 48px 입력 영역을 유지한다 (plan.md D1) */
   .row + .row {
-    margin-top: calc(var(--card-w-l) * -0.75);
+    margin-top: calc(55px - var(--card-h-l));
   }
 
   .slot {

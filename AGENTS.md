@@ -11,7 +11,7 @@
 - 외부 네트워크 요청(CDN, 웹폰트, 원격 API)을 코드에 넣지 않는다. 모든 자산은 번들한다.
 - 실기기 검증(핫스팟, iPhone Safari)은 사람이 한다. 에이전트는 `docs/device-test/`의 절차서를 갱신하고, 사람이 준 결과만 그곳에 기록한다.
 
-## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`agent-era-stack.md`)
+## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`docs/research/agent-era-stack.md`)
 | 항목 | 버전 |
 |---|---|
 | Node / npm | 24.20.0 LTS / 11.19.0 (개발 이미지의 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`에 내장된 것을 로컬·CI·릴리스가 모두 쓴다), npm workspaces (`engines >=24.20.0 <25`) |
@@ -30,6 +30,7 @@
 | compileSdk / targetSdk / minSdk | 36 / **36**(37 금지: LAN 인바운드 권한) / 33 |
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
+| androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
 | Docker 이미지 | 단일 개발 이미지 `p2p-gostop-dev`(`docker/Dockerfile`, 태그는 `compose.yaml`): 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble` + JDK `eclipse-temurin:21.0.12.1_1-jdk-noble` + Android cmdline-tools 23.0(16111833, SHA-256 고정)로 설치한 `platforms;android-36`·`build-tools;36.0.0`·`platform-tools` |
 | GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(npm), gradle/actions/setup-gradle@v6, docker/setup-docker-action@v5, docker/setup-buildx-action@v4, docker/build-push-action@v7, softprops/action-gh-release@v3. 빌드·테스트는 개발 이미지 안에서 실행 |
 
@@ -45,7 +46,7 @@
 
 ## 4. 구조와 관례
 - 모노레포: `packages/{engine,ai,protocol,web,relay-dev}`, `tools/sim`, `android/`, `docker/`, `docs/`. 의존 방향: engine ← ai ← web, engine ← protocol ← web. android는 TS 패키지에 의존하지 않고 `packages/web/dist`만 `android/app/src/main/assets/web`으로 복사.
-- 엔진 API: `reduce(state, action) → {state, events}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules)`. 모두 순수 함수, 시드 PRNG는 상태 안.
+- 엔진 API: `reduce(state, action) → {ok:true, state, events} | {ok:false, reason, message}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules?)`. 모두 순수 함수, 시드 PRNG는 상태 안.
 - 웹: Svelte scoped CSS + `src/styles/tokens.css`(OKLCH, `--dur-*`). 카드 애니메이션은 `src/anim/`의 WAAPI FLIP 헬퍼, 모달·배너는 Svelte transition. 카드는 `<img>`로 svgo 최적화 SVG.
 - 테스트: JSON 규칙 벡터(`packages/engine/test/vectors/*.json`, 각 항목에 규칙 ID R/B/S/E/G/M와 한국어 설명) + fast-check 속성 테스트. 특수 이벤트는 정상·경계·반례 3종. "서로 다른 월 두 쌍 먹기는 따닥이 아니다" 반례 필수.
 - 툴체인(plan.md 1.8 하이브리드): 순수 TS 패키지는 루트 `.oxlintrc.json`(oxlint, `--type-aware`)·`.oxfmtrc.json`(oxfmt)·TS 7 `tsc --noEmit`. `packages/web`은 `packages/web/eslint.config.js`(ESLint, 금지 API 규칙)·`packages/web/.prettierrc`(Prettier)·`svelte-check`(TS 6). 루트 `npm run lint|check|format`이 둘 다 돌린다. 한국어 주석·문서, 영어 식별자.
@@ -54,8 +55,8 @@
 - 의존성 추가: `docker compose run --rm dev npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다. `./dev.sh`는 폐기되어 안내만 출력하고 실패한다(M6에서 삭제).
-- 새 체크아웃·워크트리에는 `node_modules`가 없다(소스와 함께 바인드 마운트). 처음 한 번 `npm ci`를 돌린다.
+- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다. 루트의 옛 셸 래퍼는 폐기되어 안내만 출력하고 실패한다(M6에서 삭제).
+- 새 체크아웃·워크트리에는 `node_modules`가 없다(소스와 함께 바인드 마운트). 처음 한 번 `npm ci`를 돌린다. 기존 체크아웃의 `node_modules`가 root 소유라면 `ls -ld node_modules`로 확인한다. 빈 디렉터리는 호스트에서 `rmdir node_modules`로 제거하고, 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 해당 디렉터리만 복구한 뒤 `npm ci`를 다시 실행한다. 옛 `*_node_modules`·`*_android-home` 명명 볼륨은 별도이므로, 필요 없으면 `docker volume ls --format '{{.Name}}'`로 확인한 정확한 이름만 `docker volume rm <옛_볼륨명>`으로 삭제한다(README 전환 절차).
 - PR 필수 명령:
 ```sh
 docker compose run --rm dev npm ci                          # 처음, 그리고 package-lock.json이 바뀐 뒤
@@ -67,6 +68,6 @@ docker compose run --rm dev npm run build -w packages/web
 docker compose run --rm dev npm run e2e -w packages/web
 docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint
 ```
-- 그 밖: `docker compose run --rm --service-ports dev npm run dev -w packages/web`(Vite, 5173), `docker compose run --rm --service-ports dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸).
+- 그 밖: `docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web`(Vite, 5173), `docker compose run --rm -p 17777:17777 dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸).
 - `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다(없는 태그면 `run`이 자동으로 빌드한다).
 - 포맷은 편집할 때마다 돌리는 훅이 아니라 커밋 전 `docker compose run --rm dev npm run lint:fix`로 맞추고, `lint`(CI 포함)가 `oxfmt --check`·`prettier --check`로 검사한다.

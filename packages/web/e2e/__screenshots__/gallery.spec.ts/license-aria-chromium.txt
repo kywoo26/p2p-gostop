@@ -1,0 +1,39 @@
+- main:
+  - link "뒤로":
+    - /url: "#/"
+    - text: ←
+  - heading "라이선스" [level=1]
+  - region "화투 그림 (0~47번 카드)":
+    - heading "화투 그림 (0~47번 카드)" [level=2]
+    - paragraph: Hwatu card art by Spenĉjo and Marcus Richert, based on Hanafuda graphics by Louie Mantia, Jr. — Wikimedia Commons, CC BY-SA 4.0
+    - list:
+      - listitem:
+        - strong: Spenĉjo
+        - text: — 카드별 SVG 추출·최적화 (2024-12)
+      - listitem:
+        - strong: Marcus Richert
+        - text: — 원본 화투 도안 Hwatu overview.svg (2021-02)
+      - listitem:
+        - strong: Louie Mantia, Jr.
+        - text: — 바탕이 된 Hanafuda 그래픽
+    - term: 라이선스
+    - definition:
+      - text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+      - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - term: 원본
+    - definition:
+      - text: Wikimedia Commons, Category:SVG Hwatu
+      - code: https://commons.wikimedia.org/wiki/Category:SVG_Hwatu
+    - term: 변경
+    - definition: svgo 4.1.0으로 기계적으로 최적화했다(좌표 소수점 1자리 반올림, 공백·중복 속성 제거, 경로 병합, 루트의 preserveAspectRatio="none" 제거). 도안은 바꾸지 않았고 파일 이름을 카드 번호(<id>.svg)로 바꿨다. 변경본(0~47번)도 CC BY-SA 4.0으로 배포한다.
+    - link "파일별 출처 목록 (ATTRIBUTION.md)":
+      - /url: ./cards/ATTRIBUTION.md
+  - region "보너스 카드(48~50번)·카드 뒷면":
+    - heading "보너스 카드(48~50번)·카드 뒷면" [level=2]
+    - paragraph: "보너스 카드 3장(48~50번: 2피·2피·3피)과 카드 뒷면은 p2p-gostop 기여자가 Commons 세트와 같은 판형·테두리·색으로 직접 그렸다(Commons 그림을 옮기거나 변형하지 않음)."
+    - paragraph:
+      - text: Creative Commons Zero v1.0 Universal (퍼블릭 도메인 헌정) (CC0 1.0)
+      - code: https://creativecommons.org/publicdomain/zero/1.0/
+  - region "앱 코드":
+    - heading "앱 코드" [level=2]
+    - paragraph: 앱 코드(엔진·UI)는 MIT 라이선스다. 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.

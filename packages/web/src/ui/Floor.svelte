@@ -18,8 +18,8 @@
 
 <div class="table">
   <div class="deck-area">
-    <div class="deck" role="img" aria-label={`더미 ${deckCount}장`} data-anchor="deck">
-      <span class="deck-stack">
+    <div class="deck" role="img" aria-label={`더미 ${deckCount}장`}>
+      <span class="deck-stack" data-anchor="deck">
         <Card id={null} size="m" />
       </span>
       <span class="deck-count" aria-hidden="true">{deckCount}</span>
@@ -63,6 +63,7 @@
     position: relative;
     display: grid;
     justify-items: center;
+    gap: var(--card-badge-gap);
   }
 
   /* 두께감: 뒤에 두 장을 겹친 그림자 대신 테두리 오프셋 (애니메이션되는 그림자 금지) */
@@ -75,17 +76,16 @@
   }
 
   .deck-count {
-    position: absolute;
-    right: -6px;
-    bottom: -6px;
+    position: relative;
     min-width: 1.6rem;
     padding: 0 0.3rem;
     border-radius: 999px;
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     color: var(--color-text);
-    font-size: var(--font-size-s);
+    font-size: var(--card-tag-font);
     font-weight: 700;
+    line-height: var(--card-tag-height);
     text-align: center;
     font-variant-numeric: tabular-nums;
   }
@@ -111,10 +111,11 @@
     padding: 0;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-2) var(--space-1);
+    gap: calc(var(--card-tag-height) + 2 * var(--card-badge-gap)) var(--space-1);
+    padding-top: calc(var(--card-tag-height) + var(--card-badge-gap));
     justify-items: start;
     align-content: center;
-    min-height: calc((var(--card-w-m) * 1.63) * 3 + var(--space-2) * 2);
+    min-height: calc(var(--card-h-m) * 3 + var(--space-2) * 2);
   }
 
   .group {
@@ -129,14 +130,14 @@
 
   .ppeok-tag {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    bottom: calc(100% + var(--card-badge-gap));
+    right: 0;
     padding: 0 0.35rem;
     border-radius: 999px;
-    background: var(--color-event-ppeok);
-    color: var(--color-banner-light-text);
-    font-size: var(--font-size-s);
+    background: var(--color-card-tag);
+    color: var(--color-event-ppeok-text);
+    font-size: var(--card-tag-font);
     font-weight: 800;
-    line-height: 1.4;
+    line-height: var(--card-tag-height);
   }
 </style>

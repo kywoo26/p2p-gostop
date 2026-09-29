@@ -263,16 +263,19 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
           lastSeq = 0;
         }
         let r: string;
+        // 대기 중 hostDone이 바뀌어도 이번 2초 폴링의 타임아웃은 재시도한다.
+        // 다음 폴링에서 종료 조건과 60초 대기를 함께 적용해야 마지막 정산을 기다릴 수 있다.
+        const stopAtSettlement = hostDone;
         try {
           const handle = await guestPage.waitForFunction(
             autoStep,
-            { target: null, stopAtSettlement: hostDone, seed: 2 },
-            { polling: 20, timeout: hostDone ? 60_000 : 2_000 },
+            { target: null, stopAtSettlement, seed: 2 },
+            { polling: 20, timeout: stopAtSettlement ? 60_000 : 2_000 },
           );
           r = String(await handle.jsonValue());
         } catch (error) {
           // 2초 동안 누를 것이 없었다(호스트 차례·끊김 처리 중): 조건을 새로 넣어 다시 기다린다
-          if (!hostDone && String(error).includes('Timeout')) continue;
+          if (!stopAtSettlement && String(error).includes('Timeout')) continue;
           throw await stalled('게스트', error);
         }
         count(`guest:${r}`);
@@ -298,7 +301,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
     expect(guest.balances).toEqual(host.balances);
     await expect.poll(async () => (await attrs(guestPage)).seq).toBe(host.seq);
     await hostPage.locator('[data-choice="end"]').click();
-    await expect(guestPage.getByRole('heading', { name: '정산' })).toBeVisible();
+    await expect(guestPage.getByRole('heading', { name: '정산', exact: true })).toBeVisible();
     await expect(guestPage.getByTestId('settlement-note')).toContainText('검증 통과');
     await expect(guestPage.getByTestId('settlement-note')).toContainText(
       '호스트가 대전을 끝냈습니다',

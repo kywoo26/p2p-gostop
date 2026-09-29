@@ -1,6 +1,6 @@
 # 에이전트 시대 기술 스택 재검토 (agent-era-stack.md)
 
-작성일: 2026-09-28 · 대상: `plan.md` 1~2장, `tech-stack.md` "권장 스택" 표(이 두 문서는 수정하지 않음)
+작성일: 2026-09-28 · 비교 근거 문서. 최종 도입 범위는 plan.md §1.8, 버전 정본은 AGENTS.md §2.
 질문: 앱·디자인·UI 분야에서 2026년 현재 사실상 표준이거나, 코드 대부분을 AI 코딩 에이전트(Claude Code)가 쓰는 환경에서 생산성이 높은 것 중 **현 계획을 바꿔야 할 것이 있는가.**
 
 **판정 기준**
@@ -22,7 +22,7 @@
 2. **꼭 바꿔야 할 것은 하나다. TypeScript 7.0.2 → 6.0.3 기본.** TS 7은 안정 API가 없어 typescript-eslint와 svelte-check가 확정적으로 동작하지 않는다(리스크 R9가 이미 발현됨).
 3. **추가할 것은 "에이전트가 틀렸을 때 즉시 알려 주는 장치"다.** Svelte MCP/플러그인, AGENTS.md, fast-check, Vitest 브라우저 모드, `/dev/gallery`와 Playwright 스냅샷·axe, Knip, 번들·성능 예산 검사, 공급망 설정을 더한다.
 4. **애니메이션은 라이브러리 없이 WAAPI + FLIP 헬퍼로 한다.** Svelte `animate:flip`만으로는 컨테이너 간 카드 이동을 시퀀싱하기 어렵고, GSAP은 무료지만 비OSI 라이선스에 메인 스레드에서 돈다.
-5. **도입하지 않는 것이 더 많다.** Tailwind, Storybook, Biome/oxc 전환, pnpm/Turborepo, Capacitor, Canvas 엔진, SDD 도구가 그 예다.
+5. **도입하지 않는 것이 더 많다.** Tailwind, Storybook, Biome·web의 Oxc 전환, pnpm/Turborepo, Capacitor, Canvas 엔진, SDD 도구가 그 예다.
 
 ---
 
@@ -280,7 +280,7 @@
 
 | 관례 | 현황(근거) | 판정·범위 |
 |---|---|---|
-| **AGENTS.md + CLAUDE.md** | 2025-12-09 OpenAI가 Linux Foundation 산하 Agentic AI Foundation에 기증(MCP와 함께). 6만+ 저장소, Codex·Cursor·Copilot·Gemini CLI 등이 읽는다. Radar Vol.33 Trial, Vol.34는 "팀 공유 지침(CLAUDE.md/AGENTS.md)"을 Adopt. Claude Code는 CLAUDE.md가 **없을 때만** AGENTS.md를 읽는다. [Claude Code memory 문서](https://code.claude.com/docs/en/memory) | **ADOPT**: 규범은 `AGENTS.md` 한 곳에 두고, `CLAUDE.md`는 `@AGENTS.md` 한 줄과 Claude 전용 메모(훅·스킬 사용법)만 둔다. 내용은 실행 명령(`./dev.sh …`), 버전 고정 표, 금지 사항(Svelte 4 문법, Tailwind v3, 비보안 API, 외부 URL), 테스트 기준 |
+| **AGENTS.md + CLAUDE.md** | 2025-12-09 OpenAI가 Linux Foundation 산하 Agentic AI Foundation에 기증(MCP와 함께). 6만+ 저장소, Codex·Cursor·Copilot·Gemini CLI 등이 읽는다. Radar Vol.33 Trial, Vol.34는 "팀 공유 지침(CLAUDE.md/AGENTS.md)"을 Adopt. Claude Code는 CLAUDE.md가 **없을 때만** AGENTS.md를 읽는다. [Claude Code memory 문서](https://code.claude.com/docs/en/memory) | **ADOPT**: 규범은 `AGENTS.md` 한 곳에 두고, `CLAUDE.md`는 `@AGENTS.md` 한 줄과 Claude 전용 메모(훅·스킬 사용법)만 둔다. 내용은 실행 명령(`docker compose run --rm dev …`, 2026-09-29 갱신), 버전 고정 표, 금지 사항(Svelte 4 문법, Tailwind v3, 비보안 API, 외부 URL), 테스트 기준 |
 | **llms.txt(소비)** | svelte.dev/llms.txt(+ medium/small) 제공. GSAP·Motion·Bits UI·shadcn-svelte도 제공. Tailwind는 없음. 사이트 게시용으로는 채택률이 낮다(상위 1,000개 사이트의 8.7%) | **ADOPT(소비만)**: AGENTS.md에 "Svelte 작업 전 svelte.dev/llms-small.txt 또는 Svelte MCP 참조"를 명시. 이 프로젝트가 llms.txt를 게시할 필요는 없음 |
 | **Svelte MCP / Claude Code 플러그인**(`@sveltejs/mcp` 0.1.26, `sveltejs/ai-tools`) | 공식. 문서 섹션 검색, `svelte-autofixer`(생성한 컴포넌트를 정적 분석해 Svelte 4 문법·runes 오용 지적), 스킬 2종 | **ADOPT(개발 시)**: `/plugin install svelte` |
 | **Context7** | 무료 월 1,000회 + 한도 후 일 20회(API 키 필요). Radar Vol.33 Trial("코드 환각을 크게 줄임") | **ADOPT(유지)**. 사용자 전역 지침과 일치 |
@@ -315,110 +315,20 @@
 | 웹폰트 | NF-01 외부 요청 금지, 번들 예산 | **REJECT**. 시스템 글꼴 스택(`-apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif`) |
 | SvelteKit 2.70.3 + adapter-static | 라우팅·SSR 프레임워크 | **REJECT**. 화면 수가 적고 SSR이 필요 없다. 해시 기반 단일 페이지 상태 전환이면 충분(plan의 "Vite + Svelte" 유지). 에이전트가 SvelteKit 관례(`+page.svelte`, load 함수)를 끌어들이지 않도록 AGENTS.md에 명시 |
 
-## 8. 도입 결정 제안
+## 8. 채택 결과와 적용 경계
 
-### (a) 도입 결정 표
-| 항목 | 판정 | 범위 | 한 줄 이유 |
-|---|---|---|---|
-| Svelte 5 (현 계획) | **ADOPT(유지)** | `packages/web` 전체 | 번들·내장 애니메이션 이점이 크고, Svelte MCP·llms.txt·svelte-check로 LLM 구문 혼동을 기계적으로 잡을 수 있다 |
-| React 19 / Preact / Solid / Vue | REJECT | — | "LLM이 React를 더 잘 안다"는 이점보다 번들과 전환 비용, 이 앱의 작은 UI 표면이 우선한다 |
-| **TypeScript 7 단독** | **REJECT(현시점)** | — | typescript-eslint(<6.1)·svelte-check(^5‖^6)와 확정적으로 비호환. **TS 6.0.3 기본**, TS 7은 별칭으로 비Svelte 패키지 타입 검사만 |
-| Svelte scoped CSS + `tokens.css`(CSS 변수, OKLCH) | **ADOPT** | web 전체 | 의존성 0, LLM 버전 혼동 0, 동적 카드 위치 스타일에 적합 |
-| Tailwind v4 | HOLD | (설정·로비가 커지면 TRIAL) | v3 문법 오생성 위험과 작은 UI 표면. 2026-01 회사 축소 리스크 |
-| shadcn-svelte / Bits UI | HOLD | 네이티브 `<dialog>` 부족 시 Bits UI 단일 컴포넌트 | 게임 UI는 대부분 맞춤형 |
-| daisyUI·Skeleton·Panda·vanilla-extract·Melt·Style Dictionary | REJECT | — | 일반 웹앱 모양, 빌드 단계, 정체, 단일 출력 대상 |
-| Storybook 10 | HOLD | — | Svelte용 AI 매니페스트 미지원. `/dev/gallery`로 대체 |
-| `/dev/gallery` + 픽스처 | **ADOPT** | web (dev 전용) | Storybook 가치의 80%를 의존성 0으로 얻음. 스냅샷·axe 대상 |
-| Stitch / Claude Design 시안 | TRIAL | M3 착수 전 1회 | 디자이너 없이 시각 방향 결정. 코드는 이식만 |
-| Figma MCP / Make / v0 / Lovable | REJECT | — | Figma 파일 없음, React 출력 |
-| **WAAPI + FLIP 헬퍼** | **ADOPT** | 카드 이동·플립·획득 | 컴포지터 스레드, 0KB, 표준이라 버전 혼동 없음, `finished`로 시퀀싱 |
-| Svelte transition/animate | ADOPT | 모달·배너·토스트 | 이미 포함, 단 컨테이너 간 카드 이동에는 쓰지 않음 |
-| Motion 미니 `animate()` | TRIAL | FLIP 헬퍼가 복잡해질 때만 | 2.3KB, MIT, 공식 MCP/스킬 |
-| GSAP 3 + Flip | HOLD | — | 무료지만 비OSI·Webflow 약관, 메인 스레드 틱, 38KB |
-| Pixi·Phaser·Rive·Lottie·Theatre | REJECT | — | 250~500KB 이상 또는 유료 export 또는 정체 |
-| ESLint 10 + Prettier 3 (현 계획) | **ADOPT(유지)** | 전체 | .svelte를 완전히 다루는 유일한 조합 |
-| 금지 API = 코어 규칙 설정 | **ADOPT** | web | 커스텀 규칙 대신 `no-restricted-properties`/`no-restricted-syntax` |
-| Biome 2 / oxlint·oxfmt | HOLD | — | Svelte 지원 실험적, 플러그인이 .svelte에 미적용 |
-| npm workspaces (현 계획) + `.npmrc` `min-release-age=3` | **ADOPT(유지+강화)** | 루트 | 공급망 방어를 설정 한 줄로 |
-| pnpm 11/12 | HOLD | — | 사실상 표준이지만 이득을 Knip으로 대부분 대체, 12는 1개월 차 Rust 재작성 |
-| Turborepo·Nx·moon·tsdown·tsup·Changesets·publint | REJECT | — | 6개 비배포 패키지에 과함 |
-| Vitest 브라우저 모드 + vitest-browser-svelte | **ADOPT** | web 컴포넌트 테스트 | FLIP 측정 등 실제 레이아웃이 필요한 테스트 |
-| fast-check | **ADOPT** | engine, ai | 불변식 속성 테스트로 에이전트 코드의 숨은 버그 탐지 |
-| Knip | **ADOPT** | CI | 에이전트가 남기는 죽은 코드·미선언 의존성 |
-| svgo | **ADOPT** | 카드 자산 빌드 | 번들 예산과 Safari 래스터 성능 |
-| Zod 4 (`zod/mini`) | TRIAL | protocol | 신뢰할 수 없는 WS 입력 검증 + 타입 단일 근거 |
-| chrome-devtools-mcp | **ADOPT(개발 시)** | 로컬 | 에이전트가 성능·콘솔·네트워크를 직접 확인 |
-| Playwright MCP | TRIAL | 로컬 탐색 | 토큰 비용, 테스트 대체 아님 |
-| Svelte 공식 Claude Code 플러그인(MCP·autofixer·스킬) + llms.txt | **ADOPT(개발 시)** | 로컬 | Svelte 4 문법 오생성 자동 교정 |
-| AGENTS.md + CLAUDE.md(`@AGENTS.md`) | **ADOPT** | 루트 | 도구 중립 규범 한 곳 |
-| Claude Code 포맷·린트 훅 | ADOPT | 로컬 | 지켜야 할 규칙은 문서가 아닌 훅으로 |
-| Playwright 스냅샷(도커 안) + axe | **ADOPT** | E2E | 무료, 결정적 렌더링 |
-| Chromatic / Lost Pixel / Argos | REJECT / REJECT / HOLD | — | 유료·Chrome 한정 / 보관됨 / 필요 시 |
-| Dependabot(그룹 + 기본 쿨다운) | **ADOPT** | npm, gradle, actions | 무료, 설정 최소 |
-| Spec Kit 등 SDD 도구 | REJECT | — | 기존 intend→spec→plan + 벡터와 중복 |
-| Android 셸: 직접 작성 Kotlin (현 계획) | **ADOPT(유지)** | android | 필요한 네이티브 3요소는 어느 프레임워크도 제공하지 않음 |
-| 브리지 `bridge.ts`를 Capacitor 모양으로 | **ADOPT** | web | 향후 Capacitor 전환 비용 0에 가깝게 |
-| Capacitor 8 | HOLD | iOS 네이티브 단계에서 재평가 | iOS SPM·WKWebView·플러그인 관례는 유리 |
-| Tauri / Expo·RN / Flutter / CMP | REJECT | — | 빌드 표면 증가, React·UI 재작성 강요 |
-| Comlink / 로컬 퍼스트 / 상태 라이브러리 / PWA 플러그인 / Partytown / WebGPU / 웹폰트 / SvelteKit | HOLD / REJECT ×7 | — | 불필요하거나 비보안 컨텍스트에서 불가 |
+### (a) 도입 결정의 정본
 
-### (b) 수정 스택 표 (웹·도구 계층만. Android·CI·배포 계층은 tech-stack.md 그대로)
-버전은 2026-09-28 npm 레지스트리 `latest`로 확인했다. **굵게** 표시한 행이 변경 또는 추가다.
+비교·호환성·라이선스 근거는 위 §1~7에 남기고 반복된 도입 표는 [plan.md §1.8](../../plan.md)로 대체한다. 조사 당시 ADOPT/TRIAL/HOLD는 구현 완료 표시가 아니다. 특히 후속 결정은 다음과 같다.
 
-| 계층 | 선택 (정확한 버전) | 변경 |
-|---|---|---|
-| Node | 24.21.0 LTS (번들 npm 11.19.0) | 유지 |
-| 패키지 관리 | npm workspaces + **`.npmrc`: `min-release-age=3`**, `ignore-scripts=true`(시도) | **강화** |
-| 웹 UI | Vite 8.3.1 + Svelte 5.57.1 + `@sveltejs/vite-plugin-svelte` 7.3.1 | 유지 |
-| **언어** | **`typescript` 6.0.3** (기본: ESLint·svelte-check·IDE). 선택: `"@typescript/native": "npm:typescript@7.0.2"`로 engine/ai/protocol 고속 `tsc --noEmit` | **변경**(7 → 6 기본) |
-| 타입 검사(.svelte) | `svelte-check` 4.7.6 (TS 6) | **명시** |
-| 스타일 | Svelte scoped `<style>` + **`src/styles/tokens.css`**(CSS 변수, OKLCH, `--dur-*`는 spec 6.4 예산) | **추가(관례)** |
-| 애니메이션 | **WAAPI + 자체 FLIP 헬퍼**(`src/anim/`) + Svelte transition(비카드 UI). TRIAL: `motion` 13.4.4(미니 `animate`만) | **구체화** |
-| 카드 자산 | SVG → **svgo 4.1.0** 최적화 → `<img>` 렌더(인라인 SVG 금지, filter 제거) | **추가** |
-| 린트 | ESLint 10.11.0 + `eslint-plugin-svelte` 3.23.0 + `typescript-eslint` 8.70.1. 금지 API는 **코어 `no-restricted-properties`/`no-restricted-syntax`** | 버전 명시, 커스텀 규칙 → 설정 |
-| 포맷 | Prettier 3.9.9 + `prettier-plugin-svelte` 4.1.1 | 버전 명시 |
-| 단위 테스트 | Vitest 5.0.2 + **fast-check 4.10.2**(engine/ai) | **추가** |
-| 컴포넌트 테스트 | **`@vitest/browser-playwright` 5.0.2 + `vitest-browser-svelte` 3.1.0** (Chromium+WebKit) | **추가** |
-| E2E | `@playwright/test` 1.63.0 + **`@axe-core/playwright` 4.13.0** + `toHaveScreenshot`(도커 안에서만) | **추가** |
-| UI 계약 | **`/dev/gallery` 라우트 + `fixtures/*.json`** | **추가(관례)** |
-| 프로토콜 검증 | TRIAL: `zod` 4.6.5 (`zod/mini`) | **추가(시험)** |
-| 위생 | **`knip` 6.38.0**, 번들 예산·외부 URL 검사 스크립트(의존성 0) | **추가** |
-| QR | `uqr` 0.1.3 | 유지 |
-| 의존성 업데이트 | **Dependabot**(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | **추가** |
-| 에이전트 도구(로컬, 비의존성) | **AGENTS.md + CLAUDE.md(`@AGENTS.md`)**, Context7, **`@sveltejs/mcp` 0.1.26**, **`chrome-devtools-mcp` 1.10.1**, (TRIAL) `@playwright/mcp` 0.0.82, PostToolUse 포맷 훅 | **추가** |
-| Android 셸 | 직접 작성 Kotlin + WebView + Ktor (tech-stack.md 그대로). 웹 쪽 **`bridge.ts`는 Capacitor 플러그인 모양** | 유지 + 설계 지침 |
+- web은 ESLint·Prettier·TS 6을 유지하고 순수 TS는 oxlint·oxfmt·TS 7을 채택했다. .svelte 비호환이 경계의 이유다.
+- 저장 시 포맷·린트 훅 제안은 [하네스 감사](../reviews/harness-audit.md)에서 철회했다. 현재는 커밋 전 lint:fix·CI lint로 강제한다.
+- Svelte MCP는 저장소 .mcp.json의 로컬 stdio로 사용한다. 다른 브라우저 MCP·디자인 도구 제안은 실제 설치 상태와 구분한다.
+
+### (b) 채택 버전
+
+정확한 버전은 [AGENTS.md §2](../../AGENTS.md) 하나에서 관리한다. 위 후보 비교표의 버전·통계는 2026-09-28 조사 당시 근거이며 설치 지시가 아니다.
 
 ### (c) 속도와 품질
 
-**원리**: 에이전트가 빠르고 정확해지려면 두 가지가 필요하다. (1) 틀렸을 때 **즉시 기계적으로 알려 주는 신호**, (2) 참조할 **단일한 최신 근거**. 프레임워크를 "LLM이 더 잘 아는 것"으로 바꾸는 것보다 이 두 가지를 갖추는 편이 이득이 크고 비용이 작다.
-
-#### 빨라지는 지점
-1. **첫 시도 정확도가 올라간다**:
-   - Svelte MCP의 autofixer와 llms.txt가 Svelte 4 문법(`export let`, `$:`, `on:click`, 스토어 남용)을 생성 직후 교정한다.
-   - AGENTS.md의 "금지 목록 + 버전 표"가 Tailwind v3·SvelteKit 관례·React 패턴의 혼입을 막는다.
-   - 결과적으로 사람이 "이거 옛날 문법이야"라고 지적하는 왕복이 사라진다.
-2. **TS 6 고정으로 첫날 막힘을 제거한다**: TS 7로 시작했다면 `npm ci`의 peer 충돌과 svelte-check 크래시로 골격 단계부터 에이전트가 우회책을 찾아 헤맸을 것이다. 이는 이미 발현된 리스크 R9이며, 설정 한 줄로 없앤다.
-3. **피드백 루프가 짧아진다**:
-   - 저장할 때마다 PostToolUse 훅이 포맷과 린트를 돌린다.
-   - Vitest 브라우저 모드로 컴포넌트를 실제 WebKit에서 수 초 안에 검증한다.
-   - chrome-devtools-mcp로 에이전트가 성능 트레이스와 콘솔을 직접 본다.
-   - 사람이 폰을 들고 확인해야 하는 항목이 "실기기 전용"(핫스팟, 실제 Safari 감각)으로 줄어든다.
-4. **애니메이션을 라이브러리 없이 한 헬퍼로 만든다**: 에이전트가 GSAP·Motion 버전별 API를 조회할 필요 없이, 30줄 FLIP 헬퍼와 `--dur-*` 토큰만 알면 모든 카드 연출을 작성한다. 속도 설정(×1.5/×0.6)과 E2E 즉시 모드(×0)도 같은 배율 하나로 처리된다.
-5. **빼는 것이 속도다**: Storybook, Tailwind, Turborepo, tsdown, Changesets, Capacitor, Biome 전환을 하지 않으면 의존성 업그레이드와 설정 디버깅에 쓰는 세션이 통째로 사라진다.
-
-#### 품질이 올라가는 지점
-1. **엔진 정확성**: JSON 벡터(알려진 사례)와 fast-check 속성 테스트(카드 보존, 결정론, 합법 수만 적용)의 이중망을 둔다. 에이전트가 규칙 코드를 고쳐도 불변식이 깨지면 즉시 실패한다.
-2. **UI 회귀**: `/dev/gallery`의 고정 픽스처를 Playwright 스냅샷(Chromium+WebKit, 도커 안)과 axe로 검사한다. 에이전트가 CSS를 바꿔 다른 화면을 망가뜨리면 PR에서 잡힌다.
-3. **성능 예산 자동화**: E2E에서 탭→턴 종료 ≤ 700ms를 측정하고, 빌드에서 dist ≤ 1.5MB와 외부 URL 0건을 검사한다. spec NF-03과 R5c를 사람의 주의력이 아닌 CI가 지킨다.
-4. **비보안 컨텍스트 금지 API**: 코어 ESLint 규칙이라 .svelte 템플릿·스크립트 모두에서 확실히 동작하고, 에이전트가 규칙 코드를 유지보수할 필요가 없다.
-5. **공급망**: `min-release-age=3`과 Dependabot 기본 쿨다운으로, 에이전트가 무심코 방금 배포된 악성 버전을 설치하는 경로를 막는다.
-6. **위생**: Knip이 에이전트가 남기는 미사용 export·파일·의존성을 매 PR마다 드러낸다.
-
-#### 바꾸지 말 것
-- **Svelte 5 → React로 바꾸지 않는다.** LLM의 React 숙련도 이점은 실재하지만, 이 앱은 화면 수가 적고 애니메이션·번들이 핵심이다. Svelte의 약점(구문 혼동)은 MCP와 svelte-check로 기계적으로 막을 수 있다.
-- **직접 작성 Kotlin 셸을 Capacitor·Tauri·RN·Flutter로 바꾸지 않는다.** Ktor·LOHS·FGS는 어차피 직접 써야 한다.
-- **ESLint + Prettier를 Biome·oxc로 바꾸지 않는다**(.svelte 지원이 실험적).
-- **npm workspaces를 pnpm·Turborepo로 바꾸지 않는다**(설정 강화로 충분).
-- **Canvas 엔진(Pixi·Phaser)을 도입하지 않는다.**
-- **Storybook과 스펙 주도 도구를 도입하지 않는다**(기존 문서 체계와 갤러리 라우트로 충분).
-- **plan.md 원칙 0장(공식 문서 우선, 저명 패키지, 도커 전용, 결정론, 규칙 단일 근거)은 그대로 유지한다.** 이 문서의 모든 권고는 그 원칙을 강화하는 방향이다.
+프레임워크 교체보다 공식 문서·구문 검사·규칙 벡터·브라우저 회귀·번들 예산의 빠른 실패 신호가 이 앱에 유리하다. Svelte+WAAPI, Kotlin 셸, npm workspaces를 유지한다. 실제 자동화 범위와 실기기 미검증은 plan.md §3~4에서 구분하며, 실기기 결과를 자동 검사로 대체하지 않는다.

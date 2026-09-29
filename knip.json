@@ -9,7 +9,12 @@
     "packages/*": {},
     "tools/*": {},
     "packages/web": {
-      "entry": ["scripts/*.mjs"]
+      "entry": [
+        "scripts/*.mjs",
+        "svgo.config.d.mts",
+        "e2e/design/wireframe.config.ts",
+        "e2e/design/wireframe.render.ts"
+      ]
     }
   }
 }

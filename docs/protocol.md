@@ -35,16 +35,18 @@
 |---|---|---|---|
 | 게스트→호스트 | `hello` | `v,name,sessionToken?,lastSeq?,epoch?` | 최초 접속·토큰 재접속·마지막 수신 순번. 이름은 제어 문자 금지 |
 | 호스트→게스트 | `welcome` | `v,seat,sessionToken,rules,ledger,names,epoch,seq,status` | 좌석 1, 원장 **요약**, 호스트 세대(epoch)·현재 순번, 단계 |
-| 호스트→게스트 | `snapshot` | `seq,view,ledger,settlement?,status` | 완전한 게스트 화면(BoardView) |
-| 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
-| 호스트→게스트 | `status` | `seq,status` | 화면은 그대로이고 단계·준비·파산 상태만 바뀜 |
-| 게스트→호스트 | `action` | `seq,payload` | 보낸 시점의 마지막 수신 순번과 엔진 액션(여분 필드는 지워진다) |
-| 호스트→게스트 | `reject` | `seq,reason,message` | 거부. `reason`은 아래 코드만 |
+| 호스트→게스트 | `snapshot` | `seq,view,ledger,settlement?,status,requestId?` | 완전한 게스트 화면(BoardView) |
+| 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status,requestId?` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
+| 호스트→게스트 | `status` | `seq,status,requestId?` | 화면은 그대로이고 단계·준비·파산 상태만 바뀜 |
+| 게스트→호스트 | `action` | `seq,payload,requestId?` | 보낸 시점의 마지막 수신 순번과 엔진 액션(여분 필드는 지워진다) |
+| 게스트→호스트 | `push` | `seq,requestId?` | settled에서 승자 게스트의 밀기 선택. 호스트는 `legalActions`로 재검사한다 |
+| 호스트→게스트 | `reject` | `seq,reason,message,requestId?` | 거부. `reason`은 아래 코드만 |
 | 게스트→호스트 | `ping` / 호스트→게스트 `pong` | 없음 | 하트비트 |
 | 게스트→호스트 | `log` | `entries[]` | 진단 로그(64KB, 줄당 2KB) |
 | 호스트→게스트 | `commitHost` | `round,hash` | 호스트 32바이트 난수의 SHA-256 |
 | 게스트→호스트 | `commitGuest` | `round,hash` | 게스트 32바이트 난수의 SHA-256 |
 | 호스트→게스트 | `revealGuestRequest` | `round,guestHash` | 분배 직전 게스트 원문 요청 |
+| 호스트→게스트 | `roundAborted` | `round,reason` | 3분 이상 게스트 부재 뒤 호스트가 진행 중인 판을 무효로 한 알림 |
 | 게스트→호스트 | `revealGuest` | `round,secret` | 게스트 원문(64자리 소문자 hex) |
 | 호스트→게스트 | `revealHost` | `round,secret,guestSecret,seed,actions,hostHash,guestHash,options,firstSeq` | 판 종료 후 호스트 원문과 재현 입력. `options`의 덱 고정(`deck`·`pickPools`)은 지운다 |
 | 게스트→호스트 | `ready` | `round` | settled에서 다음 판 요청(시작은 호스트) |
@@ -69,8 +71,10 @@
 | `bombMonths`, `canFlipOnly` | 폭탄 가능한 월, 폭탄패 뒤집기 가능 여부(`legal`에서 파생) |
 | `dealer`, `phase` | 선, 엔진 판 단계(`chooseFirst`·`turn`·`end`) |
 | `multiplier` | 스톱 미리보기가 있으면 그 배수, 아니면 **보는 좌석**의 흔들기·폭탄·3고부터의 고·나가리 이월·대박판의 곱(M3 `currentMultiplier`와 같다) |
+| `pushes`, `seats[*].gukjinAsPi`, `bombs`, `revealed` | 연속 밀기 횟수, 국진 위치, 폭탄 횟수, 이미 공개되어 손에 남은 카드. 상대 손패는 계속 `null`; `revealed`만 양쪽에 보인다 |
 
 정산 화면 `SettlementView`의 `balances[].before`는 판 시작 전(즉시 정산 전) 잔액, `amount`는 그 판 round 항목의 실제 이동 금액(나가리면 0)이다.
+`SettlementView.gukjinAsPi`는 승자·패자 각각 정산에 사용한 국진 위치다. `pushed`, `forfeitedPoints`, `nextPushes`와 `steps[].origin: 'push'`도 전달한다. 밀기를 하면 `Pushed` 뒤 두 번째 `Settled`가 나오며 **마지막 `Settled`만 유효**하다.
 
 ## 4. 순서
 
@@ -99,6 +103,8 @@
 ```
 
 - 판이 끝나면 **settled에서 멈춘다**(#26). 정산 화면(`settlement`)은 다음 판이 실제로 분배될 때까지 모든 snapshot·events에 실린다. 게스트 `requestNextRound()`는 요청일 뿐이고 다음 판은 호스트 `nextRound()`로 시작한다.
+- `rules.push`가 켜지고 승자에게 합법 `push`가 있으면 settled에서 정산을 잠시 보류한다. 호스트 승자는 `host.push()`, 게스트 승자는 `guest.push()`로 민다. 호스트 승자가 받으면 `host.acceptRound()`(또는 `nextRound()`), 게스트 승자가 받으면 `ready`가 보류한 정산을 확정한다. 게스트 승자가 선택하기 전에는 호스트 `nextRound()`가 거부된다. 다만 게스트가 3분 이상 부재하면 호스트가 `acceptRound({forSeat: 1, reason: 'absent'})`로 대신 받을 수 있다. 밀면 포기한 점수만 기록하고 판돈 이동은 없으며 `nextPushes`를 다음 판 `RoundOptions.pushes`에 넘긴다. `revealHost`의 액션 열에는 push도 들어가고 게스트는 마지막 정산과 리플레이를 대조한다. 밀기 보류 중 저장·복원해도 정산은 계속 보류되며, 세션 종료 시에는 보류 판을 먼저 받아 원장과 `revealHost`를 확정한 뒤 `sessionEnd`를 보낸다.
+- 게스트가 3분 이상 없고 현재 엔진 단계가 `turn`이면 호스트가 `abortRound(reason)`으로 판을 무효로 할 수 있다. 이미 지급된 즉시 정산은 유지하고 판 정산·나가리 이월·선은 그대로 둔다. 무효 판의 스냅샷은 `legal`·`playable`을 비워 입력을 막는다. `roundAborted`를 보내 양쪽을 settled 대기로 옮기며, 게스트 검증은 `aborted`로 기록한다. 재접속 때(세션이 이미 ended여도) 무효 알림을 `sessionEnd`보다 먼저 다시 보낸다.
 - 파산: 판 정산 뒤 잔액이 0인 좌석이 있으면 bankrupt 단계. 그 좌석이 고른다(호스트 좌석은 `host.chooseBankruptcy(choice)`, 게스트 좌석은 `bankruptcy` 메시지. 남의 좌석 선택은 `BANKRUPT` 거부). **재충전은 파산한 좌석만** 시작 잔액으로 되돌리고 `recharge` 원장 항목을 남긴다(상대 잔액 유지). 제로섬 대조는 "잔액 합 = 시작 잔액 × 2 + 재충전 합"(`ledgerDelta`로 항목 합 = 잔액 − 시작 잔액). 종료를 고르면 ended와 `sessionEnd`. 프롬프트는 재접속 때 다시 보낸다.
 
 ## 5. 핸드셰이크 복구 (#13)
@@ -108,15 +114,16 @@
 | 호스트 단계 | 재접속 hello에 다시 보내는 것 |
 |---|---|
 | lobby | welcome만(autoStart면 첫 판 시작) |
-| handshake | 직전 판 snapshot(없으면 status), 직전 판 revealHost, commitHost, (게스트 커밋을 받았으면) revealGuestRequest |
+| handshake | 직전 판 snapshot(없으면 status), 직전 판 revealHost 또는 roundAborted, commitHost, (게스트 커밋을 받았으면) revealGuestRequest |
 | playing | lastSeq 뒤 차분 events(현재 판 안, 40개·16KB 이하) 또는 snapshot |
-| settled·bankrupt·ended | snapshot, 그 판 revealHost, bankruptcyPrompt(bankrupt), sessionEnd(ended) |
+| settled·bankrupt·ended | snapshot, 그 판 revealHost 또는 roundAborted, bankruptcyPrompt(bankrupt), sessionEnd(ended) |
 
 - 게스트: 같은 판·같은 해시의 `commitHost`를 다시 받으면 **저장해 둔 같은 `commitGuest`**를 다시 보낸다(새 난수 금지). 같은 해시의 `revealGuestRequest`에는 같은 원문을 다시 보낸다. 지난 판 메시지는 무시한다.
 - 호스트: 분배 전이면 게스트가 다른 해시로 다시 커밋해도 받아 준다(새로고침으로 원문을 잃은 경우. 호스트 원문은 아직 비밀이라 안전). 분배 뒤 들어온 지난 핸드셰이크 메시지는 무시한다.
 - 토큰: 게스트가 토큰을 받았음이 확인되기 전(welcome 뒤에만 보낼 수 있는 메시지나 토큰 실은 hello를 받기 전)에는 토큰 없는 hello를 다시 받아 준다(welcome 유실 복구). 확인 뒤에는 토큰 없는 hello를 거절한다(NF-06). 게스트는 welcome 전에는 판 메시지에 응답하지 않는다.
-- **소켓 인증(재검토 중요 2)**: 호스트는 지금 게스트 소켓이 인증됐는지(`host.authenticated`)를 따로 든다. 중계 알림 joined·left·present·absent와 전송 끊김에서 false로 되돌리고, 그 소켓에서 hello를 받아들이면(토큰이 생긴 뒤에는 토큰 hello만) true가 된다. false인 동안에는 `hello`·`ping`만 처리하고 나머지(action·ready·bankruptcy·ledgerGet·log·잘못된 메시지)는 **응답 없이 버린다**(STALE_SEQ 거부나 스냅샷도 보내지 않는다. 버전 불일치 hello만 안내). 그래서 최신 우선 중계에서 LAN의 다른 기기가 진짜 게스트를 4001로 밀어내도 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다. 알림이 없는 전송(메모리)은 끊김 알림이 없으므로 첫 hello 뒤 계속 인증 상태다.
-- **게스트 outbox**: 게스트는 지금 소켓에서 welcome을 받기 전(끊김·present·joined 뒤)에 만든 요청(action·ready·bankruptcy·ledgerGet)을 보내지 않고 들고 있다가 welcome 뒤에 보낸다(액션은 마지막 것 하나). 인증 전 소켓에서 말없이 버려지지 않게 하기 위해서다.
+- **소켓 인증(재검토 중요 2, #40)**: 호스트는 지금 게스트 소켓이 인증됐는지(`host.authenticated`)를 따로 든다. 중계 알림 joined·left와 전송 끊김에서 false로 되돌리고(absent는 되돌리지 않는다: Android 중계는 프레임 하나를 전달하지 못했을 때도 보낸 쪽에 absent를 보내는데 그때 게스트 소켓은 그대로다. absent는 `host.peer`·`connected`에만 기록한다), 그 소켓에서 hello를 받아들이면(토큰이 생긴 뒤에는 토큰 hello만) true가 된다. false인 동안에는 `hello`·`ping`만 처리하고 나머지(action·ready·bankruptcy·ledgerGet·log·잘못된 메시지)는 **응답 없이 버린다**(STALE_SEQ 거부나 스냅샷도 보내지 않는다. 버전 불일치 hello만 안내). 그래서 최신 우선 중계에서 LAN의 다른 기기가 진짜 게스트를 4001로 밀어내도 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다. 알림이 없는 전송(메모리)은 끊김 알림이 없으므로 첫 hello 뒤 계속 인증 상태다.
+- **게스트 outbox**: 게스트는 지금 소켓에서 welcome을 받기 전(끊김·present·joined·left 뒤, absent는 제외)에 만든 요청(action·push·ready·bankruptcy·ledgerGet)을 들고 있다가 welcome과 첫 재동기화 프레임을 받은 뒤에 보낸다(로비에서는 welcome 직후, 액션은 마지막 것 하나). welcome만 받은 동안 새로 만든 요청도 재동기화 뒤로 미룬다.
+- **응답 감시(#40)**: 게스트는 보낸 요청마다 호스트 응답을 기다린다. action·push의 `requestId`는 재전송에도 유지되며 호스트가 그 요청에 대한 events·snapshot·status·reject에만 되돌려준다. ID가 없는 이전 형식의 응답은 순번이 요청 기준보다 증가했을 때만 인정한다(같은 순번의 옛 snapshot은 응답이 아니다). ready는 해당 판의 게스트 준비 상태가 true이거나 다음 판이 시작되면 완료되며, 재인증 welcome·snapshot에서도 이 상태를 확인하고 충족된 요청을 outbox에서 지운다. bankruptcy는 판과 상태 rev, ledgerGet은 같은 from의 ledgerPage로 확인한다. `ackTimeoutMs`(기본 5초) 안에 응답이 없으면 hello로 다시 인증하고 요청을 재전송한다. hello·welcome·재동기화 프레임이 유실되면 `advanceTime`이 hello를 5초부터 지수 백오프(최대 30초)로 재시도한다. 호스트는 무시하는 ready에도 status로 답한다. 시각은 외부 시계가 넣는다: 게스트 UI는 `guest.advanceTime(Date.now())`를 주기적으로(예: 1초) 부른다(세션에는 타이머가 없다).
 - 검증: `session.test.ts`가 판 1·2에서 commitHost·commitGuest·revealGuestRequest·revealGuest를 하나씩 떨어뜨리는 표 테스트와 fast-check 속성 테스트(120회, 로컬 1,500회 확인)를 돌린다. 전송 모형: 게스트→호스트 프레임은 아무렇게나 유실·중복·순서 바꿈, 호스트→게스트는 WebSocket처럼 한 소켓 안에서 순서가 지켜지고(유실은 재접속으로만) 중복은 나중에 한 번 더 도착한다.
 
 ## 6. commit-reveal 검증 (#16, NP-06 v0.5)
@@ -132,9 +139,9 @@
 7. 받은 정산의 승패·사유·최종 점수·배수 단계가 리플레이 `settle`과 같다.
 
 - 원문을 공개한 판에 다른 해시의 `commitHost`가 오면 응답하지 않고 `COMMIT_INVALID`(재추첨 방지).
-- **revealHost 누락(재검토 중요 1)**: 원문을 공개한 판의 결과(검사)가 없는데 더 큰 판의 `commitHost`가 오거나 `sessionEnd`가 오면 그 판을 `failed{missingReveal}`로 기록하고 그 `commitHost`에 응답하지 않는다. 정상 호스트는 판 종료 때와 재접속 resync에서 늘 `revealHost`를 다음 `commitHost`보다 먼저 보내므로 거짓 실패가 없다. 뒤늦은 `revealHost`로 판정을 되돌리지 않는다. 세션 도중 호스트가 판을 끝내지 않고 종료해도 같은 실패다.
+- **revealHost 누락(재검토 중요 1)**: 원문을 공개한 판의 결과(검사)가 없는데 더 큰 판의 `commitHost`가 오거나 `sessionEnd`가 오면 그 판을 `failed{missingReveal}`로 기록하고 그 `commitHost`에 응답하지 않는다. 정상 호스트는 판 종료 때와 재접속 resync에서 늘 `revealHost`를 다음 `commitHost`보다 먼저 보낸다. 판 무효는 `roundAborted`를 먼저 보내며 이 판은 `aborted{reason}`으로 판정한다. 뒤늦은 `revealHost`로 판정을 되돌리지 않는다. 세션 도중 호스트가 판을 끝내지 않고 종료해도 같은 실패다.
 - **판 번호**: 직전 커밋 판 + 1만 받는다. 더 크게 뛴 `commitHost`는 그 판 번호로 `failed{roundSkip}`을 기록하고 응답하지 않는다(위조 커밋의 기록이라, 그 번호의 판이 나중에 정상으로 진행되면 따로 검증한다).
-- 결과는 `guest.checks`(`verified`·`unverifiable{noCommitment}`·`failed{reason}`)와 `verifiedRounds`. 실패면 `errors`에 `COMMIT_INVALID`.
+- 결과는 `guest.checks`(`verified`·`aborted{reason}`·`unverifiable{noCommitment}`·`failed{reason}`)와 `verifiedRounds`. 실패면 `errors`에 `COMMIT_INVALID`.
 - 게스트 새로고침: `guest.toJSON()`(토큰·순번·세대·최근 두 판의 커밋·관찰)을 탭 수명 저장소(`sessionStorage`, 비보안 컨텍스트에서도 동작)에 두고 `new GuestSession(..., { restore })`로 이어 가면 그 판도 검증된다. 저장본이 없으면 그 판은 `unverifiable`이고 거짓 `COMMIT_INVALID`를 내지 않는다. `sendAction`은 보내기 전에 `onChange`를 부르므로 저장본의 `sent`가 실제보다 적지 않다.
 - UI 통합(I1) 체크리스트:
   - `checks`의 `failed`를 정산 화면에 "공정성 검증 실패"(이유 `missingReveal`·`roundSkip`·`events` 등)로, `unverifiable`을 "검증 불가(새로고침)"로 표시한다.

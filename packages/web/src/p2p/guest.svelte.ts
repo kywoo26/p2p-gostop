@@ -33,6 +33,8 @@ import type { RelayAddress } from './role.ts';
 import { saveGuestState, writeTicket, type GuestTicket } from './ticket.ts';
 
 const ME: Seat = 1;
+/** NP-03·NF-05: 5초 응답 기한을 1초 해상도로 확인한다. */
+const CLOCK_MS = 1_000;
 
 export type GuestPhase = 'lobby' | 'playing' | 'ended' | 'rejected';
 
@@ -54,6 +56,9 @@ export interface GuestOptions {
   readonly onTicket?: (ticket: GuestTicket) => void;
   /** false면 sessionStorage에 두지 않는다 (테스트) */
   readonly persist?: boolean;
+  /** 테스트에서 시계를 직접 움직인다. */
+  readonly clock?: boolean;
+  readonly now?: () => number;
 }
 
 interface Awaiting {
@@ -63,6 +68,7 @@ interface Awaiting {
 
 const CHECK_LABEL: Readonly<Record<RoundCheck['result'], string>> = {
   verified: '셔플 공정성 검증 통과',
+  aborted: '판 무효 (검증 대상 아님)',
   unverifiable: '검증 불가 (새로고침으로 기록을 잃음)',
   failed: '공정성 검증 실패',
 };
@@ -95,6 +101,8 @@ export class GuestGame implements GameController {
   private readonly ws: { dispose(): void; reconnect(force?: boolean): void } | null;
   private readonly onTicket: (ticket: GuestTicket) => void;
   private readonly persist: boolean;
+  private readonly now: () => number;
+  private clock: ReturnType<typeof setInterval> | null = null;
   private prevSeq = 0;
   private settledRound = 0;
   private roundInstant: EngineEvent[] = [];
@@ -104,6 +112,7 @@ export class GuestGame implements GameController {
     this.name = options.name;
     this.onTicket = options.onTicket ?? writeTicket;
     this.persist = options.persist ?? true;
+    this.now = options.now ?? Date.now;
     let inner: Transport;
     if (options.transport) {
       this.ws = null;
@@ -144,8 +153,22 @@ export class GuestGame implements GameController {
       log: (line) => log.info(`게스트 세션 ${line}`),
     });
     this.session.onChange(() => this.sync());
+    this.session.advanceTime(this.now());
     this.session.join();
+    if (options.clock ?? true) {
+      this.clock = setInterval(() => this.tick(), CLOCK_MS);
+      document.addEventListener('visibilitychange', this.onVisible);
+    }
     log.info(`게스트 참가 요청: ${options.name}${options.token ? ' (토큰으로 복귀)' : ''}`);
+  }
+
+  private readonly onVisible = () => {
+    if (document.visibilityState === 'visible') this.tick();
+  };
+
+  /** 응답이 없는 요청과 hello 재시도 기한을 진행한다. */
+  tick(): void {
+    if (!this.disposed) this.session.advanceTime(this.now());
   }
 
   // ---- 표시 값 ----
@@ -438,6 +461,8 @@ export class GuestGame implements GameController {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    if (this.clock !== null) clearInterval(this.clock);
+    document.removeEventListener('visibilitychange', this.onVisible);
     this.ws?.dispose();
     this.playback.dispose();
   }
