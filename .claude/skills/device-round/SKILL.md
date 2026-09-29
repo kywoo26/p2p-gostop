@@ -1,12 +1,12 @@
 ---
 name: device-round
-description: 사람이 수행한 실기기 테스트(Galaxy 호스트, iPhone Safari 게스트) 결과를 docs/device-test/의 해당 절차서에 회차 기록으로 남긴다. 사용자가 실기기 결과·로그·스크린샷 설명을 붙여 넣었을 때 사용.
-argument-hint: <절차서 이름, 예 MVP 또는 M4>
+description: 사람이 수행한 실기기 테스트(Galaxy 호스트, iPhone Safari 게스트) 결과를 docs/device-test/의 results.md에 회차 기록으로 남긴다. 사용자가 실기기 결과·로그·스크린샷 설명을 붙여 넣었을 때 사용.
+argument-hint: <회차 또는 검증 범위, 예 Galaxy 솔로>
 ---
 
 실기기 검증은 사람이 한다. 이 스킬은 사용자가 준 결과를 기록만 한다. 결과를 추측하거나 채우지 않는다.
 
-1. 대상 문서: `docs/device-test/$ARGUMENTS.md`(인자가 없으면 사용자에게 묻는다). 문서의 "회차 기록"(또는 "결과 기록") 절 형식을 그대로 따른다. 절이 없으면 `docs/device-test/M0.md`의 "회차 기록" 형식(요약 표 한 줄 + 회차별 상세 표)을 복사한다.
+1. 대상 문서는 `docs/device-test/results.md`다. `docs/device-test/procedure.md`의 항목·요구사항 ID와 연결해 요약 표와 회차별 상세 기록을 추가한다. 인자는 회차/검증 범위로 사용하고, 불명확한 정보는 미상으로 남긴다.
 2. 빌드 식별: 태그와 커밋을 함께 적는다(`git rev-list -n1 <tag>`의 앞 7자리). 사용자가 빌드를 모르면 "미상"으로 두고 질문 목록에 넣는다.
 3. 기기: 모델·OS 버전·브라우저. 사용자가 준 값만 쓰고, 추정이면 "(추정)"을 붙인다.
 4. 항목별 결과: ○/×/–(미수행)과 근거(사용자 문장, 로그 줄). 미수행·미확인은 다음 회차 체크리스트로 옮긴다.

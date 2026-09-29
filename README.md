@@ -9,7 +9,7 @@
 
 ```
 packages/
-  engine/     규칙 엔진 (순수 TS, 카드 카탈로그·시드 PRNG·규칙 옵션. reduce 등은 M1)
+  engine/     규칙 엔진 (순수 TS, 카드 카탈로그·시드 PRNG·규칙 옵션·reduce·정산)
   ai/         CPU 상대 (engine에만 의존)
   protocol/   호스트↔게스트 메시지 타입·버전 (spec 5장)
   relay-dev/  개발·E2E용 Node WebSocket 중계 서버 (Android 중계와 같은 규칙)
@@ -65,7 +65,7 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 
 ## 테스트
 
-- **엔진**: 카드 카탈로그 불변식, xoshiro128** PRNG 결정성, fast-check 속성 테스트(셔플은 순열). M1부터 JSON 규칙 벡터(`packages/engine/test/vectors/`)가 더해진다.
+- **엔진**: 카드 카탈로그 불변식, xoshiro128** PRNG 결정성, fast-check 속성 테스트(셔플은 순열). JSON 규칙 벡터(`packages/engine/test/vectors/`)로 사건·정산을 검증한다.
 - **웹 컴포넌트**: Vitest 브라우저 모드 + `vitest-browser-svelte`. 개발 이미지 안에서 Chromium·WebKit으로 돈다.
 - **E2E**: `vite preview`로 빌드 산출물을 띄우고 Playwright로 확인한다. 외부 네트워크 요청이 하나라도 나가면 실패한다.
 - CI(`.github/workflows/ci.yml`): 개발 이미지 하나로 push·PR마다 lint·check·test·build·Android. 컴포넌트 테스트·E2E는 PR과 수동 실행에서만(분량 절약).
@@ -77,4 +77,25 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 
 ## 라이선스
 
-코드는 MIT. 카드 이미지는 Wikimedia Commons 화투 SVG(CC BY-SA 4.0, 저작자 Spenĉjo, Marcus Richert, Louie Mantia Jr.)를 쓸 예정이며 앱의 설정 > 라이선스에 표기한다.
+코드는 MIT. 카드 이미지는 Wikimedia Commons 화투 SVG(CC BY-SA 4.0, 저작자 Spenĉjo, Marcus Richert, Louie Mantia Jr.)를 번들하며 앱의 설정 > 라이선스에 표기한다. 배포 의존성 고지 완성은 #74에서 추적한다.
+
+## 문서 지도
+
+- [의도](intend.md) → [명세](spec.md) → [구현 계획](plan.md): 목표·요구사항·현재 마일스톤과 결정.
+- [작업 규범](AGENTS.md): 작업 제약과 버전 표의 정본.
+- [Galaxy·솔로 계획](https://github.com/kywoo26/p2p-gostop/pull/76): 현재 증분·PR 소유권·완료 조건(미병합 PR #76의 docs/plan-galaxy-solo.md).
+- [UI 규범·구현 지도](docs/design/ui-spec.md): UX-01~25, 화면·상태·이벤트·현재 격차; 구 docs/ui.md를 대체.
+- [프로토콜](docs/protocol.md): 메시지·전송·세션 계약.
+- [규칙 벡터](docs/rules-vectors.md): 규칙 ID와 테스트의 대응.
+- [AI 튜닝](docs/ai-tuning.md): 강도·응답 벤치마크와 미달 근거.
+- [머니 모델](docs/money-model.md): 표준 3,000판 산정·프리셋 미완 상태.
+- [실기기 절차](docs/device-test/procedure.md) / [결과 로그](docs/device-test/results.md): M0·MVP·M4·U1·UI 절차 통합, 사용자 결과 원문 보존.
+- [상용 규칙 조사](docs/research/rules-commercial.md): §12가 게임 규칙의 유일한 규범.
+- [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.
+- [플랫폼 조사](docs/research/tech-stack.md) / [도구 비교](docs/research/agent-era-stack.md): 제약·호환성·선택 근거, 설치 버전은 AGENTS.md.
+- [M0 리뷰](docs/reviews/M0-review.md): 초기 Android·배포·스모크 검토 이력.
+- [M1 리뷰](docs/reviews/M1-review.md): 엔진 규칙·보안·벡터 검토 이력.
+- [M3 리뷰](docs/reviews/M3-review.md): 솔로 표시·프롬프트·UX 사후 검토 이력.
+- [M4 프로토콜 리뷰](docs/reviews/M4-protocol-review.md): 공정성·재접속·전송·복원 검토 이력.
+- [하네스 감사](docs/reviews/harness-audit.md): 에이전트 설정·훅·권한 정리 이력.
+- [MVP 감사](docs/reviews/mvp-rush-audit.md): 알파 출시 당시 생략·결함 기록. 리뷰의 구경로·행 번호는 당시 커밋을 가리킨다.

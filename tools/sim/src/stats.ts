@@ -228,7 +228,7 @@ export interface Summary {
   readonly nagariRate: number;
   /** A 관점 판당 평균 순액(점) */
   readonly meanNetA: number;
-  /** 판당 정산 크기(점, 나가리 제외, 즉시 정산 포함) */
+  /** 실제 이동이 있는 판의 순액 크기(점, 나가리·무이동 밀기 제외, 즉시 정산 포함) */
   readonly payoutPoints: Distribution;
   /** 같은 분포 × 점당 */
   readonly payoutMoney: Distribution;
@@ -242,6 +242,7 @@ export interface Summary {
     readonly nagari: number;
     readonly instantPayoutRounds: number;
     readonly ppeokPerRound: number;
+    readonly pushedRounds: number;
   };
   readonly timing: { readonly a: TimingStats; readonly b: TimingStats };
   readonly bankruptcy: {
@@ -281,9 +282,7 @@ export function summarize(
   const decisive = winsA + winsB;
   const rate = decisive === 0 ? 0 : winsA / decisive;
   const half = decisive === 0 ? 0 : 1.96 * Math.sqrt((rate * (1 - rate)) / decisive);
-  const payouts = records
-    .filter((r) => r.winner !== null || r.instantA !== 0)
-    .map((r) => Math.abs(r.netA));
+  const payouts = records.filter((r) => r.netA !== 0).map((r) => Math.abs(r.netA));
   const decisiveRecords = records.filter((r) => r.winner !== null);
   const netsA = records.map((r) => r.netA);
   const netsB = records.map((r) => -r.netA);
@@ -309,6 +308,7 @@ export function summarize(
       nagari: nagari / Math.max(1, n),
       instantPayoutRounds: records.filter((r) => r.instantA !== 0).length / Math.max(1, n),
       ppeokPerRound: records.reduce((s, r) => s + r.ppeoks, 0) / Math.max(1, n),
+      pushedRounds: records.filter((r) => r.pushed).length / Math.max(1, n),
     },
     timing: { a: timing(records.flatMap((r) => r.msA)), b: timing(records.flatMap((r) => r.msB)) },
     bankruptcy: {
@@ -347,8 +347,9 @@ export function toMarkdown(s: Summary): string {
     `| A 판당 평균 순액 | ${f(s.meanNetA)}점 |`,
     `| 3뻑 / 총통 / 즉시정산 판 비율 | ${pct(s.frequencies.threePpeok)} / ${pct(s.frequencies.chongtong)} / ${pct(s.frequencies.instantPayoutRounds)} |`,
     `| 판당 뻑 수 | ${f(s.frequencies.ppeokPerRound)} |`,
+    `| 밀기 비율 | ${pct(s.frequencies.pushedRounds)} |`,
     '',
-    '판당 정산 크기 (나가리 제외, 즉시 정산 포함):',
+    '실제 돈 이동이 있는 판의 순액 크기 (나가리·무이동 밀기 제외, 즉시 정산 포함):',
     '',
     '| 단위 | n | 평균 | 표준편차 | p50 | p90 | p95 | p99 | 최대 |',
     '|---|---|---|---|---|---|---|---|---|',

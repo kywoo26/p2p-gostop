@@ -2,7 +2,13 @@
 // 화면 컨트롤러(HostGame·GuestGame)가 로비 → 판 → 정산 → 다음 판을 끝까지 도는지, 게스트가 호스트 손패를 못 보는지 본다.
 // 애니메이션 없이(보드 루트를 붙이지 않음) 재생 큐만 돈다. 두 좌석 모두 화면에 보이는 합법 수에서만 무작위로 고른다.
 import { PRESETS, type Action, type CardId } from '@p2p-gostop/engine';
-import { createMemoryTransportPair, type BoardView, type Message } from '@p2p-gostop/protocol';
+import {
+  createMemoryTransportPair,
+  type BoardView,
+  type Message,
+  type RelayNotice,
+  type Transport,
+} from '@p2p-gostop/protocol';
 import { expect, test, vi } from 'vitest';
 import type { GameController } from '../game/controller.ts';
 import { GuestGame } from './guest.svelte.ts';
@@ -217,6 +223,38 @@ test('토큰 거절 뒤 다시 연결은 joinFresh로 토큰 없는 hello를 보
   guest.dispose();
 });
 
+test('게스트 시계는 1초마다 진행하고 화면 복귀 즉시 진행하며 dispose 뒤 멈춘다 (NP-03·NF-05)', () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+  const [, guestWire] = createMemoryTransportPair();
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+    now: () => 6_000,
+  });
+  const advance = vi.spyOn(
+    (guest as unknown as { session: { advanceTime(now: number): void } }).session,
+    'advanceTime',
+  );
+  try {
+    vi.advanceTimersByTime(1_000);
+    expect(advance).toHaveBeenCalledWith(6_000);
+    const calls = advance.mock.calls.length;
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(advance).toHaveBeenCalledTimes(calls + 1);
+    guest.dispose();
+    vi.advanceTimersByTime(2_000);
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(advance).toHaveBeenCalledTimes(calls + 1);
+  } finally {
+    guest.dispose();
+    visibility.mockRestore();
+    vi.useRealTimers();
+  }
+});
+
 test('게스트 3분 부재 때 계속 기다리기 또는 종료를 고를 수 있다 (spec 2.4)', async () => {
   let now = 0;
   const [hostWire, guestWire] = createMemoryTransportPair();
@@ -410,10 +448,23 @@ test('로비 → 시작 → 여러 판: 양쪽 화면이 같은 원장·순번, 
 
 test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고 판이 이어진다 (spec 2.4, NF-05)', async () => {
   const [hostWire, guestWire] = createMemoryTransportPair();
+  let notifyRelay: (notice: RelayNotice) => void = () => {};
+  const relayWire: Transport = {
+    send: (message) => guestWire.send(message),
+    onMessage: (handler) => guestWire.onMessage(handler),
+    onClose: (handler) => guestWire.onClose(handler),
+    reconnect: () => guestWire.reconnect(),
+    onRelay: (handler) => {
+      notifyRelay = handler;
+      return () => {
+        notifyRelay = () => {};
+      };
+    },
+  };
   const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false, persist: false });
   const guest = new GuestGame({
     name: '민지',
-    transport: guestWire,
+    transport: relayWire,
     onTicket: () => {},
     persist: false,
   });
@@ -441,8 +492,8 @@ test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고
   expect(host.notice).toContain('연결 끊김');
   guestWire.reconnect();
   (host as unknown as { onRelay(n: object): void }).onRelay({ t: 'relay', peer: 'joined' });
-  // GuestSession은 전송이 닫히면 hello를 다시 보낸다 (재접속 뒤 전달)
-  (guest as unknown as { session: { join(): void } }).session.join();
+  // 실제 중계의 present 알림으로 GuestSession이 스스로 hello를 보낸다.
+  notifyRelay({ t: 'relay', peer: 'present' });
   await settle();
   expect(host.guestOnline).toBe(true);
   expect(guest.stats.seq).toBe(host.stats.seq);
