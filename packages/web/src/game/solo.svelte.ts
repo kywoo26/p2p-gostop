@@ -6,6 +6,7 @@
 import type { Difficulty } from '@p2p-gostop/ai';
 import {
   playerView,
+  legalActions,
   redactEvent,
   sameAction,
   type Action,
@@ -17,15 +18,16 @@ import type { BoardView } from '@p2p-gostop/protocol';
 import { scaledMs } from '../anim/durations.ts';
 import { settings } from '../settings/settings.svelte.ts';
 import { removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
-import { toBoardView } from './adapter.ts';
+import { pushOffer, toBoardView } from './adapter.ts';
 import type { AiClient } from './ai-client.ts';
-import type { GameController, GameStats } from './controller.ts';
+import type { GameController, GameStats, PushDecision } from './controller.ts';
 import { log } from './log.svelte.ts';
 import { Playback, type RoundSummary } from './playback.svelte.ts';
 import { soloSummary } from './records.ts';
 import {
   actingSeats,
   createSession,
+  acceptRound,
   endSession,
   parseSession,
   refill,
@@ -187,6 +189,20 @@ export class SoloSession implements GameController {
     return this.state.phase === 'bankrupt';
   }
 
+  get pushDecision(): PushDecision | null {
+    const s = this.state;
+    if (s.phase !== 'pushDecision') return null;
+    const winner = s.game.result?.winner;
+    const offer = pushOffer(s.game, s.ledger);
+    return {
+      winner: winner === ME,
+      canPush: winner === ME && legalActions(s.game, ME).some((a) => a.type === 'push'),
+      nextMultiplier: 2 ** (s.game.round.pushes + 1),
+      acceptAmount: offer.amount,
+      forfeitedPoints: offer.points,
+    };
+  }
+
   get stats(): GameStats {
     const s = this.state;
     return {
@@ -233,6 +249,25 @@ export class SoloSession implements GameController {
     // 분배만으로 끝나는 판(바닥 총통 등)은 곧바로 정산 화면이 다시 뜬다
     this.enqueue(events, null, null);
     this.playback.release();
+  }
+
+  /** 결정 프롬프트에는 자동 기본값이나 시간 제한을 두지 않는다. */
+  choosePush(push: boolean): void {
+    if (this.state.phase !== 'pushDecision' || this.state.game.result?.winner !== ME) return;
+    this.finishPush(push, ME);
+  }
+
+  private finishPush(push: boolean, seat: Seat): void {
+    if (this.state.phase !== 'pushDecision' || this.state.game.result?.winner !== seat) return;
+    if (push) {
+      const step = sessionAct(this.state, { type: 'push', seat });
+      if (!step.ok) return;
+      this.commitState(step.session);
+      this.enqueue(step.events, null, null);
+    } else {
+      this.commitState(acceptRound(this.state));
+      this.enqueue([], null, null);
+    }
   }
 
   /** MN-02 재충전 (정산 화면은 그대로 두고 "다음 판"을 누르게 한다) */
@@ -287,10 +322,37 @@ export class SoloSession implements GameController {
   private kick(): void {
     if (this.disposed || this.thinking || !this.playback.idle) return;
     const s = this.state;
+    if (s.phase === 'pushDecision' && s.game.result?.winner === CPU) {
+      void this.runCpuPush();
+      return;
+    }
     if (s.phase !== 'playing') return;
     const seats = actingSeats(s.game);
     if (seats.includes(ME) || !seats.includes(CPU)) return;
     void this.runCpu();
+  }
+
+  private async runCpuPush(): Promise<void> {
+    const generation = this.generation;
+    const session = this.state;
+    this.thinking = true;
+    let push = false;
+    try {
+      const result = await this.ai.decide({
+        difficulty: this.difficulty,
+        view: this.viewOf(session, CPU),
+        seed: decisionSeed(session),
+        timeBudgetMs: this.timeBudgetMs,
+        decision: 'push',
+      });
+      push = result.action.type === 'push';
+    } catch (error) {
+      log.error(`CPU 밀기 결정 오류: ${String(error)}`);
+    } finally {
+      this.thinking = false;
+    }
+    if (this.disposed || generation !== this.generation) return;
+    this.finishPush(push, CPU);
   }
 
   private async runCpu(): Promise<void> {

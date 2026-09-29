@@ -14,6 +14,7 @@
   // data-* 속성은 E2E 자동 플레이·원장 검사·턴 시간 계측(spec AC-04·AC-06)이 읽는다.
   import { tick, untrack } from 'svelte';
   import type { GameController } from '../game/controller.ts';
+  import { formatMoney } from '../lib/format.ts';
   import { settings } from '../settings/settings.svelte.ts';
   import Board from '../ui/Board.svelte';
   import Settlement from './Settlement.svelte';
@@ -125,6 +126,39 @@
     onmenu?.(item.id);
   }
 
+  function endConfirm(item: MenuItem): string | undefined {
+    if (controller.pushDecision !== null) {
+      if (controller.mode === 'guest')
+        return '아직 정산되지 않은 판입니다. 지금 나가면 금액은 이동하지 않고 호스트가 선택을 기다립니다.';
+      return `아직 밀지 않은 판입니다. 받기 정산 ${formatMoney(controller.pushDecision.acceptAmount ?? 0, settings.value.unit)}을 확정한 뒤 세션을 끝냅니다. 밀면 이번 판 지급 0${settings.value.unit}이며 ${controller.pushDecision.forfeitedPoints ?? 0}점을 포기합니다.`;
+    }
+    const settlement = pb.settlement?.view;
+    if (settlement?.pushed)
+      return `이미 민 판은 정산 0${settlement.unit}입니다. ${settlement.forfeitedPoints ?? 0}점은 포기한 채 유지하며 별도 환급 없이 끝냅니다.`;
+    return item.confirm;
+  }
+
+  function endFromSettlement() {
+    if (pb.settlement?.view.pushed) {
+      const item = menu.find((entry) => entry.id === 'end' || entry.id === 'leave');
+      if (item) {
+        openMenu();
+        confirming = item;
+        return;
+      }
+    }
+    onend?.();
+  }
+
+  function endFromWait() {
+    const item = menu.find((entry) => entry.id === 'end');
+    if (item) {
+      waitDialog?.close();
+      openMenu();
+      confirming = item;
+    } else onmenu?.('end');
+  }
+
   let waitDialog = $state<HTMLDialogElement | null>(null);
   $effect(() => {
     const dialog = waitDialog;
@@ -148,7 +182,10 @@
   data-can-act={controller.canAct}
   data-play-timings={playTimings}
 >
-  <div class="board-wrap" inert={pb.settlement !== null || menuOpen || ended}>
+  <div
+    class="board-wrap"
+    inert={pb.settlement !== null || controller.pushDecision != null || menuOpen || ended}
+  >
     <Board
       view={pb.board}
       {extras}
@@ -199,19 +236,21 @@
         >기록 보기</button
       >
     </div>
-  {:else if pb.settlement}
+  {:else if pb.settlement || controller.pushDecision}
     <div class="overlay" inert={menuOpen}>
       <Settlement
-        view={pb.settlement.view}
-        instant={pb.settlement.instant}
-        nextCarry={pb.settlement.nextCarry}
+        view={pb.settlement?.view ?? null}
+        instant={pb.settlement?.instant ?? []}
+        nextCarry={pb.settlement?.nextCarry ?? null}
+        decision={controller.pushDecision}
+        onpush={(push) => controller.choosePush(push)}
         bankrupt={controller.bankrupt}
         note={controller.settlementNote ?? null}
         waiting={controller.settlementWaiting ?? false}
         {ended}
         onnext={() => controller.nextRound()}
         onrefill={() => controller.refill()}
-        onend={() => onend?.()}
+        onend={endFromSettlement}
         onfresh={() => onfresh?.()}
       />
     </div>
@@ -232,7 +271,7 @@
   >
     <h2 id="game-menu-title">메뉴</h2>
     {#if confirming}
-      <p class="confirm" role="alert">{confirming.confirm}</p>
+      <p class="confirm" role="alert">{endConfirm(confirming)}</p>
     {/if}
     {#if warning}
       <p class="lan-warning" role="note">{warning}</p>
@@ -260,9 +299,15 @@
       <button type="button" class="item primary" data-menu="wait" onclick={() => onwait?.()}
         >계속 기다리기</button
       >
-      <button type="button" class="item" data-menu="end" onclick={() => onmenu?.('end')}
-        >세션 종료</button
-      >
+      {#if controller.pushDecision?.winner === false && controller.acceptAbsentWinner}
+        <button
+          type="button"
+          class="item"
+          data-menu="accept-absent"
+          onclick={() => controller.acceptAbsentWinner?.()}>부재한 승자 대신 받기</button
+        >
+      {/if}
+      <button type="button" class="item" data-menu="end" onclick={endFromWait}>세션 종료</button>
     </div>
   </dialog>
 </div>

@@ -4,6 +4,8 @@ import { createPolicy, Rng, type Difficulty, type Policy } from '@p2p-gostop/ai'
 import type { Action, PlayerView } from '@p2p-gostop/engine';
 
 export interface AiRequest {
+  /** 판 종료 뒤 밀기 여부는 Policy.decidePush로 결정한다. */
+  readonly decision?: 'push';
   readonly difficulty: Difficulty;
   /** CPU 좌석의 뷰 (playerView(state, seat)) */
   readonly view: PlayerView;
@@ -32,9 +34,17 @@ function policyFor(difficulty: Difficulty): Policy {
 
 export function decide(req: AiRequest): AiResult {
   const t0 = performance.now();
-  const action = policyFor(req.difficulty).decide(req.view, req.view.legal, {
+  const ctx = {
     rng: new Rng(req.seed),
     timeBudgetMs: req.timeBudgetMs,
-  });
+  };
+  // accept는 엔진 액션이 아니므로 Worker 응답에서는 stop으로 표현하고 호출자가 해석한다.
+  const policy = policyFor(req.difficulty);
+  const action: Action =
+    req.decision === 'push'
+      ? policy.decidePush?.(req.view, ctx)
+        ? { type: 'push', seat: req.view.viewer }
+        : { type: 'stop', seat: req.view.viewer }
+      : policy.decide(req.view, req.view.legal, ctx);
   return { action, ms: performance.now() - t0 };
 }

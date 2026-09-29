@@ -7,8 +7,10 @@ import {
   applyInstantPayout,
   applySettlement,
   createLedger,
+  legalActions,
   newRound,
   reduce,
+  settle,
   type Action,
   type CapturedPile,
   type EndReason,
@@ -54,7 +56,7 @@ export interface RoundRecord {
 /**
  * playing: 판 진행 중 / roundOver: 정산 화면(다음 판 대기) / bankrupt: 잔액 0 → 재충전·종료 선택(MN-02) / ended: 종료
  */
-export type SessionPhase = 'playing' | 'roundOver' | 'bankrupt' | 'ended';
+export type SessionPhase = 'playing' | 'pushDecision' | 'roundOver' | 'bankrupt' | 'ended';
 
 export interface SessionState {
   readonly version: 1;
@@ -114,6 +116,18 @@ function closeRound(session: SessionState, events: readonly EngineEvent[]): Sess
   const settled = events.findLast((e) => e.type === 'Settled');
   if (session.game.phase !== 'end' || settled?.type !== 'Settled') return session;
   const settlement = settled.settlement;
+  if (
+    settlement.winner !== null &&
+    legalActions(session.game, settlement.winner).some((action) => action.type === 'push')
+  ) {
+    return { ...session, phase: 'pushDecision' };
+  }
+  return commitSettlement(session, settlement);
+}
+
+/** 최종 정산만 원장과 기록에 한 번 넣는다. */
+function commitSettlement(session: SessionState, settlement: Settlement): SessionState {
+  if (session.records.at(-1)?.round === session.roundNumber) return session;
   const before = session.ledger;
   const ledger = applySettlement(before, settlement, session.config.rules);
   const amount = ledger.balances[0] - before.balances[0];
@@ -139,7 +153,10 @@ function closeRound(session: SessionState, events: readonly EngineEvent[]): Sess
 
 /** 액션 하나를 적용한다. 즉시 정산 이벤트는 바로 원장에 기록한다(FR-18) */
 export function sessionAct(session: SessionState, action: Action): SessionStep {
-  if (session.phase !== 'playing') {
+  if (
+    session.phase !== 'playing' &&
+    !(session.phase === 'pushDecision' && action.type === 'push')
+  ) {
     return { ok: false, reason: 'notPlaying', message: `판 진행 중이 아닙니다: ${session.phase}` };
   }
   const result = reduce(session.game, action);
@@ -163,6 +180,12 @@ export function sessionAct(session: SessionState, action: Action): SessionStep {
   return { ok: true, session: closeRound(next, result.events), events: result.events };
 }
 
+/** 승자가 밀지 않고 이번 판 정산을 받는다. */
+export function acceptRound(session: SessionState): SessionState {
+  if (session.phase !== 'pushDecision') return session;
+  return commitSettlement(session, settle(session.game));
+}
+
 /** 다음 판: 선은 직전 승자(나가리면 유지), 나가리 배수 이월 (R5·G9) */
 export function startNextRound(session: SessionState): {
   session: SessionState;
@@ -179,6 +202,7 @@ export function startNextRound(session: SessionState): {
     {
       dealer: last.settlement.nextDealer,
       carry: last.settlement.nextCarry,
+      pushes: last.settlement.nextPushes ?? 0,
       roundNumber,
     },
   );
@@ -215,13 +239,19 @@ export function refill(session: SessionState): SessionState {
 }
 
 export function endSession(session: SessionState): SessionState {
-  return { ...session, phase: 'ended' };
+  return { ...acceptRound(session), phase: 'ended' };
 }
 
 /** 지금 입력해야 하는 좌석들 (선 고르기는 아직 고르지 않은 좌석 모두) */
 export function actingSeats(game: GameState): readonly Seat[] {
   const p = game.pending;
-  if (game.phase === 'end' || p === null) return [];
+  if (game.phase === 'end') {
+    const winner = game.result?.winner;
+    return winner !== null && winner !== undefined && legalActions(game, winner).length > 0
+      ? [winner]
+      : [];
+  }
+  if (p === null) return [];
   return p.kind === 'pickFirst' ? p.seats : [p.seat];
 }
 
@@ -573,7 +603,13 @@ export function parseSession(raw: unknown): SessionState | null {
   const config = o['config'];
   const ledger = o['ledger'];
   const game = o['game'];
-  const phases: readonly SessionPhase[] = ['playing', 'roundOver', 'bankrupt', 'ended'];
+  const phases: readonly SessionPhase[] = [
+    'playing',
+    'pushDecision',
+    'roundOver',
+    'bankrupt',
+    'ended',
+  ];
   const preset = config['preset'];
   const rules = config['rules'];
   if (
