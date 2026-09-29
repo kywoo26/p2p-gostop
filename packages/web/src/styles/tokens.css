@@ -1,5 +1,6 @@
 @import './fonts/GostopSans.css';
 @import './skin.css';
+@import './skin-marks.css';
 
 /*
  * 디자인 토큰 (plan.md 1.6). 다크 배경, OKLCH 팔레트, 애니메이션 시간 예산(spec 6.4).

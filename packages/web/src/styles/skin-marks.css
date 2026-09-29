@@ -1,0 +1,238 @@
+/* UX-H05: 먹기/확정은 카드 상태, 폭탄/흔들기는 카드 안 그림. 별도 받침은 높이0. */
+:root .board {
+  --color-hand-match: oklch(85% 0.075 85);
+}
+:root .board .hand.compact {
+  --card-w-l: 48px;
+  --card-h-l: calc(var(--card-w-l) / 0.614);
+  --hand-art-visible: var(--card-h-l);
+}
+@media (min-width: 410px) {
+  :root .board .hand.compact {
+    --card-w-l: clamp(48px, calc((var(--hand-height, 184px) - 8px) * 0.307), 56px);
+  }
+}
+:root .board .hand.compact .slot {
+  grid-template-rows: auto 0;
+  background: transparent;
+}
+:root .board .hand.compact .row + .row {
+  margin-top: 4px;
+}
+:root .board .hand-label {
+  height: 0;
+  background: transparent;
+}
+:root .board .hand-cue,
+:root .board .hand-label .match-mark,
+:root .board .group-word {
+  display: none;
+}
+:root .board .slot[data-hand-cue='matchable'] .art-window {
+  translate: 0 -2px;
+  outline: 1px solid var(--color-hand-match);
+  outline-offset: 1px;
+  box-shadow:
+    0 4px 5px #0006,
+    0 0 5px #dec29160;
+}
+:root .board .slot[data-hand-cue='secured'] .art-window {
+  translate: 0 -4px;
+  outline: 3px double var(--color-hand-secured);
+  outline-offset: 0;
+  box-shadow:
+    0 5px 6px #0007,
+    0 0 5px #a1d9ba60;
+}
+/* 폭탄/흔들기 묶음은 #164의 월/행동 속성만 소비한다. 가로 띠는 카드 위에 없다. */
+:root .board .slot[data-hand-action='bomb'] {
+  --action-color: oklch(45% 0.17 28);
+  --action-paper: oklch(91% 0.045 28);
+  --action-count: 3;
+}
+:root .board .slot[data-hand-action='shake'] {
+  --action-color: oklch(44% 0.09 75);
+  --action-paper: oklch(92% 0.055 85);
+  --action-count: 3;
+}
+:root .board .slot[data-hand-action='chongtong'] {
+  --action-color: oklch(45% 0.17 28);
+  --action-count: 4;
+}
+/* 같은 월의 첫 슬롯만 연속 외곽선을 그린다. #164가 월 묶음을 한 줄에 정렬한다. */
+:root
+  .board
+  .slot[data-hand-group='1']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='1'] + [data-hand-group='1'])::before,
+:root
+  .board
+  .slot[data-hand-group='2']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='2'] + [data-hand-group='2'])::before,
+:root
+  .board
+  .slot[data-hand-group='3']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='3'] + [data-hand-group='3'])::before,
+:root
+  .board
+  .slot[data-hand-group='4']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='4'] + [data-hand-group='4'])::before,
+:root
+  .board
+  .slot[data-hand-group='5']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='5'] + [data-hand-group='5'])::before,
+:root
+  .board
+  .slot[data-hand-group='6']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='6'] + [data-hand-group='6'])::before,
+:root
+  .board
+  .slot[data-hand-group='7']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='7'] + [data-hand-group='7'])::before,
+:root
+  .board
+  .slot[data-hand-group='8']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='8'] + [data-hand-group='8'])::before,
+:root
+  .board
+  .slot[data-hand-group='9']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='9'] + [data-hand-group='9'])::before,
+:root
+  .board
+  .slot[data-hand-group='10']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='10'] + [data-hand-group='10'])::before,
+:root
+  .board
+  .slot[data-hand-group='11']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='11'] + [data-hand-group='11'])::before,
+:root
+  .board
+  .slot[data-hand-group='12']:is(
+    [data-hand-action='bomb'],
+    [data-hand-action='shake'],
+    [data-hand-action='chongtong']
+  ):not([data-hand-group='12'] + [data-hand-group='12'])::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: -6px;
+  width: calc(var(--action-count) * var(--card-w-l) + (var(--action-count) - 1) * 8px + 6px);
+  height: calc(var(--card-h-l) + 10px);
+  box-sizing: border-box;
+  border: 2px solid var(--action-color);
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--action-color) 20%, transparent);
+  pointer-events: none;
+  z-index: -1;
+}
+/* 해당 카드 안의 전문 일러스트. 월 배지 반대쪽 상단 모서리에 배치. */
+:root .board .hand.compact .art-window {
+  position: relative;
+}
+:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='shake']) .art-window::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--action-color);
+  background: var(--action-paper) url('/skin/bomb-illustrated.webp') center / 20px 20px no-repeat;
+  box-shadow: 0 0 0 1px #182e28;
+  pointer-events: none;
+}
+:root .board .slot[data-hand-action='shake'] .art-window::after {
+  background-image: url('/skin/bell-illustrated.webp');
+}
+:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='shake']) .mark {
+  padding-inline: 1px;
+}
+:root .board .slot .art-window:has(.mark-top.mark-right)::after {
+  right: auto;
+  left: 2px;
+}
+:root .board .slot .art-window:has(.card[style*='will-change'])::after {
+  display: none;
+}
+/* 신규 설정 필드의 읽기 계약만. 속성이 없으면 정적(subtle)이다. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-effect-intensity='strong']
+    .board
+    .slot:is([data-hand-action='bomb'], [data-hand-action='shake'])
+    .art-window::after {
+    animation: skin-action-breath 1.6s ease-in-out infinite;
+  }
+}
+@keyframes skin-action-breath {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px #182e28;
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px #182e28,
+      0 0 5px 2px var(--action-color);
+  }
+}
+:root .board .hand.compact .group-selected .hand-label {
+  background: transparent;
+}
+/* #114/#115 표시 계약만 소비. 월/카드 수/합법성을 CSS에서 판정하지 않는다. */
+:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='chongtong']) .art-window {
+  translate: 0 -5px;
+  outline: 2px solid var(--color-hand-match);
+  outline-offset: 0;
+  box-shadow:
+    0 5px 6px #0007,
+    0 0 7px #dec29190;
+}
+:root
+  .board
+  .slot[data-hand-cue='secured']:is([data-hand-action='bomb'], [data-hand-action='chongtong'])
+  .art-window {
+  outline: 3px double var(--color-hand-secured);
+}
+:root .board .floor .group:is([data-hand-link='bomb'], [data-hand-link='chongtong']) > .card {
+  outline: 2px solid var(--color-hand-match);
+  outline-offset: 1px;
+  box-shadow: 0 0 7px #dec29190;
+}
+/* 규칙보다 뒤에 두어 이동 중 강조 회수가 우선한다. */
+:root .board .hand.compact .slot .art-window:has(.card[style*='will-change']) {
+  translate: none;
+  outline: none;
+  box-shadow: none;
+}
