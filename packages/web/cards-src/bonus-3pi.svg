@@ -1,25 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- p2p-gostop 자체 제작 보너스 카드. CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) -->
+<!-- p2p-gostop 자체 제작 보너스 카드 50번 "보너스 3피" (주홍 땅). CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+     Commons 화투 세트와 같은 판형(103.2×168.2)·테두리·선 굵기(1.2)·팔레트(흰 바탕, 먹, 주홍, 노랑)로 새로 그렸다. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="103.2" height="168.2" viewBox="0 0 103.2 168.2">
-  <!-- 바탕 -->
-  <path fill="#ffd9e6" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
-  <!-- 가치 표기: 숫자 + 피 (선 글자) -->
-  <g fill="none" stroke="#111" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M19 33Q23 28 30 28Q41 28 41 38Q41 48 30 49Q42 49 42 60Q42 72 30 72Q22 72 18 67"/>
-    <path d="M52 33H74M58 33V63M68 33V63M50.5 63H75.5M86.5 26V76"/>
+  <!-- 흰 앞면 -->
+  <path fill="#fff" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
+  <!-- "보너스" (선 글자) -->
+  <g fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M33 16.5v7.5h9v-7.5M33 20.2h9M37.5 24v3.2M31.5 28h12"/>
+    <path d="M48 16v12h7.5M60 14.5v15.5M56.5 22h3.5"/>
+    <path d="M69 15.5 64.5 23.5M69 15.5l4.8 8M63.5 28h12"/>
   </g>
-  <!-- 구분선 -->
-  <path fill="none" stroke="#7a2fd0" stroke-width="2" stroke-dasharray="4 3" d="M16 86H87"/>
-  <!-- 뺏기 표식: 상대 패(오른쪽, 점선 = 빠져나감) → 내 패(왼쪽) -->
-  <g stroke="#111" stroke-width="1.6" stroke-linejoin="round">
-    <rect x="58" y="108" width="26" height="40" rx="3" fill="#fff" stroke-dasharray="3 2.4" transform="rotate(8 71 128)"/>
-    <rect x="19" y="104" width="26" height="40" rx="3" fill="#ef1d1e" transform="rotate(-8 32 124)"/>
-    <rect x="23.5" y="108.5" width="17" height="31" rx="2" fill="#fff" stroke="none" transform="rotate(-8 32 124)"/>
+  <!-- 가치: 주홍 숫자(먹 윤곽) + 먹 "피" -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#000" stroke-width="10.5" d="M16 48q3-7 11-7 10.5 0 10.5 10.5 0 10-11 11.5 12 .5 12 13.5 0 12.5-11.5 12.5-9 0-12-7"/>
+    <path stroke="#ef1d1e" stroke-width="7" d="M16 48q3-7 11-7 10.5 0 10.5 10.5 0 10-11 11.5 12 .5 12 13.5 0 12.5-11.5 12.5-9 0-12-7"/>
+    <path stroke="#000" stroke-width="7" d="M48 45h26M54 45.5 53 82M68 45.5l1 36.5M46.5 83h29M86 38v57"/>
   </g>
-  <path fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="round" d="M25.5 117.5H33.5M27.8 117.5V128M31.2 117.5V128M25 128H34M37.5 114.5V132" transform="rotate(-8 32 124)"/>
-  <!-- 갈고리 화살표 -->
-  <path fill="none" stroke="#7a2fd0" stroke-width="5" stroke-linecap="round" d="M74 112C74 92 42 90 36 101"/>
-  <path fill="#7a2fd0" d="M29.5 97.5L41 99.5L33.5 108.5Z"/>
+  <!-- 주홍 땅 (11월·12월 쌍피처럼 붉은 면 = 값이 큰 피) -->
+  <path fill="#ef1d1e" stroke="#000" stroke-width="1.2" d="M6.3 161v-29c9-6 19-8 29-5 10 3 17 6 28 2 11-4 22-8 33.6-3V161z"/>
+  <path fill="#000" d="M6.3 161v-12c8-5 18-6 27-3 10 3 19 3 30-1 12-4 23-4 33.6 0V161z"/>
+  <!-- 뺏기: 갈고리가 피 한 장을 걸어 온다 -->
+  <g stroke="#000" stroke-width="1.2" stroke-linejoin="round" transform="rotate(-14 42 130)">
+    <path fill="#ef1d1e" d="M32 112h21q1.5 0 1.5 1.5v33q0 1.5-1.5 1.5H32q-1.5 0-1.5-1.5v-33q0-1.5 1.5-1.5z"/>
+    <path fill="#fff" d="M34 115.5h17v29H34z"/>
+    <path fill="none" stroke-width="2.2" stroke-linecap="round" d="M36.5 122h10M39 122v12.5M44 122v12.5M36 135h11M49 119.5v21"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#000" stroke-width="6" d="M76 101v17q0 13-11.5 13Q55 131 53 120"/>
+    <path stroke="#faea01" stroke-width="3.4" d="M76 101v17q0 13-11.5 13Q55 131 53 120"/>
+    <path stroke="#000" stroke-width="4.2" d="M53 120l5.5 3.5"/>
+    <path stroke="#faea01" stroke-width="1.8" d="M53.4 120.3l4.6 3"/>
+  </g>
+  <circle cx="76" cy="99.5" r="3.4" fill="none" stroke="#000" stroke-width="2.2"/>
   <!-- 테두리 (Commons 세트와 같은 모양) -->
   <path fill="#ef1d1e" d="M5 0Q0 0 0 5v158.2q0 5 5 5h93.2q5 0 5-5V5q0-5-5-5zm8.3 7.2h76.6q7 0 7 7V154q0 7-7 7H13.3q-7 0-7-7V14.2q0-7 7-7"/>
   <path fill="none" stroke="#000" stroke-width="1.2" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>

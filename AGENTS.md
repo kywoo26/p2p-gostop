@@ -3,7 +3,7 @@
 이 파일은 사람과 AI 에이전트 모두가 따르는 단일 규범이다. 문서 체계: `intend.md`(왜) → `spec.md`(무엇을) → `plan.md`(어떻게) → 코드. 규칙의 근거는 `docs/research/rules-commercial.md` 12장뿐이다.
 
 ## 1. 절대 규칙
-- 모든 빌드·테스트는 Docker 컨테이너에서 실행한다(진입점과 태스크는 5장). WSL/호스트에 도구를 설치하지 않는다. 예외는 에이전트 도구인 Svelte MCP(`.mcp.json`, 호스트 `npx`) 하나다.
+- 모든 빌드·테스트는 개발 이미지 안에서 실행한다: 저장소 루트에서 `docker compose run --rm dev <명령>`, 또는 Dev Container(`.devcontainer/`) 안에서 `<명령>` 그대로(5장). WSL/호스트에 도구를 설치하지 않는다(호스트에는 git·gh·docker만). 예외는 에이전트 도구인 Svelte MCP(`.mcp.json`, 호스트 `npx`) 하나다.
 - 라이브러리 API를 쓰기 전에 공식 문서(Context7)를 조회한다. 기억으로 쓰지 않는다.
 - 버전은 아래 표를 따른다. 표에 없는 의존성을 추가하려면 `plan.md` 1.8에 근거를 적고 나서 추가한다.
 - 게임 규칙의 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 정답으로 쓰지 않는다. PolyForm NC·무라이선스 저장소의 코드는 복사하지 않는다.
@@ -14,7 +14,7 @@
 ## 2. 버전 표 (2026-09-28 확인, `docs/research/tech-stack.md`·`docs/research/agent-era-stack.md`)
 | 항목 | 버전 |
 |---|---|
-| Node / npm | 24.21.0 LTS / 11.x, npm workspaces (`engines >=24.20.0`: Playwright 이미지의 Node가 24.20.0) |
+| Node / npm | 24.20.0 LTS / 11.19.0 (개발 이미지의 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`에 내장된 것을 로컬·CI·릴리스가 모두 쓴다), npm workspaces (`engines >=24.20.0 <25`) |
 | TypeScript (하이브리드) | `packages/web`: **6.0.3** (7.x 금지: svelte-check `^5‖^6`·typescript-eslint `<6.1` 비호환) / 순수 TS 패키지(engine·ai·protocol·relay-dev·sim): **7.0.2**(tsgo, 타입 검사 전용, 루트 npm 별칭 `typescript-7`) |
 | Vite / Svelte / vite-plugin-svelte | 8.3.1 / 5.57.1 / 7.3.1 |
 | svelte-check | 4.7.6 |
@@ -31,8 +31,8 @@
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
 | androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
-| Docker 이미지 | `node:24-bookworm-slim`, `cimg/android:2026.08.1-node`, `mcr.microsoft.com/playwright:v1.63.0-noble` |
-| GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, setup-java@v6, gradle/actions/setup-gradle@v6, setup-node@v7, upload-artifact@v7, softprops/action-gh-release@v3 |
+| Docker 이미지 | 단일 개발 이미지 `p2p-gostop-dev`(`docker/Dockerfile`, 태그는 `compose.yaml`): 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble` + JDK `eclipse-temurin:21.0.12.1_1-jdk-noble` + Android cmdline-tools 23.0(16111833, SHA-256 고정)로 설치한 `platforms;android-36`·`build-tools;36.0.0`·`platform-tools` |
+| GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(ci.yml의 Gradle 홈), softprops/action-gh-release@v3. setup-java@v6·gradle/actions/setup-gradle@v6는 release.yml의 서명 빌드에만 남는다(ci.yml은 개발 이미지로 돈다) |
 
 ## 3. 금지 목록 (에이전트가 자주 틀리는 것)
 - **Svelte 4 문법 금지**: `export let`, `$:`, `on:click`, `createEventDispatcher`, `<slot>`. Svelte 5 runes(`$state`, `$derived`, `$effect`, `$props`), `onclick`, `{@render children()}`, snippets를 쓴다.
@@ -51,11 +51,23 @@
 - 테스트: JSON 규칙 벡터(`packages/engine/test/vectors/*.json`, 각 항목에 규칙 ID R/B/S/E/G/M와 한국어 설명) + fast-check 속성 테스트. 특수 이벤트는 정상·경계·반례 3종. "서로 다른 월 두 쌍 먹기는 따닥이 아니다" 반례 필수.
 - 툴체인(plan.md 1.8 하이브리드): 순수 TS 패키지는 루트 `.oxlintrc.json`(oxlint, `--type-aware`)·`.oxfmtrc.json`(oxfmt)·TS 7 `tsc --noEmit`. `packages/web`은 `packages/web/eslint.config.js`(ESLint, 금지 API 규칙)·`packages/web/.prettierrc`(Prettier)·`svelte-check`(TS 6). 루트 `npm run lint|check|format`이 둘 다 돌린다. 한국어 주석·문서, 영어 식별자.
 - 패키지: 워크스페이스 패키지는 빌드 없이 `exports: ./src/index.ts`로 소스를 직접 내보낸다. 공용 컴파일 옵션은 `tsconfig.base.json`(strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, TS 6 기본값 변경으로 `types`를 패키지마다 명시).
-- 테스트 위치: 루트 `npm test`(Vitest, Node)는 web을 제외한 모든 패키지. web 컴포넌트 테스트(`*.test.ts`, Vitest 브라우저 모드)와 E2E(`e2e/`, Playwright)는 e2e 컨테이너에서 돈다.
-- 의존성 추가: `./dev.sh npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
+- 테스트 위치: 루트 `npm test`(Vitest, Node)는 web을 제외한 모든 패키지. web 컴포넌트 테스트(`*.test.ts`, Vitest 브라우저 모드, 루트 `npm run test:browser`)와 E2E(`e2e/`, Playwright)는 같은 개발 이미지의 Chromium·WebKit으로 돈다.
+- 의존성 추가: `docker compose run --rm dev npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-- 진입점: 현재 `./dev.sh <task>`(내부는 `docker compose run --rm`). 진입점을 바꾸는 작업이 별도 PR로 진행 중이다. 바뀌면 이 장, 4장 "의존성 추가" 줄, `.claude/settings.json`의 허용 규칙을 함께 고친다.
-- 새 체크아웃·워크트리는 `node_modules` 볼륨이 비어 있다. 처음 한 번 `install`을 돌린다.
-- PR 필수 태스크: `lint` · `check` · `test` · `test:browser` · `build:web` · `e2e` · `apk:debug` · `android:test`. `ci`는 이것들을 CI 순서대로 한 번에 돌린다(단, 현재 `ci`에는 `test:browser`가 빠져 있어 따로 돌린다).
-- 포맷은 편집할 때마다 돌리는 훅이 아니라 커밋 전 `lint:fix`로 맞추고, `lint`(CI 포함)가 `oxfmt --check`·`prettier --check`로 검사한다.
+- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다. 루트의 옛 셸 래퍼는 폐기되어 안내만 출력하고 실패한다(M6에서 삭제).
+- 새 체크아웃·워크트리에는 `node_modules`가 없다(소스와 함께 바인드 마운트). 처음 한 번 `npm ci`를 돌린다. 기존 체크아웃의 `node_modules`가 root 소유라면 `ls -ld node_modules`로 확인한다. 빈 디렉터리는 호스트에서 `rmdir node_modules`로 제거하고, 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 해당 디렉터리만 복구한 뒤 `npm ci`를 다시 실행한다. 옛 `*_node_modules`·`*_android-home` 명명 볼륨은 별도이므로, 필요 없으면 `docker volume ls --format '{{.Name}}'`로 확인한 정확한 이름만 `docker volume rm <옛_볼륨명>`으로 삭제한다(README 전환 절차).
+- PR 필수 명령:
+```sh
+docker compose run --rm dev npm ci                          # 처음, 그리고 package-lock.json이 바뀐 뒤
+docker compose run --rm dev npm run lint
+docker compose run --rm dev npm run check
+docker compose run --rm dev npm test
+docker compose run --rm dev npm run test:browser
+docker compose run --rm dev npm run build -w packages/web
+docker compose run --rm dev npm run e2e -w packages/web
+docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint
+```
+- 그 밖: `docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web`(Vite, 5173), `docker compose run --rm -p 17777:17777 dev npm run start -w packages/relay-dev`(중계, 17777), `docker compose run --rm dev npm run sim -- …`, `docker compose run --rm dev bash`(셸).
+- `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다(없는 태그면 `run`이 자동으로 빌드한다).
+- 포맷은 편집할 때마다 돌리는 훅이 아니라 커밋 전 `docker compose run --rm dev npm run lint:fix`로 맞추고, `lint`(CI 포함)가 `oxfmt --check`·`prettier --check`로 검사한다.

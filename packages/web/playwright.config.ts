@@ -14,7 +14,7 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
   },
-  // 스크린샷 기준 이미지는 도커 e2e 이미지 안에서만 만든다(글꼴·렌더러 고정): ./dev.sh e2e --update-snapshots
+  // 스크린샷 기준 이미지는 개발 이미지 안에서만 만든다(글꼴·렌더러 고정): docker compose run --rm dev npm run e2e -w packages/web -- --update-snapshots
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
   expect: {
     toHaveScreenshot: {

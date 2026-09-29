@@ -45,6 +45,22 @@
   --card-w-s: 26px;
   --card-w-m: 44px;
   --card-w-l: 62px;
+  /* 카드 높이: 원본 비율을 1% 이내로 근사. SVG 내부 비율은 보존한다.
+     정수 CSS px도 DPR 3.5·부모 transform에서는 기기 픽셀 정렬을 보장하지 않는다. */
+  --card-h-s: 42px;
+  --card-h-m: 72px;
+  --card-h-l: 101px;
+  /* D1·UX-12~14: 그림 밖 실루엣/선택선, 불투명 색인. 수치는 docs/design/cards-polish.md */
+  --color-card-edge: oklch(95% 0.035 85);
+  --color-card-tag: oklch(15% 0 0);
+  --color-on-card-tag: oklch(99% 0 0);
+  --card-edge-width: 1px;
+  --card-highlight-width: 3px;
+  --card-highlight-offset: 2px;
+  --card-tag-font: 12px;
+  --card-tag-height: 16px;
+  --card-symbol-stroke: 1px;
+  --card-badge-gap: 2px;
   --font-body: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   --font-size-s: 0.8125rem;
   --font-size-m: 1rem;

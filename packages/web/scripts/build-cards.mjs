@@ -1,6 +1,9 @@
 // 카드 SVG 파이프라인 (plan.md 1.6, spec 6.6). 의존성: svgo(4.1.0)뿐.
 //
-//   node scripts/build-cards.mjs [--fetch] [--raw <디렉터리>]
+//   node scripts/build-cards.mjs [--fetch] [--raw <디렉터리>] [--originals-only]
+//
+// --originals-only: Commons 원본(0~47번) 없이 자체 제작 4장(보너스 3장·뒷면)과 ATTRIBUTION.md·LICENSE만 다시 만든다.
+//   public/cards/0~47.svg는 그대로 둔다(Commons 원본 캐시가 없는 체크아웃에서 자체 제작 그림만 고칠 때).
 //
 // 1. src/cards/map.json의 Commons 파일(0~47번)을 --raw 디렉터리(기본 .cache/hwatu)에서 읽는다.
 //    --fetch를 주면 없는 파일을 Wikimedia Commons에서 받아 온다(한 번만 필요. 앱 코드는 네트워크를 쓰지 않는다).
@@ -35,6 +38,7 @@ const { values: args } = parseArgs({
   options: {
     fetch: { type: 'boolean', default: false },
     raw: { type: 'string', default: join(WEB, '.cache/hwatu') },
+    'originals-only': { type: 'boolean', default: false },
   },
 });
 
@@ -65,18 +69,40 @@ function svgoOptimize(svg, path) {
   return optimize(svg, { ...svgoConfig, path }).data;
 }
 
-await rm(OUT, { recursive: true, force: true });
+/** 자체 제작 그림 1장의 svgo 결과 상한 (plan.md D1) */
+const ORIGINAL_LIMIT_BYTES = 8 * 1024;
+
+if (!args['originals-only']) await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
+
+/** 자체 제작 그림 검사: 8 KB 이하, 외부 주소·글꼴 의존(<text>)·래스터(<image>)·<filter> 없음 */
+function checkOriginal(file, data) {
+  const bytes = Buffer.byteLength(data);
+  if (bytes > ORIGINAL_LIMIT_BYTES) {
+    throw new Error(`${file}: svgo 후 ${bytes} B > ${ORIGINAL_LIMIT_BYTES} B`);
+  }
+  const external = data.replaceAll('http://www.w3.org/2000/svg', '').match(/https?:/);
+  if (external !== null || /<(?:text|image|filter)\b/.test(data)) {
+    throw new Error(`${file}: 외부 주소·<text>·<image>·<filter> 금지`);
+  }
+}
 
 const rows = [];
 let commonsBytes = 0;
 let originalBytes = 0;
 for (const card of map.cards) {
+  if (card.source === 'commons' && args['originals-only']) {
+    const bytes = Buffer.byteLength(await readFile(join(OUT, `${card.id}.svg`)));
+    commonsBytes += bytes;
+    rows.push({ card, bytes, sourceBytes: bytes });
+    continue;
+  }
   const source =
     card.source === 'commons'
       ? await readCommons(card)
       : await readFile(join(ORIGINALS, card.file), 'utf8');
   const data = svgoOptimize(source, card.file);
+  if (card.source === 'original') checkOriginal(card.file, data);
   const bytes = Buffer.byteLength(data);
   await writeFile(join(OUT, `${card.id}.svg`), data);
   if (card.source === 'commons') commonsBytes += bytes;
@@ -84,13 +110,16 @@ for (const card of map.cards) {
   rows.push({ card, bytes, sourceBytes: Buffer.byteLength(source) });
 }
 const back = svgoOptimize(await readFile(join(ORIGINALS, map.back.file), 'utf8'), map.back.file);
+checkOriginal(map.back.file, back);
 await writeFile(join(OUT, 'back.svg'), back);
 originalBytes += Buffer.byteLength(back);
 
 const monthLabel = (card) => (card.month === null ? '보너스' : `${card.month}월`);
 const kindLabel = { gwang: '광', yeol: '열끗', tti: '띠', pi: '피', bonus: '보너스' };
 const describe = (card) =>
-  `${monthLabel(card)} ${kindLabel[card.kind]}${card.kind === 'pi' && card.piValue === 2 ? '(쌍피)' : ''}${card.kind === 'bonus' ? ` ${card.piValue}피` : ''}`;
+  card.kind === 'bonus'
+    ? `보너스 ${card.piValue}피`
+    : `${monthLabel(card)} ${kindLabel[card.kind]}${card.kind === 'pi' && card.piValue === 2 ? '(쌍피)' : ''}`;
 
 const attribution = `# 카드 그림 저작자 표시 (Attribution)
 
@@ -120,13 +149,16 @@ ${rows
 
 ${ORIGINAL_ART_LICENSE.scope} [${ORIGINAL_ART_LICENSE.title}](${ORIGINAL_ART_LICENSE.url})로 공개한다. 사람이 읽는 원본은 저장소의 \`packages/web/cards-src/\`에 있다.
 
-| ID | 카드 | 파일 | 원본 |
-|---:|---|---|---|
+| ID | 카드 | 그림 | 파일 | 원본 | 라이선스 |
+|---:|---|---|---|---|---|
 ${rows
   .filter((r) => r.card.source === 'original')
-  .map(({ card }) => `| ${card.id} | ${describe(card)} | ${card.id}.svg | cards-src/${card.file} |`)
+  .map(
+    ({ card }) =>
+      `| ${card.id} | ${describe(card)} | ${card.title} | ${card.id}.svg | cards-src/${card.file} | ${card.license} |`,
+  )
   .join('\n')}
-| — | 카드 뒷면 | back.svg | cards-src/${map.back.file} |
+| — | 카드 뒷면 | ${map.back.title} | back.svg | cards-src/${map.back.file} | ${map.back.license} |
 
 ## 코드
 
