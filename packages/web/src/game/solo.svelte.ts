@@ -1,13 +1,10 @@
 // 혼자 연습 세션 (spec 2.5, FR-10~19, MN-01·02·05, AI-05, 6.3·6.4).
-// 엔진 + CPU + 원장을 이어 붙이는 오케스트레이터. 좌석 0 = 사람, 좌석 1 = CPU.
+// 엔진 + CPU + 원장을 이어 붙이는 오케스트레이터. 좌석 0 = 이 기기, 좌석 1 = CPU.
 // - 순수 세션 모델(session.ts)로 상태를 바꾸고, 바뀔 때마다 localStorage에 저장한다(MN-05).
-// - 액션 하나가 낸 이벤트 묶음을 큐에 넣고, 보드 루트가 붙어 있으면 이벤트를 애니메이션으로 재생한 뒤
-//   최신 뷰로 스냅한다(spec 6.4). 큐가 비면 CPU 차례인지 보고 Web Worker에 결정을 맡긴다(AI-05, UI를 막지 않음).
-// - 화면은 반응형 필드(board·extras·banner·toast·busy·thinking·settlementReady)만 읽는다.
-// M4 호스트 모드는 같은 모양(board·extras·submit·skipAnimations)을 원격 좌석으로 구현하면 된다(docs/ui.md 4장).
+// - 액션 하나가 낸 이벤트 묶음을 재생 큐(playback.svelte.ts)에 넣는다. 큐가 비면 CPU 차례인지 보고
+//   Web Worker에 결정을 맡긴다(AI-05, UI를 막지 않음). 호스트·게스트 모드도 같은 재생 큐와 GameController 모양을 쓴다.
 import type { Difficulty } from '@p2p-gostop/ai';
 import {
-  getCard,
   playerView,
   redactEvent,
   sameAction,
@@ -16,17 +13,16 @@ import {
   type PlayerView,
   type Seat,
 } from '@p2p-gostop/engine';
-import { tick } from 'svelte';
-import { deal, replay, skip, unskip, type ReplayHost } from '../anim/choreo.ts';
-import { DUR, scaledMs } from '../anim/durations.ts';
+import type { BoardView } from '@p2p-gostop/protocol';
+import { scaledMs } from '../anim/durations.ts';
+import { settings } from '../settings/settings.svelte.ts';
 import { readJson, removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
-import { bannerForEngineEvent, type Banner } from '../ui/banner.ts';
-import { cardLabel } from '../ui/cards.ts';
-import { INSTANT_LABEL } from '../ui/settle-labels.ts';
-import { inFlightOf, toBoardExtras, toBoardView, type BoardExtras } from './adapter.ts';
+import { toBoardView } from './adapter.ts';
 import type { AiClient } from './ai-client.ts';
-import { isDealBatch, snap, type DisplayBoard } from './display.ts';
+import type { GameController, GameStats } from './controller.ts';
 import { log } from './log.svelte.ts';
+import { Playback, type RoundSummary } from './playback.svelte.ts';
+import { soloSummary } from './records.ts';
 import {
   actingSeats,
   createSession,
@@ -39,9 +35,8 @@ import {
   type SessionConfig,
   type SessionState,
 } from './session.ts';
-import { sounds, type SoundKind } from './sound.ts';
 
-const HUMAN: Seat = 0;
+const ME: Seat = 0;
 const CPU: Seat = 1;
 
 export const DIFFICULTY_LABEL: Readonly<Record<Difficulty, string>> = {
@@ -66,38 +61,6 @@ export interface SoloOptions {
   readonly persist?: boolean;
 }
 
-/** 탭 → 그 액션의 이벤트 재생 끝까지 걸린 시간 (spec AC-06, 6.4 "탭부터 턴 종료까지") */
-export interface TurnTiming {
-  readonly action: Action['type'];
-  readonly ms: number;
-  /** 재생 뒤 내 프롬프트(대상·고/스톱 등)가 떴는지: 이 경우 턴 종료가 아니라 프롬프트 표시까지 */
-  readonly promptAfter: boolean;
-}
-
-interface Batch {
-  readonly events: readonly EngineEvent[];
-  /** 재생이 끝난 뒤 스냅할 뷰 */
-  readonly board: DisplayBoard;
-  readonly extras: BoardExtras;
-  readonly action: Action | null;
-  /** 사람이 탭한 시각 (performance.now) */
-  readonly tapAt: number | null;
-}
-
-const BANNER_SOUND: Readonly<Record<Banner['kind'], SoundKind>> = {
-  ppeok: 'ppeok',
-  jjok: 'jjok',
-  ttadak: 'ttadak',
-  sseul: 'sseul',
-  shake: 'shake',
-  bomb: 'bomb',
-  go: 'go',
-  stop: 'stop',
-  chongtong: 'bomb',
-  nagari: 'end',
-  hudang: 'end',
-};
-
 /** CPU 결정 시드: 세션 시드 × 판 번호 × 액션 순번 (AI-08 재현성) */
 function decisionSeed(session: SessionState): number {
   return roundSeed(roundSeed(session.config.seed, session.roundNumber), session.actions.length + 1);
@@ -107,34 +70,20 @@ function sleep(ms: number): Promise<void> {
   return ms <= 0 ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export class SoloSession {
-  // ---- 반응형 상태 (화면이 읽는다) ----
+export class SoloSession implements GameController {
+  readonly mode = 'solo' as const;
   state: SessionState;
-  /** 화면에 그리는 판: 재생 중에는 중간 모습, 끝나면 최신 뷰 */
-  board: DisplayBoard;
-  extras: BoardExtras;
-  /** 이벤트 재생 중 (입력 잠금, 탭하면 건너뛰기) */
-  busy = $state(false);
   /** CPU가 생각 중 */
   thinking = $state(false);
-  banner = $state.raw<(Banner & { readonly id: number }) | null>(null);
-  toast = $state.raw<{ readonly id: number; readonly text: string } | null>(null);
-  /** 판이 끝나고 마지막 재생까지 마쳐 정산 화면을 보여 줄 때 */
-  settlementReady = $state(false);
-  timings = $state.raw<readonly TurnTiming[]>([]);
-
+  readonly playback: Playback;
   readonly difficulty: Difficulty;
+  readonly notice = null;
   private readonly timeBudgetMs: number;
   private readonly ai: AiClient;
   private readonly persist: boolean;
-  private host: ReplayHost | null = null;
-  private queue: Batch[] = [];
-  private pumping = false;
   private disposed = false;
   /** 상태가 바뀔 때마다 증가: CPU 결정이 오래된 상태에 적용되지 않게 한다 */
   private generation = 0;
-  private bannerSeq = 0;
-  private bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(session: SessionState, options: SoloOptions) {
     this.difficulty = options.difficulty;
@@ -142,10 +91,13 @@ export class SoloSession {
     this.ai = options.ai;
     this.persist = options.persist ?? true;
     this.state = $state.raw(session);
-    const view = this.viewOf(session);
-    this.board = $state.raw(snap(toBoardView(view, this.meta(session)), inFlightOf(view)));
-    this.extras = $state.raw(toBoardExtras(view));
-    this.settlementReady = session.phase === 'roundOver' || session.phase === 'bankrupt';
+    const over = session.phase === 'roundOver' || session.phase === 'bankrupt';
+    this.playback = new Playback(this.boardOf(session), {
+      viewer: ME,
+      names: () => this.state.config.names,
+      onIdle: () => this.kick(),
+      settlement: over ? this.summary(session) : null,
+    });
     this.save();
   }
 
@@ -178,21 +130,27 @@ export class SoloSession {
 
   // ---- 뷰 ----
 
-  private viewOf(session: SessionState, seat: Seat = HUMAN): PlayerView {
+  private viewOf(session: SessionState, seat: Seat = ME): PlayerView {
     // 원장을 넘기면 스톱 미리보기 금액이 올인 상한까지 반영된다(FR-14, MN-02)
     return playerView(session.game, seat, { ledger: session.ledger });
   }
 
-  private meta(session: SessionState) {
-    return { names: session.config.names, balances: session.ledger.balances };
+  private boardOf(session: SessionState): BoardView {
+    return toBoardView(this.viewOf(session), {
+      names: session.config.names,
+      balances: session.ledger.balances,
+    });
   }
 
-  private target(session: SessionState): { board: DisplayBoard; extras: BoardExtras } {
-    const view = this.viewOf(session);
-    return {
-      board: snap(toBoardView(view, this.meta(session)), inFlightOf(view)),
-      extras: toBoardExtras(view),
-    };
+  private summary(session: SessionState): RoundSummary | null {
+    const record = session.records.at(-1);
+    if (record === undefined) return null;
+    return soloSummary({
+      record,
+      names: session.config.names,
+      unit: settings.value.unit,
+      perPoint: session.config.perPoint,
+    });
   }
 
   get names(): readonly [string, string] {
@@ -200,41 +158,42 @@ export class SoloSession {
   }
 
   /** 지금 사람이 입력할 차례인지 (재생·CPU 생각 중이 아니고 내 합법 수가 있다) */
-  get awaitingHuman(): boolean {
+  get canAct(): boolean {
     return (
-      !this.busy &&
+      this.playback.idle &&
       !this.thinking &&
       this.state.phase === 'playing' &&
-      actingSeats(this.state.game).includes(HUMAN)
+      actingSeats(this.state.game).includes(ME)
     );
   }
 
-  get lastTiming(): TurnTiming | null {
-    return this.timings.at(-1) ?? null;
+  get bankrupt(): boolean {
+    return this.state.phase === 'bankrupt';
+  }
+
+  get stats(): GameStats {
+    const s = this.state;
+    return {
+      round: s.roundNumber,
+      phase: s.phase,
+      roundsPlayed: s.records.length,
+      balances: s.ledger.balances,
+      refilled: s.refilled,
+      startBalance: s.config.startBalance,
+      seq: null,
+    };
   }
 
   // ---- 화면 연결 ----
 
-  /** 게임판이 마운트되면 보드 루트를 붙인다. null이면 떼어 낸다(재생은 스냅으로 대체) */
   attach(root: HTMLElement | null): void {
-    if (root === null) {
-      this.host = null;
-      return;
-    }
-    this.host = {
-      root,
-      commit: async (board) => {
-        this.board = board;
-        await tick();
-      },
-      onEvent: (event) => this.onEvent(event),
-    };
+    this.playback.attach(root);
     this.kick();
   }
 
-  /** 사람 좌석의 액션 (spec 6.3 탭 한 번). 받아들이면 true */
+  /** 이 기기 좌석의 액션 (spec 6.3 탭 한 번). 받아들이면 true */
   submit(action: Action, tapAt: number = performance.now()): boolean {
-    if (this.disposed || !this.awaitingHuman || action.seat !== HUMAN) return false;
+    if (this.disposed || !this.canAct || action.seat !== ME) return false;
     const step = sessionAct(this.state, action);
     if (!step.ok) {
       log.warn(`액션 거부: ${step.message}`);
@@ -245,26 +204,25 @@ export class SoloSession {
     return true;
   }
 
-  /** 남은 애니메이션을 즉시 끝낸다 (spec 6.3 "화면을 탭하면 즉시 완료") */
   skipAnimations(): void {
-    if (this.busy && this.host !== null) skip(this.host.root);
+    this.playback.skip();
   }
 
   /** 정산 화면 → 다음 판 */
   nextRound(): void {
-    if (this.state.phase !== 'roundOver' || this.busy) return;
+    if (this.state.phase !== 'roundOver' || this.playback.busy) return;
     const { session, events } = startNextRound(this.state);
-    this.settlementReady = false;
     this.commitState(session);
     log.info(`판 ${session.roundNumber} 시작`);
+    // 분배만으로 끝나는 판(바닥 총통 등)은 곧바로 정산 화면이 다시 뜬다
     this.enqueue(events, null, null);
+    this.playback.release();
   }
 
-  /** MN-02 재충전 */
+  /** MN-02 재충전 (정산 화면은 그대로 두고 "다음 판"을 누르게 한다) */
   refill(): void {
     if (this.state.phase !== 'bankrupt') return;
     this.commitState(refill(this.state));
-    this.refreshSnapshot();
     log.info('재충전: 잔액 0인 좌석을 시작 잔액으로');
   }
 
@@ -276,8 +234,7 @@ export class SoloSession {
 
   dispose(): void {
     this.disposed = true;
-    this.host = null;
-    if (this.bannerTimer !== null) clearTimeout(this.bannerTimer);
+    this.playback.dispose();
   }
 
   // ---- 내부 ----
@@ -295,83 +252,23 @@ export class SoloSession {
       log.warn('세션 저장 실패 (저장소 없음 또는 용량 초과)');
   }
 
-  private refreshSnapshot(): void {
-    const { board, extras } = this.target(this.state);
-    this.board = board;
-    this.extras = extras;
-  }
-
   private enqueue(events: readonly EngineEvent[], action: Action | null, tapAt: number | null) {
-    const { board, extras } = this.target(this.state);
-    this.queue.push({ events, board, extras, action, tapAt });
-    void this.pump();
-  }
-
-  private async pump(): Promise<void> {
-    if (this.pumping) return;
-    this.pumping = true;
-    this.busy = true;
-    try {
-      for (let batch = this.queue.shift(); batch !== undefined; batch = this.queue.shift()) {
-        await this.play(batch);
-        if (batch.tapAt !== null && batch.action !== null) this.recordTiming(batch);
-      }
-    } catch (error) {
-      log.error(`재생 오류: ${String(error)}`);
-      this.refreshSnapshot();
-    } finally {
-      this.pumping = false;
-      this.busy = false;
-      if (this.host !== null) unskip(this.host.root);
-    }
-    if (this.state.phase === 'roundOver' || this.state.phase === 'bankrupt') {
-      this.settlementReady = true;
-    }
-    this.kick();
-  }
-
-  /** 묶음 하나 재생 → 최신 뷰로 스냅 (spec 6.4) */
-  private async play(batch: Batch): Promise<void> {
-    const events = batch.events.map((e) => redactEvent(e, HUMAN));
-    const host = this.host;
-    if (host === null || this.disposed) {
-      for (const e of events) this.onEvent(e);
-    } else if (isDealBatch(events)) {
-      for (const e of events) this.onEvent(e);
-      if (events.some((e) => e.type === 'FirstPicked')) {
-        // 선 고르기 결과를 읽을 시간
-        await sleep(scaledMs(DUR.banner * 2));
-      }
-      await deal(host, batch.board);
-    } else {
-      await replay(host, this.board, events);
-    }
-    this.board = batch.board;
-    this.extras = batch.extras;
-    await tick();
-    if (events.some((e) => e.type === 'RoundEnded') && host !== null) {
-      // 마지막 획득·배너를 본 뒤 정산 화면으로
-      await sleep(scaledMs(DUR.banner * 2));
-    }
-  }
-
-  private recordTiming(batch: Batch): void {
-    if (batch.tapAt === null || batch.action === null) return;
-    const ms = Math.round(performance.now() - batch.tapAt);
-    const pending = batch.board.pending;
-    const promptAfter = pending !== null && pending.seat === HUMAN && pending.kind !== 'play';
-    const timing: TurnTiming = { action: batch.action.type, ms, promptAfter };
-    this.timings = [...this.timings.slice(-99), timing];
-    log.info(`턴 시간 ${timing.action} ${ms}ms${promptAfter ? ' (프롬프트까지)' : ''}`);
+    const s = this.state;
+    const over = s.phase === 'roundOver' || s.phase === 'bankrupt';
+    this.playback.enqueue(
+      events.map((e) => redactEvent(e, ME)),
+      this.boardOf(s),
+      { action, tapAt, settlement: over ? this.summary(s) : null },
+    );
   }
 
   /** 큐가 비었을 때 다음 할 일: CPU 차례면 결정을 맡긴다 */
   private kick(): void {
-    if (this.disposed || this.host === null || this.pumping || this.thinking) return;
+    if (this.disposed || this.thinking || !this.playback.idle) return;
     const s = this.state;
     if (s.phase !== 'playing') return;
     const seats = actingSeats(s.game);
-    if (seats.includes(HUMAN) || !seats.includes(CPU)) return;
+    if (seats.includes(ME) || !seats.includes(CPU)) return;
     void this.runCpu();
   }
 
@@ -413,101 +310,6 @@ export class SoloSession {
       return;
     }
     this.commitState(step.session);
-    this.enqueue(step.events, action, null);
-  }
-
-  // ---- 이벤트 부수 효과: 배너·토스트·효과음 (spec 6.5, FR-18) ----
-
-  private nameOf(seat: Seat | null): string {
-    return seat === null ? '' : this.state.config.names[seat];
-  }
-
-  private showBanner(banner: Banner): void {
-    this.bannerSeq += 1;
-    this.banner = { ...banner, id: this.bannerSeq };
-    if (this.bannerTimer !== null) clearTimeout(this.bannerTimer);
-    // spec 6.4: 350ms 표시 후 다음 단계와 겹쳐 사라진다
-    this.bannerTimer = setTimeout(() => (this.banner = null), scaledMs(DUR.banner) + 1);
-  }
-
-  private showToast(text: string): void {
-    this.toast = { id: (this.toast?.id ?? 0) + 1, text };
-  }
-
-  private sound(kind: SoundKind): void {
-    sounds.play(kind);
-  }
-
-  private onEvent(event: EngineEvent): void {
-    const banner = bannerForEngineEvent(event);
-    if (banner !== null) {
-      this.showBanner(banner);
-      this.sound(BANNER_SOUND[banner.kind]);
-    }
-    switch (event.type) {
-      case 'CardPlayed':
-        this.sound('play');
-        break;
-      case 'CardFlipped':
-      case 'CardDrawn':
-        this.sound('flip');
-        break;
-      case 'Dealt':
-        this.sound('deal');
-        break;
-      case 'Captured':
-        this.sound('capture');
-        break;
-      case 'PiStolen':
-        this.sound('steal');
-        break;
-      case 'InstantPayout':
-        this.sound('payout');
-        this.showToast(
-          `${this.nameOf(event.seat)} ${INSTANT_LABEL[event.kind] ?? event.kind} 즉시 정산 +${event.points}점`,
-        );
-        break;
-      case 'PpeokTaken':
-        this.showToast(`${this.nameOf(event.seat)} 뻑 먹기`);
-        break;
-      case 'SelfPpeok':
-        this.showToast(`${this.nameOf(event.seat)} 자뻑`);
-        break;
-      case 'FirstPicked': {
-        const [a, b] = event.picks;
-        this.showToast(
-          `선 고르기: ${this.nameOf(0)} ${cardLabel(a)} · ${this.nameOf(1)} ${cardLabel(b)}`,
-        );
-        break;
-      }
-      case 'FirstPickTie':
-        this.showToast('같은 월: 다시 고릅니다');
-        break;
-      case 'FirstPickerChosen':
-        this.showToast(`${this.nameOf(event.seat)} 선`);
-        break;
-      case 'Redealt':
-        this.showToast('바닥 총통: 다시 나눕니다');
-        break;
-      case 'GukjinPlaced':
-        this.showToast(`${this.nameOf(event.seat)} 국진: ${event.asPi ? '쌍피' : '열끗'}`);
-        break;
-      case 'RoundEnded':
-        this.sound('end');
-        break;
-      case 'Shake':
-        if (event.seat !== HUMAN) {
-          this.showToast(
-            `${this.nameOf(event.seat)} 흔들기: ${event.cards.map((id) => cardLabel(id)).join(', ')}`,
-          );
-        }
-        break;
-      default:
-        break;
-    }
-    if (event.type === 'Bomb' && event.seat !== null) {
-      const month = getCard(event.cards[0] ?? 0).month;
-      this.showToast(`${this.nameOf(event.seat)} 폭탄 (${month ?? ''}월)`);
-    }
+    this.enqueue(step.events, null, null);
   }
 }

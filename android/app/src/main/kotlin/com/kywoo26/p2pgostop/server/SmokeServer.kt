@@ -266,7 +266,13 @@ private class RelayRoles(private val env: ServerEnv) {
     private var host: DefaultWebSocketServerSession? = null
     private var guest: DefaultWebSocketServerSession? = null
     private val absenceNotified = mutableSetOf<DefaultWebSocketServerSession>()
-    private val enqueuePolicy = RelayEnqueuePolicy<DefaultWebSocketServerSession>()
+    private val enqueuePolicy = RelayEnqueuePolicy<DefaultWebSocketServerSession>(
+        close = { target, code, reason ->
+            env.log("relay 송신 큐 초과 또는 종료: ${MAX_OUTGOING_FRAMES}프레임")
+            scheduleClose(target, code, reason)
+        },
+        detach = ::detach,
+    )
 
     // M4 릴레이 정책(오케스트레이터 결정): 호스트는 127.0.0.1만, 두 역할 모두 최신 연결이 이전 연결을 교체한다.
     // 접속·해제·알림 enqueue·전달을 이 잠금 하나로 직렬화해 joined/left 순서가 뒤집히지 않게 한다.
@@ -340,38 +346,50 @@ private class RelayRoles(private val env: ServerEnv) {
         }
     }
 
-    private fun enqueue(target: DefaultWebSocketServerSession, frame: Frame,
-                        onOverflow: () -> Unit = { detach(target) }): Boolean {
-        return enqueuePolicy.offer(target, { target.outgoing.trySend(frame).isSuccess }) {
-            env.log("relay 송신 큐 초과 또는 종료: ${MAX_OUTGOING_FRAMES}프레임")
-            scheduleClose(target, 1008, "slow peer")
-            onOverflow()
-        }
-    }
+    private fun enqueue(target: DefaultWebSocketServerSession, frame: Frame): Boolean =
+        enqueuePolicy.offer(target) { target.outgoing.trySend(frame).isSuccess }
 
     @Synchronized fun forward(role: String, sender: DefaultWebSocketServerSession, frame: Frame.Text) {
         if (current(role) !== sender) return // 교체된 소켓에서 늦게 도착한 프레임
+        if (isRelayFrame(frame.readText())) {
+            env.log("relay $role 위조 알림 프레임 폐기")
+            return
+        }
         val target = peer(role)
         if (target == null) {
             if (absenceNotified.add(sender)) enqueue(sender, notice("absent"))
         } else {
             absenceNotified.remove(sender)
-            enqueue(target, Frame.Text(true, frame.data)) {
-                if (absenceNotified.add(sender)) enqueue(sender, notice("absent"))
-                detach(target) // left는 열린 상대 소켓으로 즉시 보낸다.
-            }
+            // 송신 실패는 연결 단절로 취급한다. 열린 소켓 중간에서 프레임을 잃으면 재동기화가 불가능하다(#40).
+            // enqueuePolicy가 대상에 1008을 예약하고 detach→leave로 송신자에게 left를 보낸다.
+            enqueue(target, Frame.Text(true, frame.data))
         }
     }
 }
 
-/** 송신 큐 실패 후 같은 세션의 종료를 한 번만 예약한다. RelayRoles 잠금 안에서 호출한다. */
-internal class RelayEnqueuePolicy<T> {
+/** Node relay-dev와 같은 알림 위조 판정: 작은 JSON 객체의 t/type=relay만 버린다. */
+internal fun isRelayFrame(raw: String): Boolean {
+    if (raw.length > 256 || !raw.contains("\"relay\"")) return false
+    return try {
+        val value = org.json.JSONObject(raw)
+        value.optString("t") == "relay" || value.optString("type") == "relay"
+    } catch (_: org.json.JSONException) { false }
+}
+
+/** 송신 큐 실패 시 대상의 1008을 예약하고 역할을 해제한다. RelayRoles 잠금 안에서 호출한다. */
+internal class RelayEnqueuePolicy<T>(
+    private val close: (T, Int, String) -> Unit,
+    private val detach: (T) -> Unit,
+) {
     private val closing = mutableSetOf<T>()
 
-    fun offer(target: T, send: () -> Boolean, onOverflow: () -> Unit): Boolean {
+    fun offer(target: T, send: () -> Boolean): Boolean {
         if (target in closing) return false
         if (send()) return true
-        if (closing.add(target)) onOverflow()
+        if (closing.add(target)) {
+            close(target, 1008, "slow-peer")
+            detach(target) // leave()가 열린 상대 소켓으로 left를 보낸다.
+        }
         return false
     }
 

@@ -26,6 +26,8 @@ export interface AppSettings {
   readonly difficulty: Difficulty;
   /** 상용급 CPU 생각 시간 상한 ms (AI-05: Android ≤ 1.0초) */
   readonly aiTimeMs: number;
+  /** 친구와 대전에서 상대에게 보이는 내 이름 (spec 2.1·2.2, 최대 12자) */
+  readonly playerName: string;
 }
 
 /** 화면에 적용되는 속도: 설정값 또는 자동 시험용 즉시 모드(`?speed=instant`) */
@@ -48,7 +50,14 @@ const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   vibration: true,
   difficulty: 'normal',
   aiTimeMs: 1000,
+  playerName: '호스트',
 });
+
+/** 이름: 앞뒤 공백을 지우고 12자까지 (protocol hello는 80자까지 받는다) */
+export function cleanName(value: unknown, fallback: string): string {
+  const name = typeof value === 'string' ? value.trim().slice(0, 12) : '';
+  return name === '' ? fallback : name;
+}
 
 function pick<T>(value: unknown, options: readonly T[], fallback: T): T {
   return options.includes(value as T) ? (value as T) : fallback;
@@ -73,6 +82,7 @@ export function normalizeSettings(raw: unknown): AppSettings {
     vibration: typeof o['vibration'] === 'boolean' ? o['vibration'] : d.vibration,
     difficulty: pick(o['difficulty'], DIFFICULTY_IDS, d.difficulty),
     aiTimeMs: pick(o['aiTimeMs'], AI_TIME_OPTIONS, d.aiTimeMs),
+    playerName: cleanName(o['playerName'], d.playerName),
   };
 }
 
