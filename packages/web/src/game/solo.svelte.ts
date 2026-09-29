@@ -18,6 +18,8 @@ import type { BoardView } from '@p2p-gostop/protocol';
 import { durationMs } from '../anim/durations.ts';
 import { settings } from '../settings/settings.svelte.ts';
 import { removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
+import { loadSoloSave, type SoloSave } from '../storage/solo-save.ts';
+export type { SoloSave } from '../storage/solo-save.ts';
 import { pushOffer, toBoardView } from './adapter.ts';
 import type { AiClient } from './ai-client.ts';
 import type { GameController, GameStats, PushDecision } from './controller.ts';
@@ -29,7 +31,6 @@ import {
   createSession,
   acceptRound,
   endSession,
-  parseSession,
   refill,
   roundSeed,
   sessionAct,
@@ -46,13 +47,6 @@ export const DIFFICULTY_LABEL: Readonly<Record<Difficulty, string>> = {
   normal: '보통',
   commercial: '상용급',
 };
-
-/** localStorage에 저장하는 솔로 세션 (MN-05) */
-export interface SoloSave {
-  readonly version: 1;
-  readonly difficulty: Difficulty;
-  readonly session: SessionState;
-}
 
 export interface SoloOptions {
   readonly difficulty: Difficulty;
@@ -111,28 +105,7 @@ export class SoloSession implements GameController {
 
   /** 저장된 세션 읽기 (MN-05). 끝난 세션도 기록 화면을 위해 돌려준다 */
   static loadResult(): { save: SoloSave | null; error: string | null } {
-    let raw: unknown;
-    try {
-      const stored = globalThis.localStorage.getItem(STORAGE_KEYS.soloSession);
-      if (stored === null) return { save: null, error: null };
-      raw = JSON.parse(stored) as unknown;
-    } catch {
-      return {
-        save: null,
-        error: '저장된 세션을 읽을 수 없습니다. 저장소 접근 또는 데이터 형식을 확인해 주세요.',
-      };
-    }
-    if (typeof raw !== 'object' || raw === null)
-      return { save: null, error: '저장된 세션 데이터가 손상되었습니다.' };
-    const o = raw as Partial<SoloSave>;
-    const session = parseSession(o.session);
-    if ((o.version !== 1 && o.version !== 0) || session === null)
-      return { save: null, error: '저장된 세션 데이터가 손상되었거나 지원하지 않는 형식입니다.' };
-    const difficulty = o.difficulty;
-    if (difficulty !== 'easy' && difficulty !== 'normal' && difficulty !== 'commercial') {
-      return { save: null, error: '저장된 난이도 정보가 손상되었습니다.' };
-    }
-    return { save: { version: 1, difficulty, session }, error: null };
+    return loadSoloSave();
   }
 
   static load(): SoloSave | null {
