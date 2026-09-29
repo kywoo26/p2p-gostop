@@ -1,10 +1,13 @@
 // FR-14·FR-16·AI-02, plan §4.2 .2-A: 밀기 보류와 최종 원장 반영.
-import { legalActions, PRESETS, settle } from '@p2p-gostop/engine';
+import { legalActions, PRESETS, settle, type Seat } from '@p2p-gostop/engine';
 import { expect, test } from 'vitest';
-import { createMemoryTransportPair } from '@p2p-gostop/protocol';
+import { createMemoryTransportPair, GuestSession, HostSession } from '@p2p-gostop/protocol';
 import { GuestGame } from '../p2p/guest.svelte.ts';
 import { HostGame } from '../p2p/host.svelte.ts';
 import { pushOffer } from './adapter.ts';
+import type { AiClient } from './ai-client.ts';
+import type { AiRequest, AiResult } from './ai-core.ts';
+import { SoloSession } from './solo.svelte.ts';
 import {
   acceptRound,
   actingSeats,
@@ -16,14 +19,14 @@ import {
   type SessionState,
 } from './session.ts';
 
-function fresh(): SessionState {
+function fresh(seed = 20260929): SessionState {
   return createSession({
     preset: 'arcade',
     rules: PRESETS.arcade,
     perPoint: 100,
     startBalance: 1_000_000,
     names: ['가', '나'],
-    seed: 20260929,
+    seed,
   }).session;
 }
 
@@ -51,6 +54,20 @@ function winnerDecision(): SessionState {
     session = startNextRound(session).session;
   }
   throw new Error('승자 밀기 선택이 없음');
+}
+
+function winnerDecisionFor(wanted: Seat): SessionState {
+  for (let seed = 1; seed <= 50; seed++) {
+    let session = fresh(seed);
+    for (let round = 0; round < 10; round++) {
+      session = untilDecision(session);
+      if (session.phase === 'pushDecision' && session.game.result?.winner === wanted)
+        return session;
+      session = session.phase === 'pushDecision' ? acceptRound(session) : session;
+      session = startNextRound(session).session;
+    }
+  }
+  throw new Error(`좌석 ${wanted} 밀기 결정 대기 판이 없음`);
 }
 
 test('받기: 보류 저장·복원 뒤 확정 정산은 원장과 기록에 한 번만 들어간다 (FR-16)', () => {
@@ -94,6 +111,90 @@ test('밀기: 포기 정산 0, 다음 판 ×2, 중복·패자 입력 거부 (FR-
   expect(next.game.round.pushes).toBe(1);
   expect(next.game.round.carry).toBe(1);
   expect(settle(pushed.game).nextPushes).toBe(1);
+  const ended = endSession(pushed);
+  expect(ended.ledger).toEqual(pushed.ledger);
+  expect(ended.records).toEqual(pushed.records);
+  expect(endSession(ended)).toEqual(ended);
+});
+
+test.each([false, true])(
+  'CPU %s: Worker 요청 하나의 받기/밀기 결과만 확정한다 (AI-02)',
+  async (push) => {
+    const pending = winnerDecisionFor(1);
+    const requests: AiRequest[] = [];
+    const pendingAnswer: { resolve?: (result: AiResult) => void } = {};
+    const ai: AiClient = {
+      mode: 'worker',
+      decide(request) {
+        requests.push(request);
+        return new Promise<AiResult>((resolve) => (pendingAnswer.resolve = resolve));
+      },
+      dispose() {},
+    };
+    const root = document.createElement('div');
+    document.body.append(root);
+    const solo = new SoloSession(pending, {
+      difficulty: 'easy',
+      timeBudgetMs: 100,
+      ai,
+      persist: false,
+    });
+    try {
+      solo.attach(root);
+      expect(requests).toHaveLength(1);
+      expect(requests[0]?.decision).toBe('push');
+      solo.skipAnimations();
+      solo.attach(root);
+      expect(requests).toHaveLength(1);
+      expect(solo.thinking).toBe(true);
+      pendingAnswer.resolve?.({ action: { type: push ? 'push' : 'stop', seat: 1 }, ms: 1 });
+      await flush();
+      expect(solo.state.phase).toBe('roundOver');
+      expect(solo.state.records).toHaveLength(pending.records.length + 1);
+      expect(solo.state.records.at(-1)?.settlement.pushed).toBe(push);
+      expect(solo.state.ledger.balances).toEqual(
+        push ? pending.ledger.balances : acceptRound(pending).ledger.balances,
+      );
+      expect(requests).toHaveLength(1);
+    } finally {
+      solo.dispose();
+      root.remove();
+    }
+  },
+);
+
+test('CPU의 오래된 밀기 Worker 응답은 세션 종료 후 적용되지 않는다 (AI-02)', async () => {
+  const pending = winnerDecisionFor(1);
+  const pendingAnswer: { resolve?: (result: AiResult) => void } = {};
+  const ai: AiClient = {
+    mode: 'worker',
+    decide() {
+      return new Promise<AiResult>((resolve) => (pendingAnswer.resolve = resolve));
+    },
+    dispose() {},
+  };
+  const root = document.createElement('div');
+  document.body.append(root);
+  const solo = new SoloSession(pending, {
+    difficulty: 'easy',
+    timeBudgetMs: 100,
+    ai,
+    persist: false,
+  });
+  try {
+    solo.attach(root);
+    expect(solo.thinking).toBe(true);
+    solo.end();
+    const ended = solo.state;
+    expect(ended.phase).toBe('ended');
+    expect(ended.records.at(-1)?.settlement.pushed).toBe(false);
+    pendingAnswer.resolve?.({ action: { type: 'push', seat: 1 }, ms: 1 });
+    await flush();
+    expect(solo.state).toEqual(ended);
+  } finally {
+    solo.dispose();
+    root.remove();
+  }
 });
 
 test('두 번 밀면 다음 판 ×4이고 세 번째 밀기는 합법 수가 아니다 (FR-16)', () => {
@@ -304,3 +405,50 @@ test('호스트가 선택 대기 중 종료하면 받기 정산을 한 번 기�
     guest.dispose();
   }
 }, 30_000);
+
+test('게스트 승자 이탈 뒤 3분에도 자동 수락하지 않고 호스트 명시 선택만 확정한다', () => {
+  function secrets(start: number): () => Uint8Array {
+    let n = start;
+    return () => {
+      n++;
+      return Uint8Array.from({ length: 32 }, (_, i) => (n * 31 + i * 7) & 255);
+    };
+  }
+  for (let seed = 0; seed < 40; seed++) {
+    const [hostWire, guestWire] = createMemoryTransportPair();
+    const host = new HostSession(hostWire, {
+      rules: PRESETS.arcade,
+      names: ['호스트', '게스트'],
+      random32: secrets(seed),
+      startBalance: 1_000_000,
+    });
+    const guest = new GuestSession(guestWire, {
+      name: '게스트',
+      random32: secrets(seed + 5000),
+    });
+    guest.join();
+    for (let step = 0; step < 400 && host.stage === 'playing'; step++) {
+      const mine = host.hostView()?.legal ?? [];
+      const legal = mine.length > 0 ? mine : (guest.view?.legal ?? []);
+      const action = legal.find((a) => a.type === 'stop') ?? legal[0];
+      if (action === undefined) throw new Error('합법 수 없음');
+      if (action.seat === 0) expect(host.apply(action)).toBe(true);
+      else guest.sendAction(action);
+    }
+    if (host.stage !== 'settled' || host.state?.result?.winner !== 1) continue;
+    expect(host.settlement).toBeNull();
+    const before = host.ledger.balances;
+    guestWire.disconnect();
+    host.advanceTime(179_999);
+    expect(host.acceptRound({ forSeat: 1, reason: 'absent' })).toBe(false);
+    expect(host.settlement).toBeNull();
+    host.advanceTime(180_001);
+    expect(host.settlement).toBeNull();
+    expect(host.acceptRound({ forSeat: 1, reason: 'absent' })).toBe(true);
+    expect(host.settlement?.winner).toBe(1);
+    expect(host.ledger.balances).not.toEqual(before);
+    expect(host.acceptRound({ forSeat: 1, reason: 'absent' })).toBe(false);
+    return;
+  }
+  throw new Error('게스트 승자 밀기 선택 대기 판이 없음');
+});

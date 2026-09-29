@@ -44,7 +44,7 @@
       : null,
   );
 
-  // 속도(--dur-scale, spec 6.4)와 효과음 설정을 문서에 반영한다. 갤러리는 스스로 instant로 덮어쓴다.
+  // 속도(UX-15 단계 시간표와 --dur-scale)와 효과음 설정을 문서에 반영한다.
   $effect(() => {
     const speed = settings.speed;
     if (speed === 'fast') delete document.documentElement.dataset['speed'];

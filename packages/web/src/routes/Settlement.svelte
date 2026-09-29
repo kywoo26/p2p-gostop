@@ -16,6 +16,7 @@
       readonly acceptAmount: number | null;
       readonly forfeitedPoints: number | null;
     } | null;
+    guest?: boolean;
     onpush?: ((push: boolean) => void) | undefined;
     /** 이 판의 즉시 정산 (첫뻑·첫따닥 등, FR-18 "별도 원장 항목") */
     instant?: readonly { readonly label: string; readonly name: string; readonly points: number }[];
@@ -37,6 +38,7 @@
   let {
     view,
     decision = null,
+    guest = false,
     onpush,
     instant = [],
     nextCarry = null,
@@ -199,7 +201,7 @@
           type="button"
           class="button primary"
           data-choice="accept"
-          onclick={() => onpush?.(false)}>받기</button
+          onclick={() => onpush?.(false)}>{guest ? '받기 · 다음 판 준비' : '받기'}</button
         >
         {#if decision.canPush}<button
             type="button"

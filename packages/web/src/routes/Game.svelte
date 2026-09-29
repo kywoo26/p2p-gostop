@@ -243,6 +243,7 @@
         instant={pb.settlement?.instant ?? []}
         nextCarry={pb.settlement?.nextCarry ?? null}
         decision={controller.pushDecision}
+        guest={controller.mode === 'guest'}
         onpush={(push) => controller.choosePush(push)}
         bankrupt={controller.bankrupt}
         note={controller.settlementNote ?? null}
