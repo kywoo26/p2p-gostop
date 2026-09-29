@@ -145,6 +145,7 @@
   />
 {:else if page.startsWith('fan-')}
   <main>
+    <h1 class="fixture-title">게임판 시각 검토</h1>
     <Board
       perPoint={10_000}
       roundChanges={[70_000, -70_000]}

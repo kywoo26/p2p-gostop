@@ -43,7 +43,7 @@ for (const [width, height] of [
 test('skin 이미지 실패에도 정보·입력·카드가 유지된다', async ({ page }) => {
   await page.route('**/skin/**', (route) => route.abort());
   await page.goto('./#/dev/gallery/board-gostop');
-  await expect(page.getByRole('button', { name: /스톱 ·.*냥/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: '스톱', exact: true })).toBeVisible();
   await expect(page.locator('.hand .card').first()).toBeVisible();
   expect(
     await page.locator('.board').evaluate((el) => getComputedStyle(el).backgroundColor),

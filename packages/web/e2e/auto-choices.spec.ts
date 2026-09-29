@@ -73,7 +73,8 @@ test('솔로: 판 정보 열람 중 유일 수 보류, 닫으면 한 번만 저�
   const game = createScenario({ hands: [[c('5열')], [c('10열')]], floor: [c('8광')] });
   await openSave(page, game, true);
   // #104 통합 후 임시 dialog 대신 실제 판 정보 열기/닫기를 검증한다.
-  await page.getByRole('button', { name: '판 정보', exact: true }).click();
+  await page.getByTestId('game-menu').click();
+  await page.locator('[data-menu="board-info"]').click();
   await expect(page.getByTestId('solo')).toHaveAttribute('data-auto-held', 'true');
   await page.evaluate(() => (window as typeof window & { showForTest: () => void }).showForTest());
   await page.waitForTimeout(100);

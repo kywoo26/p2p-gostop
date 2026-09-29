@@ -129,10 +129,27 @@ export function auditLayout() {
   const cards = board
     ? [...board.querySelectorAll<HTMLElement>('.hand .card, .floor .card, .captured-zone .card')]
         .filter(visible)
-        .map((el) => el.getBoundingClientRect().width)
+        .map((el) => el.offsetWidth)
     : [];
   const scales = [...new Set(cards.map((n) => Math.round(n * 100) / 100))];
-  if (scales.length > 1) issues.push(`card scales: ${scales}`);
+  for (const card of board?.querySelectorAll<HTMLElement>(
+    '.hand .card, .floor .card, .captured-zone .card',
+  ) ?? []) {
+    const expected = card.closest('.captured-zone') ? 32 : 48;
+    if (card.offsetWidth !== expected)
+      issues.push(`card scale: ${card.offsetWidth}, expected ${expected}`);
+  }
+  // 클립된 카드가 가시 요소 필터에서 빠져 검사를 통과하지 않게 한다.
+  for (const card of board?.querySelectorAll<HTMLElement>(
+    '.hand-zone .card, .center .card, .captured-zone .card',
+  ) ?? []) {
+    const r = card.getBoundingClientRect(),
+      painted = paintedRect(card);
+    if (painted.width < r.width - 1 || painted.height < r.height - 1)
+      issues.push(`clipped card: ${card.dataset['cardId']}`);
+  }
+  if (board && document.documentElement.scrollHeight > innerHeight + 1)
+    issues.push('board document scroll');
   const rows = board ? [...board.querySelectorAll('.hand .row')] : [];
   const exposure = rows.flatMap((row) => {
     const slots = [...row.querySelectorAll<HTMLElement>('.slot')].map((el) =>
@@ -141,7 +158,56 @@ export function auditLayout() {
     return slots.slice(0, -1).map((r, i) => Math.min(1, (slots[i + 1]!.left - r.left) / r.width));
   });
   if (exposure.some((n) => n < 1 - 0.001)) issues.push(`hand exposure: ${Math.min(...exposure)}`);
+  const floorCells = [...document.querySelectorAll<HTMLElement>('.floor .group')];
+  const monthGaps: number[] = [];
+  for (const cell of floorCells) {
+    const peers = floorCells.filter(
+      (other) => other !== cell && other.dataset['month'] === cell.dataset['month'],
+    );
+    if (!peers.length) continue;
+    const a = cell.getBoundingClientRect();
+    const distance = Math.min(
+      ...peers.map((other) => {
+        const b = other.getBoundingClientRect();
+        return Math.hypot(
+          Math.max(0, a.left - b.right, b.left - a.right),
+          Math.max(0, a.top - b.bottom, b.top - a.bottom),
+        );
+      }),
+    );
+    monthGaps.push(distance);
+    if (!document.querySelector('[data-floor-folded="true"]') && distance > 12)
+      issues.push(`month separated: ${cell.dataset['month']} ${distance}`);
+  }
   const center = board?.querySelector('.center')?.getBoundingClientRect();
+  // 진영의 상태판은 차례와 무관하게 같은 바탕·안쪽 여백을 가진다.
+  const seatPanels = [...(board?.querySelectorAll<HTMLElement>('.opponent-hud, .mine-hud') ?? [])];
+  if (seatPanels.length === 2) {
+    const styles = seatPanels.map((el) => getComputedStyle(el));
+    for (const property of [
+      'backgroundColor',
+      'paddingTop',
+      'paddingBottom',
+      'paddingLeft',
+      'paddingRight',
+      'borderRadius',
+    ] as const)
+      if (styles[0]![property] !== styles[1]![property])
+        issues.push(`seat style mismatch: ${property}`);
+    if (styles[0]!.backgroundColor === 'rgba(0, 0, 0, 0)') issues.push('seat background missing');
+    const opponentCapture = board
+      ?.querySelector('.captured-zone:not(.mine)')
+      ?.getBoundingClientRect();
+    const ownCapture = board?.querySelector('.captured-zone.mine')?.getBoundingClientRect();
+    const opponent = seatPanels[0]!.getBoundingClientRect();
+    const own = seatPanels[1]!.getBoundingClientRect();
+    if (opponentCapture && opponent.top - opponentCapture.bottom < 5.5)
+      issues.push('opponent summary gap');
+    if (ownCapture && ownCapture.top - own.bottom < 5.5) issues.push('own summary gap');
+    const firstHandCard = board?.querySelector('.hand .card')?.getBoundingClientRect();
+    if (ownCapture && firstHandCard && firstHandCard.top - ownCapture.bottom < 17.5)
+      issues.push('captured/hand separation');
+  }
   const floor = board?.querySelector('.floor')?.getBoundingClientRect();
   const centerError =
     center && floor ? Math.abs((center.top + center.bottom - floor.top - floor.bottom) / 2) : 0;
@@ -156,5 +222,8 @@ export function auditLayout() {
     minExposure: exposure.length ? Math.min(...exposure) : 1,
     centerError,
     elementCount: elements.length,
+    monthGaps,
+    handCount: board?.querySelectorAll('.hand .slot').length ?? 0,
+    floorCount: board?.querySelectorAll('.floor .card').length ?? 0,
   };
 }

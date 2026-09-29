@@ -27,8 +27,10 @@ for (const [width, height] of [
       await expect(page.locator('.table')).toHaveAttribute('data-floor-fits', 'true');
       const report = await page.evaluate(auditLayout);
       expect(report.issues).toEqual([]);
-      expect(report.scales).toEqual([48]);
+      expect(report.scales).toEqual([32, 48]);
       expect(report.minExposure).toBe(1);
+      expect(report.handCount).toBe(10);
+      if (!['empty', 'overflow'].includes(state)) expect(report.floorCount).toBe(10);
       expect(
         await page.locator('.captured-zone .stack[data-count]:not([data-count="0"])').count(),
       ).toBe(8);
@@ -53,6 +55,32 @@ for (const [width, height] of [
         expect(violations).toEqual([]);
         await expect(page).toHaveScreenshot(`fan-${state}-${width}x${height}.png`);
       }
+    });
+  }
+  for (const scene of ['home', 'settlement', 'settings', 'guest', 'license', 'game-menu']) {
+    test(`${width}×${height} ${scene}: 전체 화면 겹침·입력·텍스트 게이트`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height });
+      if (scene === 'game-menu') {
+        await page.addInitScript(
+          (save) => localStorage.setItem('gostop.solo.v1', JSON.stringify(save)),
+          timingSave(TIMING_FIXTURES[0]!),
+        );
+        await page.goto('./?speed=instant#/game');
+        await page.getByTestId('game-menu').click();
+      } else {
+        await page.goto(scene === 'license' ? './#/license' : `./#/dev/gallery/${scene}`);
+      }
+      await expect(page.locator('main, .board').first()).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      await expect.poll(async () => (await page.evaluate(auditLayout)).issues).toEqual([]);
+      const report = await page.evaluate(auditLayout);
+      expect(report.elementCount).toBeGreaterThan(0);
+      await info.attach('layout-audit', {
+        body: JSON.stringify(report, null, 2),
+        contentType: 'application/json',
+      });
     });
   }
 }
@@ -98,3 +126,24 @@ test('가로 방향 입력 잠금·세로 복귀', async ({ page }) => {
   await expect(page.getByRole('alert')).toHaveCount(0);
   expect(await page.locator('.hand button:enabled').count()).toBe(10);
 });
+
+for (const state of ['play', 'target', 'gostop']) {
+  test(`412×840 시스템 inset ${state}: 카드·입력 안전영역`, async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 840 });
+    await page.goto(`./#/dev/gallery/fan-${state}`);
+    const board = page.locator('.board');
+    await expect(board).toBeVisible();
+    await board.evaluate((el) => {
+      el.style.setProperty('--board-safe-top', '34px');
+      el.style.setProperty('--board-safe-bottom', '24px');
+    });
+    await expect(page.locator('.table')).toHaveAttribute('data-floor-fits', 'true');
+    await page.evaluate(() => document.fonts.ready);
+    await expect.poll(async () => (await page.evaluate(auditLayout)).issues).toEqual([]);
+    const edges = await page
+      .locator('.hud, .hand-zone')
+      .evaluateAll((ns) => ns.map((n) => n.getBoundingClientRect().toJSON()));
+    expect(edges[0]!.top).toBeGreaterThanOrEqual(34);
+    expect(edges[1]!.bottom).toBeLessThanOrEqual(816);
+  });
+}

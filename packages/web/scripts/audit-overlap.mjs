@@ -10,10 +10,10 @@ const out = `${cwd}test-results/pro-skin`;
 await mkdir(out, { recursive: true });
 const server = spawn(
   process.execPath,
-  ['../../node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4187'],
+  ['../../node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4189', '--strictPort'],
   { cwd, stdio: 'ignore' },
 );
-const base = 'http://127.0.0.1:4187';
+const base = 'http://127.0.0.1:4189';
 const reports = [];
 try {
   for (let i = 0; i < 80; i++) {
@@ -38,7 +38,7 @@ try {
     ]) {
       const page = await browser.newPage({
         viewport: { width, height },
-        deviceScaleFactor: 1,
+        deviceScaleFactor: width === 412 && height === 840 ? 3.5 : 1,
         reducedMotion: 'reduce',
       });
       for (const scene of [
@@ -67,9 +67,11 @@ try {
           await page.goto(
             scene === 'license' ? `${base}/#/license` : `${base}/#/dev/gallery/${scene}`,
           );
+        await page.locator('main, .board').first().waitFor({ state: 'visible' });
         await page.evaluate(() => document.fonts.ready);
         await page.waitForTimeout(100);
         const report = await page.evaluate(auditLayout);
+        if (report.elementCount === 0) throw new Error(`Empty audit: ${scene}`);
         const capture = `${engine}-${scene}-${width}x${height}.png`;
         await page.screenshot({ path: `${out}/${capture}` });
         reports.push({ engine, width, height, scene, capture, ...report });

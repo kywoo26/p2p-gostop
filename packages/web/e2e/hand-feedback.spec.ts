@@ -28,24 +28,15 @@ for (const [width, height] of [
         );
         const board = document.querySelector('.board')!;
         const boardRect = board.getBoundingClientRect();
-        const frame = getComputedStyle(board, '::after');
-        const frameTop = boardRect.top + parseFloat(frame.top) + parseFloat(frame.borderTopWidth);
-        const frameLeft =
-          boardRect.left + parseFloat(frame.left) + parseFloat(frame.borderLeftWidth);
-        const frameRight =
-          boardRect.right - parseFloat(frame.right) - parseFloat(frame.borderRightWidth);
-        const frameBottom =
-          boardRect.bottom - parseFloat(frame.bottom) - parseFloat(frame.borderBottomWidth);
         const panelsInsideFrame = [
-          ...document.querySelectorAll('.scoreboard, .decision-area, .captured-zone, .hand-zone'),
+          ...document.querySelectorAll('.scoreboard, .captured-zone, .hand-zone'),
         ].every((el) => {
           const r = el.getBoundingClientRect();
-          // 1px 외곽선까지 포함하고 프레임 안쪽과 최소2px 분리한다.
           return (
-            r.top - 1 >= frameTop + 2 &&
-            r.left - 1 >= frameLeft + 2 &&
-            r.right + 1 <= frameRight - 2 &&
-            r.bottom + 1 <= frameBottom - 2
+            r.top >= boardRect.top &&
+            r.left >= boardRect.left &&
+            r.right <= boardRect.right &&
+            r.bottom <= boardRect.bottom
           );
         });
         return {
@@ -130,7 +121,12 @@ for (const [width, height] of [
               ),
               evenGap: cards
                 .slice(1)
-                .every((card, index) => Math.abs(card.left - cards[index]!.right - 8) < 0.02),
+                .every(
+                  (card, index) =>
+                    card.left - cards[index]!.right >= 3.9 &&
+                    Math.abs(card.left - cards[index]!.right - (cards[1]!.left - cards[0]!.right)) <
+                      0.05,
+                ),
               border: parseFloat(plate.borderTopWidth),
               color: plate.borderTopColor,
               background: plate.backgroundColor,
@@ -173,20 +169,20 @@ for (const [width, height] of [
       expect(
         report.stateStyles
           .filter((s) => s.cue === 'matchable' && !s.action)
-          .every((s) => s.lift === '0px -2px' && s.line === 'solid'),
+          .every((s) => s.lift === 'none' && s.line === 'solid'),
       ).toBe(true);
       expect(
         report.stateStyles
           .filter((s) => s.cue === 'secured' && !s.action)
-          .every((s) => s.lift === '0px -4px' && s.line === 'double'),
+          .every((s) => s.lift === 'none' && s.line === 'double'),
       ).toBe(true);
       expect(report.actionIcons).toHaveLength(6);
       for (const icon of report.actionIcons) {
         expect(icon.image).toContain(
           icon.action === 'bomb' ? '/skin/bomb-illustrated.webp' : '/skin/bell-illustrated.webp',
         );
-        expect(icon.width).toBe(22);
-        expect(icon.height).toBe(22);
+        expect(icon.width).toBe(20);
+        expect(icon.height).toBe(20);
         expect(icon.otherCardOverlap).toBe(false);
         expect(icon.inside).toBe(true);
       }
@@ -219,18 +215,18 @@ for (const [width, height] of [
       await expect(page.locator('.hand')).not.toContainText(/대기|폭3|흔3/);
       expect(report.inside).toBe(true);
       expect(report.scoreSize).toBe('24px');
-      expect(report.secondarySize).toBe('14px');
+      expect(report.secondarySize).toBe('24px');
       expect(report.tnum).toContain('tabular-nums');
       await expect(page.locator('[data-hand-group="1"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-action="shake"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-action="bomb"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-cue="secured"]')).toHaveCount(1);
       if (state === 'stop') {
-        await expect(page.locator('[data-choice="stop"]')).toContainText('2,400냥');
-        await expect(page.locator('.risk-kind')).toHaveText('피박 위험');
+        await expect(page.locator('[data-choice="stop"]')).toHaveAccessibleName('스톱 · 2,400냥');
+        await expect(page.locator('.risk-kind')).toHaveAccessibleName('피박 위험');
       } else {
-        await expect(page.locator('.idle-slot')).toContainText('내 차례');
-        await expect(page.locator('.idle-slot button')).toHaveText('판 정보');
+        await expect(page.locator('.board')).toHaveAttribute('data-awaiting', 'me');
+        await expect(page.locator('.menu-reserved')).toHaveText('메뉴');
       }
       const { violations } = await new AxeBuilder({ page }).analyze();
       expect(violations).toEqual([]);

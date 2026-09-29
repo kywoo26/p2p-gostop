@@ -1,72 +1,70 @@
 - region "게임판":
-  - heading "상대컴퓨터 · 상용급" [level=2]
-  - text: 0 점 0고 미정 스톱 미정 48,800냥
+  - text: 3판 · 점당 100냥
+  - strong: 컴퓨터 · 상용급
   - list "상대 획득패":
     - listitem "광 1":
       - img "3월 광"
+      - text: "1"
     - listitem "열끗 2":
       - img "7월 열끗"
       - img "12월 열끗"
+      - text: "2"
     - listitem "띠 2":
       - img "4월 초단"
       - img "6월 청단"
+      - text: "2"
     - listitem "피 5 (4장)":
       - img "3월 피"
       - img "4월 피"
       - img "7월 피"
       - img "11월 쌍피"
-  - list "상대 족보 진행도":
-    - listitem "광 1/3, 미달": 광 1/3
-    - listitem "고도리 0/3, 미달": 고도리 0/3
-    - listitem "단 1/3, 미달": 단 1/3
-    - listitem "피 가치 5/10, 미달": 피 5/10
-    - listitem: 뻑 1
-    - listitem: 흔들 0
-    - listitem: 손패 5장
-  - img "더미 14장":
-    - img "카드 뒷면"
-  - text: 5월 뻑
-  - list "바닥":
-    - listitem "6월 1장":
-      - img "6월 피"
-    - listitem "9월 2장":
-      - img "9월 국진"
-      - img "9월 청단"
-    - listitem "5월 3장 뻑":
-      - img "5월 열끗"
-      - img "5월 초단"
-      - img "5월 피"
-    - listitem "10월 1장":
-      - img "10월 피"
-    - listitem "12월 1장":
-      - img "12월 비광"
-  - text: 3판
+      - text: "4"
+  - heading "상대 컴퓨터 · 상용급" [level=2]
+  - text: 4만8800냥 0냥 0 점 0고 0고, 배수 미정, 스톱 예상액 미제공
+  - group:
+    - img "더미 14장":
+      - img "카드 뒷면"
+    - list "바닥":
+      - listitem "5월 1장 뻑":
+        - img "5월 열끗"
+      - listitem "5월 1장 뻑":
+        - img "5월 초단"
+      - listitem "5월 1장 뻑":
+        - img "5월 피"
+      - listitem "9월 1장":
+        - img "9월 국진"
+      - listitem "9월 1장":
+        - img "9월 청단"
+      - listitem "6월 1장":
+        - img "6월 피"
+      - listitem "10월 1장":
+        - img "10월 피"
+      - listitem "12월 1장":
+        - img "12월 비광"
   - status: 내 차례
-  - button "판 정보"
-  - heading "나" [level=2]
-  - text: 8 점 1고 ×2 스톱 미정 51,200냥
+  - heading "나 뻑 0회, 흔들기 1회" [level=2]:
+    - text: 나
+    - img "뻑 0회, 흔들기 1회"
+  - text: 5만1200냥 0냥 8 점 1고 · ×2 1고, 배수 2, 스톱 예상액 미제공
   - list "내 획득패":
     - listitem "광 1":
       - img "1월 광"
+      - text: "1"
     - listitem "열끗 3":
       - img "2월 고도리"
       - img "4월 고도리"
       - img "8월 고도리"
+      - text: "3"
     - listitem "띠 3":
       - img "1월 홍단"
       - img "2월 홍단"
       - img "3월 홍단"
+      - text: "3"
     - listitem "피 4 (3장)":
       - img "1월 피"
       - img "2월 피"
       - img "보너스 2피"
-  - list "내 족보 진행도":
-    - listitem "광 1/3, 미달": 광 1/3
-    - listitem "고도리 3/3, 첫 기준 달성": 고도리 3/3
-    - listitem "단 3/3, 첫 기준 달성": 단 3/3
-    - listitem "피 가치 4/10, 미달": 피 4/10
-    - listitem: 뻑 0
-    - listitem: 흔들 1
+      - text: "3"
   - group "내 손패":
     - button "8월 피, 내기":
       - img "8월 피"
