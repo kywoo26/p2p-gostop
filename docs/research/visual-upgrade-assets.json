@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-29",
+  "encoding": "Chromium Canvas WebP quality0.82; max dimension256/512; tone felt/wood",
+  "assets": [
+    {
+      "file": "coin.svg",
+      "bytes": 636,
+      "sha256": "f052b8b64b36c69a3c516613405dc1c038983fd5d65f0fa1c2b258667f90c422"
+    },
+    {
+      "file": "felt-256.webp",
+      "bytes": 3796,
+      "sha256": "6271e72e991bc8f442503b9abbb65e8f531db09fb3ee2168f0a5e66fa4d8564f"
+    },
+    {
+      "file": "felt-512.webp",
+      "bytes": 8702,
+      "sha256": "4c1602894306f255debd618e301dc402ac63be15a3695f29d972c7a02cf4ab17"
+    },
+    {
+      "file": "hero-inlay.svg",
+      "bytes": 920,
+      "sha256": "593472032965f82ab36323c17d11851b955082835c23729f0ee31c5e685de5c4"
+    },
+    {
+      "file": "table-inlay.svg",
+      "bytes": 477,
+      "sha256": "8d8267e7fdb7ff7ae227488b75b80bd6f642c321c8019d100284fae833d23586"
+    },
+    {
+      "file": "wood-256.webp",
+      "bytes": 1714,
+      "sha256": "facc7292ed9460f98af582686aa58f00b3aeee2eef76d633f97bfcb605a9a83d"
+    },
+    {
+      "file": "wood-512.webp",
+      "bytes": 4214,
+      "sha256": "75910915af6021289b66154a9d96d6fa299ee33a2b03b1cdbd28931556448a67"
+    }
+  ]
+}

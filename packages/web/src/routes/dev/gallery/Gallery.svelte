@@ -107,7 +107,10 @@
   $effect(() => {
     const root = document.documentElement;
     const previous = root.dataset['speed'];
-    root.dataset['speed'] = 'instant';
+    root.dataset['speed'] =
+      new URLSearchParams(location.search).get('visual') === 'upgrade'
+        ? (previous ?? 'normal')
+        : 'instant';
     return () => {
       if (previous === undefined) delete root.dataset['speed'];
       else root.dataset['speed'] = previous;
@@ -115,7 +118,20 @@
   });
 </script>
 
-{#if page === 'feedback-play' || page === 'feedback-stop'}
+{#if page === 'upgrade-ppeok' || page === 'upgrade-jjok'}
+  <main>
+    <h1 class="fixture-title">게임판 시각 검토</h1>
+    <Board
+      view={feedbackFixture()}
+      handVisualGroups={feedbackGroups}
+      banner={{
+        kind: page === 'upgrade-ppeok' ? 'ppeok' : 'jjok',
+        text: page === 'upgrade-ppeok' ? '뻑' : '쪽',
+        seat: 0,
+      }}
+    />
+  </main>
+{:else if page === 'feedback-play' || page === 'feedback-stop'}
   <main>
     <h1 class="fixture-title">게임판 시각 검토</h1>
     <Board

@@ -34,3 +34,5 @@ coverage/
 # Claude Code 개인 설정(공유하지 않음)
 .claude/settings.local.json
 CLAUDE.local.md
+# 시각 프로토타입의 재다운로드 가능한 CC0 원본(배포 자산 아님)
+.visual-source/

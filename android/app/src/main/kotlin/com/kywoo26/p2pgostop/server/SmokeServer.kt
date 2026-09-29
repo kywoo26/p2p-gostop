@@ -414,6 +414,8 @@ private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall,
         "js" -> ContentType.parse("text/javascript; charset=utf-8")
         "css" -> ContentType.Text.CSS.withParameter("charset", "utf-8")
         "svg" -> ContentType.Image.SVG
+        "webp" -> ContentType.parse("image/webp")
+        "avif" -> ContentType.parse("image/avif")
         "json" -> ContentType.Application.Json.withParameter("charset", "utf-8")
         "md" -> ContentType.parse("text/markdown; charset=utf-8")
         "txt", "" -> ContentType.Text.Plain.withParameter("charset", "utf-8")

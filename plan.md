@@ -103,6 +103,8 @@ p2p-gostop/
 ### 1.8 스택·의존성 도입 근거
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
+**시각 업그레이드 실험(2026-09-29, VU-01~04, 사용자 요청):** `design/visual-upgrade-proto`는 #104의 `57f8689`에서 분기하며 #104 자체는 유지한다. `?visual=upgrade`에서 실제 Home/Board에 로컬 CC0 WebP 질감·자체 MIT SVG 오브젝트·Canvas 2D 사건·CSS 3D 표시를 적용한다. 원 카드 SVG·게임/P2P/정산 로직·`anim/*`·`--dur-*`는 변경하지 않는다. 공식 API 문서는 Svelte/Playwright/MDN에서 확인(Context7 도구 미제공). npm 의존성 추가0; 기존 개발 이미지 Playwright/Canvas로 자산을 최적화한다. **프로토타입만** 예산 초과가 허용되지만 기존 빌드 게이트는 유지한다. 규범 UX-11의 무질감 정책·NF-03/AC-07의 1.5MiB 상한을 정식으로 바꾸는 것은 [조사·실측·제안](docs/research/visual-upgrade.md) 검토 뒤 사용자 결정 사항이다. PixiJS는 이번에 도입하지 않으며, Canvas 병목이 실기기에서 확인될 경우에만 고정 버전/최소 빌드 차이/발열·문맥 복구 측정을 갖춘 별도 TRIAL을 제안한다.
+
 **A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/visual-direction.md`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
 | 선택 | 이유·범위 |

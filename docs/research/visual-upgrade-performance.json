@@ -1,0 +1,187 @@
+{
+  "date": "2026-09-29T09:47:52.919Z",
+  "environment": {
+    "platform": "linux",
+    "cpu": "Intel(R) Core(TM) i7-14700K",
+    "logicalCpus": 20
+  },
+  "method": "5s rAF callback cadence; 5 alternating ppeok/jjok bursts; CSS412x915; no CPU/network throttle; Docker headless, NOT Galaxy/iPhone device FPS",
+  "runs": [
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": false,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.8,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 451308,
+      "textures": []
+    },
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": true,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.7,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0.3,
+      "callbackMaxMs": 0.4,
+      "callbackCount": 275,
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 455581,
+      "textures": [
+        {
+          "name": "felt-256.webp",
+          "encoded": 3796,
+          "transferred": 4096
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": false,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.8,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 451308,
+      "textures": []
+    },
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": true,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.7,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0.3,
+      "callbackMaxMs": 0.7,
+      "callbackCount": 275,
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 460487,
+      "textures": [
+        {
+          "name": "felt-512.webp",
+          "encoded": 8702,
+          "transferred": 9002
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": false,
+      "frames": 309,
+      "rafFps": 61.96,
+      "gapP95Ms": 17,
+      "gapsOver25Ms": 1,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 451974,
+      "textures": []
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": true,
+      "frames": 262,
+      "rafFps": 53.85,
+      "gapP95Ms": 17,
+      "gapsOver25Ms": 5,
+      "callbackP95Ms": 1,
+      "callbackMaxMs": 1,
+      "callbackCount": 241,
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 456247,
+      "textures": [
+        {
+          "name": "felt-256.webp",
+          "encoded": 3796,
+          "transferred": 4096
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": false,
+      "frames": 309,
+      "rafFps": 61.96,
+      "gapP95Ms": 17,
+      "gapsOver25Ms": 1,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 451974,
+      "textures": []
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": true,
+      "frames": 267,
+      "rafFps": 53.51,
+      "gapP95Ms": 17,
+      "gapsOver25Ms": 5,
+      "callbackP95Ms": 1,
+      "callbackMaxMs": 1,
+      "callbackCount": 242,
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0,
+      "resourceEncodedBytes": 461153,
+      "textures": [
+        {
+          "name": "felt-512.webp",
+          "encoded": 8702,
+          "transferred": 9002
+        }
+      ]
+    }
+  ]
+}

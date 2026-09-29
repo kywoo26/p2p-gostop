@@ -1,0 +1,265 @@
+/* VU-01~04 시각 실험. 기존 A의 값/레이아웃/판정/시간표는 보존한다. */
+:root[data-visual='upgrade'] {
+  --vu-felt: url('/visual/felt-256.webp');
+  --vu-wood: url('/visual/wood-256.webp');
+}
+@media (min-resolution: 2dppx) {
+  :root[data-visual='upgrade'] {
+    --vu-felt: url('/visual/felt-512.webp');
+    --vu-wood: url('/visual/wood-512.webp');
+  }
+}
+:root[data-visual='upgrade'] .board {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 48% 36%, #417f6659, #081a1866 55%, #01090de0 100%),
+    var(--vu-felt) center / 256px;
+  box-shadow:
+    inset 5px 0 0 #261c13,
+    inset -5px 0 0 #261c13,
+    inset 6px 0 0 #cda35c66,
+    inset -6px 0 0 #cda35c66;
+}
+:root[data-visual='upgrade'] .board::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(110deg, #f4ddb114, transparent 38%, #06282544),
+    url('/visual/table-inlay.svg') center 40% / min(90%, 370px) auto no-repeat;
+  box-shadow: inset 0 0 45px #0008;
+}
+:root[data-visual='upgrade'] .board .scoreboard {
+  background: linear-gradient(120deg, #183e36f2, #0b191ce8);
+  box-shadow:
+    0 1px 0 #dcb98770,
+    0 8px 20px #0005,
+    inset 0 1px 0 #ffffff29;
+}
+:root[data-visual='upgrade'] .board .seat-bar {
+  background: transparent;
+}
+:root[data-visual='upgrade'] .board .seat-bar.me {
+  background: linear-gradient(90deg, #84794c38, #203f3733);
+}
+:root[data-visual='upgrade'] .board .milestone,
+:root[data-visual='upgrade'] .board .captured-zone .name {
+  box-shadow:
+    inset 0 1px 0 #ffffff12,
+    0 2px 5px #0004;
+}
+:root[data-visual='upgrade'] .board .center {
+  border-radius: 22px;
+  background: radial-gradient(ellipse, #5fbd9519, transparent 65%);
+}
+:root[data-visual='upgrade'] .board .card {
+  box-shadow:
+    0 1px 0 #ffdb9d77,
+    0 3px 1px #250a09,
+    0 7px 9px #0009;
+}
+:root[data-visual='upgrade'] .board .inner[data-depth-flip] .back {
+  transform: scaleX(-1);
+}
+:root[data-visual='upgrade'] .board .hand .slot {
+  box-shadow: 0 5px 9px #0007;
+}
+:root[data-visual='upgrade'] .board .hand.compact .slot {
+  background: #061e1be0;
+}
+:root[data-visual='upgrade'] .board .group-word {
+  background: #102b26;
+}
+:root[data-visual='upgrade'] .board .deck-stack {
+  box-shadow:
+    1px 2px 0 #e9cfa0,
+    2px 4px 0 #3a1713,
+    3px 6px 0 #a68152,
+    4px 8px 0 #3a1713,
+    6px 14px 14px #0009;
+}
+:root[data-visual='upgrade'] .board .decision-area.idle-slot {
+  background: linear-gradient(120deg, #102726dd, #091a20b8);
+  border-color: #9ab7a02b;
+  box-shadow:
+    inset 0 1px 0 #e7cca11a,
+    0 8px 18px #0003;
+  backdrop-filter: blur(6px);
+}
+:root[data-visual='upgrade'] .board .prompt {
+  background: linear-gradient(130deg, #1c3837f5, #0c1c25f5);
+  box-shadow:
+    0 10px 28px #0008,
+    inset 0 1px 0 #e7d0a455;
+}
+:root[data-visual='upgrade'] .board .stop,
+:root[data-visual='upgrade'] .home .menu-button.versus {
+  background: linear-gradient(110deg, #fff0c7, #e7c382 54%, #b58a52);
+  box-shadow:
+    inset 0 1px 0 #fff7df,
+    inset 0 -3px 0 #875e35,
+    0 6px 18px #0005;
+  color: #1f231e;
+}
+:root[data-visual='upgrade'] .event-rail {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+}
+:root[data-visual='upgrade'] .event-rail:has(> p) {
+  justify-items: start;
+}
+:root[data-visual='upgrade'] .board .event-rail .banner {
+  position: relative;
+  z-index: 1;
+  min-width: 110px;
+  padding: 0 24px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #fff2e8;
+  font-size: 34px;
+  line-height: 44px;
+  font-weight: 850;
+  transform: skewX(-8deg);
+  text-shadow:
+    0 2px 0 #482117,
+    0 4px 0 #291614,
+    0 0 14px #ff512988;
+  overflow: visible;
+}
+:root[data-visual='upgrade'] .board .event-rail .banner.kind-jjok {
+  color: #e8fcff;
+  text-shadow:
+    0 2px 0 #12364e,
+    0 4px 0 #091d34,
+    0 0 16px #4ccfffaa;
+}
+:root[data-visual='upgrade'] .board .event-rail .actor {
+  font-size: 14px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+:root[data-visual='upgrade'] .home {
+  position: relative;
+  isolation: isolate;
+  padding-top: max(28px, env(safe-area-inset-top));
+  background:
+    radial-gradient(ellipse at 50% 28%, #17675891, transparent 50%),
+    linear-gradient(#03171b66, #020d13f2),
+    var(--vu-felt) center / 256px;
+}
+:root[data-visual='upgrade'] .home::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('/visual/hero-inlay.svg') center 110px / 100% auto no-repeat;
+  box-shadow: inset 0 0 55px #000a;
+}
+:root[data-visual='upgrade'] .home .hero {
+  min-height: 385px;
+}
+:root[data-visual='upgrade'] .home h1 {
+  padding: 0;
+  font-size: 44px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  text-align: center;
+  color: #f9e9c5;
+  text-shadow:
+    0 2px 0 #85613b,
+    0 8px 22px #000;
+}
+:root[data-visual='upgrade'] .home .hero-art {
+  width: 310px;
+  height: 220px;
+  left: 50%;
+  right: auto;
+  bottom: 4px;
+  border: 2px solid #a48a5e;
+  border-radius: 50%;
+  transform: translateX(-50%) rotateX(32deg) rotateZ(-12deg);
+  background:
+    radial-gradient(ellipse at 50% 30%, #537d5c88, #091b21aa),
+    var(--vu-wood) center / 256px;
+  box-shadow:
+    0 3px 0 #e3c18b,
+    0 9px 0 #432c20,
+    0 12px 0 #1a1813,
+    0 32px 28px #000b,
+    inset 0 0 35px #000a;
+}
+:root[data-visual='upgrade'] .home .hero-art::before {
+  inset: 13px;
+  border: 1px solid #d5af674d;
+  background: url('/visual/table-inlay.svg') center / contain no-repeat;
+}
+:root[data-visual='upgrade'] .home .hero-art::after {
+  content: '';
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  right: 12px;
+  bottom: 18px;
+  border-radius: 50%;
+  background: url('/visual/coin.svg') center / contain;
+  box-shadow:
+    0 3px 0 #987144,
+    0 6px 0 #3c291a,
+    0 12px 12px #0009;
+}
+:root[data-visual='upgrade'] .home .hero-art img {
+  width: 94px;
+  left: 58px;
+  bottom: 30px;
+  transform: translateY(-22px) rotate(-15deg);
+  border-radius: 5px;
+  box-shadow:
+    1px 2px 0 #ac2c21,
+    2px 4px 0 #641e16,
+    0 16px 14px #000a;
+}
+:root[data-visual='upgrade'] .home .hero-art img + img {
+  left: 134px;
+  bottom: 43px;
+  transform: translateY(-25px) rotate(13deg);
+}
+:root[data-visual='upgrade'] .home nav {
+  gap: 12px;
+}
+:root[data-visual='upgrade'] .home .menu-button {
+  background: linear-gradient(145deg, #294743d9, #10242bf2);
+  box-shadow:
+    inset 0 1px 0 #fff2,
+    0 6px 18px #0004;
+  border-color: #789b9470;
+}
+:root[data-visual='upgrade'] .home .menu-button.primary {
+  min-height: 72px;
+  border-radius: 16px;
+}
+:root[data-visual='upgrade'] .home .menu-button.primary:not(.versus) {
+  background: linear-gradient(145deg, #294743, #11252b);
+}
+@media (max-height: 780px) {
+  :root[data-visual='upgrade'] .home .hero {
+    min-height: 295px;
+  }
+  :root[data-visual='upgrade'] .home .hero-art {
+    scale: 0.85;
+    transform-origin: 0 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-visual='upgrade'] .impact {
+    display: none;
+  }
+}

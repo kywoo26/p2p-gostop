@@ -46,6 +46,7 @@ class M4ServerTest {
             "style.css" to "body{}", "card.svg" to "<svg/>",
             "manifest.json" to "{}", "about.md" to "# hello", "font.abcdef1234.woff2" to "font",
             "cards/LICENSE" to "license", "notes.txt" to "text",
+            "visual/felt.webp" to "webp", "visual/felt.avif" to "avif",
         ))
         application { smokeModule(e) }
         val page = client.get("/")
@@ -57,6 +58,7 @@ class M4ServerTest {
             "card.svg" to "image/svg+xml", "manifest.json" to "application/json",
             "about.md" to "text/markdown", "font.abcdef1234.woff2" to "font/woff2",
             "cards/LICENSE" to "text/plain", "notes.txt" to "text/plain",
+            "visual/felt.webp" to "image/webp", "visual/felt.avif" to "image/avif",
         )) assertTrue(client.get("/$path").headers[HttpHeaders.ContentType]!!.startsWith(mime), path)
         for (path in listOf("index.html", "style.css", "about.md", "cards/LICENSE")) {
             assertTrue(client.get("/$path").headers[HttpHeaders.ContentType]!!.contains("charset=utf-8"), path)

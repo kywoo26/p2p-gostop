@@ -3,6 +3,10 @@
   // 시간/소리/효과 강도는 기존 재생기와 후속 effects PR 소유.
   import type { Banner } from './banner.ts';
   import EventBanner from './EventBanner.svelte';
+  import Impact from './visual-upgrade/Impact.svelte';
+  const upgrade = document.documentElement.dataset['visual'] === 'upgrade';
+  const frame = new URLSearchParams(location.search).get('impact-frame');
+  const sample = frame === null ? null : Math.max(0, Math.min(1, Number(frame) || 0));
   let {
     banner = null,
     toast = null,
@@ -28,6 +32,9 @@
 
 {#if !blocked}
   <div class="event-rail" data-testid="event-rail">
+    {#if upgrade && banner && (banner.kind === 'ppeok' || banner.kind === 'jjok')}
+      {#key banner.id ?? banner.kind}<Impact kind={banner.kind} {sample} />{/key}
+    {/if}
     {#if banner}
       <EventBanner
         kind={banner.kind}

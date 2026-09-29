@@ -23,6 +23,7 @@
   import SeatProgress from './SeatProgress.svelte';
   import { seatStats, type SeatExtras } from './seat-stats.ts';
   import TargetModal from './TargetModal.svelte';
+  import { flipDepth } from './visual-upgrade/flip-depth.ts';
 
   type BoardSeat = SeatView & SeatExtras;
 
@@ -200,6 +201,7 @@
   data-busy={busy}
   data-turn-ms={turnMs}
   bind:this={root}
+  use:flipDepth
   onpointerdowncapture={skipIfBusy}
 >
   <div class="hud" inert={landscape} data-testid="hud">
