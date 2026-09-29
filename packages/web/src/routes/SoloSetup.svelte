@@ -17,9 +17,21 @@
 
   const s = $derived(settings.value);
   const resumable = $derived(current.resumable);
+  const previous = $derived(current.recordSource);
+  let confirmDialog = $state<HTMLDialogElement | null>(null);
 
   function start() {
+    if (previous !== null || current.saveError !== null) {
+      confirmDialog?.showModal();
+      return;
+    }
+    startConfirmed();
+  }
+
+  function startConfirmed() {
+    if (current.saveError !== null) current.discardCorruptSave();
     current.startSolo(settings.value, settings.value.difficulty);
+    confirmDialog?.close();
     location.hash = '#/game';
   }
 
@@ -29,6 +41,9 @@
 </script>
 
 <Screen title="혼자 연습">
+  {#if current.saveError}
+    <p class="save-error" role="alert" data-testid="save-error">{current.saveError}</p>
+  {/if}
   <fieldset>
     <legend>상대 난이도</legend>
     {#each DIFFICULTY_IDS as id (id)}
@@ -66,6 +81,20 @@
     <button type="button" class="button primary" data-choice="start" onclick={start}>시작</button>
   {/snippet}
 </Screen>
+
+<dialog bind:this={confirmDialog} aria-labelledby="new-game-title">
+  <h2 id="new-game-title">새 게임을 시작할까요?</h2>
+  <p>기존 판·잔액·기록이 새 게임으로 바뀝니다. 취소하면 현재 상태가 그대로 남습니다.</p>
+  {#if current.saveError}<p role="alert">
+      저장 데이터를 읽을 수 없습니다. 계속하면 기존 저장을 덮어씁니다.
+    </p>{/if}
+  <div class="confirm-actions">
+    <button type="button" data-choice="cancel-new" onclick={() => confirmDialog?.close()}
+      >취소</button
+    >
+    <button type="button" data-choice="confirm-new" onclick={startConfirmed}>새 게임 시작</button>
+  </div>
+</dialog>
 
 <style>
   fieldset {
@@ -119,5 +148,26 @@
 
   .link {
     color: var(--color-accent);
+  }
+
+  .save-error {
+    margin: var(--space-3);
+    color: var(--color-event-go);
+  }
+  dialog {
+    width: min(22rem, calc(100% - 2 * var(--space-4)));
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+  .confirm-actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .confirm-actions button {
+    min-height: var(--touch-min);
+    flex: 1;
   }
 </style>
