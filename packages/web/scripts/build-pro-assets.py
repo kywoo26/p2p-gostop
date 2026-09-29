@@ -1,6 +1,13 @@
-"""PA-03: pinned Docker tools; offline conversion, provenance and byte inventory."""
+# /// script
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
+# dependencies = ["pillow==12.3.0"]
+# ///
+"""PA-03: uv-pinned Pillow + Ubuntu 24.04 apt FFmpeg/libavif (tools/setup-host.sh); offline conversion, provenance and byte inventory."""
 from pathlib import Path
-from PIL import Image, ImageOps, ImageChops, ImageDraw
+try:
+    from PIL import Image, ImageOps, ImageChops, ImageDraw
+except ModuleNotFoundError:
+    raise SystemExit(f'Pillow가 없다. uv로 실행한다(PEP 723 의존성 자동 설치): uv run {__file__}')
 import hashlib, json, subprocess, tempfile, importlib.util
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'assets-src'

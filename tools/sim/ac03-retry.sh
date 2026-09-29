@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # spec AI-04·AI-05·AI-07·AI-08·AC-03, plan §1.5·§4 테스트 전략
-# 저장소 루트의 개발 컨테이너에서 실행: bash tools/sim/ac03-retry.sh <단계>
+# 저장소 루트에서 실행: bash tools/sim/ac03-retry.sh <단계>
 set -euo pipefail
 
 phase=${1:?baseline|training|validation|timing}
-workers=8
+workers=4 # AGENTS §5 공유 머신 상한. 워커 수는 결과에 영향이 없다(src/pool.ts).
 out=tools/sim/results/ac03-retry
 
 run_match() {

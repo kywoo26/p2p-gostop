@@ -287,7 +287,7 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 
 ## 12. 공개 중계 제어 채널 v1 (RP-02, NP-RP-01~08)
 
-이 절은 공개 중계의 **controlVersion 1** 계약이다. 첫 인증·초대 claim·코드 참여 제어 프레임은 중계가 소비하며 `packages/protocol`의 게임 wire **v2** `decode`나 게임 상대에게 전달하지 않는다. 기본 LAN 중계의 루프백 host 제한과 게임 `hello`/`sessionToken` 계약은 그대로다. 공개 모드는 명시적으로 켜며, host 자격은 IP나 Origin 대신 방 역할 토큰으로 확인한다. PC 앞단에서 HTTPS/WSS를 종료한다.
+이 절은 공개 중계의 **controlVersion 1** 계약이다. 첫 인증·초대 claim·코드 참여 제어 프레임은 중계가 소비하며 `packages/protocol`의 현재 게임 wire(`PROTOCOL_VERSION`) `decode`나 게임 상대에게 전달하지 않는다. 기본 LAN 중계의 루프백 host 제한과 게임 `hello`/`sessionToken` 계약은 그대로다. 공개 모드는 명시적으로 켜며, host 자격은 IP나 Origin 대신 방 역할 토큰으로 확인한다. PC 앞단에서 HTTPS/WSS를 종료한다.
 
 ### 실행 설정
 
@@ -304,7 +304,7 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 
 | 요청 | 자격·응답 |
 |---|---|
-| `GET /health` | `{relay:"p2p-gostop",ready:true,controlVersion:1,wireVersion:2}`. 방·이름·토큰·PC 상세를 포함하지 않는다 |
+| `GET /health` | `{relay:"p2p-gostop",ready:true,controlVersion:1,wireVersion:<PROTOCOL_VERSION>}`. 현재 게임 wire는 v3이다. 방·이름·토큰·PC 상세를 포함하지 않는다 |
 | `GET /version` | 현행 release/hash/path와 최대 2개 release의 wire·호환 표. 서로 다른 게임 wire는 플레이 호환으로 표시하지 않는다 |
 | `GET /` | 현행 `/r/<release>/<content-hash>/`로 302 |
 | `GET /r/<release>/<content-hash>/...` | 등록된 `web/dist`의 허용 파일만 제공. traversal·숨김 파일·설정 JSON·소스맵·심볼릭 링크는 제공하지 않는다 |
@@ -328,6 +328,6 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 
 ### 코드 참여 채널
 
-`WS /join?code=<12자리 코드>&name=<닉네임>`는 게임 WS와 별도다. `name`은 선택 사항이다. 중계는 URL 디코딩 뒤 제어문자·개행(U+2028·U+2029 포함)을 제거하고 화면에 표시되는 문자 20자를 넘으면 잘라낸다. 정리한 결과가 1~20자일 때만 메모리의 pending 레코드에 보관하고, 로그에는 남기지 않는다. 유효/무효/점유 코드 모두 먼저 `{"t":"relay-join-pending"}`을 받는다. 유효하고 빈 방이면 호스트에 `{"t":"relay-join-request","requestId":"...","nickname":"<정리한 닉네임>"}`를 보낸다(방당 최대 2건). `name`이 없거나 정리한 결과가 비면 `nickname` 필드를 생략한다. 호스트의 `relay-accept` 후 코드 참여자는 `{"t":"relay-accepted","roomId":"...","token":"<resumeToken>"}`을 받아 `/ws?role=guest&room=<roomId>`에 **새로 연결해 첫 프레임으로 인증**한다. 호스트가 `{"t":"relay-deny","requestId":"..."}`로 거절하면 중계는 pending을 정리하고 코드 참여자에 `{"t":"relay-join-denied"}`를 보낸 뒤 1000으로 닫는다. 수락·거절이 없으면 최대 60초 뒤 기존 `{"t":"relay-join-unavailable"}`로 끝난다. 호스트 수락 전에는 토큰·게임 내용을 코드 참여자에게 보내지 않는다. 존재/부재/점유 실패의 초기 응답은 같다.
+`WS /join?code=<12자리 코드>&name=<닉네임>`는 게임 WS와 별도다. `name`은 선택 사항이다. 중계는 URL 디코딩 뒤 제어문자·개행(U+2028·U+2029 포함)을 제거하고, 연속된 유니코드 공백을 한 칸으로 합친 뒤 양끝 공백을 제거한다. 화면에 표시되는 문자 20자를 넘으면 잘라내고 잘린 결과 끝의 공백도 제거한다. 정리한 결과가 1~20자일 때만 메모리의 pending 레코드에 보관하고, 로그에는 남기지 않는다. 유효/무효/점유 코드 모두 먼저 `{"t":"relay-join-pending"}`을 받는다. 유효하고 빈 방이면 호스트에 `{"t":"relay-join-request","requestId":"...","nickname":"<정리한 닉네임>"}`를 보낸다(방당 최대 2건). `name`이 없거나 정리한 결과가 비면 `nickname` 필드를 생략한다. 호스트의 `relay-accept` 후 코드 참여자는 `{"t":"relay-accepted","roomId":"...","token":"<resumeToken>"}`을 받아 `/ws?role=guest&room=<roomId>`에 **새로 연결해 첫 프레임으로 인증**한다. 호스트가 `{"t":"relay-deny","requestId":"..."}`로 거절하면 중계는 pending을 정리하고 코드 참여자에 `{"t":"relay-join-denied"}`를 보낸 뒤 1000으로 닫는다. 수락·거절이 없으면 최대 60초 뒤 기존 `{"t":"relay-join-unavailable"}`로 끝난다. 호스트 수락 전에는 토큰·게임 내용을 코드 참여자에게 보내지 않는다. 존재/부재/점유 실패의 초기 응답은 같다.
 
 초대와 미참여 코드는 15분, 방은 생성 후 절대 6시간, host 단절은 10분에 만료된다. 공개 WS는 25초 ping·60초 무응답 종료, 인증 전 전체 8개/방당 2개, 인증 뒤 host 1개·guest 1개다. 방은 중계 메모리에만 있고 재시작하면 모두 사라진다.

@@ -1,4 +1,4 @@
-// AI 롤아웃 벤치마크 (CI 아님). 사용: docker compose run --rm dev npm run bench -w packages/ai -- [반복 수]
+// AI 롤아웃 벤치마크 (CI 아님). 사용: npm run bench -w packages/ai -- [반복 수]
 // 같은 시드·휴리스틱으로 판을 끝까지 두어 reduce와 applyUnchecked의 반복 처리량을 비교한다.
 import { PRESETS, newRound, playerView } from '@p2p-gostop/engine';
 import { DEFAULT_WEIGHTS, IsmctsPolicy, Rng, rollout } from '../src/index.ts';

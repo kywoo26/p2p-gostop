@@ -20,7 +20,7 @@ updates:
       # 런타임은 Node 24 LTS
       - dependency-name: '@types/node'
         versions: ['>=25.0.0']
-      # Playwright는 Docker 이미지 태그(v1.63.0-noble: docker/Dockerfile, release.yml)와 함께 올린다
+      # Playwright는 브라우저 빌드가 바뀌어 스크린샷 기준 재생성이 필요하므로 수동으로 올린다
       - dependency-name: '@playwright/test'
         update-types: [version-update:semver-minor, version-update:semver-major]
       - dependency-name: playwright

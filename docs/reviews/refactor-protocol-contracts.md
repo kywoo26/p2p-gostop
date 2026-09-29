@@ -23,10 +23,10 @@
 
 ```sh
 # 전후 수신 결과 비교: 기존 wire 벡터 41 + 월 경계 입력 21
-docker compose run --rm -T dev node --input-type=module < docs/research/protocol-contract-probes.mjs.txt
+node --input-type=module < docs/research/protocol-contract-probes.mjs.txt
 # 타입 정합은 check, 런타임 성질은 Vitest
-docker compose run --rm dev npm run check -w packages/protocol
-docker compose run --rm dev npm exec -- vitest run packages/protocol/test/schema-contracts.test.ts
+npm run check -w packages/protocol
+npm exec -- vitest run packages/protocol/test/schema-contracts.test.ts
 wc -l packages/protocol/src/schema.ts packages/protocol/src/codec.ts packages/protocol/test/schema-contracts.test.ts
 ```
 
@@ -45,6 +45,6 @@ wc -l packages/protocol/src/schema.ts packages/protocol/src/codec.ts packages/pr
 | schema.ts / codec.ts LOC | 310 / 99 | 311 / 100 |
 | schema-contracts.test.ts | 없음 | 72줄 |
 
-전체 게이트는 루트 `docker compose run --rm dev`로 `npm run lint`, `npm run check`(knip 포함), `npm test`(기존 fast-check 포함), `npm run test:net -w packages/web`, `npm run test:browser`, `npm run build -w packages/web`, `npm run e2e -w packages/web`, `android/gradlew -p android assembleDebug testDebugUnitTest lint`를 실행한다. 최종 결과는 PR 본문에 기록한다.
+전체 게이트는 루트에서 `npm run lint`, `npm run check`(knip 포함), `npm test`(기존 fast-check 포함), `npm run test:net -w packages/web`, `npm run test:browser`, `npm run build -w packages/web`, `npm run e2e -w packages/web`, `android/gradlew -p android assembleDebug testDebugUnitTest lint`를 실행한다. 최종 결과는 PR 본문에 기록한다.
 
 API 근거: [Zod Mini](https://zod.dev/packages/mini), [리터럴 집합](https://zod.dev/api?id=literals), [출력 타입 추론](https://zod.dev/basics), [Vitest expectTypeOf](https://vitest.dev/api/expect-typeof.html), [fast-check 숫자 arbitrary](https://fast-check.dev/docs/core-blocks/arbitraries/primitives/number/). Context7 미노출로 plan §0.1의 공식 문서 대체 경로를 사용했다. 새 의존성은 없다.
