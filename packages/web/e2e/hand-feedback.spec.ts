@@ -10,7 +10,8 @@ for (const [width, height] of [
   [412, 915],
 ] as const) {
   for (const state of ['play', 'stop']) {
-    test(`${width}x${height} ${state}: 점수 위계·표식 별도 행·손패10`, async ({ page }, info) => {
+    test(`${width}x${height} ${state}: 점수 위계·카드 상태·손패10`, async ({ page }, info) => {
+      test.setTimeout(90_000);
       await page.setViewportSize({ width, height });
       await page.goto(`./#/dev/gallery/feedback-${state}`);
       await page.evaluate(() => document.fonts.ready);
@@ -21,25 +22,17 @@ for (const [width, height] of [
         const windows = [...document.querySelectorAll('.hand .art-window')].map((el) =>
           el.getBoundingClientRect(),
         );
-        const labels = [...document.querySelectorAll('.hand-label')].map((el) =>
-          el.getBoundingClientRect(),
-        );
         const slots = [...document.querySelectorAll('.hand .slot')].map((el) =>
           el.getBoundingClientRect(),
         );
         return {
           windows: windows.map((r) => ({ width: r.width, height: r.height })),
-          labelHeight: labels.map((r) => r.height),
-          collisions: labels.filter((label) => windows.some((art) => overlap(label, art))).length,
+          addOnNodes: document.querySelectorAll(
+            '.hand .hand-label, .hand .match-mark, .hand .action-mark',
+          ).length,
           slotOverlap: slots.some((r, i) => slots.slice(i + 1).some((other) => overlap(r, other))),
           monthMarks: document.querySelectorAll('.hand .mark').length,
-          labelSize: [...document.querySelectorAll('.hand-cue, .group-word')].map(
-            (el) => getComputedStyle(el).fontSize,
-          ),
-          brackets: [...document.querySelectorAll('.group-bracket')].map((el) => {
-            const rect = el.getBoundingClientRect();
-            return { width: rect.width, inside: rect.left >= 0 && rect.right <= innerWidth };
-          }),
+          actionMarks: document.querySelectorAll('.hand [data-hand-action]').length,
           inside: slots.every(
             (r) => r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
           ),
@@ -54,24 +47,20 @@ for (const [width, height] of [
           .slice(0, 5)
           .every((r) => r.height >= (width >= 410 ? 56 : 50) && r.width >= 48),
       ).toBe(true);
-      expect(report.labelHeight.every((h) => h === 16)).toBe(true);
       if (width === 412 && height === 915)
         expect(report.windows[0]!.height).toBeCloseTo(report.windows[9]!.height, 1);
-      expect(report.collisions).toBe(0);
+      expect(report.addOnNodes).toBe(0);
       expect(report.slotOverlap).toBe(false);
       expect(report.monthMarks).toBe(10);
-      expect(report.labelSize.every((size) => size === '14px')).toBe(true);
-      expect(report.brackets.every((b) => b.inside && b.width === (width >= 410 ? 184 : 160))).toBe(
-        true,
-      );
-      await expect(page.locator('.group-word')).toHaveText(['폭탄', '흔들']);
-      await expect(page.locator('.hand')).not.toContainText(/대기|폭3|흔3/);
+      expect(report.actionMarks).toBe(6);
+      await expect(page.locator('.hand')).not.toContainText(/먹기|확정|폭탄|흔들/);
       expect(report.inside).toBe(true);
       expect(report.scoreSize).toBe('24px');
       expect(report.secondarySize).toBe('14px');
       expect(report.tnum).toContain('tabular-nums');
-      await expect(page.locator('[data-hand-group="sample-bomb"]')).toHaveCount(3);
+      await expect(page.locator('[data-hand-group="1"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-action="shake"]')).toHaveCount(3);
+      await expect(page.locator('[data-hand-action="bomb"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-cue="secured"]')).toHaveCount(1);
       if (state === 'stop') {
         await expect(page.locator('[data-choice="stop"]')).toContainText('2,400냥');
@@ -99,6 +88,44 @@ for (const [width, height] of [
           fullPage: true,
         });
       }
+    });
+  }
+}
+
+for (const width of [360, 390, 412, 430]) {
+  for (const fixture of ['groups', 'bonus']) {
+    test(`${width}px ${fixture}: 월 묶음과 48px 노출`, async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto(`./#/dev/gallery/hand-layout-${fixture}`);
+      const rows = await page.locator('.hand .row').evaluateAll((elements) =>
+        elements.map((row) => ({
+          count: row.querySelectorAll('.slot').length,
+          months: [...row.querySelectorAll<HTMLElement>('.slot')].map((slot) =>
+            Number(slot.dataset['slot']),
+          ),
+          slots: [...row.querySelectorAll('.slot')].map((slot) => {
+            const rect = slot.getBoundingClientRect();
+            return { left: rect.left, right: rect.right, width: rect.width };
+          }),
+          artHeights: [...row.querySelectorAll('.art-window')].map(
+            (art) => art.getBoundingClientRect().height,
+          ),
+        })),
+      );
+      expect(rows).toHaveLength(2);
+      expect(rows.every((row) => row.count >= 4 && row.count <= 6)).toBe(true);
+      expect(
+        rows
+          .flatMap((row) => row.slots)
+          .every((slot) => slot.left >= 0 && slot.right <= width && slot.width >= 48),
+      ).toBe(true);
+      expect(rows[0]!.artHeights.every((height) => height >= 48)).toBe(true);
+      for (const month of [0, 1, 2]) {
+        const cards = Array.from({ length: 4 }, (_, i) => month * 4 + i);
+        const occupied = rows.filter((row) => row.months.some((id) => cards.includes(id)));
+        expect(occupied).toHaveLength(1);
+      }
+      await page.screenshot({ path: info.outputPath(`hand-layout-${fixture}-${width}.png`) });
     });
   }
 }

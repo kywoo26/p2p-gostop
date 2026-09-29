@@ -224,6 +224,7 @@
   >
     <Board
       view={pb.board}
+      soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
       {extras}
       unit={settings.value.unit}
       banner={pb.banner}
@@ -235,6 +236,7 @@
       onskip={() => controller.skipAnimations()}
       oninfochange={(open) => (boardInfoOpen = open)}
       onnotice={(text) => pb.showToast(text)}
+      onhintdisplayed={(level) => controller.recordHintUsage?.(level)}
       bind:root
     />
   </div>

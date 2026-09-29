@@ -8,7 +8,9 @@
   // 손가락을 떼기 전에 재생이 끝나 버튼이 풀릴 수 있다. 그 click은 건너뛰기용이었으므로 카드를 내지 않는다.
   import type { CardId } from '../lib/view-types.ts';
   import Card from './Card.svelte';
-  import { cardLabel, sortHand } from './cards.ts';
+  import { cardLabel } from './cards.ts';
+  import { handRows } from './hand-layout.ts';
+  import { getCard } from '@p2p-gostop/engine';
   import { HAND_CUES, type HandVisualGroup } from './hand-visual.ts';
 
   interface Props {
@@ -20,7 +22,8 @@
     matchable?: readonly CardId[];
     /** 시각 슬롯. 확정 획득 판정은 공개 보조 API가 전달하며 UI가 숨은 패를 읽지 않는다. */
     visualGroups?: readonly HandVisualGroup[];
-    /** 후속 사건 PR은 같은 group ID의 3개 data-slot을 이동 기준점으로 사용한다. */
+    cuesEnabled?: boolean;
+    /** 선택한 행동 묶음 ID. 2~4장 구성은 카드가 아닌 공개 계산 결과가 정한다. */
     selectedGroup?: string | null;
     /** 카드를 냈다. at = 탭 시각(performance.now 기준, spec AC-06 계측) */
     onplay?: ((id: CardId, at: number) => void) | undefined;
@@ -34,37 +37,31 @@
     playable,
     matchable = [],
     visualGroups = [],
+    cuesEnabled = true,
     selectedGroup = null,
     onplay,
     onpreview,
   }: Props = $props();
 
-  const ONE_ROW_MAX = 5;
   const LONG_PRESS_MS = 400;
-  const sorted = $derived(sortHand(cards));
-  const rows = $derived.by(() => {
-    if (sorted.length <= ONE_ROW_MAX) return [sorted];
-    const middle = Math.ceil(sorted.length / 2);
-    // compact는 최대 6열(360px에서 328px). 월 순서를 보존하며 행동 묶음 경계를 우선한다.
-    const split = compact
-      ? ([middle, middle + 1, middle - 1].find(
-          (at) =>
-            at <= 6 &&
-            sorted.length - at <= 6 &&
-            !visualGroups.some(
-              (group) =>
-                group.kind !== 'secured' &&
-                group.cards.includes(sorted[at - 1]!) &&
-                group.cards.includes(sorted[at]!),
-            ),
-        ) ?? middle)
-      : middle;
-    return [sorted.slice(0, split), sorted.slice(split)];
-  });
+  const rows = $derived(handRows(cards));
   const myTurn = $derived(playable.length > 0);
 
   /** 누르기 시작한 카드·시각, 그때 낼 수 있었는지 (반응형일 필요 없음) */
   let pressed: { id: CardId; at: number; armed: boolean } | null = null;
+  let handRoot: HTMLElement;
+  let previousOrder = '';
+  $effect(() => {
+    const order = rows.map((row) => row.join(',')).join('|');
+    if (previousOrder !== order) {
+      pressed = null;
+      onpreview?.(null);
+      previousOrder = order;
+    }
+  });
+  function moving(): boolean {
+    return handRoot?.querySelector('.card[style*="will-change"]') !== null;
+  }
 
   /** 부채꼴: 가운데에서 멀수록 기울이고 조금 내린다 */
   function fan(index: number, count: number): string {
@@ -83,6 +80,10 @@
    * 건너뛸 수 있으므로 버튼이 아니라 손패 영역에서 누른 카드를 기록한다.
    */
   function press(event: PointerEvent) {
+    if (moving()) {
+      pressed = null;
+      return;
+    }
     const slot =
       event.target instanceof Element ? event.target.closest<HTMLElement>('[data-slot]') : null;
     const id = slot === null ? null : Number(slot.dataset['slot']);
@@ -112,7 +113,7 @@
     const press = pressed;
     pressed = null;
     onpreview?.(null);
-    if (!playable.includes(id)) return;
+    if (!playable.includes(id) || moving()) return;
     // 키보드(Enter·Space)와 스크립트 click은 누르기 없이 온다(detail 0): 그대로 낸다
     if (event.detail !== 0) {
       // 포인터 탭: 같은 카드를 낼 수 있을 때 눌렀어야 한다(건너뛰기 탭 방지), 길게 누르기는 미리보기 전용
@@ -124,6 +125,7 @@
 </script>
 
 <div
+  bind:this={handRoot}
   class={['hand', { waiting: !myTurn, compact }]}
   role="group"
   aria-label="내 손패"
@@ -133,33 +135,46 @@
     <div class="row">
       {#each row as id, i (id)}
         {@const canPlay = playable.includes(id)}
-        {@const canMatch = canPlay && matchable.includes(id)}
-        {@const group = visualGroups.find(
-          (group) => group.kind !== 'secured' && group.cards.includes(id),
-        )}
-        {@const secured = visualGroups.some(
-          (group) => group.kind === 'secured' && group.cards.includes(id),
-        )}
-        {@const cue = secured ? 'secured' : canMatch ? 'matchable' : canPlay ? 'playable' : null}
-        {@const fragment = group ? row.filter((card) => group.cards.includes(card)) : []}
-        {@const groupStart = group && fragment[0] === id}
-        {@const firstFragment = group && sorted.find((card) => group.cards.includes(card)) === id}
+        {@const canMatch = cuesEnabled && canPlay && matchable.includes(id)}
+        {@const group = cuesEnabled
+          ? visualGroups.find((group) => group.kind !== 'secured' && group.cards.includes(id))
+          : undefined}
+        {@const secured =
+          cuesEnabled &&
+          visualGroups.some((group) => group.kind === 'secured' && group.cards.includes(id))}
+        {@const month = getCard(id).month}
+        {@const monthGroup =
+          cuesEnabled &&
+          month !== null &&
+          cards.filter((card) => getCard(card).month === month).length > 1}
         <button
           type="button"
           class={[
             'slot',
             {
               playable: canPlay,
-              matchable: canMatch,
               'group-selected': group && group.id === selectedGroup,
             },
           ]}
           style:transform={compact ? 'none' : fan(i, row.length)}
-          aria-label={`${cardLabel(id)}${secured ? ' (확정 획득 짝)' : canMatch ? ' (먹을 수 있음)' : ''}${group ? ` (${HAND_CUES[group.kind].label})` : ''} 내기`}
+          aria-label={[
+            cardLabel(id),
+            secured ? '확정 획득 짝' : canMatch ? '먹을 수 있음' : null,
+            group ? HAND_CUES[group.kind].label : null,
+            '내기',
+          ]
+            .filter(Boolean)
+            .join(', ')}
           disabled={!canPlay}
           data-slot={id}
-          data-hand-group={group?.id}
-          data-hand-cue={cue}
+          data-hand-group={monthGroup ? month : undefined}
+          data-hand-cue={cuesEnabled
+            ? secured
+              ? 'secured'
+              : canMatch
+                ? 'matchable'
+                : undefined
+            : undefined}
           data-hand-action={group?.kind}
           onpointerup={release}
           onpointercancel={abandon}
@@ -178,26 +193,6 @@
               markAt={rows.length > 1 && r === 0 ? 'top' : 'bottom'}
             />
           </span>
-          {#if compact}
-            <span class="hand-label" data-cue={cue} aria-hidden="true">
-              {#if !group && (cue === 'matchable' || cue === 'secured')}
-                <span class="match-mark"></span><span class="hand-cue">{HAND_CUES[cue].short}</span>
-              {/if}
-              {#if groupStart}
-                <span
-                  class="group-bracket"
-                  data-action={group.kind}
-                  style:width={`calc(${fragment.length} * var(--card-w-l) + ${(fragment.length - 1) * 8}px)`}
-                >
-                  {#if firstFragment}<span class="group-word">
-                      {#if cue === 'secured' || cue === 'matchable'}<span class="match-mark"
-                        ></span>{/if}
-                      {HAND_CUES[group.kind].short}
-                    </span>{/if}
-                </span>
-              {/if}
-            </span>
-          {/if}
         </button>
       {/each}
     </div>
@@ -241,18 +236,6 @@
     translate: 0 -6px;
   }
 
-  /* FR-12: 먹을 수 있는 카드는 아래에 금색 막대 (색만으로 구분하지 않도록 이름에도 "먹을 수 있음") */
-  .slot.matchable::after {
-    content: '';
-    position: absolute;
-    left: 20%;
-    right: 20%;
-    bottom: -2px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--color-event-go);
-  }
-
   .slot:disabled {
     cursor: default;
   }
@@ -289,9 +272,6 @@
   .compact .slot:has(:global(.card[style*='will-change'])) {
     z-index: var(--z-moving);
   }
-  .compact .slot:has(:global(.card[style*='will-change'])) .hand-label {
-    visibility: hidden;
-  }
   .compact .row {
     gap: 8px;
   }
@@ -301,77 +281,6 @@
   .compact .slot.playable :global(.card) {
     translate: none;
   }
-  .compact .slot.matchable::after {
-    display: none;
-  }
-  .hand-label {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    height: 16px;
-    color: var(--color-hud-text);
-    font-size: 14px;
-    font-weight: 650;
-    line-height: 16px;
-  }
-  .match-mark {
-    flex: none;
-    width: 8px;
-    height: 8px;
-    box-sizing: border-box;
-  }
-  .hand-label[data-cue='matchable'] {
-    color: var(--color-hand-match);
-  }
-  .hand-label[data-cue='matchable'] .match-mark {
-    border: 1.5px solid currentColor;
-    background: transparent;
-    rotate: 45deg;
-  }
-  .hand-label[data-cue='secured'] {
-    color: var(--color-hand-secured);
-  }
-  .hand-label[data-cue='secured'] .match-mark {
-    border-radius: 50%;
-    background: currentColor;
-    outline: 1px solid currentColor;
-    outline-offset: 2px;
-  }
-  .group-bracket {
-    position: absolute;
-    top: 1px;
-    left: 0;
-    height: 14px;
-    border: 1px solid var(--color-hand-bomb);
-    border-width: 0 1px 1px;
-    border-radius: 0 0 3px 3px;
-    pointer-events: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: var(--color-hand-bomb);
-    z-index: 1;
-  }
-  .group-bracket[data-action='shake'] {
-    color: var(--color-hand-shake);
-    border-color: currentColor;
-    border-style: dashed;
-  }
-  .group-word {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 6px;
-    background: var(--color-felt);
-  }
-  .group-word .match-mark {
-    color: var(--color-hand-secured);
-  }
-  .hand-label[data-cue='matchable'] .group-word .match-mark {
-    color: var(--color-hand-match);
-  }
   .compact .group-selected {
     outline: 2px dashed var(--color-hand-bomb);
     outline-offset: 2px;
@@ -379,13 +288,6 @@
   .compact .slot:focus-visible {
     outline: var(--focus-width) solid var(--color-focus);
     outline-offset: var(--focus-offset);
-  }
-  .compact .group-selected .hand-label {
-    background: var(--color-hand-bomb);
-    color: var(--color-on-accent);
-  }
-  .compact .group-selected .hand-cue {
-    color: inherit;
   }
   @media (min-width: 410px) {
     .hand.compact {

@@ -21,6 +21,13 @@ test('정상 저장과 재충전 전 v0 저장을 읽되 시드·판·잔액을 
   expect(migrated?.refilled).toEqual([0, 0]);
 });
 
+test('현재 판의 힌트 사용은 복원하고 옛 판 기록의 필드 부재는 미확인으로 남긴다 (FR-50)', () => {
+  const saved = parseSession({ ...original, hintUsage: 'basic' });
+  expect(saved?.hintUsage).toBe('basic');
+  const old = parseSession({ ...original, hintUsage: undefined });
+  expect(old?.hintUsage).toBeUndefined();
+});
+
 test('손상된 게임판·원장·미지원 옛 형식은 복원하지 않는다 (MN-05, NF-05)', () => {
   expect(parseSession({ ...original, game: { ...original.game, seats: [] } })).toBeNull();
   expect(
