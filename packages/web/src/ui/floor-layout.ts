@@ -9,6 +9,9 @@ interface Rect {
 export interface FloorCell extends FloorGroupView {
   x: number;
   y: number;
+  angle?: number;
+  dx?: number;
+  dy?: number;
 }
 const seeds = [
   [0.12, 0.16],
@@ -54,6 +57,45 @@ export function floorLayout(
     y: (height - cardHeight) / 2,
     width: cardWidth,
     height: cardHeight,
+  };
+  // 회전·흩뿌림은 인접 카드·더미와 교차하지 않는 셀 여유 안에서만 허용한다.
+  // 짧거나 조밀한 판에서는 범위를 줄여 전체 앞면을 우선한다.
+  const scatter = (cells: FloorCell[]): FloorCell[] => {
+    const envelopes = cells.map((c) => ({
+      x: c.x,
+      y: c.y,
+      width: cardWidth + (c.cards.length - 1) * 5,
+      height: cardHeight,
+    }));
+    const intersects = (a: Rect, b: Rect) =>
+      a.x < b.x + b.width + 1 &&
+      a.x + a.width + 1 > b.x &&
+      a.y < b.y + b.height + 1 &&
+      a.y + a.height + 1 > b.y;
+    return cells.map((cell, index) => {
+      if (cell.cards.length > 1 || options.includes(cell.cards[0]!)) return cell;
+      const id = cell.cards[0]!;
+      for (const factor of [1, 0.5, 0.25]) {
+        const angle = (((id * 7 + 3) % 9) - 4) * factor;
+        const dx = (((id * 5 + 1) % 7) - 3) * factor;
+        const dy = (((id * 3 + 2) % 7) - 3) * factor;
+        const radians = (Math.abs(angle) * Math.PI) / 180;
+        const w = cardWidth * Math.cos(radians) + cardHeight * Math.sin(radians);
+        const h = cardHeight * Math.cos(radians) + cardWidth * Math.sin(radians);
+        const r = {
+          x: cell.x + dx + (cardWidth - w) / 2,
+          y: cell.y + dy + (cardHeight - h) / 2,
+          width: w,
+          height: h,
+        };
+        if (r.x < 0 || r.y < 0 || r.x + w > width || r.y + h > height || intersects(r, deck))
+          continue;
+        if (envelopes.some((other, i) => i !== index && intersects(r, other))) continue;
+        envelopes[index] = r;
+        return { ...cell, angle, dx, dy };
+      }
+      return cell;
+    });
   };
   for (const gap of [12, 8, 6, 4]) {
     const sizes = blocks.map((b) => ({
@@ -123,14 +165,16 @@ export function floorLayout(
       return {
         folded,
         fits: true,
-        cells: blocks.flatMap((b, i) => {
-          let x = placed[i]!.x;
-          return b.chunks.map((cards) => {
-            const cell = { ...b.group, cards, x, y: placed[i]!.y };
-            x += cardWidth + (cards.length - 1) * 5 + monthGap;
-            return cell;
-          });
-        }),
+        cells: scatter(
+          blocks.flatMap((b, i) => {
+            let x = placed[i]!.x;
+            return b.chunks.map((cards) => {
+              const cell = { ...b.group, cards, x, y: placed[i]!.y };
+              x += cardWidth + (cards.length - 1) * 5 + monthGap;
+              return cell;
+            });
+          }),
+        ),
       };
   }
   // 과밀 경계에서만 여유를 일정하게 나눈다. 패를 감추거나 화면 밖으로 밀지 않는다.

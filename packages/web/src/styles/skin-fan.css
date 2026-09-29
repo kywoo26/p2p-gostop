@@ -2,15 +2,17 @@
 :root .board.board {
   --table-card: 56px;
   --table-card-height: calc(var(--table-card) / 0.614);
+  --capture-card: 32px;
+  --capture-card-height: calc(var(--capture-card) / 0.614);
   --table-gap: calc(var(--table-card) / 4);
   --table-muted: #c3b9a8;
   --table-border: #b9a98455;
   --table-radius: 4px;
   --fan-top: 48px;
-  --fan-capture: calc(var(--table-card-height) + 18px);
+  --fan-capture: calc(var(--capture-card-height) + 18px);
   --fan-seat: 52px;
   --fan-hand: max(104px, calc(var(--table-card-height) + 13px));
-  --fan-gap: 4px;
+  --fan-gap: 8px;
   --color-hud-muted: var(--table-muted);
   --color-hud-mine: #9bcebb;
   --color-event-ppeok-text: #e99d95;
@@ -86,8 +88,8 @@
   position: relative;
   display: block;
   min-width: 0;
-  --card-w-s: var(--table-card);
-  --card-h-s: var(--table-card-height);
+  --card-w-s: var(--capture-card);
+  --card-h-s: var(--capture-card-height);
 }
 :root .board .captured-zone > .captured {
   position: static;
@@ -125,12 +127,12 @@
 :root .board .captured-zone .stack {
   position: relative;
   display: flex;
-  width: calc(var(--table-card) + max(0, var(--pile-count) - 1) * 6px);
-  min-height: var(--table-card-height);
-  height: var(--table-card-height);
+  width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 6px);
+  min-height: var(--capture-card-height);
+  height: var(--capture-card-height);
 }
 :root .board .captured-zone .stack > .card + .card {
-  margin-left: calc(6px - var(--table-card));
+  margin-left: calc(6px - var(--capture-card));
 }
 :root .board .captured-zone .stack[data-count]:not([data-count='0'])::after {
   content: attr(data-count);
@@ -153,6 +155,10 @@
 }
 :root .board :is(.opponent-hud, .mine-hud) {
   min-width: 0;
+  padding: 2px 6px;
+  background: #eed5a108;
+  border-left: 2px solid transparent;
+  border-radius: var(--table-radius);
 }
 :root .board :is(.scoreboard, .scoreboard.expanded) {
   display: block;
@@ -270,6 +276,11 @@
 }
 :root .board .table.compact .deck {
   gap: 0;
+}
+:root .board .table.compact .deck-stack {
+  width: var(--table-card);
+  height: var(--table-card-height);
+  line-height: 0;
 }
 :root .board .table.compact .deck-count {
   position: absolute;
@@ -421,7 +432,7 @@
 }
 :root .board[data-awaiting='me'] .mine-hud,
 :root .board[data-awaiting='other'] .opponent-hud {
-  background: #eed5a108;
+  border-left-color: var(--skin-brass);
 }
 /* 세로 예산 부족 시 손패·바닥·획득패를 함께 한 단계 줄인다. */
 @media (max-width: 411px), (max-height: 880px) {
@@ -442,12 +453,12 @@
 /* 실제 카드 식별 우선: 손패와 바닥은 그림을 서로 가리지 않는다. */
 :root .board.board {
   --table-card: 48px;
-  --fan-hand: 92px;
-  --fan-seat: 48px;
-  --fan-gap: 2px;
+  --fan-hand: 102px;
+  --fan-seat: 52px;
+  --fan-gap: 8px;
 }
 :root .board.two-hands {
-  --fan-hand: 170px;
+  --fan-hand: 180px;
 }
 :root .board .table.compact .floor {
   row-gap: 6px;
@@ -456,7 +467,7 @@
   display: grid;
   grid-template-rows: repeat(2, var(--table-card-height));
   gap: 6px;
-  padding-top: 6px;
+  padding-top: 16px;
 }
 :root .board .hand.compact .row {
   display: flex;
@@ -501,12 +512,12 @@
 }
 @media (max-height: 760px) {
   :root .board.board {
-    --fan-capture: calc(var(--table-card-height) + 14px);
+    --fan-capture: calc(var(--capture-card-height) + 18px);
     --fan-seat: 40px;
-    --fan-gap: 0px;
+    --fan-gap: 6px;
   }
   :root .board.two-hands {
-    --fan-hand: calc(2 * var(--table-card-height) + 4px);
+    --fan-hand: calc(2 * var(--table-card-height) + 16px);
   }
   :root .board .captured-zone .group {
     grid-template-rows: 12px 1fr;
@@ -514,6 +525,9 @@
   :root .board .captured-zone .name {
     height: 12px;
     line-height: 12px;
+  }
+  :root .board :is(.opponent-hud, .mine-hud) {
+    padding-block: 0;
   }
   :root .board .seat-bar .identity {
     height: 14px;
@@ -533,7 +547,7 @@
   }
   :root .board .hand.compact {
     gap: 4px;
-    padding-top: 0;
+    padding-top: 12px;
   }
   :root .board .hand.compact .slot.selected .art-window {
     transform: none;
@@ -610,4 +624,21 @@
 
 :root .board .decision-area .flip-only {
   pointer-events: auto;
+}
+
+/* 획득 요약과 낼 손패는 크기·경계로 구분한다. 선택 가능한 카드 면은 그대로 둔다. */
+:root .board .captured-zone.mine::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  border-top: 1px solid var(--table-border);
+  pointer-events: none;
+}
+
+@media (max-height: 760px) {
+  :root .board .captured-zone.mine::after {
+    bottom: -9px;
+  }
 }

@@ -147,12 +147,12 @@
   content: '';
   position: absolute;
   left: -3px;
-  top: -6px;
+  top: -2px;
   width: calc(
     var(--card-w-l) + (var(--action-count) - 1) *
       ((100cqw - var(--card-w-l)) / max(1, var(--fan-count) - 1)) + 6px
   );
-  height: calc(var(--card-h-l) + 10px);
+  height: calc(var(--card-h-l) + 4px);
   box-sizing: border-box;
   border: 2px solid var(--action-color);
   border-radius: 6px;

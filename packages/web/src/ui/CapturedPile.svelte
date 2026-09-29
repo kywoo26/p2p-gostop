@@ -12,9 +12,10 @@
     label: string;
     /** 잠깐 강조할 카드 (피 뺏기, M3 리뷰 I-4) */
     highlight?: readonly CardId[];
+    summary?: boolean;
   }
 
-  let { stats, label, highlight = [] }: Props = $props();
+  let { stats, label, highlight = [], summary = false }: Props = $props();
 
   function describe(name: string, value: number, cards: number, isPi: boolean): string {
     return isPi ? `${name} ${value} (${cards}장)` : `${name} ${value}`;
@@ -40,10 +41,10 @@
       >
       <span
         class="stack"
-        style:--pile-count={Math.min(4, pile.cards.length)}
+        style:--pile-count={summary ? Math.min(4, pile.cards.length) : pile.cards.length}
         data-count={pile.cards.length}
       >
-        {#each pile.cards.slice(-4) as id (id)}
+        {#each summary ? pile.cards.slice(-4) : pile.cards as id (id)}
           <Card {id} size="s" marks={false} highlight={highlight.includes(id)} />
         {/each}
       </span>

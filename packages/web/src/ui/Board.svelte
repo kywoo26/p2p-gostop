@@ -334,7 +334,7 @@
     {
       'hud-expanded': expandedHud,
       selecting,
-      'two-hands': (me.hand?.length ?? 0) > 5,
+      'two-hands': (me.hand?.length ?? 0) > 6,
       'first-pick': pickFirst !== null,
       'go-stop': pending?.kind === 'goStop',
     },
@@ -362,7 +362,12 @@
     <div class="menu-reserved" data-testid="menu-reserved" aria-hidden="true">메뉴</div>
   </div>
   <div class="captured-zone" data-anchor="opp-hand">
-    <CapturedPile stats={opponentStats} label="상대 획득패" highlight={view.highlight ?? []} />
+    <CapturedPile
+      summary
+      stats={opponentStats}
+      label="상대 획득패"
+      highlight={view.highlight ?? []}
+    />
   </div>
   <div class="opponent-hud">
     <div class="scoreboard" class:expanded={expandedHud} aria-label="상대 점수판">
@@ -507,7 +512,7 @@
     </div>
   </div>
   <div class="captured-zone mine">
-    <CapturedPile stats={myStats} label="내 획득패" highlight={view.highlight ?? []} />
+    <CapturedPile summary stats={myStats} label="내 획득패" highlight={view.highlight ?? []} />
   </div>
   <div class="hand-zone" inert={landscape}>
     <Hand

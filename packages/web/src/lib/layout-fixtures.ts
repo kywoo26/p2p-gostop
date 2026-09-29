@@ -145,7 +145,8 @@ export function fanFixture(
               { month: 3, kind: 'loose', owner: null, cards: [8] },
               { month: 4, kind: 'loose', owner: null, cards: [12, 13] },
               { month: 9, kind: 'loose', owner: null, cards: [32, 33] },
-              { month: 10, kind: 'loose', owner: null, cards: [36] },
+              { month: 10, kind: 'loose', owner: null, cards: [36, 37] },
+              { month: 11, kind: 'loose', owner: null, cards: [40] },
             ],
     pending:
       state === 'waiting'

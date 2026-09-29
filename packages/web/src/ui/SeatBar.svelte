@@ -46,11 +46,11 @@
 >
   <div class="seat-main">
     <h2 class="identity" title={name}>
-      {#if who === '나' && dealer}<span class="dealer" aria-label="선">선</span>{/if}
+      {#if who === '나' && dealer}<span class="dealer">선</span>{/if}
       <span class="who">{who}</span>
       {#if name !== who}<span class="name">{name}</span>{/if}
       {#if who === '나'}
-        <span class="counters" aria-label={`뻑 ${ppeokCount}회, 흔들기 ${shakes}회`}>
+        <span class="counters" role="img" aria-label={`뻑 ${ppeokCount}회, 흔들기 ${shakes}회`}>
           <span class="counter" aria-hidden="true" title={`뻑 ${ppeokCount}회`}>
             <svg viewBox="0 0 20 20" width="16" height="16"
               ><path
@@ -147,9 +147,9 @@
     flex: none;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
-    background: var(--skin-brass);
-    color: var(--skin-ink);
+    border-radius: 2px;
+    background: #843d38;
+    color: var(--skin-paper);
     font-weight: 600;
   }
   .counter {

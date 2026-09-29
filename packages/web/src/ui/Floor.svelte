@@ -55,7 +55,11 @@
   const layout = $derived(
     floorLayout(groups, options, bounds.width, bounds.height, bounds.cardWidth),
   );
-  const cells = $derived(layout.cells);
+  const cells = $derived(
+    compact
+      ? layout.cells
+      : groups.map((group) => ({ ...group, x: 0, y: 0, angle: 0, dx: 0, dy: 0 })),
+  );
 </script>
 
 <div
@@ -94,6 +98,8 @@
         class={['group', `kind-${group.kind}`]}
         style:left={`${group.x}px`}
         style:top={`${group.y}px`}
+        style:rotate={`${group.angle ?? 0}deg`}
+        style:translate={`${group.dx ?? 0}px ${group.dy ?? 0}px`}
         data-month={group.month}
         data-hand-link={handLinks[group.month]}
         aria-label={`${group.month}월 ${group.cards.length}장${group.kind === 'loose' ? '' : ' 뻑'}${handLinks[group.month] === 'bomb' ? ', 손패 폭탄 후보의 짝' : handLinks[group.month] === 'chongtong' ? ', 손패 총통 후보의 짝' : ''}`}

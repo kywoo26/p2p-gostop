@@ -28,6 +28,8 @@ test('카드 내기: 손패 5장이 버튼이고 모달이 없다', async () => 
   expect(minTouch(buttons)).toBeGreaterThanOrEqual(48);
   expect(screen.getByRole('dialog').elements()).toHaveLength(0);
   await expect.element(screen.getByRole('img', { name: '더미 14장' })).toBeVisible();
+  const info = screen.container.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')!;
+  info.showModal();
   const progress = screen.getByRole('list', { name: '내 족보 진행도' });
   await expect.element(progress).toBeVisible();
   expect(progress.element().textContent).toContain('고도리 3/3');
@@ -35,10 +37,10 @@ test('카드 내기: 손패 5장이 버튼이고 모달이 없다', async () => 
 
 test('대상 고르기: 바닥 2장 선택지, 손패는 잠김', async () => {
   const screen = await render(Board, { view: target });
-  const dialog = screen.getByRole('dialog', { name: '어느 패를 먹을까요?' });
+  const dialog = screen.getByRole('dialog', { name: '먹을 바닥패 선택' });
   await expect.element(dialog).toBeVisible();
-  await expect.element(dialog.getByRole('button', { name: '9월 국진 먹기' })).toBeVisible();
-  await expect.element(dialog.getByRole('button', { name: '9월 청단 먹기' })).toBeVisible();
+  await expect.element(dialog.getByRole('button', { name: '9월 국진' })).toBeVisible();
+  await expect.element(dialog.getByRole('button', { name: '9월 청단' })).toBeVisible();
   for (const b of screen.getByRole('button', { name: /내기$/ }).elements()) {
     expect((b as HTMLButtonElement).disabled).toBe(true);
   }
@@ -46,7 +48,7 @@ test('대상 고르기: 바닥 2장 선택지, 손패는 잠김', async () => {
 
 test('고/스톱: 2고·스톱 버튼과 스톱 금액', async () => {
   const screen = await render(Board, { view: goStop });
-  const dialog = screen.getByRole('dialog', { name: '고? 스톱?' });
+  const dialog = screen.getByRole('dialog', { name: '고 하시겠습니까?' });
   await expect.element(dialog).toBeVisible();
   expect(dialog.element().textContent).toContain('9점');
   expect(dialog.element().textContent).toContain('2,000냥');
@@ -161,9 +163,10 @@ test('배너에 주체가 붙고 예약 선택 행 안에 뜬다 (UX-08, M3 리�
   expect(layer!.querySelectorAll('.banner')).toHaveLength(1);
 });
 
-test('상시 정보: 양쪽 족보 진행도·뻑·흔들기·폭탄, 내 배수 (spec 6.1, M3 리뷰 I-4)', async () => {
+test('판 정보 상세: 양쪽 족보 진행도·뻑·흔들기·폭탄, 내 배수 (spec 6.1, M3 리뷰 I-4)', async () => {
   await page.viewport(390, 844);
   const screen = await render(Board, { view: play });
+  screen.container.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')!.showModal();
   const mine = screen.getByRole('list', { name: '내 족보 진행도' }).element().textContent ?? '';
   const theirs = screen.getByRole('list', { name: '상대 족보 진행도' }).element().textContent ?? '';
   for (const text of [mine, theirs]) {
@@ -174,7 +177,7 @@ test('상시 정보: 양쪽 족보 진행도·뻑·흔들기·폭탄, 내 배수
   expect(theirs).toContain('뻑 1');
   expect(theirs).toContain('피 5/10');
   expect(screen.container.querySelector('.me .multiplier')?.getAttribute('aria-label')).toBe(
-    '나 누적 배수, 박 제외 ×2',
+    '나 누적 배수, 박 제외 2배',
   );
   // 한 손 세로 화면: 게임판이 가로로 넘치지 않는다
   const board = screen.getByTestId('board').element();
