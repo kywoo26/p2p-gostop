@@ -40,8 +40,9 @@ import {
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import type { RecordRow } from '../lib/view-types.ts';
+import { WsTransport } from '../net/index.ts';
 import { emptyBoard, random32, randomHex, vibrateFor } from './common.ts';
-import { openLink, type LinkState, type RelayPeer } from './link.ts';
+import { linkStateOf, openLink, type LinkState, type RelayPeer } from './link.ts';
 import type { RelayAddress } from './role.ts';
 import { HostSaveStore, saveTimerPreference, type HostConfig, type HostSave } from './host-save.ts';
 import { hostBoard, hostEvents, hostSummary, type PendingAction } from './host-view.ts';
@@ -141,9 +142,22 @@ export class HostGame implements GameController {
     this.records = this.resume?.records ?? [];
     this.roundsPlayed = this.records.length;
     if (options.transport) {
-      this.ws = null;
       this.transport = options.transport;
-      this.link = 'open';
+      if (options.transport instanceof WsTransport) {
+        const remote = options.transport;
+        const off = remote.onConnection((event) => {
+          const state = linkStateOf(event);
+          if (state !== null) this.link = state;
+        });
+        this.ws = {
+          dispose: off,
+          reconnect: (force) => remote.reconnect(force),
+        };
+        this.link = remote.state === 'open' ? 'open' : 'connecting';
+      } else {
+        this.ws = null;
+        this.link = 'open';
+      }
     } else {
       const ws = openLink({
         role: 'host',

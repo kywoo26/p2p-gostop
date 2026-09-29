@@ -1,0 +1,42 @@
+# RP-03A/B: Windows 수동 스크립트가 관리하는 공개 중계 하나만 포함한다.
+name: p2p-gostop-relay
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: docker/relay/Dockerfile
+    image: p2p-gostop-relay:${RELAY_IMAGE_TAG:-local}
+    restart: 'no'
+    init: true
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 1.0
+    ports:
+      - '127.0.0.1:17777:17777'
+    environment:
+      RELAY_PUBLIC: '1'
+      RELAY_CREATION_SECRET_FILE: /run/secrets/creation-secret
+      # 기본값은 ps/down 조회용이다. start 스크립트가 실제 origin/release를 넘긴다.
+      RELAY_ALLOWED_ORIGINS: ${RELAY_ALLOWED_ORIGINS:-http://127.0.0.1:17777}
+      RELAY_RELEASE: ${RELAY_RELEASE:-v0.0.0}
+      RELAY_DIST_DIR: /app/packages/web/dist
+      PORT: '17777'
+      HOST: 0.0.0.0
+    volumes:
+      - type: bind
+        source: ${RELAY_CREATION_SECRET_PATH:-/dev/null}
+        target: /run/secrets/creation-secret
+        read_only: true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:17777/health').then(r => r.json()).then(j => process.exit(j.relay === 'p2p-gostop' && j.ready === true ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
