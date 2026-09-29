@@ -361,8 +361,19 @@ export class HostSession {
       return false;
     }
   }
-  private reject(reason: ErrorCode, seq = this.seq, message: string = reason): void {
-    this.send({ t: 'reject', seq, reason, message: message.slice(0, 200) });
+  private reject(
+    reason: ErrorCode,
+    seq = this.seq,
+    message: string = reason,
+    requestId?: number,
+  ): void {
+    this.send({
+      t: 'reject',
+      seq,
+      reason,
+      message: message.slice(0, 200),
+      ...(requestId === undefined ? {} : { requestId }),
+    });
   }
   private changed(): void {
     for (const handler of this.changeHandlers) {
@@ -402,10 +413,10 @@ export class HostSession {
         }
       : view;
   }
-  private snapshot(): void {
+  private snapshot(requestId?: number): void {
     const view = this.viewFor(1);
     if (view === null) {
-      this.sendStatus();
+      this.sendStatus(requestId);
       return;
     }
     const sent = this.send({
@@ -415,16 +426,22 @@ export class HostSession {
       ledger: summarizeLedger(this.ledger),
       ...(this.settlementView ? { settlement: this.settlementView } : {}),
       status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
     });
-    if (!sent) this.sendStatus();
+    if (!sent) this.sendStatus(requestId);
   }
-  private sendStatus(): void {
-    this.send({ t: 'status', seq: this.seq, status: this.status });
+  private sendStatus(requestId?: number): void {
+    this.send({
+      t: 'status',
+      seq: this.seq,
+      status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
+    });
   }
-  private publish(events: readonly EngineEvent[]): void {
+  private publish(events: readonly EngineEvent[], requestId?: number): void {
     if (this.state === null) return;
     if (events.length === 0) {
-      this.snapshot();
+      this.snapshot(requestId);
       return;
     }
     const from = this.seq + 1;
@@ -441,8 +458,9 @@ export class HostSession {
       ledger: summarizeLedger(this.ledger),
       ...(this.settlementView ? { settlement: this.settlementView } : {}),
       status: this.status,
+      ...(requestId === undefined ? {} : { requestId }),
     });
-    if (!sent) this.snapshot();
+    if (!sent) this.snapshot(requestId);
   }
 
   // ---- 판 흐름 ----
@@ -496,7 +514,7 @@ export class HostSession {
   private seedOf(round: RoundRecord): readonly [number, number, number, number] {
     return combineSeed(fromHex(round.hostSecret)!, fromHex(round.guestSecret ?? '')!);
   }
-  private finishRound(): void {
+  private finishRound(requestId?: number): void {
     const round = this.current;
     if (
       this.state?.phase !== 'end' ||
@@ -526,7 +544,7 @@ export class HostSession {
     this.bankrupt = ([0, 1] as const).filter((seat) => this.ledger.balances[seat] <= 0);
     const bankrupt = this.bankrupt.length > 0;
     this.setStage(bankrupt ? 'bankrupt' : 'settled');
-    this.snapshot();
+    this.snapshot(requestId);
     if (round.guestSecret !== null && round.guestHash !== null) {
       this.lastReveal = {
         t: 'revealHost',
@@ -573,7 +591,7 @@ export class HostSession {
     this.sendStatus();
     this.send({ t: 'sessionEnd', reason, seat });
   }
-  private applyAction(action: Action): boolean {
+  private applyAction(action: Action, requestId?: number): boolean {
     if (
       this.state === null ||
       this.current === null ||
@@ -589,12 +607,12 @@ export class HostSession {
     this.current.actions.push(action);
     for (const payout of this.state.instantPayouts.slice(oldCount))
       this.ledger = withInstantPayout(this.ledger, payout, this.rules);
-    this.publish(result.events);
-    if (action.type === 'push') this.finishRound();
-    else if (this.state.phase === 'end') this.endRound();
+    this.publish(result.events, requestId);
+    if (action.type === 'push') this.finishRound(requestId);
+    else if (this.state.phase === 'end') this.endRound(requestId);
     return true;
   }
-  private endRound(): void {
+  private endRound(requestId?: number): void {
     if (this.state === null) return;
     const winner = this.state.result?.winner;
     if (
@@ -603,15 +621,15 @@ export class HostSession {
       legalActions(this.state, winner).some((a) => a.type === 'push')
     ) {
       this.setStage('settled');
-      this.snapshot();
-    } else this.finishRound();
+      this.snapshot(requestId);
+    } else this.finishRound(requestId);
   }
 
   // ---- 수신 ----
 
   private acceptAction(message: Extract<GuestMessage, { t: 'action' }>): void {
     if (message.seq !== this.seq) {
-      this.reject('STALE_SEQ', message.seq);
+      this.reject('STALE_SEQ', message.seq, 'STALE_SEQ', message.requestId);
       this.snapshot();
       return;
     }
@@ -621,11 +639,11 @@ export class HostSession {
       this.state === null ||
       (this.state.phase === 'end' && message.payload.type !== 'push')
     ) {
-      this.reject('ROUND_NOT_READY', message.seq);
+      this.reject('ROUND_NOT_READY', message.seq, 'ROUND_NOT_READY', message.requestId);
       return;
     }
-    if (message.payload.seat !== 1 || !this.applyAction(message.payload))
-      this.reject('ILLEGAL_ACTION', message.seq);
+    if (message.payload.seat !== 1 || !this.applyAction(message.payload, message.requestId))
+      this.reject('ILLEGAL_ACTION', message.seq, 'ILLEGAL_ACTION', message.requestId);
   }
   /** 재접속 hello: 단계마다 게스트에게 빠졌을 수 있는 것을 모두 다시 보낸다(멱등, #13) */
   private resync(lastSeq: number | undefined): void {
@@ -802,7 +820,12 @@ export class HostSession {
         this.acceptAction(message);
         break;
       case 'push':
-        this.acceptAction({ t: 'action', seq: message.seq, payload: { type: 'push', seat: 1 } });
+        this.acceptAction({
+          t: 'action',
+          seq: message.seq,
+          payload: { type: 'push', seat: 1 },
+          ...(message.requestId === undefined ? {} : { requestId: message.requestId }),
+        });
         break;
       case 'ping':
         this.send({ t: 'pong' });

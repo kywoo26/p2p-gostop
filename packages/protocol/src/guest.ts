@@ -134,6 +134,7 @@ export class GuestSession {
    * 알아채기 위한 감시다. 응답이 오면 지우고, 시간이 지나면 hello로 다시 인증한 뒤 다시 보낸다.
    */
   private readonly inflight = new Map<string, PendingRequest>();
+  private nextRequestId = 1;
   private now = 0;
   private readonly ackTimeout: number;
   private helloRetryAt: number | null = null;
@@ -256,7 +257,7 @@ export class GuestSession {
       // 보내기 전에 저장 기회를 준다: 저장본의 sent가 실제로 보낸 것보다 적으면 검증이 거짓 실패한다.
       this.changed();
     }
-    this.sendGame({ t: 'action', seq: this.seq, payload });
+    this.sendGame({ t: 'action', seq: this.seq, payload, requestId: this.nextRequestId++ });
   }
   /** settled에서 승자가 게스트이면 밀기를 요청한다 */
   push(): void {
@@ -265,7 +266,7 @@ export class GuestSession {
       observed.sent.push({ type: 'push', seat: 1 });
       this.changed();
     }
-    this.sendGame({ t: 'push', seq: this.seq });
+    this.sendGame({ t: 'push', seq: this.seq, requestId: this.nextRequestId++ });
   }
   /** settled 단계에서 다음 판을 요청한다. 시작은 호스트가 한다 */
   requestNextRound(): void {
@@ -295,21 +296,38 @@ export class GuestSession {
     this.outbox.clear();
     for (const message of pending) this.sendGame(message);
   }
+  private readySatisfied(
+    message: Extract<GuestMessage, { t: 'ready' }>,
+    status: RoundStatus,
+  ): boolean {
+    return status.round > message.round || (status.round === message.round && status.ready[1]);
+  }
+  private pruneSatisfiedReady(status: RoundStatus): void {
+    const pending = this.outbox.get('ready');
+    if (pending?.t === 'ready' && this.readySatisfied(pending, status)) this.outbox.delete('ready');
+    const inflight = this.inflight.get('ready');
+    if (inflight?.message.t === 'ready' && this.readySatisfied(inflight.message, status))
+      this.inflight.delete('ready');
+  }
   /** 응답의 순번·판·원장 위치가 해당 요청을 실제로 덮을 때만 감시를 지운다. */
   private settle(m: HostMessage): void {
     for (const [key, pending] of this.inflight) {
       const request = pending.message;
       let answered = false;
-      if (request.t === 'action') {
+      if (request.t === 'action' || request.t === 'push') {
+        const directResponse =
+          m.t === 'events' || m.t === 'snapshot' || m.t === 'status' || m.t === 'reject';
         answered =
-          (m.t === 'events' && m.to > request.seq) ||
-          (m.t === 'snapshot' && m.seq >= request.seq) ||
-          (m.t === 'reject' && m.seq === request.seq);
+          directResponse &&
+          ((request.requestId !== undefined && m.requestId === request.requestId) ||
+            (m.requestId === undefined &&
+              ((m.t === 'events' && m.to > request.seq) ||
+                (m.t === 'snapshot' && m.seq > request.seq))));
       } else if (request.t === 'ready') {
         answered =
           (m.t === 'status' || m.t === 'snapshot') &&
-          m.status.round >= request.round &&
-          m.status.rev > pending.statusRev;
+          (this.readySatisfied(request, m.status) ||
+            (m.status.round >= request.round && m.status.rev > pending.statusRev));
       } else if (request.t === 'bankruptcy') {
         answered =
           ((m.t === 'events' || m.t === 'snapshot' || m.t === 'status') &&
@@ -599,8 +617,9 @@ export class GuestSession {
     switch (m.t) {
       case 'welcome':
         this.welcome(m);
+        this.pruneSatisfiedReady(m.status);
         this.linked = true;
-        this.awaitingResync = this.outbox.size > 0 && m.status.stage !== 'lobby';
+        this.awaitingResync = m.status.stage !== 'lobby';
         if (this.awaitingResync) this.helloRetryAt ??= this.now + this.ackTimeout;
         else {
           this.helloRetryAt = null;
@@ -662,6 +681,8 @@ export class GuestSession {
       case 'pong':
         break;
     }
+    if (m.t === 'snapshot' || m.t === 'events' || m.t === 'status')
+      this.pruneSatisfiedReady(m.status);
     if (this.awaitingResync && (m.t === 'snapshot' || m.t === 'events' || m.t === 'status')) {
       this.awaitingResync = false;
       this.helloRetryAt = null;

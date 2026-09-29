@@ -35,12 +35,12 @@
 |---|---|---|---|
 | 게스트→호스트 | `hello` | `v,name,sessionToken?,lastSeq?,epoch?` | 최초 접속·토큰 재접속·마지막 수신 순번. 이름은 제어 문자 금지 |
 | 호스트→게스트 | `welcome` | `v,seat,sessionToken,rules,ledger,names,epoch,seq,status` | 좌석 1, 원장 **요약**, 호스트 세대(epoch)·현재 순번, 단계 |
-| 호스트→게스트 | `snapshot` | `seq,view,ledger,settlement?,status` | 완전한 게스트 화면(BoardView) |
-| 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
-| 호스트→게스트 | `status` | `seq,status` | 화면은 그대로이고 단계·준비·파산 상태만 바뀜 |
-| 게스트→호스트 | `action` | `seq,payload` | 보낸 시점의 마지막 수신 순번과 엔진 액션(여분 필드는 지워진다) |
-| 게스트→호스트 | `push` | `seq` | settled에서 승자 게스트의 밀기 선택. 호스트는 `legalActions`로 재검사한다 |
-| 호스트→게스트 | `reject` | `seq,reason,message` | 거부. `reason`은 아래 코드만 |
+| 호스트→게스트 | `snapshot` | `seq,view,ledger,settlement?,status,requestId?` | 완전한 게스트 화면(BoardView) |
+| 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status,requestId?` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
+| 호스트→게스트 | `status` | `seq,status,requestId?` | 화면은 그대로이고 단계·준비·파산 상태만 바뀜 |
+| 게스트→호스트 | `action` | `seq,payload,requestId?` | 보낸 시점의 마지막 수신 순번과 엔진 액션(여분 필드는 지워진다) |
+| 게스트→호스트 | `push` | `seq,requestId?` | settled에서 승자 게스트의 밀기 선택. 호스트는 `legalActions`로 재검사한다 |
+| 호스트→게스트 | `reject` | `seq,reason,message,requestId?` | 거부. `reason`은 아래 코드만 |
 | 게스트→호스트 | `ping` / 호스트→게스트 `pong` | 없음 | 하트비트 |
 | 게스트→호스트 | `log` | `entries[]` | 진단 로그(64KB, 줄당 2KB) |
 | 호스트→게스트 | `commitHost` | `round,hash` | 호스트 32바이트 난수의 SHA-256 |
@@ -122,8 +122,8 @@
 - 호스트: 분배 전이면 게스트가 다른 해시로 다시 커밋해도 받아 준다(새로고침으로 원문을 잃은 경우. 호스트 원문은 아직 비밀이라 안전). 분배 뒤 들어온 지난 핸드셰이크 메시지는 무시한다.
 - 토큰: 게스트가 토큰을 받았음이 확인되기 전(welcome 뒤에만 보낼 수 있는 메시지나 토큰 실은 hello를 받기 전)에는 토큰 없는 hello를 다시 받아 준다(welcome 유실 복구). 확인 뒤에는 토큰 없는 hello를 거절한다(NF-06). 게스트는 welcome 전에는 판 메시지에 응답하지 않는다.
 - **소켓 인증(재검토 중요 2, #40)**: 호스트는 지금 게스트 소켓이 인증됐는지(`host.authenticated`)를 따로 든다. 중계 알림 joined·left와 전송 끊김에서 false로 되돌리고(absent는 되돌리지 않는다: Android 중계는 프레임 하나를 전달하지 못했을 때도 보낸 쪽에 absent를 보내는데 그때 게스트 소켓은 그대로다. absent는 `host.peer`·`connected`에만 기록한다), 그 소켓에서 hello를 받아들이면(토큰이 생긴 뒤에는 토큰 hello만) true가 된다. false인 동안에는 `hello`·`ping`만 처리하고 나머지(action·ready·bankruptcy·ledgerGet·log·잘못된 메시지)는 **응답 없이 버린다**(STALE_SEQ 거부나 스냅샷도 보내지 않는다. 버전 불일치 hello만 안내). 그래서 최신 우선 중계에서 LAN의 다른 기기가 진짜 게스트를 4001로 밀어내도 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다. 알림이 없는 전송(메모리)은 끊김 알림이 없으므로 첫 hello 뒤 계속 인증 상태다.
-- **게스트 outbox**: 게스트는 지금 소켓에서 welcome을 받기 전(끊김·present·joined·left 뒤, absent는 제외)에 만든 요청(action·ready·bankruptcy·ledgerGet)을 보내지 않고 들고 있다가 welcome과 첫 재동기화 프레임을 받은 뒤에 보낸다(로비에서는 welcome 직후, 액션은 마지막 것 하나). 인증 전 소켓에서 말없이 버려지지 않게 하기 위해서다.
-- **응답 감시(#40)**: 게스트는 보낸 요청마다 호스트 응답을 기다린다. action의 응답은 요청 순번 이상의 events·snapshot(이벤트가 없는 합법 수는 같은 순번의 snapshot) 또는 같은 순번의 reject, ready·bankruptcy는 요청 당시보다 새 상태 rev, ledgerGet은 같은 from의 ledgerPage로 확인한다. welcome 뒤에는 재동기화 프레임을 먼저 적용하고 outbox 요청을 보낸다. 따라서 재동기화로 먼저 받은 snapshot·status나 이전 순번의 STALE_SEQ는 새 요청의 감시를 지우지 않는다. `ackTimeoutMs`(기본 5초) 안에 응답이 없으면 ping에는 답하지만 요청을 버리는 호스트(인증을 잃은 소켓 등)로 보고 hello를 다시 보내 인증한 뒤 요청을 다시 보낸다. hello 또는 welcome이 유실되면 `advanceTime`이 hello를 5초부터 지수 백오프(최대 30초)로 재시도한다. 호스트가 이미 적용했다면 다시 보낸 액션은 STALE_SEQ로 무해하게 거부된다. 호스트는 무시하는 ready에도 status로 답한다. 시각은 외부 시계가 넣는다: 게스트 UI는 `guest.advanceTime(Date.now())`를 주기적으로(예: 1초) 부른다(호스트의 `advanceTime`과 같은 방식, 세션에는 타이머가 없다).
+- **게스트 outbox**: 게스트는 지금 소켓에서 welcome을 받기 전(끊김·present·joined·left 뒤, absent는 제외)에 만든 요청(action·push·ready·bankruptcy·ledgerGet)을 들고 있다가 welcome과 첫 재동기화 프레임을 받은 뒤에 보낸다(로비에서는 welcome 직후, 액션은 마지막 것 하나). welcome만 받은 동안 새로 만든 요청도 재동기화 뒤로 미룬다.
+- **응답 감시(#40)**: 게스트는 보낸 요청마다 호스트 응답을 기다린다. action·push의 `requestId`는 재전송에도 유지되며 호스트가 그 요청에 대한 events·snapshot·status·reject에만 되돌려준다. ID가 없는 이전 형식의 응답은 순번이 요청 기준보다 증가했을 때만 인정한다(같은 순번의 옛 snapshot은 응답이 아니다). ready는 해당 판의 게스트 준비 상태가 true이거나 다음 판이 시작되면 완료되며, 재인증 welcome·snapshot에서도 이 상태를 확인하고 충족된 요청을 outbox에서 지운다. bankruptcy는 판과 상태 rev, ledgerGet은 같은 from의 ledgerPage로 확인한다. `ackTimeoutMs`(기본 5초) 안에 응답이 없으면 hello로 다시 인증하고 요청을 재전송한다. hello·welcome·재동기화 프레임이 유실되면 `advanceTime`이 hello를 5초부터 지수 백오프(최대 30초)로 재시도한다. 호스트는 무시하는 ready에도 status로 답한다. 시각은 외부 시계가 넣는다: 게스트 UI는 `guest.advanceTime(Date.now())`를 주기적으로(예: 1초) 부른다(세션에는 타이머가 없다).
 - 검증: `session.test.ts`가 판 1·2에서 commitHost·commitGuest·revealGuestRequest·revealGuest를 하나씩 떨어뜨리는 표 테스트와 fast-check 속성 테스트(120회, 로컬 1,500회 확인)를 돌린다. 전송 모형: 게스트→호스트 프레임은 아무렇게나 유실·중복·순서 바꿈, 호스트→게스트는 WebSocket처럼 한 소켓 안에서 순서가 지켜지고(유실은 재접속으로만) 중복은 나중에 한 번 더 도착한다.
 
 ## 6. commit-reveal 검증 (#16, NP-06 v0.5)

@@ -1022,6 +1022,92 @@ describe('#40 absent는 인증을 되돌리지 않는다, 응답 없는 요청 �
     expect(h.guest.seq).toBe(h.host.seq);
   });
 
+  it('같은 seq의 이전 snapshot은 welcome 뒤 새 action의 감시를 지우지 않는다', () => {
+    const { h } = confirmedAtGuestTurn(9);
+    h.guest.advanceTime(1_000);
+    const state = h.host.state;
+    h.guest.join();
+    h.link.deliver(); // hello → welcome, snapshot
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['welcome', 'snapshot']);
+    h.link.deliver(); // welcome만 받는다
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['snapshot']);
+    const oldSnapshot = h.link.queue[0]!.raw;
+    h.link.deliver(); // 재동기화가 끝난 뒤 action 송신
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['action']);
+    h.link.drop(); // 새 action 유실
+    h.link.inject(1, oldSnapshot); // 같은 seq의 이전 snapshot이 늦게 도착
+    h.link.deliver();
+    expect(h.host.state).toBe(state);
+    h.guest.advanceTime(6_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+    h.guest.advanceTime(61_000);
+    expect(h.link.queue).toEqual([]);
+  });
+
+  it('이벤트 없는 합법 action의 같은 seq snapshot은 requestId로 감시를 끝낸다', () => {
+    const { h } = confirmedAtGuestTurn(16);
+    h.guest.advanceTime(1_000);
+    const seq = h.guest.seq;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    const request = decode(h.link.queue[0]!.raw, 'guest');
+    expect(typeof (request.ok && request.message.t === 'action' && request.message.requestId)).toBe(
+      'number',
+    );
+    h.link.deliver();
+    const reply = decode(h.link.queue[0]!.raw, 'host');
+    expect(reply.ok && reply.message.t === 'snapshot' && reply.message.seq).toBe(seq);
+    expect(reply.ok && reply.message.t === 'snapshot' && reply.message.requestId).toBe(
+      request.ok && request.message.t === 'action' && request.message.requestId,
+    );
+    h.link.flush();
+    h.guest.advanceTime(61_000);
+    expect(h.link.queue).toEqual([]);
+  });
+
+  it('이전 action의 같은 seq 응답은 새 action의 requestId 감시를 지우지 않는다', () => {
+    const { h } = confirmedAtGuestTurn(16);
+    h.guest.advanceTime(1_000);
+    const action = guestMoves(h.guest)[0]!;
+    h.guest.sendAction(action);
+    h.link.deliver(); // 첫 action의 응답 snapshot을 잠시 보류한다
+    const oldSnapshot = h.link.queue[0]!.raw;
+    h.guest.sendAction(action);
+    h.link.drop(nth(h.link, 0, 0)); // 새 action 유실
+    h.link.deliver(); // 첫 action의 같은-seq snapshot
+    const parsed = decode(oldSnapshot, 'host');
+    expect(parsed.ok && parsed.message.t === 'snapshot' && parsed.message.seq).toBe(h.guest.seq);
+    h.guest.advanceTime(6_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+  });
+
+  it('ready 응답 유실 뒤 welcome의 ready=true로 완료하고 중복 ready도 재인증하지 않는다', () => {
+    const h = setup({ seed: 4 });
+    h.guest.join();
+    playRound(h, new Picker(4));
+    h.guest.advanceTime(1_000);
+    h.guest.requestNextRound();
+    h.link.deliver(); // ready는 적용되지만 응답 status를 유실시킨다
+    expect(h.host.guestReady).toBe(true);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['status']);
+    h.link.drop();
+    h.guest.advanceTime(6_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+    h.link.deliver(); // hello → welcome, snapshot
+    h.link.deliver(); // welcome의 ready=true가 요청을 충족한다
+    h.link.flush();
+    expect(h.guest.status?.ready[1]).toBe(true);
+    expect(h.link.queue).toEqual([]);
+    h.guest.requestNextRound(); // 호스트는 같은 rev로 응답한다
+    h.link.flush();
+    for (const at of [11_000, 16_000, 61_000]) {
+      h.guest.advanceTime(at);
+      expect(h.link.queue.filter((f) => frameType(f.raw) === 'hello')).toEqual([]);
+    }
+  });
+
   it('이전 판 ready의 status는 새 판 ready의 감시를 지우지 않는다', () => {
     const h = setup({ seed: 18 });
     h.guest.join();
