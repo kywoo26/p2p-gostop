@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = ["pillow==12.3.0"]
+# ///
 """PA-05 / NF-03/07: select approved, graded #147 variants for the release skin.
 
 No network or new runtime dependency. Re-run build-pro-assets.py first when a

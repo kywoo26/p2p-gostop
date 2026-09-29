@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = ["pillow==12.3.0"]
+# ///
 """Optimize two user-supplied icon references edited into one visual family.
 
 This is a deterministic raster export from pinned AI-assisted artwork. The
