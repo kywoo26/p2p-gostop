@@ -1,0 +1,211 @@
+[
+  {
+    "id": "felt",
+    "file": "felt-1x.webp",
+    "bytes": 14090,
+    "width": 512,
+    "height": 512,
+    "sha256": "4172ca10166ea0ad4531dfa4ce728046335e93bccc11e1d3561bd80c13021ad6",
+    "source": "https://ambientcg.com/view?id=Fabric037",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "wood",
+    "file": "wood-1x.webp",
+    "bytes": 11032,
+    "width": 512,
+    "height": 512,
+    "sha256": "b6eaeed4686f050d91829a490a30590010e499e3c0e8b286da755afaaf38a5bb",
+    "source": "https://ambientcg.com/view?id=Wood050",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "gold",
+    "file": "gold-1x.webp",
+    "bytes": 874,
+    "width": 512,
+    "height": 512,
+    "sha256": "fc66c625d4df76bcd3bf45ce5e4ac3c921dc7600826957ee8643678095f28325",
+    "source": "https://ambientcg.com/view?id=Metal034",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "leather",
+    "file": "leather-1x.webp",
+    "bytes": 1428,
+    "width": 512,
+    "height": 512,
+    "sha256": "2463d74f337e9efa86f5a8260fc383522a65b264b9763b69b2de5b78c0a3a0bd",
+    "source": "https://ambientcg.com/view?id=Leather037",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "key-art",
+    "file": "key-art-1x.webp",
+    "bytes": 54482,
+    "width": 512,
+    "height": 400,
+    "sha256": "a817e45696ece4b1a891f4de5ee9b2a1371e683570471f80c699ac54be111d29",
+    "source": "https://www.metmuseum.org/art/collection/search/37107",
+    "license": "CC0-1.0",
+    "changes": "Public domain woodblock print; cropped, ink/paper duotone, resized and encoded."
+  },
+  {
+    "id": "avatar-01",
+    "file": "avatar-01-1x.webp",
+    "bytes": 2238,
+    "width": 64,
+    "height": 64,
+    "sha256": "0b321a5969f12f0cfaebcb65d11c319e036495b83d9449c92043fe4b508dd730",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_January_Hikari.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-02",
+    "file": "avatar-02-1x.webp",
+    "bytes": 2544,
+    "width": 64,
+    "height": 64,
+    "sha256": "da0e36edda9a4c2c279f133cdd6b28e1930a8344940946dc7a431755cecefe75",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_February_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-03",
+    "file": "avatar-03-1x.webp",
+    "bytes": 3160,
+    "width": 64,
+    "height": 64,
+    "sha256": "2386705221ed33acc642287817aeccb482967e7ca9e335e0663433ebc16b7f75",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_March_Hikari.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-04",
+    "file": "avatar-04-1x.webp",
+    "bytes": 3014,
+    "width": 64,
+    "height": 64,
+    "sha256": "2c1dbb27cd65baebdaa56d3be4689ea683d8ab032240213c4252e3e61a41fa74",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_April_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-05",
+    "file": "avatar-05-1x.webp",
+    "bytes": 2586,
+    "width": 64,
+    "height": 64,
+    "sha256": "a44dba49deeea87228a4f7241e2bcbbc52c06cfdaba02b7ebfc9796eb2410b62",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_May_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-06",
+    "file": "avatar-06-1x.webp",
+    "bytes": 2754,
+    "width": 64,
+    "height": 64,
+    "sha256": "906360277574ff7e418dc6b70d05846f3a7cbc09ea11f67b56a99c25ee9eedaf",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_June_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-07",
+    "file": "avatar-07-1x.webp",
+    "bytes": 2786,
+    "width": 64,
+    "height": 64,
+    "sha256": "671ef77277b90044a9e4e3c00bf893544f110799cf7f8d56174fbefe7e01747c",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_July_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-08",
+    "file": "avatar-08-1x.webp",
+    "bytes": 2144,
+    "width": 64,
+    "height": 64,
+    "sha256": "32a85eabd8299fb63390edd56ac07f3d531d6bb5c9966668f19039893bc02281",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_August_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-09",
+    "file": "avatar-09-1x.webp",
+    "bytes": 2550,
+    "width": 64,
+    "height": 64,
+    "sha256": "9284939aa325e7228378bde572e158bcbd2fb12d4e6137968711db7ae196b97e",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_September_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-10",
+    "file": "avatar-10-1x.webp",
+    "bytes": 2658,
+    "width": 64,
+    "height": 64,
+    "sha256": "7afe70404d535388f2575792e2a91f1220a4a1be8259f69560631513e0896eb8",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_October_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-11",
+    "file": "avatar-11-1x.webp",
+    "bytes": 1978,
+    "width": 64,
+    "height": 64,
+    "sha256": "71fce2c019fd3118c63ec3d8b892c2e943c12e115e8fb95aee606b9b19ab0414",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_November_Hikari.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "avatar-12",
+    "file": "avatar-12-1x.webp",
+    "bytes": 2644,
+    "width": 64,
+    "height": 64,
+    "sha256": "a0d1a3b1542e12ace32eac2d2a5e697da802342ce109b4a0fd9e9395180e152f",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_December_Tane.svg",
+    "license": "CC-BY-SA-4.0",
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+  },
+  {
+    "id": "bomb-illustrated",
+    "file": "bomb-illustrated.webp",
+    "bytes": 1568,
+    "width": 96,
+    "height": 96,
+    "sha256": "b4b008afbede951fbaa6554858df0123606e723c57a63945c8d33acb293d2fe4",
+    "source": "User-provided visual reference, 2026-09-30",
+    "license": "User-provided reference; rights to be confirmed by product owner",
+    "changes": "AI-assisted harmonization; transparent 96px WebP palette and size normalization."
+  },
+  {
+    "id": "bell-illustrated",
+    "file": "bell-illustrated.webp",
+    "bytes": 2758,
+    "width": 96,
+    "height": 96,
+    "sha256": "d9c3c580d7df3b156f2c04f17cafd7c1d2f3e4c9b12760342e15e34b5236d51f",
+    "source": "User-provided visual reference, 2026-09-30",
+    "license": "User-provided reference; rights to be confirmed by product owner",
+    "changes": "AI-assisted harmonization; transparent 96px WebP palette and size normalization."
+  }
+]

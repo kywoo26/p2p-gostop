@@ -17,3 +17,9 @@ Paid/non-redistributable originals must not be added to this shared source direc
 ## A 일관성 갱신 (PA-03 / NF-07)
 
 UI Adventure/Animal Pack은 사용자 결정으로 제거했다. Met JP660 원본 JPG와 API 권리 기록은 met/, 기존 카드 SVG 도상에서 추출한 별도 PNG/좌표는 portraits/에 둔다. 원본 카드는 변경하지 않는다. 재현: `node packages/web/scripts/render-pro-portraits.mjs` → `python3 packages/web/scripts/build-pro-assets.py` → `python3 packages/web/scripts/check-pro-assets.py` (모두 Docker). 초상은 CC BY-SA 4.0, 박물관 원화/재질/효과/소리는 CC0. manifest와 public/pro/NOTICE.md의 파일별 출처·변경 고지를 따른다.
+
+## 본선 스킨 선별 (PA-05)
+
+`docker compose run --rm dev python3 packages/web/scripts/build-skin-assets.py`는 승인된 pro 변환물에서 재질4·홈 화조도1·12달 초상1x WebP만 `public/skin`으로 선별한다. 원본/카드 SHA와 pro catalog 크기를 먼저 확인한다. `--check`는 선별 결과의 바이트 동일성·추가/누락 파일·128KiB 하위 예산을 검증하며 정규 build에서 자동 실행된다. 원본·가공 좌표 변경 시 pro 파이프라인부터 재생성한다. 전체 dist 1.5MiB 예산과 평가 팩 분리는 유지한다. 출처/변경/라이선스는 기존 License 화면·`/pro/NOTICE.md`, 본선 파일 해시는 `/skin/manifest.json`에 기록한다.
+
+사용자가 제공한 폭탄·종 그림을 같은 먹선/금·주홍 팔레트로 편집한 투명 PNG 두 종은 `skin-icons/`에 보존한다. SHA가 고정된 원본을 `scripts/build_skin_icons.py`가 결정적으로96px WebP로 변환하고 `build-skin-assets.py`의 `--check`가 배포 바이트를 검증한다. 출처와 가공은 `public/skin/NOTICE.md`에 기록하며 사용 권리 확인은 제품 소유자가 릴리스 전에 완료한다. 빌드 중 외부 요청은 없다.
