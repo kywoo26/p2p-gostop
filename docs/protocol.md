@@ -213,7 +213,7 @@
 |---|---|
 | `TimerSettings` | `decisionMs: null 또는 5000/10000/20000/30000/60000`, `policy: 'fixed-v1'`. null=끔. `RuleOptions`와 별도 세션 설정, 솔로 전달 없음 |
 | `DecisionKey` | `epoch`(현재 호스트 세대), `round`(양의 정수), `decisionId`(세션 내 증가 정수), `baseSeq`(결정 직전 이벤트 순번). 소켓 교체는 key 유지; 호스트 복원만 epoch 교체 |
-| `DecisionClock` | `key, seat, timerRev, state, hostNowMs, remainingMs, deadlineMs, confirmByMs, attempt`. state=`preparing/running/checking/paused/resolved`; running만 deadlineMs 유효, preparing/checking만 confirmByMs 유효(그 외 null). remainingMs는 0~decisionMs, 시각은 호스트 epoch 내 음이 아닌 안전 정수. attempt는 확인 시도마다 증가하며 오래된 응답 차단 |
+| `DecisionClock` | `key, seat, timerRev, state, hostNowMs, remainingMs, deadlineMs, confirmByMs, attempt, resumeFloorUsed, recoveryGrantMs, pauseReason`. state=`preparing/running/checking/paused/resolved`; running만 deadlineMs 유효, preparing/checking만 confirmByMs 유효(그 외 null). remainingMs는 0~decisionMs, 시각은 호스트 epoch 내 음이 아닌 안전 정수. attempt는 확인 시도마다 증가. resumeFloorUsed는 결정당 1회 증액 소비 여부, recoveryGrantMs는 그 증액(0~2999ms); pauseReason은 `peer/hostBackground/guestBackground/hostGap/clockUnknown/recoveryLimit` 또는 null. 복귀·실행 공백의 정본은 §11.3 |
 | `TimeoutResult` | `key, actionIndex, seat, baseSeq, toSeq, deadlineMs, confirmedAtMs, reason:'timeout', policy:'fixed-v1', action`. actionIndex는 해당 판 actions의 0 기반 위치. 실제 수락한 합법 액션만, 숨은 후보/상대 손패 목록 없음 |
 
 | 방향 / 메시지 | v3 필드 초안 | 처리 |
@@ -221,8 +221,8 @@
 | H→G `welcome` | 기존 + `timerSettings` 필수 | 양쪽 동일 설정 확인. 진행 세션 설정 변경 거부 |
 | H→G `events`·`snapshot` | 기존 + `decision: DecisionClock 또는 null`, `timeoutResult?: TimeoutResult` | 뷰와 시계를 함께 수신. timeoutResult는 그 전이의 원인; 중복은 key/actionIndex로 제거. 상대 비공개 pending의 종류·기본 액션은 deadline 전에 전송하지 않음 |
 | H→G `decisionDeadline` (신규) | `clock: DecisionClock` | 이벤트 없는 시작/중단/마감 상태 통지. 게스트는 baseSeq 뷰 확보 전 보류, 작은 timerRev 무시. 상대도 seat·남은 시간만 표시 가능 |
-| G→H `decisionReady` (신규) | `key, attempt, renderedSeq` | 현재 뷰까지 재생/스킵·프롬프트 반영 후 foreground일 때 1회. 같은 확인 재전송은 멱등; 최초 offer 후 5초 상한 고정 |
-| G→H `action` | 기존 + `decisionKey`(시간 제한 대상이면 필수), `requestId` 필수 | seq와 key·좌석·합법성·호스트 수신시각을 함께 검사. 선 고르기/밀기는 key 없음. 호스트 로컬 입력도 같은 검증 경로 |
+| G→H `decisionReady` (신규) | `key, attempt, renderedSeq` | 통지된 잔여량과 최신 뷰를 반영하고 입력을 활성화한 뒤 보내는 확인(비행동 좌석 및 잔여 0은 뷰 준비만 확인). foreground일 때만 전송. 같은 확인 재전송은 멱등; 해당 offer 후 5초 상한 고정. 기존 다음 판 `ready`와 무관 |
+| G→H `action` | 기존 + `decisionKey, decisionAttempt`(시간 제한 대상이면 필수), `requestId` 필수 | seq·key·현재 attempt·좌석·합법성·호스트 수신시각 검사. 선 고르기/밀기는 key/attempt 없음. 호스트 로컬 입력도 같은 경로. 중단 전 attempt의 밀린 입력은 복귀 후 수로 재사용하지 않음 |
 | H→G `expiryCheck` (신규) | `key, attempt, confirmByMs` | 마감 때 1회, 2초 상한. 호스트 좌석 결정에도 게스트 접속 확인 필요 |
 | G→H `expiryAck` (신규) | `key, attempt, renderedSeq` | 현재 소켓 인증·foreground·최신 뷰에서만 응답. 메뉴는 응답 가능, 숨김/재생 미완료는 응답 불가. 단순 수신 확인 아님 |
 | G→H `decisionUnavailable` (신규) | `key, reason:'background' 또는 'resync'` | 백그라운드/뷰 소실 통지. 전달 실패 가능하므로 이것만으로 단절 감지하지 않음. 호스트 UI도 로컬 동일 처리 |
@@ -230,18 +230,43 @@
 | H→G `revealHost` | 기존 + `timeoutCount, timeoutDigest` | 원래 actions는 순수 엔진 액션 그대로. 별도 표식 이력의 개수·해시(§11.4) |
 | G→H `timeoutGet` / H→G `timeoutPage` (신규) | 요청 `round,from`; 응답 `round,from,total,entries: TimeoutResult[]` | 해당 판 초과 기록 재동기화/검증. 같은 from 재요청 멱등; 직전 판까지 제공. 페이지 실제 인코딩 ≤16KB, entries 본문 예산 8KB. 새 메시지도 인증 필요 |
 
-**카운트다운은 통지가 아니라 로컬 표시 갱신이다.** `hostNowMs`와 수신 기준 로컬 단조 시각으로 남은 시간을 근사하며 네트워크 지연 때문에 권위 시각과 다를 수 있다. 기기 벽시계끼리 빼지 않는다. 0은 ‘호스트 확인 중’이지 로컬 자동 액션 신호가 아니다. 결정 시작 준비 확인 시점에는 전체 예산으로 표시하고 호스트 deadline 통지로 보정한다.
+**카운트다운은 통지가 아니라 로컬 표시 갱신이다.** `hostNowMs`와 수신 기준 로컬 단조 시각으로 남은 시간을 근사하며 네트워크 지연 때문에 권위 시각과 다를 수 있다. 기기 벽시계끼리 빼지 않는다. 0은 ‘호스트 확인 중’이지 로컬 자동 액션 신호가 아니다. 최초 시작/복귀 모두 offer의 예산을 먼저 표시하고 입력 가능 확인 뒤 로컬 감소를 시작, running 통지로 보정한다. 통지 수신 대기로 입력을 다시 잠그지 않는다.
 
 ### 11.3 시작·마감·복구 순서
 
 | 단계 | 호스트 계약 | 게스트/호스트 UI 계약 |
 |---|---|---|
-| offer | 새 결정 key·preparing, 준비 확인 상한 5초. 같은 key의 중복 송신은 attempt·상한 유지 | 최신 뷰까지 재생, 스킵도 최종 뷰 반영 후 확인. 메뉴는 확인을 지연시키지 않음 |
-| 재생 준비 확인 | 양쪽 decisionReady 수신 시 running, deadline=현재 호스트 시각+예산. 최초 preparing 중 현재 결정의 합법 수동 입력은 먼저 수락 가능 | 새 창은 **decisionReady를 보낼 때 입력 활성화**, deadline 수신 대기 잠금 없음. 따라서 준비 왕복·재생 때문에 설정된 생각 시간이 짧아지지 않음. 중단된 창은 running 재개 통지 뒤에만 입력 허용, 잔여 0이면 수동 입력 금지 |
+| offer(잔여량 통지) | 최초는 새 key·설정 예산, 복귀는 같은 key·아래 복귀 예산을 `snapshot/decisionDeadline(state=preparing, remainingMs=B, attempt)`로 **먼저 통지**. 아직 deadline 없음. 준비 확인 상한 5초. 동일 offer 중복은 attempt·예산·상한 유지 | 통지된 예산 B와 최신 뷰를 반영, 재생/스킵 완료·foreground 확인. 메뉴는 확인을 지연시키지 않음 |
+| 입력 가능 확인→마감 개시 | 현재 attempt의 양쪽 decisionReady 수신 시 **한 번만** `startedAt=now`, `deadline=startedAt+B`로 running 전환. 중복 ready로 startedAt/deadline 불변. 행동 좌석의 ready를 수락한 뒤 다른 좌석 확인보다 먼저 도착한 합법 action도 preparing에서 1회 수락 가능(이미 완료되면 마감 개시 없음) | **최초/복귀 모두 B>0이면 입력 활성화와 decisionReady 송신을 같은 UI 전이에서 수행**. running 통지를 기다리지 않으므로 첫 입력 가능 시점부터 B 이상을 확보. B=0이면 입력 잠금 유지·뷰 준비만 확인하고 checking으로 전환. 준비 실패/중단 통지 시 다시 잠금 |
 | running | 수동 입력 `< deadline`만 수락. 입력과 tick은 수신시각 기준 직렬화, key 소비는 1회 | 옵션 120ms 지연/메뉴 열람도 deadline 연장 없음. 전송 재시도는 같은 key/requestId |
-| checking | deadline에서 expiryCheck, 2초 안의 현재 attempt 응답과 호스트 가용성 확인 뒤 최신 legal 재검사→초과 액션 1회→결과 저장/전파 | 확인 기간은 추가 생각 시간 아님. 늦은 action은 reject. timeoutResult는 액션 응답 감시를 성공으로 끝내지 않으며, 해당 결정의 오래된 outbox를 폐기 |
-| paused | 준비 확인 실패, 마감 확인 실패, 알려진 단절/숨김/호스트 실행 중단이면 자동 실행 없음. 마감 전 남은 값, 마감 후 0 보존 | 복구 안내·입력 잠금, 오래된 확인·미전송 입력 폐기. 임의 ping이 와도 자동 재개하지 않음 |
-| resume | 인증+snapshot+새 attempt의 준비 확인 후 같은 key·남은 값. 0이면 바로 checking. `unavailableSinceMs`를 별도 보존해 타이머 복구 대기 3분도 기존 수동 대기/무효/종료 조건에 포함(현재 connected/lastGuestActivity 조건의 개정) | 재렌더·새로고침·다른 소켓·반복 hello가 예산을 늘리지 않음. ping/hello/실패한 확인은 최초 중단시각을 초기화하지 않음. 복구 5초 목표는 시간 보너스 아님 |
+| checking | deadline에서 expiryCheck, 2초 안의 현재 attempt 응답과 호스트 가용성 확인 뒤 최신 legal 재검사→초과 액션 1회→결과 저장/전파 | 확인 기간은 추가 생각 시간 아님. 늦은 action은 reject. 검증한 timeoutResult 또는 DECISION_EXPIRED로 만료를 확인한 결정의 요청은 **성공 ACK 대신 취소/대체됨**으로 종결: 그 key의 outbox·inflight·requestId 응답 감시·재전송 예약을 함께 제거, 5초 뒤 hello/재전송으로 되살리지 않음. requestId 없는 timeoutResult는 저장된 요청→key 대응으로 취소, reject는 requestId와 key 대응을 함께 확인. 오래된 결과는 새 결정·다른 요청 감시를 지우지 않음 |
+| paused | 준비/마감 확인 실패·명시 단절·숨김·호스트 실행 공백이면 자동 실행 없음. 진행 attempt를 무효화하고 유효 중단시각의 잔여량 보존(호스트 공백은 아래 표). preparing이면 통지한 예산, checking이면 0 | 복구 안내·입력 잠금, 중단 전 attempt의 미전송/응답 대기 요청은 취소(성공 처리 아님). 이미 호스트가 수락한 결과는 snapshot으로 복원. 임의 ping이 와도 자동 재개하지 않음 |
+| resume | 인증+snapshot 이후 아래 예산으로 새 offer→입력 가능 확인→마감 개시. `unavailableSinceMs`를 별도 보존해 타이머 복구 대기 3분도 기존 수동 대기/무효/종료 조건에 포함 | 재렌더/hello/실패한 확인으로 예산·최초 중단시각 갱신 금지. 호스트의 실제 running 재개(잔여 0은 초과 확정) 때만 부재 구간 종료. NF-05 복구 5초 목표와 생각 시간은 별개 |
+
+| 복귀 예산 (재접속·양쪽 백그라운드 복귀 공통) | 규범 제안 / 반복 충전 방지 |
+|---|---|
+| 잔여 R≥3000ms | B=R. offer 수신→입력 가능 확인→호스트 시작 순서로 통지 지연이 B를 소모하지 않음 |
+| 0<R<3000ms, 아직 증액 안 함 | **복귀 하한 3000ms 권고**: B=3000, recoveryGrantMs=3000−R, resumeFloorUsed=true를 **offer 송신 전에 저장**. 기존 ‘설정값 이하’에서 ‘설정값+결정당 1회 증액 이하’로 개정. 좌석 0/1 동일 |
+| 같은 결정에서 다시 R<3000ms | 한 번 증액했으면 더 지급하지 않고 `paused/recoveryLimit` 유지, 입력·초과 실행 모두 보류. 대기/기존 3분 후 판 무효/세션 종료만 제공. R≥3000인 재개는 여전히 가능. 반복 복귀마다 3초를 충전하거나 짧은 입력 창을 강요하지 않는 절충안 |
+| R=0 / 완료한 결정 | 3초로 부활하지 않음. 미완료이면 입력 잠금 상태로 뷰 확인→마감 확인만 재시도; 완료이면 저장한 결과 전달 |
+| 확인 유실·재접속·epoch 복원 | offer를 보낸 뒤 확인 실패해도 B·증액 소비 여부는 보존(미사용 B를 깎지도, 증액을 재지급하지도 않음). 통지와 확인의 attempt가 다르면 거부. 복원 시 증액 이력도 복원 불가하면 clockUnknown으로 대기 |
+
+| 호스트 실행 공백 | 판정·중단 시각·처리 우선순위 (권고값) |
+|---|---|
+| 시계가 멈추는 의미 | 외부 단조 원시 시계는 계속 흐른다. **결정의 예산 소비·마감/확인 진행만 멈춘다**. NP-05 활동 감지용 시계까지 멈추지 않음. 외부 어댑터는 preparing/running/checking일 때 로컬 확인을 최대 500ms 간격으로 요청(네트워크 ping 아님), 정상 검사를 마친 원시 시각 `lastHealthyMs`를 기록. 새 세션 최초 offer 직전에 현재 단조 시각으로 초기화 |
+| 공백 검출 | 모든 수신·로컬 입력·tick 처리 **전에** 원시 시각 now를 표본화. 같은 렌더러/단조 시계 영역에서 `now−lastHealthyMs ≥ 2000ms`면 hostGap. 1999ms는 정상 진행, 2000/2001ms는 공백. 중간 확인이 없는 구간을 원격 송신 시각이나 밀린 콜백으로 정상 실행처럼 채우지 않음 |
+| 명시 호스트 백그라운드 | foreground 이탈 이벤트를 정상 실행 중 받으면 그 시각을 유효 중단시각 S로 확정·저장. 이 이벤트 자체가 공백 뒤 밀려 도착했다면 공백 검출이 먼저이므로 S=lastHealthyMs. 네이티브 포그라운드 서비스/중계 유지와 WebView 실행 가용성을 구분 |
+| ANR·같은 렌더러의 긴 정지 | gap≥2000이면 **S=lastHealthyMs**, 인지 시각 now가 아님. running 잔여 `R=max(0, deadline−S)` 보존, preparing은 B, checking은 0. 공백 검출→paused 저장/attempt 무효화→대기 통지→밀린 입력/만료 처리 순. 밀린 옛 attempt action은 DECISION_PAUSED(요청 감시 취소)·snapshot으로 답하고 자동 적용/뒤늦은 수로 판정하지 않음 |
+| 렌더러 재시작·연속성 불명 | epoch/시계 영역 변경, lastHealthyMs 소실, 신뢰할 수 없는 저장 이후 소비량이면 `paused/clockUnknown`. 재시작 시각으로 R을 추정하지 않음. 중단 상태를 확정 저장했거나 연속성 입증 자료가 있을 때만 R·증액 이력 복원→새 offer. 그 외는 입력/자동 만료 없이 대기/기존 무효/종료 경로 |
+| 재개·유한 보정 | foreground·시계 연속성·인증·최신 뷰를 확인한 뒤 복귀 예산 표 적용. paused 중 R/유효 중단시각을 다시 계산하지 않음. 재개를 허용할 때만 lastHealthyMs를 현재 시각으로 새로 잡고 새 offer부터 감시 재시작(과거 gap 재검출 반복 금지). gap 직전 정상 확인 이후의 미관측 구간을 소비하지 않은 것으로 간주하는 정책이며 실제 정지 시작시각을 측정했다고 주장하지 않음 |
+| 게스트 표시 | 통지 가능한 경우 `paused`와 pauseReason을 즉시 보내 **‘호스트 대기 · 남은 시간 보존’**, clockUnknown은 **‘호스트 대기 · 시간 확인 필요’**. 실행 정지 중에는 호스트가 통지할 수 없으므로 게스트가 0초에서 2초 동안 결과를 못 받거나 요청 감시 5초가 먼저 끝나면 **‘호스트 응답 대기 · 시간 확인 중’**으로 입력 잠금·기존 재인증 수행. 이는 로컬 의심 표시일 뿐 R/마감 결정 권위가 아니며 복귀 snapshot으로 정정 |
+
+| 리뷰 반례·구현 검증 벡터 (실행 결과 아님) | 좌석 0/1을 바꿔도 같은 기대값 |
+|---|---|
+| R=500ms, running 통지 지연 600ms | 먼저 B=3000 통지, 입력 가능 확인 수락이 t=20000이면 deadline=23000. t=20600 통지를 기다리지 않고 확인 송신 때부터 입력 가능. 준비 중 선행 action은 ready 수락 뒤 1회 적용, 중복 ready로 deadline 변화 없음 |
+| deadline=10000, lastHealthy=9000, 재개=12000 | gap=3000→S=9000, R=1000. 밀린 action/tick보다 먼저 중단. 최초 복귀 B=3000, 증액 사용 후 다시 R=500이면 recoveryLimit 대기, 0이면 부활 없음 |
+| gap=1999/2000/2001, deadline=lastHealthy+3000 | 정상 실행 시 잔여 1001 / 중단 보존 3000 / 중단 보존 3000. 렌더러 변경이면 세 값과 무관하게 연속성 확인 전 clockUnknown |
+| 초과된 요청의 5초 감시 / 옛 결과 재수신 | 해당 key의 inflight/outbox와 재전송 예약 0, 그 요청 때문에 hello 발생 0. 다른 key의 현재 감시·일반 연결 복구는 유지 |
 
 **NP-05 경합 규칙:** 주기 ping 25초/무응답 60초는 유지하고 반복적인 고빈도 ping을 추가하지 않는다. 준비/마감의 유한 확인 교환만 추가한다. 같은 호스트 시각이면 단절/숨김 처리가 초과 확정보다 우선, 이미 완료한 key는 다시 실행하지 않는다. 10초 마감에서 조용한 끊김은 최대 2초 확인 실패 후 잔여 0으로 중단하며 60초 감지를 기다려 자동 수를 쌓지 않는다. 확인 직후의 물리적 끊김까지 원자적으로 알 수는 없으며, 호스트가 이미 수락한 결과는 재접속 때 재전달한다.
 
@@ -255,7 +280,7 @@
 | 이력 페이지·해시 | TimeoutResult를 actionIndex 오름차순으로 모은 정규 배열 `[epoch,round,decisionId,baseSeq,actionIndex,seat,toSeq,deadlineMs,confirmedAtMs,policy,action]`의 JSON UTF-8을 기존 순수 JS SHA-256으로 해시. action은 현행 wire 필드 순서로 정규화. count=0도 빈 배열 해시 명시. 판당 최대 400개(기존 actions 상한), 페이지 합·해시·관찰 기록을 모두 대조; 검증 페이지 누락은 미완/복구, 성공 처리 금지 |
 | 다음 판·재접속 | snapshot/차분에 현재 clock 필수, 완료 결과 유실은 timeoutPage로 회복. 게스트는 직전 판 초과 이력 검증을 끝내기 전 새 commit에 응답하지 않음. 페이지 ack 감시는 round/from 기준, 기존 5초 응답 감시·백오프 재사용. 저장에는 현재/최근 판 관찰·초과 기록도 포함 |
 | v2/v3 wire | **PROTOCOL_VERSION 2→3 권고**. 새 t는 v2 union에 없고, 추가 필드는 v2 파서가 지우므로 선택적 필드 추가만으로 호환 불가. hello 버전을 스키마 본문보다 먼저 검사해 VERSION_MISMATCH 안내. 구버전과 제한 켬으로 조용히 연결하거나 요청 필드 생략으로 우회 금지; 끔에서도 v3끼리 연결 |
-| 저장 버전 | wire와 별개인 `HostSessionState.v` 현행 1 및 게스트 저장 형식을 개정. v1에 타이머 이력이 없으면 제한 **끔**으로 명시 이관, 새 세션은 10초. 새 형식 필드 소실은 손상으로 거부. 새 저장에는 settings/key/잔여량/완료 표식/이력 포함; epoch 변경 시 과거 확인 무효. running 중 강제 종료로 저장 이후 소비량이 불명확하면 그 판 입력 재개 금지, 기존 대기/무효/종료만 제공. 중단을 저장했거나 시계 연속성을 증명한 경우만 잔여량 재개(오래된 저장 잔여량의 반복 충전 금지) |
+| 저장 버전 | wire와 별개인 `HostSessionState.v` 현행 1 및 게스트 저장 형식을 개정. v1에 타이머 이력이 없으면 제한 **끔**으로 명시 이관, 새 세션은 10초. 새 형식 필드 소실은 손상으로 거부. 새 저장에는 settings/key/잔여량/완료 표식/이력과 **resumeFloorUsed/recoveryGrantMs·lastHealthyMs의 시계 영역·확정 중단시각/사유** 포함; epoch 변경 시 과거 확인 무효. running 중 강제 종료로 저장 이후 소비량이 불명확하면 clockUnknown으로 입력 재개 금지. §11.3의 중단 확정/연속성 입증 때만 잔여량 재개 |
 | 크기·정보 경계 | NP-07 16KB 유지. 최대 actions·타이머 이력/재접속 snapshot 바이트 검증 필수. 최종 reveal도 초과하면 제한을 올리지 말고 별도 분할 계약을 먼저 확정. 수신 스키마는 시각·ID 상한, 상태별 null 조건·설정 일치·중복 key를 검증; 모든 신규 메시지는 소켓 인증 규칙 적용 |
 
 C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으로 위장하지 않는다. 테스트 소유: 호스트 가짜 단조 시계·경합(`packages/protocol/test`), 실제 relay-dev 재연결(`packages/relay-dev/test/session-relay.test.ts`), Chromium/WebKit 두 클라이언트 E2E(`packages/web/e2e`). 구현 체크리스트 정본은 [#123](https://github.com/kywoo26/p2p-gostop/issues/123).
