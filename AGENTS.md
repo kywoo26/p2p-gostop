@@ -33,7 +33,7 @@
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
 | androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
 | Android JVM 테스트 JSON | `org.json:json` **20260814** (2026-09-29 검토, NP-02·NF-09·plan §1.8). [Maven Central 게시](https://repo.maven.apache.org/maven2/org/json/json/20260814/) 2026-08-14 16:19 UTC로 3일 경과. [릴리스](https://github.com/stleary/JSON-java/releases/tag/20260814)는 XML 공백 문자 처리 수정이며 테스트 전용 의존성이다. `.npmrc`의 자동 제한은 npm에만 적용되고 Maven은 게시일을 직접 확인한다. |
-| 자산 변환(dev 전용, PA-03) | Ubuntu 24.04 apt python3-pil 10.2.0-1ubuntu1.3 / ffmpeg 7:6.1.1-3ubuntu5 / libavif-bin 1.0.4-1ubuntu3 (`tools/setup-host.sh`). 앱 런타임 의존성 없음 |
+| 자산 변환(dev 전용, PA-03) | Pillow **10.2.0**(PyPI, 스크립트의 PEP 723 `dependencies`; 휠이 cp312까지라 `requires-python = ">=3.12,<3.13"`) / Ubuntu 24.04 apt ffmpeg 7:6.1.1-3ubuntu5 / libavif-bin 1.0.4-1ubuntu3. 폰트 제작 fonttools 4.61.1 / brotli 1.2.0(PEP 723). 실행기 uv 0.11.6(`uv run <script>`). 2026-09-30 `uv run` 재생성이 커밋된 164개 산출물과 바이트 동일. 앱 런타임 의존성 없음 |
 | Android SDK | cmdline-tools 23.0(16111833, SHA-256 고정) + `platforms;android-36`·`build-tools;36.0.0`·`platform-tools`. 호스트는 `tools/setup-host.sh`가 `$ANDROID_HOME`(기본 `~/Android/Sdk`)에 설치, CI는 `ubuntu-24.04` 러너 내장 SDK(같은 두 패키지 포함) |
 | GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, setup-node@v7, setup-java@v6, gradle/actions/setup-gradle@v6, upload-artifact@v7, download-artifact@v8, softprops/action-gh-release@v3. 빌드·테스트는 러너에서 네이티브로 실행 |
 
@@ -73,7 +73,7 @@ npm run e2e -w packages/web
 android/gradlew -p android assembleDebug testDebugUnitTest lint
 ```
   `npm run verify`가 위 명령(npm ci 제외)을 차례로 돈다.
-- 그 밖: `npm run dev -w packages/web`(Vite, 5173), `npm run start -w packages/relay-dev`(중계, 17777), `npm run sim -- --workers 4 …`, 스크린샷 기준 갱신 `npm run e2e -w packages/web -- --update-snapshots`, 자산 변환 `python3 packages/web/scripts/build-pro-assets.py`.
+- 그 밖: `npm run dev -w packages/web`(Vite, 5173), `npm run start -w packages/relay-dev`(중계, 17777), `npm run sim -- --workers 4 …`, 스크린샷 기준 갱신 `npm run e2e -w packages/web -- --update-snapshots`, 자산 변환 `uv run packages/web/scripts/build-pro-assets.py`(파이썬 스크립트는 모두 `uv run`, 의존성은 스크립트의 PEP 723 메타데이터).
 - 공유 머신 부하: 여러 에이전트가 한 호스트를 쓴다. E2E는 설정 기본값(로컬 4 workers)을 넘기지 않고, `sim`은 `--workers 4` 이하(기본값은 CPU 수), Gradle은 `--max-workers=4` 이하, `@timing`(AC-06)은 설정대로 직렬로 둔다.
 - 호스트와 CI 결과가 다르면 버전 핀(위 1장 목록)과 `tools/setup-host.sh` 출력부터 대조한다. 문서에 남은 옛 표기 `docker compose run --rm dev <명령>`은 호스트 `<명령>`과 같다(개발 이미지는 2026-09-30 삭제).
 - 포맷은 편집할 때마다 돌리는 훅이 아니라 커밋 전 `npm run lint:fix`로 맞추고, `lint`(CI 포함)가 `oxfmt --check`·`prettier --check`로 검사한다.

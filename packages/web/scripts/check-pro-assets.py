@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.12,<3.13"  # 이전 python:3.12 실행 환경과 같게 고정
+# dependencies = []
+# ///
 """PA-03: input hashes, excluded packs, Ogg repeatability and committed-output equality."""
 from pathlib import Path
 import hashlib, importlib.util, json, tempfile

@@ -6,7 +6,8 @@
 #   - Node: .nvmrc 버전 (nvm install)
 #   - npm 의존성: npm ci (node_modules가 없을 때)
 #   - apt(sudo): Playwright Chromium·WebKit 시스템 라이브러리(npx playwright install-deps),
-#     openjdk-21-jdk-headless(Gradle), python3-pil·ffmpeg·libavif-bin(자산 변환, PA-03), unzip
+#     openjdk-21-jdk-headless(Gradle), ffmpeg·libavif-bin(자산 변환 바이너리, PA-03), unzip
+#   - uv 확인: 파이썬 스크립트는 PEP 723 메타데이터로 `uv run`이 의존성(Pillow·FontTools)을 받는다
 #   - Playwright 브라우저: ~/.cache/ms-playwright (npx playwright install)
 #   - Android SDK: $ANDROID_HOME(기본 ~/Android/Sdk)에 cmdline-tools + platforms;android-36·build-tools;36.0.0·platform-tools
 # sudo 암호는 터미널에서 직접 실행할 때만 묻는다. 비대화형이면 그 단계를 보류로 남기고 끝에 알린다.
@@ -39,10 +40,11 @@ fi
 echo "node $(node -v), npm $(npm -v)"
 
 step "npm 의존성"
-if [[ -d node_modules ]]; then echo "node_modules 있음 (lock이 바뀌었으면 npm ci)"; else npm ci; fi
+# 디렉터리만 있고 설치가 중간에 끊긴 경우(.bin 없음)도 다시 설치한다.
+if [[ -x node_modules/.bin/playwright ]]; then echo "node_modules 있음 (lock이 바뀌었으면 npm ci)"; else npm ci; fi
 
 step "apt 패키지 (sudo)"
-apt_pkgs=(openjdk-21-jdk-headless python3-pil ffmpeg libavif-bin unzip)
+apt_pkgs=(openjdk-21-jdk-headless ffmpeg libavif-bin unzip)
 missing=()
 for p in "${apt_pkgs[@]}"; do
   dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed' || missing+=("$p")
@@ -65,6 +67,14 @@ else
   [[ ${#missing[@]} -gt 0 ]] && echo "보류: ${missing[*]}"
   [[ $pw_deps_ok == false ]] && echo "보류: Playwright Chromium·WebKit 시스템 라이브러리"
   pending+=("apt(sudo): 터미널에서 tools/setup-host.sh를 다시 실행")
+fi
+
+step "uv (파이썬 스크립트, PEP 723)"
+if command -v uv >/dev/null; then
+  uv --version
+else
+  echo "uv가 없다. 공식 설치(https://docs.astral.sh/uv/getting-started/installation/) 뒤 다시 실행한다."
+  pending+=("uv 설치: https://docs.astral.sh/uv/getting-started/installation/")
 fi
 
 step "Playwright 브라우저 (Chromium·WebKit)"
@@ -120,7 +130,7 @@ fi
 step "요약"
 echo "node $(node -v) · npm $(npm -v) · playwright $(npx playwright --version)"
 javac -version 2>&1 || echo "javac 없음"
-dpkg-query -W -f='${Package} ${Version}\n' python3-pil ffmpeg libavif-bin 2>/dev/null || true
+dpkg-query -W -f='${Package} ${Version}\n' ffmpeg libavif-bin 2>/dev/null || true
 if [[ ${#pending[@]} -gt 0 ]]; then
   printf '\n보류된 단계 (사람이 터미널에서 실행):\n'
   printf '  - %s\n' "${pending[@]}"

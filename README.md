@@ -28,7 +28,7 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 빌드·테스트는 호스트(WSL2 Ubuntu 24.04)에서 네이티브로 실행한다. CI도 같은 명령을 `ubuntu-24.04` 러너에서 네이티브로 돈다. 둘의 동일성은 버전 핀(`.nvmrc`, `package-lock.json`, Gradle 설정, JDK 21)으로 맞춘다. 규범은 [AGENTS.md §5](AGENTS.md).
 
 ```sh
-tools/setup-host.sh                  # 처음 한 번: Node(.nvmrc), apt(Playwright 의존성·JDK 21·자산 변환 도구, sudo), 브라우저, Android SDK
+tools/setup-host.sh                  # 처음 한 번: Node(.nvmrc), apt(Playwright 의존성·JDK 21·FFmpeg·libavif, sudo), uv 확인, 브라우저, Android SDK
 nvm use                              # 셸마다
 npm ci                               # 처음, 그리고 lock이 바뀐 뒤
 npm run lint                         # oxlint + oxfmt(순수 TS) / ESLint + Prettier(web)

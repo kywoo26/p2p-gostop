@@ -7,7 +7,7 @@
 | 원본 / 고지 출처 | [WOFF2](https://raw.githubusercontent.com/orioncactus/pretendard/v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2) · [OFL 원문](https://raw.githubusercontent.com/orioncactus/pretendard/v1.3.9/LICENSE) |
 | 수정본 표시명 | GostopSans (Reserved Font Name 미사용) |
 | 수정 내용 | UI 문자 subset, WOFF2, 가변 축·OpenType 기능 보존, hinting 제거, family/PS 표시명 변경 |
-| 도구 | FontTools 4.61.1 / Brotli 1.2.0 / [고정 Docker 이미지·재생성 절차](README.md#확정-앱-산출물-재생성) |
+| 도구 | FontTools 4.61.1 / Brotli 1.2.0 / [`uv run` 고정 의존성·재생성 절차](README.md#확정-앱-산출물-재생성) |
 | 입력·OFL·코퍼스·출력 SHA-256 | [app-metrics.json](app-metrics.json) — 각 산출물 갱신 시 함께 검증 |
 | 크기 / 상한 | 143,932 B / 163,840 B |
 | 라이선스 | SIL Open Font License 1.1, 수정본에도 동일 적용 |

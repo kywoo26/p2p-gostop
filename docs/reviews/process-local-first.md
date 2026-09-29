@@ -12,10 +12,10 @@
 | 스크린샷 렌더링 동일성 | "기준을 만든 환경에서 실행" ([visual comparisons](https://playwright.dev/docs/test-snapshots)) → 기준 환경 = Ubuntu 24.04 + install-deps(호스트·CI 공통) | deps 없는 호스트에서 15건 불일치(글꼴 fallback 포함) |
 | Android SDK | cmdline-tools 23.0(SHA-256 고정) + `platforms;android-36`·`build-tools;36.0.0` ([sdkmanager](https://developer.android.com/tools/sdkmanager)); CI는 러너 내장 SDK(같은 패키지, [runner-images Ubuntu 24.04](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)) | cmdline-tools 174 MB·9 s, 패키지 약 315 MB. 23.0부터 `--licenses`는 no-op이고 설치가 라이선스 파일을 기록한다([Android CLI](https://developer.android.com/tools/agents/android-cli)) |
 | JDK 21 | CI `actions/setup-java` Temurin 21, 호스트 apt `openjdk-21-jdk-headless`(21.0.12.1) | 호스트는 JRE만 있어 `javac` 없음 |
-| 자산 변환 도구 | apt 후보 버전이 기존 고정값과 같다: python3-pil 10.2.0-1ubuntu1.3, ffmpeg 7:6.1.1-3ubuntu5, libavif-bin 1.0.4-1ubuntu3 | 미설치 |
+| 자산 변환 도구 | Pillow 10.2.0·fonttools 4.61.1·brotli 1.2.0은 스크립트의 PEP 723 메타데이터로 `uv run`(Pillow 휠이 cp312까지라 Python 3.12 고정). FFmpeg·libavif는 apt(후보 버전이 기존 고정값과 같다) | `uv run build-pro-assets.py`가 164개 산출물을 다시 써도 `git status` 변화 없음(바이트 동일), `check-pro-assets.py` 통과. 폰트는 같은 소스에서 uv와 옛 Docker+pip 결과 4파일 바이트 동일 |
 | 릴리스 웹 빌드 격리(M0 R-1) | 비밀 없는 읽기 권한 전용 잡(새 VM)에서 빌드하고 아티팩트만 서명 잡으로 전달 | — |
 
-sudo가 필요한 apt 일괄 설치: 255개, 내려받기 262 MB, 디스크 +638 MB.
+sudo가 필요한 apt 일괄 설치: 255개, 내려받기 262 MB, 디스크 +638 MB(python3-pil 포함 시 측정; 이후 Pillow는 uv로 옮김).
 
 ## 결정
 
