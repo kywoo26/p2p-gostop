@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.12,<3.13"  # 이전 python:3.12 실행 환경과 같게 고정
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
 # dependencies = ["fonttools==4.61.1", "brotli==1.2.0"]
 # ///
 """OFL 로컬 입력 → 검증된 WOFF2/CSS/고지. `uv run`(PEP 723 고정 의존성), 네트워크 접근 없음."""

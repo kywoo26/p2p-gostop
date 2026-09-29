@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.12,<3.13"  # 이전 python:3.12 실행 환경과 같게 고정
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
 # dependencies = ["fonttools==4.61.1", "brotli==1.2.0"]
 # ///
 """정상 네 폰트와 실패 gate. 원본 입력은 FONT_INPUTS(기본 /tmp/visual-research), 임시 출력은 tempfile."""

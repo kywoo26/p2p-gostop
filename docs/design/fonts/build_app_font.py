@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.12,<3.13"  # 이전 python:3.12 실행 환경과 같게 고정
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
 # dependencies = ["fonttools==4.61.1", "brotli==1.2.0"]
 # ///
 """확정 A의 앱 폰트 생성. `uv run`, 입력 디렉터리(FONT_INPUTS, 기본 /tmp/visual-research)에 고정 원본/OFL 필요."""

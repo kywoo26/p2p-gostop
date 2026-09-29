@@ -1,6 +1,6 @@
 # /// script
-# requires-python = ">=3.12,<3.13"  # Pillow 10.2.0의 PyPI 휠이 cp312까지만 있다. uv가 3.12를 받는다.
-# dependencies = ["pillow==10.2.0"]
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
+# dependencies = ["pillow==12.3.0"]
 # ///
 """PA-03: uv-pinned Pillow + Ubuntu 24.04 apt FFmpeg/libavif (tools/setup-host.sh); offline conversion, provenance and byte inventory."""
 from pathlib import Path

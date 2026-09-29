@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.12,<3.13"  # 이전 python:3.12 실행 환경과 같게 고정
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
 # dependencies = []
 # ///
 """PA-03: input hashes, excluded packs, Ogg repeatability and committed-output equality."""
