@@ -340,10 +340,10 @@ test('정산 → 다음 판, 설정 저장, 홈 이어하기 (spec 6.2, MN-05)',
   test.setTimeout(3 * 60_000);
   // 설정: 점당 200이면 시작 잔액도 비례해서 바뀐다(MN-04)
   await page.goto('./?speed=instant#/settings');
-  await page.getByRole('combobox').selectOption('200');
+  await page.getByRole('combobox', { name: '점당' }).selectOption('200');
   await expect(page.getByText('300,000냥')).toBeVisible();
   await page.goto('./?speed=instant#/settings');
-  await expect(page.getByRole('combobox')).toHaveValue('200');
+  await expect(page.getByRole('combobox', { name: '점당' })).toHaveValue('200');
 
   await startSolo(page, '?speed=instant', '보통');
   await playRounds(page, 1);

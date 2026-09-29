@@ -1,6 +1,13 @@
+# /// script
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
+# dependencies = ["pillow==12.3.0"]
+# ///
 """PA-04: PNG review copies only. Never quantize app assets or regression baselines."""
 from pathlib import Path
-from PIL import Image
+try:
+    from PIL import Image
+except ModuleNotFoundError:
+    raise SystemExit(f'Pillow가 없다. uv로 실행한다(PEP 723 의존성 자동 설치): uv run {__file__}')
 import shutil
 
 root = Path(__file__).resolve().parents[3]

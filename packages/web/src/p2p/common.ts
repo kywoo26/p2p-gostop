@@ -1,8 +1,9 @@
 // 호스트·게스트 공통 도구: 난수, 빈 게임판, 규칙 프리셋 이름, 기기 진동 피드백.
-import { PRESETS, type PresetId, type RuleOptions } from '@p2p-gostop/engine';
+import { type PresetId, type RuleOptions } from '@p2p-gostop/engine';
 import type { BoardView, SeatView } from '@p2p-gostop/protocol';
 import { getBridge } from '../bridge/bridge.ts';
 import { settings } from '../settings/settings.svelte.ts';
+import { presetOfRules } from '../settings/rule-options.ts';
 import type { Banner } from '../ui/banner.ts';
 
 /** NP-06: 비보안 컨텍스트에서도 되는 32바이트 난수 (crypto.subtle·randomUUID 금지, NF-02) */
@@ -24,14 +25,9 @@ export const PRESET_LABEL: Readonly<Record<PresetId | 'custom', string>> = {
   custom: '사용자 지정',
 };
 
-/** welcome으로 받은 호스트 규칙이 어느 프리셋인지 (국진 선택은 별도 설정이라 비교에서 뺀다) */
+/** welcome으로 받은 호스트 규칙이 어느 프리셋인지. 국진 변경도 사용자 지정으로 표시한다. */
 export function presetOf(rules: RuleOptions): PresetId | 'custom' {
-  const strip = (r: RuleOptions) => JSON.stringify({ ...r, gukjin: null });
-  const key = strip(rules);
-  for (const id of ['standard', 'traditional', 'arcade'] as const) {
-    if (strip(PRESETS[id]) === key) return id;
-  }
-  return 'custom';
+  return presetOfRules(rules);
 }
 
 function emptySeat(name: string, balance: number): SeatView {
@@ -97,6 +93,6 @@ const PATTERN: Partial<Readonly<Record<Banner['kind'], readonly number[]>>> = {
 export function vibrateFor(kind: Banner['kind']): void {
   const pattern = PATTERN[kind];
   const bridge = getBridge();
-  if (pattern === undefined || !bridge.isNative || !settings.value.vibration) return;
+  if (pattern === undefined || !bridge.isNative || !settings.value.vibrate) return;
   void bridge.vibrate(pattern);
 }

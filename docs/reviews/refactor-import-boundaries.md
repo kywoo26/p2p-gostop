@@ -23,9 +23,9 @@ Oxlint `eslint/no-restricted-imports`의 패키지별 override와 web ESLint `no
 
 ```sh
 # 각 fixture를 실제 소스 경로에 잠시 만들고 기존 린터로 검사한 뒤 finally에서 제거한다.
-docker compose run --rm -T dev node --input-type=module < docs/research/import-boundary-probes.mjs.txt
+node --input-type=module < docs/research/import-boundary-probes.mjs.txt
 # 기존 AST 감사 도구로 현재 파일/패키지 그래프를 계측한다.
-git ls-files packages tools android | docker compose run --rm -T dev node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)" > /tmp/import-boundary-audit.json
+git ls-files packages tools android | node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)" > /tmp/import-boundary-audit.json
 wc -l .oxlintrc.json packages/web/eslint.config.js
 git show 7cb06f3:.oxlintrc.json | wc -l
 git show 7cb06f3:packages/web/eslint.config.js | wc -l
@@ -46,7 +46,7 @@ git show 7cb06f3:packages/web/eslint.config.js | wc -l
 
 probe는 금지/허용 의존 방향, deep import, 상대경로·중간 `..`, 타입 전용 import, 재수출, 문자열 동적 import, 공개 testing/net 및 그 아래 비공개 경로, Svelte/E2E를 검사한다. 부정 fixture가 다른 경고 때문에 실패한 것을 성공으로 세지 않고 **경계 규칙 진단과 종료 코드**를 확인한다. 최초 실험에서 `*`가 깊은 하위 경로를 놓치는 것을 발견해 Oxlint 패턴을 `**`로 수정했다.
 
-전체 게이트는 루트에서 `docker compose run --rm dev` 뒤에 각각 다음 명령을 붙여 실행한다: `npm run lint`, `npm run check`(knip 포함), `npm test`(fast-check 포함), `npm run test:net -w packages/web`, `npm run test:browser`, `npm run build -w packages/web`, `npm run e2e -w packages/web`, `android/gradlew -p android assembleDebug testDebugUnitTest lint`. lock이 같아 앞선 새 진입점 `npm ci` 결과를 유지했다. 최종 결과는 PR 본문에 기록한다.
+전체 게이트는 루트에서 다음 명령을 실행한다: `npm run lint`, `npm run check`(knip 포함), `npm test`(fast-check 포함), `npm run test:net -w packages/web`, `npm run test:browser`, `npm run build -w packages/web`, `npm run e2e -w packages/web`, `android/gradlew -p android assembleDebug testDebugUnitTest lint`. lock이 같아 앞선 새 진입점 `npm ci` 결과를 유지했다. 최종 결과는 PR 본문에 기록한다.
 
 #96의 브라우저 간헐 실패 수정은 별도 PR #97이다. 이 PR은 해당 테스트를 포함하거나 변경하지 않으며, 병합 순서는 #97을 먼저 권장한다.
 

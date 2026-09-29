@@ -6,7 +6,7 @@
     "valid": true,
     "value": {
       "t": "hello",
-      "v": 2,
+      "v": 3,
       "name": "민지",
       "lastSeq": 0
     }
@@ -192,14 +192,14 @@
     "valid": true,
     "value": {
       "t": "hello",
-      "v": 2,
+      "v": 3,
       "name": "민지",
       "lastSeq": 3,
       "pad": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     },
     "parsed": {
       "t": "hello",
-      "v": 2,
+      "v": 3,
       "name": "민지",
       "lastSeq": 3
     }
@@ -238,7 +238,7 @@
     "reason": "MALFORMED",
     "value": {
       "t": "hello",
-      "v": 2,
+      "v": 3,
       "name": "민\u0007지"
     }
   },
@@ -371,7 +371,8 @@
     "valid": true,
     "value": {
       "t": "welcome",
-      "v": 2,
+      "v": 3,
+      "timerSettings": { "decisionMs": 10000, "policy": "fixed-v1" },
       "seat": 1,
       "sessionToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "rules": {
@@ -417,7 +418,8 @@
     "reason": "MALFORMED",
     "value": {
       "t": "welcome",
-      "v": 2,
+      "v": 3,
+      "timerSettings": { "decisionMs": 10000, "policy": "fixed-v1" },
       "seat": 1,
       "sessionToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "rules": {},
@@ -466,6 +468,8 @@
     "value": {
       "t": "revealHost",
       "round": 1,
+      "timeoutCount": 0,
+      "timeoutDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "guestSecret": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "seed": [1, 2, 3, 4],
@@ -488,6 +492,8 @@
     "parsed": {
       "t": "revealHost",
       "round": 1,
+      "timeoutCount": 0,
+      "timeoutDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "guestSecret": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "seed": [1, 2, 3, 4],

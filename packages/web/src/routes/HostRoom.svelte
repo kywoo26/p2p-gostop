@@ -1,13 +1,16 @@
 <script lang="ts" module>
   import type { PresetId } from '@p2p-gostop/engine';
   import type { MoneyUnit } from '../lib/view-types.ts';
+  import type { TimerDecisionMs } from '../p2p/host-save.ts';
 
   export interface HostRoomRules {
     readonly preset: PresetId;
+    readonly custom: boolean;
     readonly perPoint: number;
     readonly startBalance: number;
     readonly hostName: string;
     readonly unit: MoneyUnit;
+    readonly timerDecisionMs: TimerDecisionMs;
   }
 </script>
 
@@ -36,6 +39,7 @@
     /** 저장된 세션 이어하기 (MN-05). 있으면 규칙·금액은 그 세션 값으로 고정 */
     resume?: { readonly round: number; readonly guestName: string | null } | null;
     busy?: boolean;
+    timerSaveFailed?: boolean;
     onhotspot?: (() => void) | undefined;
     onaddressonly?: (() => void) | undefined;
     ondiagnostics?: (() => void) | undefined;
@@ -52,6 +56,7 @@
     rules,
     resume = null,
     busy = false,
+    timerSaveFailed = false,
     onhotspot,
     onaddressonly,
     ondiagnostics,
@@ -375,10 +380,14 @@
     <h2 id={`${ids}-rules`}>{resume ? '이어하기' : '규칙·금액'}</h2>
     {#if resume}
       <p class="rules">
-        {resume.round}판째부터 · {PRESET_LABEL[rules.preset]} · 점당 {formatMoney(
+        {resume.round}판째부터 · {rules.custom ? '사용자 지정' : PRESET_LABEL[rules.preset]} · 점당 {formatMoney(
           rules.perPoint,
           rules.unit,
         )}{resume.guestName ? ` · 지난 상대 ${resume.guestName}` : ''}
+      </p>
+      <p class="hint">
+        생각 시간: {rules.timerDecisionMs === null ? '끄기' : `${rules.timerDecisionMs / 1000}초`} · 결정마다
+        적용
       </p>
       <button type="button" class="link" onclick={() => onfresh?.()}>새 세션으로 시작</button>
     {:else}
@@ -401,6 +410,9 @@
           {#each PRESETS as id (id)}<option value={id}>{PRESET_LABEL[id]}</option>{/each}
         </select>
       </label>
+      {#if rules.custom}<p class="rules">
+          사용자 지정 규칙이 게스트에게 전달됩니다. <a href="#/settings">세부 규칙·복원</a>
+        </p>{/if}
       <label class="row">
         <span>점당</span>
         <select
@@ -416,7 +428,35 @@
         <span>시작 잔액</span>
         <strong>{formatMoney(rules.startBalance, rules.unit)}</strong>
       </p>
+      <label class="row">
+        <span>생각 시간</span>
+        <select
+          value={rules.timerDecisionMs === null ? 'off' : String(rules.timerDecisionMs)}
+          onchange={(e) =>
+            onrules?.({
+              timerDecisionMs:
+                e.currentTarget.value === 'off'
+                  ? null
+                  : (Number(e.currentTarget.value) as TimerDecisionMs),
+            })}
+        >
+          <option value="off">끄기</option><option value="5000">5초</option><option value="10000"
+            >10초</option
+          >
+          <option value="20000">20초</option><option value="30000">30초</option><option
+            value="60000">60초</option
+          >
+        </select>
+      </label>
     {/if}
+    <p class="hint">
+      선택마다 시간이 적용됩니다. 초과하면 합법 카드 중 ID가 가장 작은 카드를 내고, 선택 창은
+      스톱·흔들지 않기 등 정해진 행동으로 진행합니다. 선 고르기·밀기/받기·다음 판·재충전은 직접
+      선택합니다.
+    </p>
+    {#if timerSaveFailed}<p class="warn" role="alert">
+        이번 대전에는 적용했지만 설정을 저장하지 못했어요
+      </p>{/if}
   </section>
 
   {#snippet actions()}

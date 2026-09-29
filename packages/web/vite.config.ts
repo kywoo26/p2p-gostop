@@ -7,7 +7,7 @@ import { defineConfig } from 'vite';
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 /**
- * 빌드 식별자용 git 짧은 해시. 컨테이너에 git이 없어도 되도록 .git을 직접 읽는다.
+ * 빌드 식별자용 git 짧은 해시. git 실행 파일 없이도 되도록 .git을 직접 읽는다.
  * CI에서는 GITHUB_SHA를 우선한다. 알 수 없으면 'dev'.
  */
 function gitShortHash(): string {
@@ -49,6 +49,25 @@ export default defineConfig({
   base: './',
   plugins: [
     svelte(),
+    {
+      name: 'record-bundled-npm-packages',
+      apply: 'build',
+      generateBundle(_options, bundle) {
+        const names = new Set<string>();
+        for (const output of Object.values(bundle)) {
+          if (output.type !== 'chunk') continue;
+          for (const id of Object.keys(output.modules)) {
+            const match = id.replaceAll('\\', '/').match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+            if (match?.[1]) names.add(match[1]);
+          }
+        }
+        this.emitFile({
+          type: 'asset',
+          fileName: 'oss/bundled-packages.json',
+          source: `${JSON.stringify([...names].sort())}\n`,
+        });
+      },
+    },
     {
       name: 'exclude-prototype-assets-from-release',
       closeBundle() {

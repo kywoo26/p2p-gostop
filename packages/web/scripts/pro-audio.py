@@ -1,4 +1,4 @@
-"""PA-03: deterministic offline audio conversion; FFmpeg 6.1.1 in Docker."""
+"""PA-03: deterministic offline audio conversion; FFmpeg 6.1.1 (Ubuntu 24.04 apt)."""
 import subprocess
 
 def encode(source, target):

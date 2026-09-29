@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { PRESETS } from '@p2p-gostop/engine';
   import { proEnabled, unlockAudio, playSound, stopAudio } from './pro-assets/runtime.ts';
   // 앱 진입점. 역할은 주소로 정한다(src/p2p/role.ts): 루프백 origin(Android WebView `/?build=…`, 개발 브라우저)은
   // 호스트 앱, 루프백이 아닌 origin(iPhone이 QR로 연 `http://<핫스팟 IP>:17777/`)이나 `?role=guest`는 게스트 화면.
@@ -16,6 +17,8 @@
   import { DIFFICULTY_LABEL } from './game/solo.svelte.ts';
   import { sounds } from './game/sound.ts';
   import type { RecordsView } from './lib/view-types.ts';
+  import { presetOf } from './p2p/common.ts';
+  import { loadTimerPreference, saveTimerPreference } from './p2p/host-save.ts';
   import { hotspot } from './p2p/hotspot.svelte.ts';
   import { detectMode } from './p2p/role.ts';
   import { hostConfigFrom, p2p } from './p2p/store.svelte.ts';
@@ -29,7 +32,7 @@
   import Settings from './routes/Settings.svelte';
   import SoloSetup from './routes/SoloSetup.svelte';
   import Versus from './routes/Versus.svelte';
-  import { effectiveStartBalance, settings } from './settings/settings.svelte.ts';
+  import { presetSettingsPatch, settings } from './settings/settings.svelte.ts';
   import Screen from './ui/Screen.svelte';
 
   const GALLERY = '/dev/gallery';
@@ -43,12 +46,17 @@
   let remoteActive = $state(false);
   const route = $derived(hash.replace(/^#/, '') || '/');
   const host = $derived(p2p.host);
+  const remoteConfig = $derived(host?.config ?? hostConfigFrom(settings.value));
   const remoteRules = $derived<HostRoomRules>({
-    preset: host?.config.preset ?? settings.value.preset,
-    perPoint: host?.config.perPoint ?? settings.value.perPoint,
-    startBalance: host?.config.startBalance ?? effectiveStartBalance(settings.value),
-    hostName: host?.config.hostName ?? settings.value.playerName,
+    preset: remoteConfig.preset,
+    custom:
+      presetOf(remoteConfig.rules) === 'custom' ||
+      remoteConfig.rules.gukjin !== PRESETS[remoteConfig.preset].gukjin,
+    perPoint: remoteConfig.perPoint,
+    startBalance: remoteConfig.startBalance,
+    hostName: remoteConfig.hostName,
     unit: settings.value.unit,
+    timerDecisionMs: remoteConfig.timerDecisionMs ?? loadTimerPreference(),
   });
 
   function openRemote(): RemoteHostController | null {
@@ -82,11 +90,19 @@
   }
 
   function changeRemoteRules(patch: Partial<HostRoomRules>) {
-    if (patch.preset !== undefined) settings.update({ preset: patch.preset, startBalance: null });
+    if ('timerDecisionMs' in patch && patch.timerDecisionMs !== undefined) {
+      saveTimerPreference(patch.timerDecisionMs);
+      host?.configure({ ...host.config, timerDecisionMs: patch.timerDecisionMs });
+      return;
+    }
+    if (patch.preset !== undefined) settings.update(presetSettingsPatch(patch.preset));
     if (patch.perPoint !== undefined)
       settings.update({ perPoint: patch.perPoint, startBalance: null });
     if (patch.hostName !== undefined) settings.update({ playerName: patch.hostName });
-    host?.configure(hostConfigFrom(settings.value));
+    host?.configure({
+      ...hostConfigFrom(settings.value),
+      timerDecisionMs: host.config.timerDecisionMs ?? loadTimerPreference(),
+    });
   }
 
   function startRemote() {
@@ -301,120 +317,122 @@
   onunhandledrejection={(e) => onError(`처리되지 않은 Promise 거부: ${String(e.reason)}`)}
 />
 
-{#if mode === 'guest' && galleryPage === null}
-  <GuestApp />
-{:else if galleryPage !== null}
-  <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, plan.md 1.2) -->
-  {#await import('./routes/dev/gallery/Gallery.svelte') then { default: Gallery }}
-    <Gallery page={galleryPage} />
-  {/await}
-{:else if route === '/license'}
-  <License />
-{:else if route === '/solo'}
-  <SoloSetup />
-{:else if route === '/game'}
-  {#if current.solo !== null}
-    <Game
-      controller={current.solo}
-      menu={SOLO_MENU}
-      onmenu={soloMenu}
-      onend={() => endSolo(true)}
-      ended={current.solo.state.phase === 'ended'}
-      onfresh={() => (location.hash = '#/solo')}
-      onrecords={() => (location.hash = '#/records')}
-      {backToken}
+<div class="app-root" data-effect-intensity={settings.value.effectIntensity}>
+  {#if mode === 'guest' && galleryPage === null}
+    <GuestApp />
+  {:else if galleryPage !== null}
+    <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, plan.md 1.2) -->
+    {#await import('./routes/dev/gallery/Gallery.svelte') then { default: Gallery }}
+      <Gallery page={galleryPage} />
+    {/await}
+  {:else if route === '/license'}
+    <License />
+  {:else if route === '/solo'}
+    <SoloSetup />
+  {:else if route === '/game'}
+    {#if current.solo !== null}
+      <Game
+        controller={current.solo}
+        menu={SOLO_MENU}
+        onmenu={soloMenu}
+        onend={() => endSolo(true)}
+        ended={current.solo.state.phase === 'ended'}
+        onfresh={() => (location.hash = '#/solo')}
+        onrecords={() => (location.hash = '#/records')}
+        {backToken}
+      />
+    {:else}
+      <Screen title="혼자 연습">
+        <p>{current.saveError ?? '진행 중인 게임이 없습니다.'}</p>
+        {#snippet actions()}
+          <a class="button primary" href="#/solo">새 게임</a>
+        {/snippet}
+      </Screen>
+    {/if}
+  {:else if route === '/versus'}
+    <Versus />
+  {:else if route === '/remote'}
+    {#if remoteHost}
+      <HostRoom
+        hotspot={hotspot.info}
+        guest={host?.guestName ? { name: host.guestName, connected: host.guestOnline } : null}
+        rules={remoteRules}
+        remote={remoteHost}
+        onrules={changeRemoteRules}
+        onstart={startRemote}
+      />
+    {/if}
+  {:else if route === '/match'}
+    {#if host !== null && host.phase !== 'lobby'}
+      <Game
+        controller={host}
+        menu={HOST_MENU}
+        onmenu={hostMenu}
+        onend={endMatch}
+        onreconnect={() => host?.reconnect()}
+        waiting={host.waitPrompt}
+        onwait={() => host.keepWaiting()}
+        warning={hotspot.info.warning}
+        {backToken}
+      />
+    {:else}
+      <Screen title="친구와 대전">
+        <p>진행 중인 대전이 없습니다.</p>
+        {#snippet actions()}
+          <a class="button primary" href="#/versus">방 열기</a>
+        {/snippet}
+      </Screen>
+    {/if}
+  {:else if route === '/records'}
+    <Records view={records} />
+  {:else if route === '/settings'}
+    <Settings
+      settings={settings.value}
+      sessionActive={current.resumable !== null || match !== null || remoteActive}
+      onchange={changeSettings}
+      back={returnFromSettings ?? '#/'}
+    />
+  {:else if route === '/diagnostics'}
+    <Diagnostics
+      view={diagnosticsView(
+        host !== null ? 'host' : 'solo',
+        host === null
+          ? []
+          : [
+              {
+                label: '중계 연결 (호스트)',
+                ok: host.link === 'open',
+                detail: host.link,
+              },
+              {
+                label: '게스트',
+                ok: host.guestName === null ? null : host.guestOnline,
+                detail:
+                  host.guestName === null
+                    ? '없음'
+                    : `${host.guestName} · ${host.guestOnline ? '연결됨' : '끊김'}`,
+              },
+            ],
+      )}
+      guestLog={host?.guestLogs() ?? []}
+      back={match !== null ? '#/match' : '#/'}
+      onshare={bridge.isNative ? share : undefined}
+      ondevice={bridge.isNative ? () => void bridge.openDiagnostics() : undefined}
+      status={shareStatus}
     />
   {:else}
-    <Screen title="혼자 연습">
-      <p>{current.saveError ?? '진행 중인 게임이 없습니다.'}</p>
-      {#snippet actions()}
-        <a class="button primary" href="#/solo">새 게임</a>
-      {/snippet}
-    </Screen>
-  {/if}
-{:else if route === '/versus'}
-  <Versus />
-{:else if route === '/remote'}
-  {#if remoteHost}
-    <HostRoom
-      hotspot={hotspot.info}
-      guest={host?.guestName ? { name: host.guestName, connected: host.guestOnline } : null}
-      rules={remoteRules}
-      remote={remoteHost}
-      onrules={changeRemoteRules}
-      onstart={startRemote}
+    {#if current.saveError}<p role="alert" class="storage-error">
+        {current.saveError} <a href="#/solo">저장 상태 확인</a>
+      </p>{/if}
+    <Home
+      {resume}
+      onresume={resumeSolo}
+      {match}
+      onmatch={() => (location.hash = '#/match')}
+      activeMode={remoteActive ? 'remote' : host && host.phase !== 'ended' ? 'hotspot' : undefined}
     />
   {/if}
-{:else if route === '/match'}
-  {#if host !== null && host.phase !== 'lobby'}
-    <Game
-      controller={host}
-      menu={HOST_MENU}
-      onmenu={hostMenu}
-      onend={endMatch}
-      onreconnect={() => host?.reconnect()}
-      waiting={host.waitPrompt}
-      onwait={() => host.keepWaiting()}
-      warning={hotspot.info.warning}
-      {backToken}
-    />
-  {:else}
-    <Screen title="친구와 대전">
-      <p>진행 중인 대전이 없습니다.</p>
-      {#snippet actions()}
-        <a class="button primary" href="#/versus">방 열기</a>
-      {/snippet}
-    </Screen>
-  {/if}
-{:else if route === '/records'}
-  <Records view={records} />
-{:else if route === '/settings'}
-  <Settings
-    settings={settings.value}
-    sessionActive={current.resumable !== null || match !== null || remoteActive}
-    onchange={changeSettings}
-    back={returnFromSettings ?? '#/'}
-  />
-{:else if route === '/diagnostics'}
-  <Diagnostics
-    view={diagnosticsView(
-      host !== null ? 'host' : 'solo',
-      host === null
-        ? []
-        : [
-            {
-              label: '중계 연결 (호스트)',
-              ok: host.link === 'open',
-              detail: host.link,
-            },
-            {
-              label: '게스트',
-              ok: host.guestName === null ? null : host.guestOnline,
-              detail:
-                host.guestName === null
-                  ? '없음'
-                  : `${host.guestName} · ${host.guestOnline ? '연결됨' : '끊김'}`,
-            },
-          ],
-    )}
-    guestLog={host?.guestLogs() ?? []}
-    back={match !== null ? '#/match' : '#/'}
-    onshare={bridge.isNative ? share : undefined}
-    ondevice={bridge.isNative ? () => void bridge.openDiagnostics() : undefined}
-    status={shareStatus}
-  />
-{:else}
-  {#if current.saveError}<p role="alert" class="storage-error">
-      {current.saveError} <a href="#/solo">저장 상태 확인</a>
-    </p>{/if}
-  <Home
-    {resume}
-    onresume={resumeSolo}
-    {match}
-    onmatch={() => (location.hash = '#/match')}
-    activeMode={remoteActive ? 'remote' : host && host.phase !== 'ended' ? 'hotspot' : undefined}
-  />
-{/if}
+</div>
 
 <style>
   .storage-error {

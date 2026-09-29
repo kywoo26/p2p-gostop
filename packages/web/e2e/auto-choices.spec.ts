@@ -105,11 +105,11 @@ test('솔로: 동등 바닥 대상은 힌트 설정 없이 최소 ID를 한 번 
 
 test('국진 매번 묻기 설정은 새로고침 뒤에도 복원된다', async ({ page }) => {
   await page.goto('./?speed=instant#/settings');
-  const ask = page.getByRole('switch', { name: '매번 묻기' });
-  await expect(ask).not.toBeChecked();
-  await ask.check();
+  const ask = page.getByLabel('국진 처리');
+  await expect(ask).toHaveValue('"auto"');
+  await ask.selectOption('"ask"');
   await page.reload();
-  await expect(ask).toBeChecked();
+  await expect(ask).toHaveValue('"ask"');
 });
 
 const relayCli = fileURLToPath(new URL('../../relay-dev/src/cli.ts', import.meta.url));

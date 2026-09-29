@@ -1,10 +1,17 @@
-"""정상 네 폰트와 실패 gate. 원본 입력은 /inputs, 임시 출력은 컨테이너 /tmp."""
+# /// script
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
+# dependencies = ["fonttools==4.61.1", "brotli==1.2.0"]
+# ///
+"""정상 네 폰트와 실패 gate. 원본 입력은 FONT_INPUTS(기본 /tmp/visual-research), 임시 출력은 tempfile."""
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from fontTools.ttLib import TTFont
 from subset_font import build, validate_font
+
+INPUTS = Path(os.environ.get('FONT_INPUTS', '/tmp/visual-research'))
 
 MANIFEST = json.loads(Path(__file__).with_name('sources.json').read_text())
 TEXT = '맞고 먹을 패 선택 정산 뻑 쪽 0123456789+×냥'
@@ -18,7 +25,7 @@ class SubsetGates(unittest.TestCase):
         self.entry = MANIFEST['fonts'][0]
 
     def run_build(self, entry=None, text=TEXT, budget=163840):
-        return build(entry or self.entry, Path('/inputs'), self.out, text, budget)
+        return build(entry or self.entry, INPUTS, self.out, text, budget)
 
     def test_four_candidates_roundtrip_and_determinism(self):
         for entry in MANIFEST['fonts']:
@@ -30,7 +37,7 @@ class SubsetGates(unittest.TestCase):
                 self.assertIn('U+B9DE', css)
                 self.assertNotIn('https:', css)
                 self.assertEqual((self.out / (entry['family'] + '-OFL.txt')).read_bytes(),
-                                 (Path('/inputs') / entry['licenseFile']).read_bytes())
+                                 (INPUTS / entry['licenseFile']).read_bytes())
 
     def test_bad_hash_rejected(self):
         with self.assertRaisesRegex(ValueError, 'SHA-256'):
@@ -48,7 +55,7 @@ class SubsetGates(unittest.TestCase):
 
     def test_tnum_loss_rejected(self):
         self.run_build()
-        source = TTFont(Path('/inputs') / self.entry['source'])
+        source = TTFont(INPUTS / self.entry['source'])
         result = TTFont(self.out / (self.entry['family'] + '.woff2'))
         for record in result['GSUB'].table.FeatureList.FeatureRecord:
             if record.FeatureTag == 'tnum':

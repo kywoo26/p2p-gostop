@@ -369,3 +369,78 @@ test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 �
     relay.proc.kill('SIGTERM');
   }
 });
+
+test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53, NP-10)', async ({
+  baseURL,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', '한 번만 실행 (Chromium 호스트 + WebKit 게스트)');
+  test.setTimeout(75_000);
+  const relay = await startRelay();
+  const hostBrowser = await chromium.launch();
+  const guestBrowser = await webkit.launch();
+  let timeoutFrames = 0;
+  try {
+    const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
+    const base = baseURL ?? 'http://127.0.0.1:4173';
+    const host = await hostBrowser.newPage();
+    const guestContext = await guestBrowser.newContext();
+    let guest = await guestContext.newPage();
+    await host.goto(`${base}/${query}&role=host#/`);
+    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await expect(host.getByRole('combobox', { name: '생각 시간' })).toHaveValue('10000');
+    await guest.goto(`${base}/${query}&role=guest`);
+    await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
+    await guest.getByRole('button', { name: '입장' }).click();
+    await expect(guest.getByTestId('lobby')).toContainText('10초');
+    await host.getByTestId('host-start').click();
+    await expect(host.getByTestId('match')).toBeVisible();
+    await expect(guest.getByTestId('match')).toBeVisible();
+    // 선 고르기는 월이 같으면 재추첨한다. 재추첨도 제한시간 밖이다.
+    for (let pick = 0; pick < 8; pick++) {
+      if (await host.getByTestId('hud').getByText(/초/).isVisible()) break;
+      const hostChoice = host.locator('[data-choice^="pick-"]:not([disabled])').first();
+      if (await hostChoice.isVisible()) await hostChoice.click();
+      const guestChoice = guest.locator('[data-choice^="pick-"]:not([disabled])').first();
+      if (await guestChoice.isVisible()) await guestChoice.click();
+      await host.waitForTimeout(100);
+    }
+    await expect(host.getByTestId('hud')).toContainText(/초/);
+    await expect(host.getByTestId('decision-timer')).toContainText(/[1-9]초/, { timeout: 5_000 });
+    const before = (await attrs(host)).seq;
+    const guestUrl = guest.url();
+    await guest.close();
+    await expect(host.getByTestId('game-notice')).toContainText('연결 끊김');
+    await expect(host.getByTestId('hud')).toContainText('남은');
+    guest = await guestContext.newPage();
+    guest.on('websocket', (socket) =>
+      socket.on('framereceived', ({ payload }) => {
+        try {
+          const message = JSON.parse(String(payload)) as { t?: string; timeoutResult?: unknown };
+          if (message.t === 'events' && message.timeoutResult !== undefined) timeoutFrames++;
+        } catch {
+          /* 중계 알림·잘못된 프레임은 결과가 아니다 */
+        }
+      }),
+    );
+    await guest.goto(guestUrl);
+    await expect(guest.getByTestId('match')).toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => (await attrs(guest)).seq).toBe(before);
+    await expect(host.getByTestId('hud')).toContainText(/초/);
+    // 렌더러의 2초 이상 공백은 마지막 정상 검사 시각에서 멈추고 새 offer로 재개한다.
+    await host.evaluate(() => {
+      const until = performance.now() + 2_200;
+      while (performance.now() < until) {
+        /* 실행 공백 재현 */
+      }
+    });
+    expect((await attrs(host)).seq).toBe(before);
+    await expect(host.getByTestId('hud')).toContainText(/초/);
+    await expect.poll(() => timeoutFrames, { timeout: 20_000 }).toBeGreaterThan(0);
+    await expect.poll(async () => (await attrs(host)).seq).toBeGreaterThan(before);
+    await expect.poll(async () => (await attrs(guest)).seq).toBe((await attrs(host)).seq);
+  } finally {
+    await hostBrowser.close();
+    await guestBrowser.close();
+    relay.proc.kill('SIGTERM');
+  }
+});

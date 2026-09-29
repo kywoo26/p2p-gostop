@@ -2,7 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import type { HotspotInfo } from '../bridge/bridge.ts';
 import { FakeRemoteHost } from '../../test/fakes/remote-host.ts';
-import HostRoom from './HostRoom.svelte';
+import HostRoom, { type HostRoomRules } from './HostRoom.svelte';
 
 const hotspot: HotspotInfo = {
   state: 'off',
@@ -14,12 +14,14 @@ const hotspot: HotspotInfo = {
   lanEnabled: false,
   warning: null,
 };
-const rules = {
+const rules: HostRoomRules = {
   preset: 'standard' as const,
+  custom: false,
   perPoint: 100,
   startBalance: 10_000,
   hostName: '방장',
   unit: '원' as const,
+  timerDecisionMs: 10_000,
 };
 
 test('원격 방의 코드·링크·QR과 만료 시간을 표시한다 (FR-RP-02)', async () => {

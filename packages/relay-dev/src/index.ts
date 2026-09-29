@@ -96,16 +96,20 @@ function requestUrl(raw: string | undefined): URL | null {
 
 function joinNickname(raw: string | null): string | undefined {
   if (raw === null) return undefined;
+  const cleaned = raw
+    .replace(/[\p{Cc}\p{Zl}\p{Zp}]/gu, '')
+    .replace(/\s+/gu, ' ')
+    .trim();
   let nickname = '';
   let length = 0;
   for (const { segment } of new Intl.Segmenter('ko', { granularity: 'grapheme' }).segment(
-    raw.replace(/[\p{Cc}\p{Zl}\p{Zp}]/gu, ''),
+    cleaned,
   )) {
     if (length >= 20) break;
     nickname += segment;
     length++;
   }
-  return nickname || undefined;
+  return nickname.trimEnd() || undefined;
 }
 
 function isReservedControlFrame(raw: string): boolean {

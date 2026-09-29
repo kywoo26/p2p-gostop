@@ -8,6 +8,7 @@ import {
   type PlayerView,
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
+import type { DecisionClock, TimeoutResult } from '@p2p-gostop/protocol';
 import type { Playback } from './playback.svelte.ts';
 
 export type GameMode = 'solo' | 'host' | 'guest';
@@ -56,12 +57,21 @@ export interface GameController {
   /** 판 종료 뒤 승자의 수동 받기/밀기 선택. loser는 기다린다. */
   readonly pushDecision: PushDecision | null;
   readonly stats: GameStats;
+  readonly decisionClock?: DecisionClock | null;
+  readonly timerDecisionMs?: number | null;
+  readonly timerRemainingMs?: number | null;
+  readonly timerUncertain?: boolean;
+  readonly timeoutResult?: TimeoutResult | null;
+  /** 최신 뷰와 입력 상태를 DOM에 반영한 뒤 확인한다. */
+  decisionRendered?(): void;
   submit(action: Action, tapAt?: number): boolean;
   /** 정산 화면 → 다음 판 */
   nextRound(): void;
   choosePush(push: boolean): void;
   /** 3분 이상 부재한 게스트 승자의 대리 받기는 호스트가 명시적으로 고른다. */
   acceptAbsentWinner?(): void;
+  /** 장시간 중단 또는 시계 연속성 소실 때 진행 중인 판을 수동 무효로 한다. */
+  abortRound?(): void;
   /** MN-02 재충전 */
   refill(): void;
   /** 세션 종료 */
