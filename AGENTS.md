@@ -4,7 +4,7 @@
 
 ## 1. 절대 규칙
 - 요구사항 상태를 바꾸는 PR은 `plan.md` §3-2 진행 매트릭스를 갱신한다.
-- 모든 빌드·테스트는 개발 이미지 안에서 실행한다: 저장소 루트에서 `docker compose run --rm dev <명령>`, 또는 Dev Container(`.devcontainer/`) 안에서 `<명령>` 그대로(5장). WSL/호스트에 도구를 설치하지 않는다(호스트에는 git·gh·docker만). 예외는 에이전트 도구인 Svelte MCP(`.mcp.json`, 호스트 `npx`) 하나다.
+- 검증의 정본은 개발 이미지다: 저장소 루트에서 `docker compose run --rm dev <명령>`, 또는 Dev Container(`.devcontainer/`) 안에서 `<명령>` 그대로(5장). CI도 같은 이미지를 쓴다. **호스트 네이티브 실행(2026-09-30 허용)**: 호스트 Node가 `package.json` engines 범위(24.20.0 이상 24.x, `.nvmrc`=`24`; 공식 방법 `nvm install 24`로 최신 LTS)이면 `npm ci`·`npm run lint`·`npm run check`·`npm test`·`npm run build -w packages/web`은 앞의 `docker compose run --rm dev` 없이 호스트에서 바로 실행해도 된다(같은 `node_modules`를 공유하며 결과가 같다; 2026-09-30 24.20.0·24.21.0 모두 확인). `test:browser`·`e2e`·Android·대량 `sim`·자산 변환(Pillow/FFmpeg)은 개발 이미지에서 돌린다(호스트에 WebKit·Android SDK가 없다). 호스트에 두는 도구는 git·gh·docker·nvm Node뿐이고, 예외는 에이전트 도구인 Svelte MCP(`.mcp.json`, 호스트 `npx`) 하나다.
 - 라이브러리 API를 쓰기 전에 공식 문서(Context7)를 조회한다. 기억으로 쓰지 않는다.
 - 버전은 아래 표를 따른다. 표에 없는 의존성을 추가하려면 `plan.md` 1.8에 근거를 적고 나서 추가한다.
 - 게임 규칙의 기대값은 `rules-commercial.md` 12장에서만 도출한다. 다른 오픈소스 구현의 출력을 정답으로 쓰지 않는다. PolyForm NC·무라이선스 저장소의 코드는 복사하지 않는다.
@@ -59,7 +59,7 @@
 - 의존성 추가: `docker compose run --rm dev npm install -D <pkg>@<정확한 버전> -w <workspace>`. `.npmrc`의 `min-release-age=3`이 게시 3일 미만 버전을 거부한다(예외가 필요하면 `--min-release-age-exclude=<pkg>`를 그 명령에만 주고 근거를 이 표에 적는다).
 
 ## 5. 검증 명령
-- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다.
+- 진입점: 저장소 루트에서 `docker compose run --rm dev <명령>`(루트 `compose.yaml`의 `dev` 서비스, 이미지는 `docker/Dockerfile`). Dev Container 안이면 앞의 `docker compose run --rm dev`를 뺀다. CI(`ci.yml`)도 같은 이미지·같은 명령을 쓴다. 호스트 Node가 engines 범위(`.nvmrc`=`24`, `nvm use`)이면 아래 표의 `npm ci`·`lint`·`check`·`test`·`build`는 호스트에서 직접 실행해도 된다(1장). `test:browser`·`e2e`·`android/gradlew`는 이미지에서 실행한다.
 - 새 체크아웃·워크트리에는 `node_modules`가 없다(소스와 함께 바인드 마운트). 처음 한 번 `npm ci`를 돌린다. 기존 체크아웃의 `node_modules`가 root 소유라면 `ls -ld node_modules`로 확인한다. 빈 디렉터리는 호스트에서 `rmdir node_modules`로 제거하고, 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 해당 디렉터리만 복구한 뒤 `npm ci`를 다시 실행한다. 옛 `*_node_modules`·`*_android-home` 명명 볼륨은 별도이므로, 필요 없으면 `docker volume ls --format '{{.Name}}'`로 확인한 정확한 이름만 `docker volume rm <옛_볼륨명>`으로 삭제한다(README 전환 절차).
 - PR 필수 명령:
 ```sh
