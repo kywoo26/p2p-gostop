@@ -1,18 +1,8 @@
 - region "게임판":
-  - heading "컴퓨터 · 상용급" [level=2]
-  - term: 점수
-  - definition: "0"
-  - term: 손패
-  - definition: "5"
-  - term: 잔액
-  - definition: 48,800냥
-  - list "상대 족보 진행도":
-    - listitem: 광 1/3
-    - listitem: 고도리 0/3
-    - listitem: 단 1/3
-    - listitem: 피 5/10
-    - listitem: 뻑 1
-    - listitem: 흔들 0
+  - heading "상대 컴퓨터 · 상용급" [level=2]
+  - text: 0 점 0고 — 48,800냥
+  - heading "나" [level=2]
+  - text: 8 점 1고 ×2 51,200냥
   - list "상대 획득패":
     - listitem "광 1":
       - img "3월 광"
@@ -27,8 +17,17 @@
       - img "4월 피"
       - img "7월 피"
       - img "11월 쌍피"
+  - list "상대 족보 진행도":
+    - listitem "광 1/3, 미달": 광 1/3
+    - listitem "고도리 0/3, 미달": 고도리 0/3
+    - listitem "단 1/3, 미달": 단 1/3
+    - listitem "피 가치 5/10, 미달": 피 5/10
+    - listitem: 뻑 1
+    - listitem: 흔들 0
+    - listitem: 손패 5장
   - img "더미 14장":
     - img "카드 뒷면"
+  - text: 5월 뻑
   - list "바닥":
     - listitem "6월 1장":
       - img "6월 피"
@@ -43,6 +42,17 @@
       - img "10월 피"
     - listitem "12월 1장":
       - img "12월 비광"
+  - dialog "어느 패를 먹을까요?":
+    - heading "어느 패를 먹을까요?" [level=2]
+    - region "선택 설명":
+      - paragraph:
+        - img "9월 피"
+        - text: "낸 패: 9월 피"
+    - button "9월 국진 먹기":
+      - img "9월 국진"
+    - button "9월 청단 먹기":
+      - img "9월 청단"
+  - button "판 정보"
   - list "내 획득패":
     - listitem "광 1":
       - img "1월 광"
@@ -58,20 +68,11 @@
       - img "1월 피"
       - img "2월 피"
       - img "보너스 2피"
-  - heading "나" [level=2]
-  - term: 점수
-  - definition: "8"
-  - term: 고
-  - definition: "1"
-  - term: 배수
-  - definition: ×2
-  - term: 잔액
-  - definition: 51,200냥
   - list "내 족보 진행도":
-    - listitem: 광 1/3
-    - listitem: 고도리 3/3
-    - listitem: 단 3/3
-    - listitem: 피 4/10
+    - listitem "광 1/3, 미달": 광 1/3
+    - listitem "고도리 3/3, 첫 기준 달성": 고도리 3/3
+    - listitem "단 3/3, 첫 기준 달성": 단 3/3
+    - listitem "피 가치 4/10, 미달": 피 4/10
     - listitem: 뻑 0
     - listitem: 흔들 1
   - group "내 손패":
@@ -83,12 +84,3 @@
       - img "11월 피"
     - button "12월 쌍피 내기" [disabled]:
       - img "12월 쌍피"
-  - dialog "어느 패를 먹을까요?":
-    - heading "어느 패를 먹을까요?" [level=2]
-    - paragraph:
-      - img "9월 피"
-      - text: "낸 패: 9월 피"
-    - button "9월 국진 먹기":
-      - img "9월 국진"
-    - button "9월 청단 먹기":
-      - img "9월 청단"

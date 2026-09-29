@@ -72,22 +72,16 @@ test('솔로: 메뉴 열람 중 유일 수 보류, 복귀 후 최신 뷰에서 �
 test('솔로: 판 정보 열람 중 유일 수 보류, 닫으면 한 번만 저장', async ({ page }) => {
   const game = createScenario({ hands: [[c('5열')], [c('10열')]], floor: [c('8광')] });
   await openSave(page, game, true);
-  await page.evaluate(() => {
-    const board = document.querySelector('[data-testid="board"]');
-    if (board === null) throw new Error('게임판 없음');
-    // #104가 이 이름의 대화상자를 Board에 추가한다. 연결 계약을 먼저 검증한다.
-    const dialog = document.createElement('dialog');
-    dialog.setAttribute('aria-label', '판 정보');
-    board.append(dialog);
-    dialog.showModal();
-  });
+  // #104 통합 후 임시 dialog 대신 실제 판 정보 열기/닫기를 검증한다.
+  await page.getByRole('button', { name: '판 정보', exact: true }).click();
   await expect(page.getByTestId('solo')).toHaveAttribute('data-auto-held', 'true');
   await page.evaluate(() => (window as typeof window & { showForTest: () => void }).showForTest());
   await page.waitForTimeout(100);
   expect((await actions(page)).filter((a) => a.type === 'play' && a.seat === 0)).toHaveLength(0);
   await page
     .getByRole('dialog', { name: '판 정보' })
-    .evaluate((dialog: HTMLDialogElement) => dialog.close());
+    .getByRole('button', { name: '닫기', exact: true })
+    .click();
   await expect
     .poll(async () => (await actions(page)).filter((a) => a.type === 'play' && a.seat === 0).length)
     .toBe(1);

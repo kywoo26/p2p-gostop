@@ -4,6 +4,14 @@
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
   import { DUR } from '../../../anim/durations.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
+  import { settlementFixture } from '../../../lib/settlement-fixtures.ts';
+  import {
+    layoutFixture,
+    layoutExtras,
+    feedbackFixture,
+    feedbackExtras,
+    feedbackGroups,
+  } from '../../../lib/layout-fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
   import { proEnabled } from '../../../pro-assets/runtime.ts';
   import { bannerFor, type BannerKind } from '../../../ui/banner.ts';
@@ -110,7 +118,27 @@
   });
 </script>
 
-{#if proEnabled && page.startsWith('pro-')}
+{#if page === 'feedback-play' || page === 'feedback-stop'}
+  <main>
+    <h1 class="fixture-title">게임판 시각 검토</h1>
+    <Board
+      view={feedbackFixture(page === 'feedback-stop')}
+      handVisualGroups={feedbackGroups}
+      extras={feedbackExtras(page === 'feedback-stop')}
+    />
+  </main>
+{:else if page === 'layout-event' || page === 'layout-event-target'}
+  <Board
+    view={layoutFixture(page.endsWith('target') ? 'target' : 'play')}
+    banner={{ kind: 'ppeok', text: '뻑 · 상대가 같은 월 세 장을 남겼습니다', seat: 1 }}
+    toast={{ id: 1, text: '피 1장 이동' }}
+  />
+{:else if page.startsWith('layout-')}
+  <Board
+    view={layoutFixture(page.split('-')[1] ?? 'target', page.endsWith('-expanded'))}
+    extras={layoutExtras(page.split('-')[1] ?? 'target')}
+  />
+{:else if proEnabled && page.startsWith('pro-')}
   <Board
     view={fixtures.board.states.play}
     banner={{
@@ -130,6 +158,8 @@
   <Board view={fixtures.board.states.target} />
 {:else if page === 'board-gostop'}
   <Board view={fixtures.board.states.goStop} />
+{:else if page.startsWith('settlement-')}
+  <Settlement {...settlementFixture(page.slice('settlement-'.length))} />
 {:else if page === 'settlement'}
   <Settlement view={fixtures.settlement} />
 {:else if page === 'home'}
@@ -271,6 +301,14 @@
 {/if}
 
 <style>
+  .fixture-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .gallery {
     display: grid;
     gap: var(--space-6);

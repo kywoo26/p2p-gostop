@@ -35,7 +35,7 @@ coverage/
 .claude/settings.local.json
 CLAUDE.local.md
 
-# 다운로드 작업 캐시
+# 디자인 조사/자산 작업 캐시 (앱 소스·배포물 아님)
 .visual-source/
 # Offline Python asset tool bytecode
 __pycache__/

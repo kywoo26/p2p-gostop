@@ -3,6 +3,7 @@ import { cardId, playerView, type Action } from '@p2p-gostop/engine';
 import { createScenario } from '@p2p-gostop/engine/testing';
 import type { BoardView } from '@p2p-gostop/protocol';
 import { expect, test, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 import { toBoardView } from '../game/adapter.ts';
 import {
@@ -70,11 +71,9 @@ test.each(['solo', 'host', 'guest'] as const)(
     };
     const screen = await render(Game, { controller });
     const root = screen.getByTestId('board').element();
-    // #104의 Board가 이 이름의 dialog를 추가한다. 현재는 인터페이스만 주입한다.
-    const dialog = document.createElement('dialog');
-    dialog.setAttribute('aria-label', '판 정보');
-    root.append(dialog);
-    dialog.showModal();
+    // #104 통합 후 실제 버튼/대화상자로 자동 진행 보류 연결을 검사한다.
+    const dialog = root.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')!;
+    await userEvent.click(screen.getByRole('button', { name: '판 정보' }));
     await vi.waitFor(() =>
       expect(screen.container.firstElementChild?.getAttribute('data-auto-held')).toBe('true'),
     );

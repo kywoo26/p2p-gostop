@@ -1,0 +1,117 @@
+# A 화면 구현·인계 기록 (UX-01~14, FR-40, plan §1.6·.1-A)
+
+기준 main `52863fa`, HUD 인계 `f566f46`. `design/a-screens`는 main에서 분기했다. 자동 검사는 실기기의 Safari 툴바·safe-area·시스템 글꼴 검증을 대신하지 않는다.
+
+| 변경 | 계약 / 재현 |
+|---|---|
+| Home | 기존 맞고 P2P 이름·친구/솔로·이어하기·기록/설정/진단·빌드/고지 유지. 기존 SVG 두 장으로 정적 도형, 기능 문구만 사용 |
+| Settings / Screen | 제목 계층·한지색 선택·라디오 간격8px·48px 소리 스위치. 값/저장/속도 로직 유지 |
+| 점수판 | f566f46의 양쪽 공통 열·56/60px·긴 잔액84px·메뉴48+8px. Galaxy 피드백 후 점수24px, 잔액/고/배수14px, 내 좌석 별도 표면/왼쪽 띠. 전체 이름 title/접근성 이름, 잔액 생략 없음 |
+| 진행도 | 양쪽 광/고도리/단/피, 점선(1장/1피 남음)/실선(첫 기준 달성), 횟수·상대 손패 수 유지 |
+| 예약6행 | HUD/상대 획득·진행/바닥/선택/내 획득·진행/손패. 바닥 최소208px. 빈 행도 은은한 슬롯·왼쪽 상태/오른쪽 판 정보. 선택132/144px, 긴 HUD의28/24px는 선택 행에서 회수 |
+| 손패 | 게임판만 좁은 폭48px/넓은 폭56px, 위 그림 노출50/56px + 그림 밖 표식16px + 다음 줄 간격4px. 월은 기존 모서리 배지, 보조 띠/그림 교차0, 슬롯 교차0, 실제48×48 안의9개 hit 지점 확인. 412×915 여유 높이는 최대220px 손패 행에 배정해 윗줄 전체 그림 표시. 공통 Hand의 기본 부채꼴·카드 자산 유지 |
+| 바닥 | 게임판에서만 40px 폭·4×3열, 무더기 오프셋8px. 뻑 라벨은 더미 아래 ‘N월 뻑’과 해당 그룹 점선으로 구분해 그림 밖에 둠 |
+| 획득패 압축 | §14 UX-H02b에 따라 낮은 화면에서 칩28+보조16px 우선. 여유 있는 한 줄 손패/높은 화면은 그림도 표시. ‘판 정보’에서 언제나 광·열끗·띠·피 카드 이름/수량/이미지를 읽음 |
+| 선택 | 실제 SVG와 card ID가 연결된 대상 버튼, 예상액·상대 점수/피·제공된 피박/광박 위험·고/스톱 고정. 설명만 내부 스크롤, 상세 배수표는 ‘판 정보’. 필수 선택은 밖탭으로 닫히지 않음 |
+| 손패 시각 슬롯 | 일반 내기는 표식 없음, 먹기는 윤곽 마름모, 확정은 채운 원+바깥 원. 14px 전체 단어, 폭탄/흔들은 묶음 브래킷당 라벨1개. #144 확정 조건은 바닥 짝+unseen 및 상대 공개 손패(revealed) 모두에 같은 월 없음. 상대 revealed에 남으면 일반 먹기(match); 현재 fixture만, 실게임 전달 후속. 폭탄3장 동시 강조, 액션/시간축 변경 없음 |
+| 선 고르기 | 실제8장 후보. 분배 전 빈 손패 행을 회수해 선택 행224px; 각 후보48px 이상 |
+| 사건 레일 | 사건/알림을 선택 예약 행 안에 배치, 긴 문구 최대2줄. 선택 중 마지막 문구 보관→해제 후 단일 상태 메시지. 기존 duration 소비; 효과 스킨·음향은 PR 3 |
+| 가로 방향 | 안내 덮개 + 손패/선택 입력 잠금. 회전 API 호출 없이 세로 복귀 때 선택 보존 |
+
+## 최소 화면 수용
+
+`e2e/layout.spec.ts`는 Chromium/WebKit에 네 viewport를 적용하고 상34/하24px의 보수적 안전 여백을 더한다. `layout-fixtures.ts`는 합법 엔진 진행이 아니라 배치 경계용 공개 UI 데이터다. 테스트는 상태 전후를 변경하지 않고 DOM rect·hit-test·실제 이미지 로드를 검사한다.
+
+| viewport | 기본/대상/고스톱/국진/흔들기/총통 | 긴 금액 | 추가 경계 | 자동 판정 |
+|---|---|---|---|---|
+| 360×780 | 손패10·12월·뻑 | play/target/goStop | 폭탄·뒤집기·선8장·긴 사건+선택 | 6행 교차0·게임 스크롤0·바닥≥208·버튼≥48 |
+| 390×734 | 동일 | 동일 | 동일 | 동일 |
+| 430×822 | 동일 | 동일 | 동일 | 동일 |
+| 412×915 | 동일 | 동일 | 동일 | 동일 |
+
+대상/긴금액 고스톱 8장×두 브라우저의 기준 PNG를 `e2e/__screenshots__/layout.spec.ts/`에 둔다. 기존 갤러리 기준 변경은 색/카드 도상 교체가 아니라 화면 계층·공통 제목·점수판/진행도 이동·선택 예약·손패 배치 때문이다. 숨겨진 획득패는 상세로 이동하므로 ARIA 기준도 같은 이유로 갱신한다. 실제 SVG·Card.svelte·원 카드 토큰·anim/*·--dur-*·timing 계측은 변경하지 않는다.
+
+## 접근성 및 후속 경계
+
+| 항목 | 이전(#102) | 화면 구현 |
+|---|---|---|
+| 최소 화면 선택 가림 | 360/390/430에서3쌍, 412에서2쌍 | 0, 별도6행·필수 버튼 고정 |
+| 입력 | 기존48px | 그대로, 선택 간격8px·손패 유효 영역9점 검사 |
+| 초점 | 전역2px+2px | 유지. 스크롤 설명 키보드 진입, 판 정보 Escape/닫기·초점 복귀 |
+| 대비 | 본문/표면12.50, 보조6.77, 주요 행동11.69 | 기본 색 유지. HUD 본문/칩≥4.5·경계≥3 별도 브라우저 계측 |
+| 동작 줄이기 | #86 시간표·scale0 | 기존 시간표 그대로, 사건 선택 대기는 추가 타이머 없음 |
+| 정보 보조 | #80~82/#87/#90 미구현 | 의미·공개정보 범위 변경 없음. 신규 추천/AI/승률/설정 없음 |
+| 확대·실기기 | #51/사람 수용 대기 | 200% 동등 행동의 완전 수용은 여전히 #51. [실기기 절차](../device-test/procedure.md) 갱신, 결과는 기록하지 않음 |
+
+각 PR 본문의 KEEP-01~18·명령별 결과·실제 dist 바이트를 최종 제출 기록으로 사용한다.
+
+## #100 병합 후 정산 마감 (main 1287e7f)
+
+main을 병합했다. 충돌은 폰트 코퍼스/메타/CSS/WOFF2 재생성과 Chromium 로비 기준샷 재렌더로 해소했다. `Settlement.svelte`의 script·분기·onclick 값은 main 그대로이며 class·표시 span·Screen의 상세 스크롤 옵션만 추가했다. `game/*`·`p2p/*`·`anim/*`·solo timing은 main과 diff0이다.
+
+| 상태 | 표시/접근성 | 검사 |
+|---|---|---|
+| 승자 받기/밀기 | 제공 예상액·포기 점수·0냥·다음 배수, 받기 한지색/밀기 윤곽 | 버튼 하단56px·가림0·hit-test |
+| 게스트/null view | #100의 받기·다음 판 준비 라벨/×4 유지 | view가 아직 없어도 오류/가짜 잔액 없음 |
+| 민 판 | 정산0·포기20점·다음×2, 점선 면, 잔액 유지값 | 읽기 문구와 다음/종료 버튼, 카운트업 없음 |
+| 승자 선택 대기/밀기 불가 | status만/받기만, 조건은 #100 제공값 | 불가능한 밀기 버튼 없음 |
+| 나가리·파산·장문 | 다음판 배수·재충전, 장문 이름/큰 잔액 줄바꿈 | 가로 넘침0, 키보드로 마지막 잔액에 도달 |
+
+`settlement-layout.spec.ts`: 7상태×4viewport×Chromium/WebKit = 56개 화면 조합, axe·문서/상세 가로 넘침·하단 버튼48 이상·상세 영역과 교차0·실제 hit-test·키보드 End 검사. 받기/밀기와 민 판은16개 PNG 기준을 추가했다. 기존 정산 gallery PNG2는 48px 금액·읽기 면·하단 행동 고정·상세 region 때문에 갱신했다. 카드/Board 기준은 이번 정산 마감에서 변경하지 않는다. 실제 선택·저장·다음판은 main의 `push.spec.ts`로 별도 검증한다.
+
+스크롤 region의 `tabindex=0`은 [MDN overflow 접근성 지침](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/overflow#accessibility)을 따른다. 일반 비대화형 div 경고는 이 요소에만 이유를 달아 억제했고 이름 있는 region·키보드 접근을 두 엔진에서 검사한다. Context7 미노출로 공식 문서를 직접 확인했다.
+
+## #104 / #147 통합 순서
+
+**#104 구조·표식·HUD 정보 설계 + 기본 A 외관·정산을 먼저 병합하고 `design/pro-skin`에서 전문 질감·프레임·일러스트를 적용한다.** #147은 main에 병합되어 이번 동기화에 평가 경로/파이프라인이 포함되지만 기본 앱에는 켜지지 않는다. #104는 프로토타입 배치를 본선으로 이식하지 않는다. 후속 스킨은 6행/선택예약/손패 표식/문턱칩/48px/가림0 계약을 재검증한다. 본선1.5MiB는 유지한다.
+
+최종 Docker 검증(main1287e7f 병합 후): npm ci/lint/check 통과(경고0), Node519·브라우저330, build1,228.1KiB/1,536KiB·외부URL0·폰트140.8KiB, 전체 E2E254통과/기존6skip, Android assembleDebug/testDebugUnitTest/lint 통과. 이번 실행은 기준샷 갱신 없이 통과했다. 정산14장 및 손패 피드백6장은 `packages/web/test-results/design-a-settlement/`·`design-a-feedback/`에 별도 복사했다.
+
+## 리뷰 5352348641 반영 + main 24bf1e0 동기화
+
+위 검증은 이전 제출 결과다. 후속 main에는 #148·#150·#147·#149가 포함된다. Home/Screen/Board 충돌은 기본 #104 구조와 main의 opt-in 평가 경로를 함께 보존했다. 제한시간 개정안은 문서만 합치며, NF-03 승인 대기/본선 전체1.5MiB를 유지한다. #151 설정 기준샷 병합 순서는 사용자 조율이며 이번 수정에서 settings PNG는 갱신하지 않는다.
+
+| 리뷰 | 수정 | 회귀 증거 |
+|---|---|---|
+| 중요1 · UX-07/24 | PromptPanel 공통 제목 초점 진입/순환/복귀, aria-modal·게임판 배경 inert. 상위 메뉴는 aria-owns 및 Tab 순서로 연결하고 네이티브 메뉴가 열린 동안 초점 가두기를 중단한다. 사라진 opener는 유효 제어로 복귀, 전환 중 창끼리 잠금 공유 | Board.input: 대상/고스톱/국진/흔들기/총통/선 고르기 + 폭탄 취소, 다음 창·busy·등장 반전. Chromium/WebKit22검사 |
+| 중요2 · UX-10/#52 | 빈 바닥에서 시작한 짧은 탭의 pointerup만 스킵. 정보 버튼의 별도 skip 호출 제거 | HUD/손패/바닥 카드/선택 행/정보 버튼0, 취소/드래그/다른 pointer0, 스킵 후 동일 연쇄 내기0 |
+| 중요3 · UX-24 | 버튼 접근성 이름 ‘스톱 · 2,000냥’ | Board.test의 금액 포함 role 이름 단언, 고스톱 ARIA2 갱신 |
+| 경미4 · #144 | 확정 조건에 상대 revealed의 같은 월 없음 추가 | ui-spec §14.5/15.1 및 이 문서 정정. 공개 흔들기 패가 남으면 match 반례 명시. 실게임 판정은 추가하지 않음 |
+
+UX-24 제목 초점 때문에 target/gostop 제목에 기존 focus-visible 링이 나타난다. 해당 gallery PNG4와 layout PNG16만 리뷰 수정으로 갱신했다. layout의 손패9점 hit-test는 선택 중에는 inert로 입력이 제외됨을, 일반 상태에는 그대로 입력 가능함을 검사한다. 그림 노출·기하·최소4화면 계약은 유지한다. main License PNG는 양쪽 변경이 합쳐진 화면으로 다시 검사했다.
+
+| 접근성 | 리뷰 전 | 리뷰 후 |
+|---|---|---|
+| 초점·배경 | dialog open만, 손패 등 배경 입력 가능 | 진입·Tab 순환·복귀 + inert, 애니메이션 중 재등장도 잠금 유지 |
+| 스톱 이름 | ‘스톱’ | ‘스톱 · 금액’ |
+| 대비/입력 | A 토큰·48px·간격 계약 | 동일, 초점 링은 기존 토큰 |
+| reduced-motion | #86 scale0 | 동일, 시간 토큰/anim 변경0 |
+| 실기기/200% | 사람/#51 확인 대기 | 동일; 자동화 통과로 대체 주장하지 않음 |
+
+Context7 도구가 노출되지 않아 [Svelte effect/lifecycle](https://svelte.dev/docs/svelte/$effect), [MDN dialog](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role), [WAI-ARIA modal pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) 공식 문서를 직접 확인했다. 인라인 dialog의 배치를 유지하려고 초점 순환과 inert를 명시적으로 구현했다.
+
+메뉴 진입점의 접근성 소유 관계는 [MDN aria-owns](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-owns), 상위 네이티브 메뉴 감지는 [MDN :modal](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:modal)을 따른다. 실제 VoiceOver/TalkBack 읽기 순서는 사람 확인 대기다.
+
+
+최종 재검증(main24bf1e0 병합 + 리뷰 수정): Docker :4에서 npm ci/lint/check 통과(오류·경고0), Node519/27파일·브라우저404/60파일, 기본 build **1,278.4/1,536KiB**·외부URL0·폰트140.8KiB/703문자 누락0. 전체 E2E **256통과/18제외(기존6+평가 전용12)/실패·재시도0**, 기준샷 갱신 없이 3.3분. 빠름 p50 Chromium381ms/WebKit382ms, 보통 매칭+획득 p50 1,754/1,748ms. Android assembleDebug/testDebugUnitTest/lint BUILD SUCCESSFUL. Settlement script/onclick은 origin/main과 동일하며 game/p2p/anim/solo timing/카드 원본 diff0이다. 실제 스크린리더·기기 검증은 수행하지 않았다.
+
+## #151 후속 병합 (main daa5e7d)
+
+#151 자동 선택·자동 진행·국진 처리와 #94/#95 의존성 갱신을 포함하는 main `daa5e7d`를 병합했다. 충돌은 아래 PNG2개뿐이며 합쳐진 Settings 화면을 Docker Playwright로 재생성했다.
+
+| 파일 | 갱신 사유 |
+|---|---|
+| `packages/web/e2e/__screenshots__/gallery.spec.ts/settings-chromium.png` | #151 국진 처리 ‘매번 묻기’ 토글·자동 최적 선택 설명 추가. #104 A 패널/버튼 외관과 함께 Chromium에서 다시 렌더 |
+| `packages/web/e2e/__screenshots__/gallery.spec.ts/settings-webkit.png` | 같은 #151 국진 토글·설명을 #104 A 외관과 함께 WebKit에서 다시 렌더 |
+
+`Game.auto-info.test.ts`와 `e2e/auto-choices.spec.ts`는 #104 도입 전 임시로 추가하던 동일 이름 dialog를 제거하고 실제 ‘판 정보’ 버튼/대화상자를 사용한다. 중복 주입이 실제 닫힌 dialog를 먼저 조회하게 만들어 컴포넌트6개와 E2E2개가 실패한 테스트 통합 문제이며, 런타임 변경 없이 실제 열람 중 자동 진행 보류·닫은 뒤 최신 액션1회 검사를 유지했다.
+
+재검증 리뷰 5352748604의 비차단 회전 후 inert 소유 충돌은 [#155](https://github.com/kywoo26/p2p-gostop/issues/155)로 분리했다. HUD/손패의 속성 충돌은 남아 있으나 리뷰어 재현에서는 action0·선택 초점·취소 복귀가 유지됐다. 가로/선택 잠금을 한 소유자로 합성하고 회전 전후 hit-test를 검사하는 후속이며, 이번 병합에서 수정 완료로 표시하지 않는다. 실제 기기 회전 결과는 미검증이다.
+
+최종 Docker 검증(main daa5e7d 병합): npm ci/lint/check 통과, Node519/27파일·브라우저420/64파일, 기본dist **1,283.1/1,536KiB**·외부URL0·폰트140.8KiB/누락0. E2E **265통과/19제외(기존6+#151 교차브라우저 중복1+평가 전용12)/실패·재시도0**, 기준샷 갱신 없이3.2분. Android assembleDebug/testDebugUnitTest/lint 성공. 이번 통합의 새 런타임 수정은 없고, 실제 기기 검증을 주장하지 않는다.
+
+## #152/#154 후속 병합 (main 8d2911b)
+
+문서 정리의 `visual-direction.md` 삭제를 유지하고 #104 KEEP-10(빈 바닥/전용 버튼만 스킵, HUD 등 스킵0)을 새 정본 `foundations/README.md`에 이관했다. plan.md 자동 병합과 관련6문서 로컬 링크46개를 확인했다. 앱 소스·기준샷 추가 변경0.
+
+Docker 필수 검사 전부 통과: npm ci/lint/check, Node522/28파일, 브라우저420/64파일, build **1,283.1/1,536KiB**·외부URL0, E2E **265통과/19제외/실패·재시도0**(3.4분, 기준샷 갱신 없음), Android assembleDebug/testDebugUnitTest/lint 성공. 제외 사유와 실기기 미검증 범위는 위 #151 검증과 동일하다.

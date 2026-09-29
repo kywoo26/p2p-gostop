@@ -5,6 +5,7 @@
   import Card from './Card.svelte';
 
   interface Props {
+    compact?: boolean;
     groups: readonly FloorGroupView[];
     deckCount: number;
     /** 강조할 바닥 카드 (대상 선택, 먹게 될 카드 미리보기, 매칭 강조) */
@@ -13,10 +14,10 @@
     staging?: readonly CardId[];
   }
 
-  let { groups, deckCount, highlight = [], staging = [] }: Props = $props();
+  let { compact = false, groups, deckCount, highlight = [], staging = [] }: Props = $props();
 </script>
 
-<div class="table">
+<div class="table" class:compact>
   <div class="deck-area">
     <div class="deck" role="img" aria-label={`더미 ${deckCount}장`}>
       <span class="deck-stack" data-anchor="deck">
@@ -24,6 +25,11 @@
       </span>
       <span class="deck-count" aria-hidden="true">{deckCount}</span>
     </div>
+    {#if compact}
+      {#each groups.filter((g) => g.kind !== 'loose') as group (group.month)}<span
+          class="compact-ppeok">{group.month}월 뻑</span
+        >{/each}
+    {/if}
     <div class="staging">
       {#each staging as id (id)}
         <Card {id} size="m" flippable />
@@ -139,5 +145,33 @@
     font-size: var(--card-tag-font);
     font-weight: 800;
     line-height: var(--card-tag-height);
+  }
+  .table.compact {
+    --card-w-m: 40px;
+    --card-h-m: calc(40px / 0.614);
+    gap: 8px;
+  }
+  .compact .floor {
+    gap: 4px;
+    padding-top: 0;
+    min-height: 0;
+  }
+  .compact .group > :global(.card + .card) {
+    margin-left: calc(8px - var(--card-w-m));
+  }
+  .compact .ppeok-tag {
+    display: none;
+  }
+  .compact-ppeok {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--color-text);
+  }
+  .compact .kind-ppeok,
+  .compact .kind-natural {
+    outline: 1px dashed var(--color-accent);
+    outline-offset: 1px;
   }
 </style>
