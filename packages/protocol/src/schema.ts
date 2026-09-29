@@ -70,6 +70,7 @@ const seatView = z.object({
   goCount: nat,
   shakes: nat,
   bombs: z.optional(z.nullable(nat)),
+  bombTokens: z.optional(nat),
   gukjinAsPi: z.optional(z.boolean()),
   revealed: z.optional(cards),
   ppeokCount: nat,
