@@ -857,3 +857,86 @@ describe('#26 판 사이 대기와 파산', () => {
     throw new Error('게스트 파산 시나리오를 찾지 못했다');
   });
 });
+
+describe('#40 absent는 인증을 되돌리지 않는다, 응답 없는 요청 감시', () => {
+  it('호스트가 absent를 받아도 게스트 소켓 인증은 그대로다(상대 상태만 기록). joined·left는 되돌린다', () => {
+    const { h } = confirmedAtGuestTurn(12);
+    h.link.notify(0, 'absent');
+    expect(h.host.authenticated).toBe(true);
+    expect(h.host.peer).toBe('absent');
+    expect(h.host.connected).toBe(false);
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+    expect(h.host.connected).toBe(true);
+    expect(h.host.diagnostics.filter((d) => d.includes('인증 전'))).toEqual([]);
+    const auth: boolean[] = [];
+    for (const peer of ['left', 'joined'] as const) {
+      reconnect(h);
+      h.link.flush();
+      auth.push(h.host.authenticated);
+      h.link.notify(0, peer);
+      auth.push(h.host.authenticated);
+    }
+    expect(auth).toEqual([true, false, true, false]);
+  });
+
+  it('게스트가 absent를 받아도 요청을 미루지 않는다', () => {
+    const { h } = confirmedAtGuestTurn(14);
+    h.link.notify(1, 'absent');
+    expect(h.guest.hostPresent).toBe(false);
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['action']);
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+  });
+
+  it('ping에는 답하지만 액션을 버리는 호스트: 응답 없이 ackTimeout이 지나면 hello로 다시 인증하고 액션을 다시 보낸다', () => {
+    const { h } = confirmedAtGuestTurn(13);
+    h.guest.advanceTime(1_000);
+    // 인증을 잃은 소켓(알림 유실·버그)을 흉내 낸다: 호스트는 ping에만 답하고 액션은 말없이 버린다.
+    h.host.authenticated = false;
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    h.guest.transport.send({ t: 'ping' });
+    h.link.flush();
+    expect(h.host.state).toBe(state);
+    h.guest.advanceTime(5_999);
+    expect(h.link.queue).toEqual([]);
+    h.guest.advanceTime(6_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+    h.link.flush();
+    expect(h.host.authenticated).toBe(true);
+    expect(h.host.state).not.toBe(state);
+    expect(h.guest.seq).toBe(h.host.seq);
+  });
+
+  it('응답을 받은 요청은 다시 보내지 않는다 (거짓 재인증 없음)', () => {
+    const h = setup({ seed: 15 });
+    const picker = new Picker(15);
+    h.guest.join();
+    h.link.flush();
+    let now = 0;
+    for (let n = 0; n < 400 && h.host.stage === 'playing'; n++) {
+      h.guest.advanceTime((now += 10_000));
+      move(h, picker);
+      h.link.flush();
+      h.guest.advanceTime((now += 10_000));
+      expect(h.link.queue).toEqual([]);
+    }
+    h.guest.requestNextRound();
+    h.guest.requestLedgerHistory(0);
+    h.link.flush();
+    h.guest.advanceTime((now += 60_000));
+    expect(h.link.queue).toEqual([]);
+    // 판 사이가 아닐 때 보낸 ready도 호스트가 단계로 답하므로 되풀이하지 않는다
+    h.host.nextRound();
+    h.link.flush();
+    h.link.inject(0, encode({ t: 'ready', round: h.host.roundNumber }));
+    h.link.flush();
+    h.guest.advanceTime((now += 60_000));
+    expect(h.link.queue).toEqual([]);
+  });
+});

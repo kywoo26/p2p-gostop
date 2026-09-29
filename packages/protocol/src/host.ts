@@ -143,11 +143,13 @@ export class HostSession {
   guestConfirmed = false;
   /**
    * 지금 게스트 소켓이 인증됐는지: 이 소켓에서 받아들인 hello(토큰이 생긴 뒤에는 토큰 hello)가 있어야 true.
-   * 중계 알림(joined·left·present·absent)과 전송 끊김에서 false로 되돌린다. false인 동안에는 hello·ping만
+   * 중계 알림 joined·left와 전송 끊김에서 false로 되돌린다(absent는 되돌리지 않는다, #40). false인 동안에는 hello·ping만
    * 처리하고 나머지는 응답 없이 버린다: 최신 우선 중계에서 LAN의 다른 기기가 게스트 자리를 밀어내도
    * 손패가 든 스냅샷을 받거나 게스트 좌석으로 둘 수 없다(재검토 중요 2, NF-06).
    */
   authenticated = false;
+  /** 중계가 마지막으로 알려 준 게스트 소켓 상태 (알림이 없는 전송이면 null) */
+  peer: RelayNotice['peer'] | null = null;
   guestLogs: string[] = [];
   ended = false;
   settlement: Settlement | null = null;
@@ -639,8 +641,12 @@ export class HostSession {
     this.send({ t: 'ledgerPage', from, total: this.ledger.entries.length, entries });
   }
   private relayNotice(notice: RelayNotice): void {
-    // 게스트 소켓이 바뀌었거나(joined·present) 없어졌다(left·absent): 새 소켓은 hello로 다시 인증해야 한다.
-    this.authenticated = false;
+    this.peer = notice.peer;
+    // 게스트 소켓이 바뀌었거나(joined) 없어졌을 때(left)만 인증을 되돌린다. present는 호스트 자신의 새 소켓에서만 오고
+    // 그 전에 끊김(onClose)으로 이미 되돌렸다. absent는 중계가 프레임 하나를 전달하지 못했다는 뜻일 뿐 게스트 소켓은
+    // 그대로일 수 있다(Android RelayRoles.forward): 여기서 인증을 되돌리면 게스트는 hello를 다시 보낼 계기가 없어
+    // 이후 액션이 말없이 버려진다(#40). 상대 상태만 기록한다.
+    if (notice.peer === 'joined' || notice.peer === 'left') this.authenticated = false;
     if (notice.peer === 'left' || notice.peer === 'absent') this.connected = false;
     this.changed();
   }
@@ -698,7 +704,11 @@ export class HostSession {
             this.bump();
           }
           this.sendStatus();
-        } else this.diag(`ready 무시 (단계 ${this.stageValue}, 판 ${message.round})`);
+        } else {
+          // 무시하더라도 현재 단계를 알려 준다: 게스트의 응답 감시(advanceTime)가 요청을 되풀이하지 않게.
+          this.diag(`ready 무시 (단계 ${this.stageValue}, 판 ${message.round})`);
+          this.sendStatus();
+        }
         break;
       case 'bankruptcy':
         if (this.stageValue !== 'bankrupt' || !this.bankrupt.includes(1)) {
