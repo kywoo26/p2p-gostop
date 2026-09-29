@@ -22,7 +22,10 @@ const secret =
   (process.env['RELAY_CREATION_SECRET_FILE']
     ? readFileSync(process.env['RELAY_CREATION_SECRET_FILE'], 'utf8').trim()
     : '');
-const origins = (process.env['RELAY_ALLOWED_ORIGINS'] ?? '').split(',').filter(Boolean);
+const origins = (process.env['RELAY_ALLOWED_ORIGINS'] ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const release = process.env['RELAY_RELEASE'];
 if (publicEnabled && !release) throw new Error('RELAY_RELEASE is required in public mode');
 const previous = process.env['RELAY_PREVIOUS_RELEASE'];

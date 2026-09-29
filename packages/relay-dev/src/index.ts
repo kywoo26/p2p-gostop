@@ -175,9 +175,10 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
   const limits = new WindowLimit();
   const seats = new Map<string, Partial<Record<Role, WebSocket>>>();
   const absence = new Set<WebSocket>();
-  const allowed = new Set(config.allowedOrigins);
+  const allowed = new Set(
+    config.allowedOrigins.length > 0 ? config.allowedOrigins : ['http://127.0.0.1:17777'],
+  );
   if (
-    allowed.size === 0 ||
     [...allowed].some(
       (origin) =>
         !/^https:\/\/[^/]+$/.test(origin) && !/^http:\/\/127\.0\.0\.1(?::[0-9]+)?$/.test(origin),
@@ -221,6 +222,27 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
     response.setHeader('Content-Type', 'application/json; charset=utf-8');
     response.setHeader('X-Content-Type-Options', 'nosniff');
     const url = new URL(request.url ?? '/', 'http://relay.invalid');
+    const corsPath =
+      url.pathname === '/health' ||
+      url.pathname === '/version' ||
+      url.pathname === '/api/rooms' ||
+      url.pathname.startsWith('/api/rooms/');
+    const origin = request.headers.origin;
+    if (corsPath && origin && allowed.has(origin)) {
+      response.setHeader('Access-Control-Allow-Origin', origin);
+      response.setHeader('Vary', 'Origin');
+    }
+    if (request.method === 'OPTIONS') {
+      if (!corsPath || !origin || !allowed.has(origin)) {
+        respondError(response, 403, 'forbidden');
+        return;
+      }
+      response.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+      response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      response.setHeader('Access-Control-Max-Age', '600');
+      response.writeHead(204).end();
+      return;
+    }
     const ip = request.socket.remoteAddress ?? 'unknown';
     if (request.method === 'POST' && url.pathname === '/api/rooms') {
       if (!rooms.auth.canCreate(bearer(request.headers.authorization))) {
