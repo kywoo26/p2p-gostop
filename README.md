@@ -74,10 +74,6 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - 규범은 `AGENTS.md` 하나이고 `CLAUDE.md`는 이를 참조한다.
 - Svelte 공식 MCP 서버 `@sveltejs/mcp`는 **무료 오픈소스**이며, 프로젝트 `.mcp.json`에 **로컬 stdio**(`npx -y @sveltejs/mcp@0.1.26`)로 등록해 쓴다. 원격 호스팅 엔드포인트는 쓰지 않는다.
 
-## 라이선스
-
-코드는 MIT. 카드 이미지는 Wikimedia Commons 화투 SVG(CC BY-SA 4.0, 저작자 Spenĉjo, Marcus Richert, Louie Mantia Jr.)를 번들하며 앱의 설정 > 라이선스에 표기한다. 배포 의존성 고지 완성은 #74에서 추적한다.
-
 ## 문서 지도
 
 - [의도](intend.md) → [명세](spec.md) → [구현 계획](plan.md): 목표·요구사항·현재 마일스톤과 결정.
@@ -93,3 +89,8 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.
 - [플랫폼 조사](docs/research/tech-stack.md) / [도구 비교](docs/research/agent-era-stack.md): 제약·호환성·선택 근거, 설치 버전은 AGENTS.md.
 - [완료된 리뷰 인덱스](docs/reviews/README.md): M0·M1·M3·M4·MVP·하네스 감사의 PR/커밋과 남은 이슈.
+
+## 라이선스
+
+코드는 MIT 라이선스입니다.
+서드파티 자산과 폰트는 각 고지(`packages/web/assets-src/*/License*`, `packages/web/src/pro-assets/credits.ts`, Pretendard OFL)를 따릅니다.

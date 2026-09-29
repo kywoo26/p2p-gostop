@@ -35,6 +35,10 @@ export interface PushDecision {
 }
 
 export interface GameController {
+  /** 솔로는 엔진의 자기 공개 PlayerView에서 힌트를 계산한다. */
+  readonly hintPlayerView?: PlayerView;
+  /** 실제 표시된 로컬 보조의 판별 사용 기록 경로 (솔로만 구현). */
+  recordHintUsage?(level: 'off' | 'basic' | 'detail'): void;
   readonly mode: GameMode;
   readonly playback: Playback;
   /** 지금 이 기기 좌석이 입력할 차례 (재생·상대·연결 대기 중이 아님) */

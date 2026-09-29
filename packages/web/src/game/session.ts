@@ -36,6 +36,8 @@ export interface SessionConfig {
 }
 
 export interface RoundRecord {
+  /** 필드가 없는 옛 판은 사용 여부 미확인이다. */
+  readonly hintUsage?: 'off' | 'basic' | 'detail';
   readonly round: number;
   readonly winner: Seat | null;
   readonly reason: EndReason;
@@ -58,6 +60,8 @@ export interface RoundRecord {
 export type SessionPhase = 'playing' | 'pushDecision' | 'roundOver' | 'bankrupt' | 'ended';
 
 export interface SessionState {
+  /** 현재 판에서 실제 표시한 선택적 힌트의 최고 단계. */
+  readonly hintUsage?: 'off' | 'basic' | 'detail';
   readonly version: 1;
   readonly config: SessionConfig;
   readonly phase: SessionPhase;
@@ -102,6 +106,7 @@ export function createSession(config: SessionConfig): {
       ledger,
       roundStart: ledger.balances,
       records: [],
+      hintUsage: 'off',
       actions: [],
       refilled: [0, 0],
     },
@@ -131,6 +136,8 @@ function commitSettlement(session: SessionState, settlement: Settlement): Sessio
   const ledger = applySettlement(before, settlement, session.config.rules);
   const amount = ledger.balances[0] - before.balances[0];
   const record: RoundRecord = {
+    // #150 복원 경계: 옛 저장의 필드 부재는 '미확인'이다. 새 판의 명시적 off만 기록한다.
+    ...(session.hintUsage === undefined ? {} : { hintUsage: session.hintUsage }),
     round: session.roundNumber,
     winner: settlement.winner,
     reason: settlement.reason,
@@ -211,6 +218,7 @@ export function startNextRound(session: SessionState): {
     roundNumber,
     game: state,
     roundStart: session.ledger.balances,
+    hintUsage: 'off',
     actions: [],
   };
   // 바닥·양측 총통처럼 분배만으로 끝나는 판도 있다(R6·E13)

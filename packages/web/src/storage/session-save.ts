@@ -17,6 +17,7 @@ const LegacyBalance = z
 
 /** v0(재충전 합계 필드 전)는 잔액 합이 초기값일 때만 보완한다. */
 function migrateSession(raw: Record<string, unknown>): Record<string, unknown> | null {
+  // v1 초기 저장에는 hintUsage가 없다. 정산 때도 미확인으로 이어지도록 필드 부재를 그대로 둔다.
   if (raw['version'] === 1) return raw;
   if (raw['version'] !== 0) return null;
   const legacy = LegacyBalance.safeParse(raw);

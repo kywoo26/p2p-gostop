@@ -29,6 +29,7 @@ export {
   guaranteedCaptures,
   uniqueLegalAction,
   type CaptureAssessment,
+  type CapturePublicView,
   type CaptureCertainty,
   type CaptureReason,
   type EquivalentTargets,
