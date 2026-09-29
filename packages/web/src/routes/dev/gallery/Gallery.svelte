@@ -3,6 +3,8 @@
   // 스냅샷·axe 대상(e2e/gallery.spec.ts). 엔진과 연결하지 않는 정적 화면만 그린다.
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
   import { DUR } from '../../../anim/durations.ts';
+  import { flipCard, flipMove } from '../../../anim/flip.ts';
+  import type { BannerKind } from '../../../ui/banner.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
   import {
     layoutFixture,
@@ -31,6 +33,44 @@
   }
 
   let { page }: Props = $props();
+  const upgradeEvents: Record<string, { kind: BannerKind; text: string }> = {
+    'upgrade-ppeok': { kind: 'ppeok', text: '뻑' },
+    'upgrade-jjok': { kind: 'jjok', text: '쪽' },
+    'upgrade-ttadak': { kind: 'ttadak', text: '따닥' },
+    'upgrade-bomb': { kind: 'bomb', text: '폭탄' },
+    'upgrade-go': { kind: 'go', text: '3고' },
+  };
+  // 시각 검토 전용: 실제 카드 헬퍼의 동일 시간표를 중간 프레임에서 정지한다.
+  function motionSample(root: HTMLElement) {
+    if (page !== 'upgrade-motion') return {};
+    let animations: Animation[] = [];
+    const raf = requestAnimationFrame(() => {
+      const card = root.querySelectorAll<HTMLElement>('.center .card:not(.hidden)')[1]!;
+      const inner = card.querySelector<HTMLElement>('.inner')!;
+      const target = card.getBoundingClientRect();
+      flipCard(inner, { duration: DUR.flip });
+      flipMove(
+        card,
+        new DOMRect(target.x - 60, target.y + 70, target.width, target.height),
+        target,
+        { duration: DUR.capture },
+      );
+      // MutationObserver 어댑터 뒤에 원본/장식 모두 같은 진행률로 정지.
+      queueMicrotask(() => {
+        animations = root.getAnimations({ subtree: true });
+        for (const animation of animations) {
+          animation.pause();
+          animation.currentTime = Number(animation.effect?.getTiming().duration ?? 0) * 0.3;
+        }
+      });
+    });
+    return {
+      destroy: () => {
+        cancelAnimationFrame(raf);
+        for (const animation of animations) animation.cancel();
+      },
+    };
+  }
 
   /** 갤러리 페이지 목록 (e2e/gallery.spec.ts가 같은 이름을 쓴다) */
   const PAGES = [
@@ -118,17 +158,13 @@
   });
 </script>
 
-{#if page === 'upgrade-ppeok' || page === 'upgrade-jjok'}
-  <main>
+{#if upgradeEvents[page] || page === 'upgrade-motion'}
+  <main use:motionSample>
     <h1 class="fixture-title">게임판 시각 검토</h1>
     <Board
       view={feedbackFixture()}
       handVisualGroups={feedbackGroups}
-      banner={{
-        kind: page === 'upgrade-ppeok' ? 'ppeok' : 'jjok',
-        text: page === 'upgrade-ppeok' ? '뻑' : '쪽',
-        seat: 0,
-      }}
+      banner={upgradeEvents[page] ? { ...upgradeEvents[page]!, seat: 0 } : null}
     />
   </main>
 {:else if page === 'feedback-play' || page === 'feedback-stop'}

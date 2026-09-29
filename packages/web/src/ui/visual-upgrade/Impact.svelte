@@ -1,11 +1,24 @@
 <script lang="ts">
   import { durationMs } from '../../anim/durations.ts';
-  let { kind, sample = null }: { kind: 'ppeok' | 'jjok'; sample?: number | null } = $props();
+  let {
+    kind,
+    sample = null,
+  }: { kind: 'ppeok' | 'jjok' | 'ttadak' | 'bomb' | 'go' | 'settlement'; sample?: number | null } =
+    $props();
+  const rich = document.documentElement.dataset['visualVariant'] === 'rich';
   let canvas: HTMLCanvasElement;
   // 이벤트 1회당 유한 루프. 레일 안에만 그려 손패·바닥·HUD를 가리지 않는다.
   $effect(() => {
     const node = canvas;
-    const color = kind === 'ppeok' ? '#ff967d' : '#82e4ff';
+    const colors = {
+      ppeok: '#ff6659',
+      jjok: '#65ffe0',
+      ttadak: '#ffd36c',
+      bomb: '#ffab51',
+      go: '#ffdf85',
+      settlement: '#ffe8ae',
+    };
+    const color = rich ? colors[kind] : kind === 'ppeok' ? '#ff967d' : '#82e4ff';
     const duration = durationMs('banner');
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches || duration === 0;
     const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -50,7 +63,12 @@
         ctx.translate(x, y);
         ctx.rotate(angle + t * 2);
         if (kind === 'ppeok') ctx.fillRect(-size, -size / 2, size * 3, size);
-        else {
+        else if (kind === 'bomb') {
+          ctx.fillRect(-size * 4, -0.7, size * 7, 1.4);
+        } else if (kind === 'ttadak' || kind === 'go' || kind === 'settlement') {
+          ctx.fillRect(-size * 2, -0.6, size * 4, 1.2);
+          ctx.fillRect(-0.6, -size * 2, 1.2, size * 4);
+        } else {
           ctx.beginPath();
           ctx.moveTo(0, -size * 2);
           ctx.lineTo(size, 0);
@@ -64,6 +82,12 @@
       ctx.beginPath();
       ctx.ellipse(cx, cy, 35 + t * 115, 9 + t * 20, 0, 0, Math.PI * 2);
       ctx.stroke();
+      if (kind === 'bomb' || kind === 'go' || kind === 'settlement') {
+        ctx.lineWidth = kind === 'bomb' ? 3 : 1;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 45 + t * 160, 14 + t * 28, -0.1, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
     };
     let raf = 0;

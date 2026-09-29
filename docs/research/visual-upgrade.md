@@ -116,6 +116,8 @@ docker compose run --rm dev node packages/web/scripts/prepare-visual-asset.mjs .
 
 ## 6. 실행·실측·한계
 
+이 절의 수치는 최초 프로토타입 `c7cb3af`의 기록이다. 강화 변형 및 최종 재검증은 §8을 따른다.
+
 ```sh
 docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web
 # 실제 홈/솔로: /?visual=upgrade  /?visual=upgrade#/solo
@@ -182,3 +184,85 @@ docker compose run --rm dev node packages/web/scripts/measure-visual-upgrade.mjs
 2. 총자산4MiB/게스트 첫 화면2MiB/Android 선택2MiB를 조건부 예산안으로 검토한다. 이번 파일들이 기존1.5MiB 안에 들어가더라도 일러스트·음향 제작 여유는 따로 결정한다.
 3. Pixi 도입은 보류하고 Canvas2D·SVG·CSS3D로 실기기 병목을 먼저 확인한다. 이번3D MutationObserver 어댑터는 실험용이며 정식 채택 때 anim 담당과 주입 API로 교체한다. 시간/게임 로직 변경 없이 갈아 끼울 수 있게 한다.
 4. 사용자 결정 후 #104 화면 스킨을 갱신하고, 사건/음향 PR에서9종 효과·강조/소리/Android 진동 기본값을 함께 완성한다. #100 정산 로직·#103 timing 계측 소유권은 유지한다.
+
+## 8. 강화 변형·공유용 초안 (VU-05)
+
+사용자 확인 뒤 같은 브랜치에 `?visual=upgrade&variant=rich`를 추가했다. 기존 프로토타입 `?visual=upgrade`와 #104는 보존한다. [PNG 비교 목록](../design/mockups/upgrade/README.md)은 실제 앱 컴포넌트를 CSS412×915에서 렌더한 기본4장+강화8장이다. 각≤300,000B, 적응형256색 문서 사본이며 앱 자산/기준샷과 무관하다. 원본 색 PNG는 test-results에 보존한다.
+
+| 강화 항목 | 구현 / 기존 계약 |
+|---|---|
+| 카드 뒤집기 광택 | 기존 3D 키프레임 위에 가는 대각선 빛. 원본 Animation의 duration/delay/easing에 맞춘 장식이며 취소/스킵 때 제거 |
+| 획득 이동 모션 블러 인상 | 실시간 blur 대신 그라데이션 잔광·속도선의 transform/opacity. 원본 위치·도착·시간 변경0, 카드 SVG 변경0 |
+| 판 테두리 | 로컬 나무 WebP border-image + 얇은 금속색 안쪽 선. 기존 구역 높이/입력 크기는 그대로 |
+| 좌석 아바타 슬롯 | 22px 원형, 기본 인물 도형. 상대 청록/나 금색, 장식 aria-hidden. 점수·잔액·이름의 기존 접근성 라벨 유지 |
+| 뻑 /쪽 | 붉은 사각 파편 /청록 마름모 스파크. 사건 문구·주체 유지 |
+| 따닥 /폭탄 | 금색 십자광 /주황 방사선+굵은 이중 폭발 링. 색과 형태를 함께 구분 |
+| 고 | 금색 십자광·이중 링 + 실제 배너의 N고. 시간표의 banner 구간 안에서 종료 |
+| 정산 | 공통 Screen의 정산 표시 레이어와 외관 CSS만 변경. 상단 빛/입자, 최종 금액 강조. **카운트업 없음**, `routes/Settlement.svelte`와 계산/다음 판 로직 변경0 |
+| 접근성·자원 | 장식 pointer-events:none, reduced-motion에서 입자/광택/잔광 숨김, 유휴 루프0. 신규 의존성0 |
+
+설정의 효과 강도/소리/Android 진동 통합과9종 완성은 기존 사건/음향 PR 범위다. 이번 opt-in 비교 화면을 출시 설정 통합 완료라고 보고하지 않는다.
+
+### WebKit 53fps 추정치의 원인 분리
+
+원본 `c7cb3af` dist, Linux headless WebKit26.6 /DPR3.5 /5초에5사건 /조건당3회. [1차 제거 실험](visual-upgrade-diagnostic.json), [대상별 제거 실험](visual-upgrade-diagnostic-target.json)을 보존한다. 아래는 rAF cadence의 중앙값으로 **실제 표시 FPS가 아니다**.
+
+| 제거/격리 조건 | 1차 중앙값 (회/초) | 해석 |
+|---|---:|---|
+| 원본 | 53.43 | 범위42.64~54.63, 최초 생성 비용/실행 편차 있음 |
+| filter·backdrop-filter 제거 | 48.13 | 이 비교에서는 개선하지 않음. 필터가 단독 원인이라는 가설 지지 안 함 |
+| 모든 box/text shadow 제거 | 61.62 | 가장 큰 개선. 그림자 raster/무효화가 주요 원인 후보 |
+| Canvas만 합성 레이어로 | 54.83 | 작은 개선, 충분하지 않음 |
+| EventRail contain:layout paint | 54.49 | 충분하지 않음 |
+| Canvas paint 비표시 | 54.51 | 입자 그리기만 없애도 원상 회복 안 됨 |
+
+| 그림자 대상별 제거 | 중앙값 (회/초) | 범위 |
+|---|---:|---|
+| 원본 | 54.30 | 43.45~54.63 |
+| 카드+손패 slot | 58.59 | 58.58~58.78 |
+| 판의 큰 inset만 | 55.62 | 55.57~55.69 |
+| text-shadow만 | 55.84 | 55.33~56.03 |
+| 카드+slot+판 inset | 59.09 | 58.95~59.19 |
+| 모든 그림자 | 61.61 | 61.37~61.62 |
+
+개선 적용은 **강화 변형에만** 한다: 중첩된 획득패는 번짐 없는1×2px 단면 그림자, 판/손패는4px 접지 그림자, slot 중복 그림자 제거, 판 inset45px 제거(기존 비네트 그라데이션 유지). 그림자를 전부 없애 시각 목표를 포기하지 않는다. 이동 잔광도 실제 blur 필터를 피한다.
+
+측정에는 최초 feedback-play→사건 fixture의 Board 생성 비용이 섞여 있었다. 그래서 `--steady` 옵션으로 처음부터 사건 Board를 띄우고 유휴 뒤 사건만 교대하는 측정을 추가했다. [원본 steady 측정](visual-upgrade-steady-performance.json)에서 Chromium60.00, WebKit DPR3.5 60.59 /DPR1 52.11이었다. DPR1은 첫 사건 부근494ms·265ms 간격이 남았고, DPR3.5는 최대89ms였다. **첫 페인트/캐시/그림자 비용과 반복 사건을 구분해야 하며, 한 번의53fps 결과를 지속적 게임 FPS로 일반화할 수 없다.** 1차와 대상별 측정 사이 일부 개발 작업이 있어 전체실행의 min/max도 공개한다. GPU/합성의 정확한 단계는 실제 장치 trace로 확인한다.
+
+```sh
+# 기존 build 후, 다른 브라우저 검사와 겹치지 않게 각각 실행
+docker compose run --rm dev node packages/web/scripts/measure-visual-upgrade.mjs --diagnose
+docker compose run --rm dev node packages/web/scripts/measure-visual-upgrade.mjs --diagnose-target
+docker compose run --rm dev node packages/web/scripts/measure-visual-upgrade.mjs --rich
+docker compose run --rm dev node packages/web/scripts/measure-visual-upgrade.mjs --rich --steady
+```
+
+### 강화 변형 최종 재측정·검증
+
+동일 환경에서 다른 자체 브라우저 테스트를 종료한 뒤 각 조합1회 실행했다. [첫 전환 포함 원자료](visual-upgrade-rich-performance.json) /[판 유지 원자료](visual-upgrade-rich-steady-performance.json). 정상 상태만 좋아졌다고 첫 지연을 숨기지 않는다.
+
+| 강화 변형 | 첫 사건 화면 전환 포함 rAF 회/초 | 판 유지 후 사건 교대 rAF 회/초 | 판 유지 gap p95 /p99 /최대 |
+|---|---:|---:|---:|
+| Chromium DPR1 | 60.00 | 60.00 | 16.7 /16.8 /16.8ms |
+| Chromium DPR3.5 | 60.00 | 60.00 | 16.7 /16.8 /16.8ms |
+| WebKit DPR1 | 55.57 | 59.52 | 17 /27 /203ms |
+| WebKit DPR3.5 | 55.28 | 60.36 | 17 /37 /99ms |
+
+WebKit의 최초 화면 전환 포함 최대 간격은 DPR1 490ms /DPR3.5 400ms다. **그림자 단순화는 개선책이지만 최초 생성 지연이 해결된 것은 아니다.** 정식 적용 전 단계는 (1) 실제 WebView trace로 첫 raster/합성 확인, (2) 접지 그림자를 작은 자체 SVG/9-slice 또는 더 적은 그림자 레이어로 대체 비교, (3) 그림자·Canvas 생성 비용을 첫 입력 이후로 미루지 않도록 화면 준비 시점 검토, (4) 시각 밀도 유지와 기기 성능을 함께 승인하는 순서다. 선언형 CSS만으로 GPU의 원인을 확정하지 않는다.
+
+| 최종 확인 | 결과 |
+|---|---|
+| dist /원본 대비 증가 | **1,281,801B = 1,251.8KiB**, c7cb3af 대비7,136B 증가. 현행1.5MiB 게이트 통과 |
+| 네트워크·유휴 | 전 조합 외부 요청0. 첫 전환 모드 유휴1.2초 콜백0. steady WebKit 두DPR에서는 초기 사건 잔여로 보이는 콜백1회 관측(원자료 공개); 60초 장기 유휴/실기기 검사는 별도 |
+| 필수 명령 | lint /check /Node491 /브라우저314 /build /E2E286(기존 skip4) /Android assembleDebug·testDebugUnitTest·lint 통과 |
+| 추가 시각 검사 | 강화8화면×2브라우저 axe, 실제 솔로 base/rich 뒤집기·사건 연결, 취소/skip 장식 회수, 정산 최종값 불변 |
+| 최소 화면·기준샷 | 기본/강화4종 입력·바닥/손패 계약 검사 통과. 기존 픽셀 기준샷 갱신0 |
+| PNG | 기본4+강화8=12장, 각412×915, 48,491~118,374B. [파일별 용량](../design/mockups/upgrade/manifest.json) |
+
+이 측정은 판·뻑/쪽 반복의 합성 부하다. 아바타/테두리는 포함하지만 카드 이동이 동시에 일어나는 실기기 GPU 부하나 폭탄·고·정산의 지속 부하를 전부 대표하지 않는다. 해당 경로의 기능/axe 검사는 통과했으며 기기 프레임 추적은 [Galaxy 절차](../device-test/visual-upgrade.md)에 남긴다.
+
+### 예산 근거 3줄
+
+- **공용4MiB:** 현재 코어·카드·폰트 약1.2MiB에 홈 키아트·사건 atlas·9종 음향 제작 여유를 둔다. 20Mbps에서도4MiB 순수 전송은1.68초이므로 전량 선행 로딩은 피한다.
+- **게스트 첫 화면2MiB:** 20Mbps 순수 전송0.84초, 40Mbps0.42초. 나머지 시간은 파싱/디코딩/입력 준비에 쓰되 실효 속도는 가정이며 실기기 cold cache20회 p95≤2초로 채택 여부를 결정한다.
+- **Android 추가2MiB:** APK 로컬 assets의 고해상도 선택 팩으로 RF 전송을 없애고 게스트에는 저용량 변형만 제공한다. 설치 총6MiB 안에서도 디코딩 메모리·GPU 업로드·30분 발열을 별도 검사한다.

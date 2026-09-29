@@ -5,6 +5,7 @@
   import EventBanner from './EventBanner.svelte';
   import Impact from './visual-upgrade/Impact.svelte';
   const upgrade = document.documentElement.dataset['visual'] === 'upgrade';
+  const rich = document.documentElement.dataset['visualVariant'] === 'rich';
   const frame = new URLSearchParams(location.search).get('impact-frame');
   const sample = frame === null ? null : Math.max(0, Math.min(1, Number(frame) || 0));
   let {
@@ -32,7 +33,7 @@
 
 {#if !blocked}
   <div class="event-rail" data-testid="event-rail">
-    {#if upgrade && banner && (banner.kind === 'ppeok' || banner.kind === 'jjok')}
+    {#if upgrade && banner && (banner.kind === 'ppeok' || banner.kind === 'jjok' || (rich && (banner.kind === 'ttadak' || banner.kind === 'bomb' || banner.kind === 'go')))}
       {#key banner.id ?? banner.kind}<Impact kind={banner.kind} {sample} />{/key}
     {/if}
     {#if banner}

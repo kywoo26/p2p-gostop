@@ -1,0 +1,50 @@
+[
+  {
+    "file": "base-board.png",
+    "bytes": 113217
+  },
+  {
+    "file": "base-home.png",
+    "bytes": 77577
+  },
+  {
+    "file": "base-jjok.png",
+    "bytes": 118242
+  },
+  {
+    "file": "base-ppeok.png",
+    "bytes": 118374
+  },
+  {
+    "file": "rich-feedback-play.png",
+    "bytes": 110165
+  },
+  {
+    "file": "rich-settlement.png",
+    "bytes": 48491
+  },
+  {
+    "file": "rich-upgrade-bomb.png",
+    "bytes": 115402
+  },
+  {
+    "file": "rich-upgrade-go.png",
+    "bytes": 116001
+  },
+  {
+    "file": "rich-upgrade-jjok.png",
+    "bytes": 115008
+  },
+  {
+    "file": "rich-upgrade-motion.png",
+    "bytes": 111689
+  },
+  {
+    "file": "rich-upgrade-ppeok.png",
+    "bytes": 114766
+  },
+  {
+    "file": "rich-upgrade-ttadak.png",
+    "bytes": 115429
+  }
+]

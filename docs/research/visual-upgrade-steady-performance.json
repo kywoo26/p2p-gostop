@@ -1,0 +1,251 @@
+{
+  "date": "2026-09-29T10:04:50.162Z",
+  "environment": {
+    "platform": "linux",
+    "cpu": "Intel(R) Core(TM) i7-14700K",
+    "logicalCpus": 20
+  },
+  "steady": true,
+  "rich": false,
+  "method": "5s rAF callback cadence; 5 alternating ppeok/jjok bursts; CSS412x915; no CPU/network throttle; Docker headless, NOT Galaxy/iPhone device FPS",
+  "runs": [
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": false,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.7,
+      "gapP99Ms": 16.8,
+      "gapMaxMs": 16.8,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "slow": [],
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": true,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.7,
+      "gapP99Ms": 16.8,
+      "gapMaxMs": 16.8,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0.3,
+      "callbackMaxMs": 0.4,
+      "callbackCount": 275,
+      "slow": [],
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": false,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.7,
+      "gapP99Ms": 16.8,
+      "gapMaxMs": 16.8,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "slow": [],
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "chromium",
+      "version": "153.0.8010.12",
+      "upgrade": true,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 301,
+      "rafFps": 60,
+      "gapP95Ms": 16.7,
+      "gapP99Ms": 16.8,
+      "gapMaxMs": 16.8,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0.3,
+      "callbackMaxMs": 0.4,
+      "callbackCount": 275,
+      "slow": [],
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": false,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 310,
+      "rafFps": 62.16,
+      "gapP95Ms": 17,
+      "gapP99Ms": 17,
+      "gapMaxMs": 17,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "slow": [],
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": true,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 249,
+      "rafFps": 52.11,
+      "gapP95Ms": 17,
+      "gapP99Ms": 61,
+      "gapMaxMs": 494,
+      "gapsOver25Ms": 6,
+      "callbackP95Ms": 1,
+      "callbackMaxMs": 1,
+      "callbackCount": 230,
+      "slow": [
+        {
+          "atMs": 226,
+          "gapMs": 226,
+          "burst": -1
+        },
+        {
+          "atMs": 720,
+          "gapMs": 494,
+          "burst": 0
+        },
+        {
+          "atMs": 985,
+          "gapMs": 265,
+          "burst": 0
+        },
+        {
+          "atMs": 1092,
+          "gapMs": 61,
+          "burst": 1
+        },
+        {
+          "atMs": 2061,
+          "gapMs": 33,
+          "burst": 2
+        },
+        {
+          "atMs": 3056,
+          "gapMs": 30,
+          "burst": 3
+        },
+        {
+          "atMs": 4053,
+          "gapMs": 30,
+          "burst": 4
+        }
+      ],
+      "width": 412,
+      "height": 915,
+      "dpr": 1,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": false,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 310,
+      "rafFps": 62.17,
+      "gapP95Ms": 17,
+      "gapP99Ms": 17,
+      "gapMaxMs": 17,
+      "gapsOver25Ms": 0,
+      "callbackP95Ms": 0,
+      "callbackMaxMs": 0,
+      "callbackCount": 0,
+      "slow": [],
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 0,
+      "externalRequests": 0
+    },
+    {
+      "browser": "webkit",
+      "version": "26.6",
+      "upgrade": true,
+      "probe": "normal",
+      "repeat": 0,
+      "frames": 302,
+      "rafFps": 60.59,
+      "gapP95Ms": 17,
+      "gapP99Ms": 41,
+      "gapMaxMs": 89,
+      "gapsOver25Ms": 5,
+      "callbackP95Ms": 1,
+      "callbackMaxMs": 1,
+      "callbackCount": 277,
+      "slow": [
+        {
+          "atMs": 121,
+          "gapMs": 89,
+          "burst": 0
+        },
+        {
+          "atMs": 1070,
+          "gapMs": 41,
+          "burst": 1
+        },
+        {
+          "atMs": 2068,
+          "gapMs": 42,
+          "burst": 2
+        },
+        {
+          "atMs": 3063,
+          "gapMs": 40,
+          "burst": 3
+        },
+        {
+          "atMs": 4066,
+          "gapMs": 47,
+          "burst": 4
+        }
+      ],
+      "width": 412,
+      "height": 915,
+      "dpr": 3.5,
+      "idleCallbacks": 1,
+      "externalRequests": 0
+    }
+  ]
+}

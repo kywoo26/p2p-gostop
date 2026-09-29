@@ -27,6 +27,7 @@
     expanded = false,
   }: Props = $props();
   const multiplierLabel = $derived(stopPreview ? '스톱 배수' : '누적 배수, 박 제외');
+  const rich = document.documentElement.dataset['visualVariant'] === 'rich';
 </script>
 
 <div
@@ -34,6 +35,7 @@
   aria-label={`${name === who ? who : `${name} (${who})`} 점수판`}
 >
   <h2 class="identity" title={name}>
+    {#if rich}<span class="vu-avatar" aria-hidden="true"></span>{/if}
     <span class="who">{who}</span><span class="name">{name === who ? '' : name}</span>
   </h2>
   <span class="score" aria-label={`${who} 현재 족보 점수 ${score}점`}>

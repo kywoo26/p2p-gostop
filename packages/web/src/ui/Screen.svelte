@@ -1,6 +1,10 @@
 <script lang="ts">
   // 일반 화면 틀: 제목 + 뒤로 가기 링크 + 본문 (한 손 세로 화면, spec 6.1)
   import type { Snippet } from 'svelte';
+  import Impact from './visual-upgrade/Impact.svelte';
+  const rich = document.documentElement.dataset['visualVariant'] === 'rich';
+  const frame = new URLSearchParams(location.search).get('impact-frame');
+  const sample = frame === null ? null : Math.max(0, Math.min(1, Number(frame) || 0));
 
   interface Props {
     title: string;
@@ -13,8 +17,9 @@
   let { title, back = '#/', children, actions }: Props = $props();
 </script>
 
-<main class="screen">
+<main class={['screen', { 'vu-settlement': rich && title === '정산' }]}>
   <header>
+    {#if rich && title === '정산'}<Impact kind="settlement" {sample} />{/if}
     {#if back !== null}<a class="back" href={back} aria-label="뒤로">←</a>{/if}
     <h1>{title}</h1>
   </header>

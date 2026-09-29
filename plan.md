@@ -107,6 +107,8 @@ p2p-gostop/
 
 **A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/visual-direction.md`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
+**강화 변형·검토용 배포(VU-05, 2026-09-29):** 같은 실험 브랜치의 `?visual=upgrade&variant=rich`에 나무/금속 테두리·원형 기본 아바타·카드 광택/이동 잔광·사건별 입자·정산 빛을 추가한다. 금액 카운트업·게임 로직·기존 시간 변경 없음. 이동 잔광은 비싼 실시간 blur 대신 그라데이션 스트릭의 transform/opacity로 표현한다. 사용자 허용에 따라 `docs/design/mockups/upgrade/*.png`만 각≤300,000B로 커밋하며 앱 번들과 분리한다. 기존 Playwright Canvas와 Node 표준 zlib를 쓰는 적응형 팔레트 최적화 스크립트로 생성; 신규 의존성0. #104 위의 초안 비교 PR이며 사용자 예산/시각 결정 전 출시 적용하지 않는다.
+
 | 선택 | 이유·범위 |
 |---|---|
 | Vite + Svelte, scoped CSS·토큰, WAAPI FLIP | 작은 UI·번들 예산; React/Tailwind/shadcn/Storybook/Pixi/Phaser/GSAP 도입 안 함 |

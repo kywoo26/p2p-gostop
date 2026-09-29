@@ -263,3 +263,159 @@
     display: none;
   }
 }
+
+/* VU-05: 한 단계 강화한 비교 변형. 기본 프로토타입은 유지한다. */
+:root[data-visual-variant='rich'] .board::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 7px solid #5c3925;
+  border-image: var(--vu-wood) 24 round;
+  box-shadow:
+    inset 0 0 0 1px #edc78099,
+    inset 0 0 0 3px #211710;
+  pointer-events: none;
+  z-index: 2;
+}
+:root[data-visual-variant='rich'] .board .scoreboard {
+  grid-template-columns:
+    minmax(58px, 64px) minmax(max-content, 1fr)
+    max-content max-content max-content;
+  column-gap: 5px;
+}
+:root[data-visual-variant='rich'] .vu-avatar {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border: 1px solid #92cccf;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 35%, #ade1dc 0 3px, transparent 3.5px),
+    radial-gradient(ellipse at 50% 100%, #5d9f99 0 7px, transparent 7.5px),
+    linear-gradient(140deg, #234c53, #071a26);
+  box-shadow:
+    inset 0 0 0 2px #10262b,
+    0 2px 4px #0008;
+}
+:root[data-visual-variant='rich'] .seat-bar.me .vu-avatar {
+  border-color: #eccb85;
+  background:
+    radial-gradient(circle at 50% 35%, #f8d893 0 3px, transparent 3.5px),
+    radial-gradient(ellipse at 50% 100%, #b58e48 0 7px, transparent 7.5px),
+    linear-gradient(140deg, #554727, #211b10);
+}
+:root[data-visual-variant='rich'] .seat-bar .identity {
+  align-items: center;
+  gap: 3px;
+}
+:root[data-visual-variant='rich'] .vu-sheen,
+:root[data-visual-variant='rich'] .vu-motion-trail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+:root[data-visual-variant='rich'] .inner[data-depth-flip] {
+  overflow: hidden;
+}
+:root[data-visual-variant='rich'] .vu-sheen {
+  background: linear-gradient(115deg, transparent 30%, #ffffed11 38%, #fff8d7 49%, transparent 60%);
+}
+:root[data-visual-variant='rich'] .vu-motion-trail {
+  inset: 20% 40% 20% auto;
+  width: 90px;
+  transform-origin: right center;
+  background:
+    linear-gradient(90deg, transparent, #a8ffd933 55%, #fff0ad99),
+    repeating-linear-gradient(0deg, transparent 0 8px, #ffffdf55 9px, transparent 10px 15px);
+  mask-image: linear-gradient(90deg, transparent, black);
+}
+:root[data-visual-variant='rich'] .banner.kind-ppeok {
+  color: #fff0ec;
+  text-shadow:
+    0 3px #681c20,
+    0 0 16px #ff363699;
+}
+:root[data-visual-variant='rich'] .banner.kind-jjok {
+  color: #eafff7;
+  text-shadow:
+    0 3px #0b4341,
+    0 0 16px #1fffd799;
+}
+:root[data-visual-variant='rich'] .board .event-rail .banner:is(.kind-ttadak, .kind-go) {
+  color: #fff2bd;
+  text-shadow:
+    0 2px #765224,
+    0 4px #302213,
+    0 0 18px #ffc342aa;
+}
+:root[data-visual-variant='rich'] .board .event-rail .banner.kind-bomb {
+  color: #fff1d7;
+  text-shadow:
+    0 2px #7b3121,
+    0 4px #32140c,
+    0 0 18px #ff7827aa;
+}
+:root[data-visual-variant='rich'] .vu-settlement {
+  background:
+    radial-gradient(ellipse at 50% 0, #bf985c33, transparent 40%),
+    linear-gradient(#091c20e6, #031116f2),
+    var(--vu-felt) center / 256px;
+}
+:root[data-visual-variant='rich'] .vu-settlement header {
+  min-height: 90px;
+  position: relative;
+  justify-content: center;
+  isolation: isolate;
+}
+:root[data-visual-variant='rich'] .vu-settlement header h1 {
+  z-index: 1;
+  color: #ffe9b4;
+  text-shadow:
+    0 2px #73522b,
+    0 0 24px #eec36666;
+  font-size: 34px;
+}
+:root[data-visual-variant='rich'] .vu-settlement .headline {
+  text-align: center;
+  color: #f4dfb6;
+}
+:root[data-visual-variant='rich'] .vu-settlement section {
+  background: linear-gradient(120deg, #253c37f2, #112328f5);
+  box-shadow:
+    inset 0 1px #ccb17e55,
+    0 8px 20px #0003;
+}
+:root[data-visual-variant='rich'] .vu-settlement section:has(#settle-amount) {
+  border: 1px solid #a78956;
+  background: radial-gradient(ellipse at 50% 100%, #997b3333, transparent 75%), #172923;
+}
+:root[data-visual-variant='rich'] .vu-settlement .amount strong {
+  display: block;
+  font-size: 36px;
+  line-height: 1.3;
+  color: #ffe7a3;
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    0 2px #5c4222,
+    0 0 18px #ffdf7e33;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-visual-variant='rich'] .vu-sheen,
+  :root[data-visual-variant='rich'] .vu-motion-trail {
+    display: none;
+  }
+}
+/* 비교 측정: 겹친 획득패/손패의 중복 blur 제거, 접지와 두께는 유지. */
+:root[data-visual-variant='rich'] .board .card {
+  box-shadow:
+    0 2px 0 #391c12,
+    0 4px 4px #0008;
+}
+:root[data-visual-variant='rich'] .board .hand .slot,
+:root[data-visual-variant='rich'] .board::before {
+  box-shadow: none;
+}
+:root[data-visual-variant='rich'] .board .captured-zone .card {
+  box-shadow: 1px 2px 0 #140d09;
+}
