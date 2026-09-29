@@ -101,6 +101,8 @@ p2p-gostop/
 
 **RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
 
+**RP-04A 테스트 의존성(2026-09-29):** `packages/web`의 Node 전용 `test:net`에서 공개 중계 WebSocket과 실제로 통신하기 위해 `ws` 8.21.3 및 `@types/ws` 8.18.1을 개발 의존성으로 추가한다. 두 버전은 AGENTS.md §2의 기존 고정 버전이며 브라우저 번들 런타임에는 포함되지 않는다. `web/src/net`의 생산 코드는 브라우저 내장 WebSocket을 사용한다.
+
 **PA-01~04 전문 자산 평가(2026-09-29, 예산 개정 승인 전):** NF-03의 전체1.5MiB·게스트 첫 로딩≤2초와 기존 카테고리 예산은 현행 유지한다. `design/pro-assets`의 명시적 `PRO_ASSET_REVIEW=1` 평가 빌드만 초과 자산을 포함한다. 기본/릴리스 빌드에는 평가 팩을 제외하고 기존 용량 gate를 적용한다. `docs/research/pro-assets.md`의 NF-03 개정안은 리뷰·사용자 승인 전 규범이 아니다. 원본은 `assets-src/`, 평가 변환물은 `public/pro/`에 둔다. Pillow 10.2.0(HPND, PEP 723 `uv run`), FFmpeg 7:6.1.1-3ubuntu5(Ubuntu GPL dev 도구), libavif-bin 1.0.4-1ubuntu3(BSD-2-Clause, 둘은 Ubuntu 24.04 apt)으로 고정해(`tools/setup-host.sh`) WebP/AVIF·해상도 단계·atlas·ogg/m4a·고지를 생성한다. 앱 런타임 npm 의존성0, Pixi/GSAP 등 금지 유지. 아트 디렉션은 `docs/design/art-direction.md`로 통일하고 RPG UI/Animal 팩은 제외한다. Met CC0 원화·기존 Hwatu의 CC BY-SA 4.0 파생 초상을 구분 고지하며 Commons48 원본은 유지한다. Ogg는 bitexact/serial=0과 두 번 인코딩 해시 검사를 고정한다. FPS·메모리·배터리 NF 후보는 연구 문서에만 두고 리뷰 전 spec를 바꾸지 않는다.
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
@@ -152,9 +154,9 @@ p2p-gostop/
 |---|---|
 | 같은 웹·프로토콜 | 한 release에서 만든 동일 dist를 APK와 PC/Pages에 복사. 모드 선택은 세션 생성 전에, endpoint와 인증 어댑터만 교체. 원격 주소를 임의 링크 query로 주입받지 않고 사용자 등록/배포 허용 목록과 비교. 기존 WsTransport send/onMessage/onClose/reconnect·세션 hello/snapshot 재사용 |
 | Android 아웃바운드 | Ktor는 APK 웹을 루프백에 서빙, WebView가 지정 공개 WSS에 직접 접속. 원격 진입 전에 LOHS 종료·LAN gate 명시적 false, 기존 `stopHotspot`의 addressOnly 전환만으로 끝내지 않음. HostBridge 허용 origin/메인 프레임·Network Security Config 127.0.0.1 예외 유지, remote 웹에 HostBridge 제공 금지 |
-| 호스트 실행 수명 | 엔진은 계속 WebView에 있으므로 백그라운드 실행 보장 없음. 화면 유지·복귀 재인증, 호스트 실행 정지 동안 입력/타이머 중단. LOHS 없는 원격 모드에서 connectedDevice FGS 사용 적합성은 Android 공식 문서 확인 후 결정; 서버 연결만으로 게임 실행을 보장한다고 쓰지 않음 |
+| 호스트 실행 수명 | **결정(RP-04A):** 원격 루프백 정적 서버와 WebView의 아웃바운드 WS는 `connectedDevice` FGS로 올리지 않는다. [Android FGS 유형](https://developer.android.com/develop/background-work/services/fgs/service-types)의 `connectedDevice`는 외부 기기와의 상호작용을 위한 유형이며, 로컬 정적 서빙만으로 그 유형을 적용하지 않는다. 원격 `GameActivity.onStart`에서 일반 `startService`로 loopback 서버를 열고 `onStop`에서 `stopService`로 닫는다([Activity lifecycle](https://developer.android.com/guide/components/activities/activity-lifecycle), [FGS 중지](https://developer.android.com/develop/background-work/services/fgs/stop-fgs)). 이전 LAN FGS에서 전환하면 LOHS 예약·LAN gate를 닫고 `stopForeground(STOP_FOREGROUND_REMOVE)`로 승격을 해제한다. LAN 모드의 LOHS용 `connectedDevice` FGS는 유지한다. WebView 엔진은 Activity에 있으므로 화면 이탈·백그라운드 중 진행 보장 없음. 복귀 시 루프백 재시작, 연결/원장 복구는 RP-04B가 맡는다. JVM 경로 테스트 통과; 실제 기기 수명·알림·재접속은 사람 검증 대기. |
 | PC 서버 | `packages/relay-dev`에 명시적 public 설정·방 API·정적 dist 서빙 추가, default loopback 개발 동작 유지. role별 소켓을 방별 map으로 분리, **공개 모드는 loopback 우회 없이 항상 토큰 검증**. 공용 자격 증명을 번들에 넣지 않고 운영자 생성 키를 Galaxy에 1회 등록. 게임 프레임은 내용 해석 없이 제한/중계, 방/인증 제어만 파싱 |
-| PC 인프라 | 같은 모노레포에 향후 `docker/relay/`와 전용 Compose 파일·운영 README. production artifact만 넣는 비root 컨테이너, 루프백 publish·read-only 파일 시스템·메모리/CPU 제한·수동 세션 기동/종료(부팅 자동 시작 없음). 기존 개발 이미지/Compose는 빌드·테스트용으로 유지. Docker socket/관리 API/진단 경로 공개 금지 |
+| PC 인프라 | 같은 모노레포의 `docker/relay/`와 전용 Compose 파일·운영 README. production artifact만 넣는 비root 컨테이너, 루프백 publish·read-only 파일 시스템·메모리/CPU 제한·수동 세션 기동/종료(부팅 자동 시작 없음). 빌드·테스트는 호스트 네이티브 도구를 사용한다. Docker socket/관리 API/진단 경로 공개 금지 |
 | Funnel 설정 | 기존 PC Tailscale의 MagicDNS·HTTPS·funnel 노드 속성 확인 후 `tailscale funnel --bg --https=443 <target>`(예: `http://127.0.0.1:17778`). 정책은 해당 PC만 허용. WSL2이면 Tailscale 실행 위치와 Docker 루프백 가시성·Windows 재부팅 뒤 자동 공개되지 않는지·수동 시작 후 가동을 확인. 별도 cloud 계정·배포 파이프라인 없이 기존 CI artifact를 PC에 설치/이전 artifact로 롤백 |
 | 인증 순서 | HTTPS 방 생성(운영자 키)→host 토큰→호스트 발급 초대 해시 등록→양쪽 WSS 첫 프레임 인증→역할 원자적 점유→기존 relay 알림/hello. 초대 claim 중에는 이전 socket 교체 금지, 호스트 승인/복귀 토큰 발급 완료 후만 좌석 확정. 모든 게임 메시지는 기존 decode·sessionToken 검증을 거침 |
 | 서버 상태 경계 | PC 방 메타데이터는 메모리 TTL·재시작 시 소실, 양쪽에 새 방/초대 안내. 폰의 원장 복구와 서버 방 복구를 구분. cloud DO는 소켓 attachment+최소 TTL 메타데이터/만료 alarm로 휴면 복원, 프레임/게임 로그는 저장 안 함 |
@@ -184,7 +186,7 @@ p2p-gostop/
 | health 경계 | NP-RP-08. 원격 화면 진입/수동 재시도에서만 유한 요청, 상시 폴링 없음. redirect로 임의 origin을 따라가지 않음. PC 로컬 진단 정보는 공개 health에 포함하지 않음. 정적 서빙 02C가 응답 계약, net 04A가 확인·취소, UI 05C가 표시를 소유 |
 | 현재 앱 실행 감사 | 문서 작업 기준 `6b63bed`: Manifest의 launcher는 `MainActivity`. `MainActivity.render()`가 웹 번들이 있으면 GameActivity로 자동 이동. `GameActivity.onCreate()`는 serviceRunning=false일 때 **ACTION_SERVER_ONLY로 FGS 시작**. `HotspotService` 해당 분기는 goForeground→LOHS 예약 취소·LAN false→로컬 서버 시작. 따라서 웹 진입은 FGS를 시작하지만 **LOHS 자동 시작은 아님** |
 | 현재 친구와 대전 감사 | `web/src/routes/Home.svelte`의 #/versus→`Versus.svelte`는 openRoom·hotspot.watch만 호출. `p2p/hotspot.svelte.ts`의 watch는 구독/getHotspot이고 start가 아님. LOHS 시작은 명시적 onhotspot→hotspot.start→브리지 startHotspot→ACTION_START 경로. 코드 열람 결과이며 실기기 재검증 결과가 아님 |
-| RP-04A 회귀 gate | 위 경로를 선행 병합본에서 다시 대조하고 `MainActivity/GameActivity/HotspotService` 및 `Versus`·p2p 소유자와 인계. 원격 선택/복귀/health 재시도에서 ACTION_START·LOHS 권한 요청0·LAN 열림0. 로컬 웹 서버용 FGS 수명/유형의 적합성은 공식 문서 검토와 JVM/기기 검사로 확정하며, 핫스팟과 FGS를 같은 것으로 취급하지 않음 |
+| RP-04A 회귀 gate | `MainActivity`/`GameActivity`의 실제 시작·복귀·권한 콜백과 `HotspotService.onStartCommand`는 `EntryEffects`/`ServiceEffects` 포트를 거친다. JVM 가짜 포트로 원격 선택·복귀·재시도·이전 LAN 상태에서 ACTION_START/LOHS 요청0·권한 요청0·LAN 열림0, loopback 일반 Service·기존 LAN 닫힘을 확인한다. 원격 health 재시도 **UI 경로는 RP-05C 전까지 미구현·미검증으로 인계**한다. 기기에서 `onStop`→서비스 종료와 `onStart`→재시작·WebView 복구, FGS 제거를 사람이 검사한다. `Versus`·p2p 연결은 RP-04B/05 소유이며 이 gate의 실기기 완료로 간주하지 않는다. |
 
 #### 두 안의 공통 전송 경계
 
@@ -305,6 +307,15 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 ---
 
 ## 3-2. 진행 매트릭스 (2026-09-29, main `daa5e7d` 코드 대조)
+
+### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목 |
+|---|---|---|---|
+| RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. Docker 컨텍스트 허용 목록과 `docker/relay/check-context.sh` canary export를 CI에 추가. `feat/relay-public` 임시 병합 이미지에서 비root/읽기 전용/루프백 기동, 로컬 `/health`·`/version`·정적 release 경로·Compose healthy 확인 | RP-02가 main에 병합된 뒤 재검사. Galaxy APK 동시 release·사람 PC 검증 대기 |
+| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가 | Windows 수동 시작·종료·Funnel·재부팅과 공개 health 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
+
+위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
 
 후속 main `8d2911b`(#152 문서/계획 이관, #154 sim 통계/보고 분리)을 병합했다. 아래 코드 대조·실행 수치는 `daa5e7d` 기준으로 보존하고, 삭제 문서 링크와 계획 소유권은 #152 정본으로 연결한다. AI-04·AC-03 행의 #167 판정은 별도로 `9f778f3` 소스에서 측정했으며 상태는 부분·P0 미완이다. 이번 병합에서는 링크 검사·lint를 수행하며 요구사항 완료율은 바꾸지 않는다.
 
@@ -473,6 +484,27 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 초기 head `e0a0bd8`의 실행 근거(아래 수치는 #151 병합 후 결과가 아님; 모두 `/home/k/.local/bin/docker compose run --rm dev …`): `npm ci`, `npm run check`, `npm test`(27파일·519테스트), `npm run test:browser`(52파일·350테스트), `npm run build -w packages/web`(1242.8KiB/1536KiB·외부 요청0), `npm run e2e -w packages/web`(108통과·평가용 등18건 skip), `android/gradlew -p android assembleDebug testDebugUnitTest lint` 통과. 별도 `env ENGINE_FULL=1 npm test -- packages/engine/test/properties.test.ts`의10,000판+첫 판1,000판도 통과했다. 포맷·린트 및 ID 누락/중복 검사는 PR 검증 기록으로 남긴다. 이 실행에 실기기·AI 강도 재측정·머니10,000판 재산정은 포함하지 않았다.
 
 리뷰 반영 병합 트리(`daa5e7d` 포함)에서도 같은 Docker 진입점으로 `npm ci`, lint/check, Node519개, 브라우저56파일·366개, E2E117통과·19 skip, 웹 빌드1247.5/1536KiB·외부 요청0, Android assembleDebug/testDebugUnitTest/lint를 다시 통과했다. ENGINE_FULL의10,000판+첫 판1,000판도2/2 통과(44.96초). 매트릭스86 ID·닫힘33개·§3-3 진단5줄을 별도 검사했다. 실기기 판정은 바꾸지 않는다.
+
+### 원격 RP-04A 진행 (기존 86개 집계 밖, spec §13)
+
+§13 신규 ID는 기존 매트릭스의 기준 SHA·분모에 소급 합산하지 않는다. 아래는 이 PR의 코드 상태이며 공개 중계 실연동과 사람 기기 시험의 완료 판정이 아니다.
+
+| 요구사항 ID | 상태 | RP-04A 근거 | 남은 검증·담당 |
+|---|---|---|---|
+| FR-RP-01·FR-RP-08 | 부분 | `GameActivity` 원격 모드 진입/복귀, `HotspotService` LOHS 취소·LAN gate 닫힘·loopback CIO 재바인딩, Activity·Service가 사용하는 부수효과 포트의 순수 JVM 회귀 gate. 원격은 Activity 가시 수명 일반 Service, LAN만 `connectedDevice` FGS | RP-05 모드/health 재시도 UI 경로 미검증·인계, Galaxy 실제 권한/서비스 수명·핫스팟 경로 사람 확인 |
+| NP-RP-01 | 부분 | `web/src/net` WSS/room/역할 URL·첫 `relay-auth`/재인증/4001 정책, 파싱된 최상위 `t`의 `relay-*` 제어 콜백, 게임 프레임 무변경. #161 `f40e180`의 `RELAY_PUBLIC=1` 실중계에서 invite 수락 뒤 같은 게스트 소켓으로 첫 hello 전달·코드 참여·4001 확인 | RP-04B/05 수락·재접속 UI 연결 |
+| NP-RP-02 | 부분 | 생성 자격을 번들에 넣지 않고 호스트 설정 저장소에 주입하는 net API, room·역할 토큰은 URL에서 제외 | RP-02 방/역할 토큰 발급·검증, RP-05 설정 UI·비밀 취급 기기 확인 |
+| NP-RP-08 | 부분 | 설정 HTTPS origin의 유한 `/health` 확인·취소·redirect 거절·wire 버전 대조·CORS/연결 실패 안내 코드, `check-bundle.mjs`의 정적 HTTP/WS URL gate, #161 `f40e180` 실중계 health·허용 Origin CORS/preflight 응답 `test:net` | RP-05C health UI 진입/재시도·화면 종료 취소·기내 요청0 E2E **미검증·인계** |
+
+### 원격 RP-04B 진행 (기존 86개 집계 밖, spec §13)
+
+| 요구사항 ID | 상태 | RP-04B 근거 | 남은 검증·담당 |
+|---|---|---|---|
+| FR-RP-01~03 | 부분 | `web/src/p2p/remote.ts`의 설정 기반 방 생성·release 경로 비밀 링크 자동 참여·코드 수동 승인·닉네임 전달 계약. `remote.net.ts` 실중계 링크/코드 참여 | RP-05A/B/C 화면·공유·로비 표시, 실제 기기 |
+| FR-RP-04·05 | 부분 | 방별 host/guest 복귀 자격, 동일 소켓 invite hello·코드 승인 뒤 신규 소켓 hello, 4001 중단·재접속 상태·절대 만료 처리. 기존 `HostGame`/`GuestGame` 세션 원장·snapshot 경로를 변경하지 않고 transport를 주입 | RP-05 UI에서 실제 게임 생성·종료 연결, RP-07 장시간/기기 복귀 |
+| NP-RP-01~06 | 부분 | 호스트 생성 자격은 설정에서만 읽고 역할 토큰은 방별 저장, 초대 비밀 fragment·주소 제거, 15분 초대·6시간 방·60초 코드 요청, 승인 전 게임 전달 없음. 실중계 `test:net` 4개와 browser 경계 테스트 | 중계는 명시적 거절 제어 프레임을 제공하지 않아 거절 시 요청이 lease/60초 뒤 만료; RP-02 후속 계약 필요 |
+| NP-RP-08·NF-RP-05/06 | 부분 | 화면 요청용 health 호출, `/version` current.path·wire 확인, 원인별 상태·1→30초 jitter 재접속. 실중계 검증 | RP-05C 호출 수명/UI 안내·공개 TLS/실기기 5초 목표 실측 |
+| FR-49 | 유지 | 원격 컨트롤러는 AI 조언 경로를 생성·전달하지 않고 기존 P2P 게임 transport만 사용 | RP-05 게임 화면 연결 회귀 |
 
 ### 이슈 정리 결과 (초기 정리와 리뷰 반영 시점 구분)
 

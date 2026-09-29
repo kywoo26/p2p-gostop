@@ -253,9 +253,9 @@ internal fun jsonString(s: String): String = buildString {
     append('"')
 }
 
-/** 0.0.0.0:17777에 CIO 서버를 띄운다. 메인 스레드에서 호출하지 않는다. */
-fun startSmokeServer(env: ServerEnv, port: Int = SERVER_PORT): EmbeddedServer<*, *> =
-    embeddedServer(CIO, host = "0.0.0.0", port = port) { smokeModule(env) }.start(wait = false)
+/** LAN 또는 원격 모드의 loopback 주소에 CIO 서버를 띄운다. 메인 스레드에서 호출하지 않는다. */
+fun startSmokeServer(env: ServerEnv, port: Int = SERVER_PORT, bindHost: String = "0.0.0.0"): EmbeddedServer<*, *> =
+    embeddedServer(CIO, host = bindHost, port = port) { smokeModule(env) }.start(wait = false)
 
 class RoleCounts {
     val host = AtomicBoolean(false)
