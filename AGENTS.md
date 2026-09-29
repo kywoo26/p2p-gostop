@@ -3,6 +3,7 @@
 이 파일은 사람과 AI 에이전트 모두가 따르는 단일 규범이다. 문서 체계: `intend.md`(왜) → `spec.md`(무엇을) → `plan.md`(어떻게) → 코드. 규칙의 근거는 `docs/research/rules-commercial.md` 12장뿐이다.
 
 ## 1. 절대 규칙
+- 요구사항 상태를 바꾸는 PR은 `plan.md` §3-2 진행 매트릭스를 갱신한다.
 - 모든 빌드·테스트는 개발 이미지 안에서 실행한다: 저장소 루트에서 `docker compose run --rm dev <명령>`, 또는 Dev Container(`.devcontainer/`) 안에서 `<명령>` 그대로(5장). WSL/호스트에 도구를 설치하지 않는다(호스트에는 git·gh·docker만). 예외는 에이전트 도구인 Svelte MCP(`.mcp.json`, 호스트 `npx`) 하나다.
 - 라이브러리 API를 쓰기 전에 공식 문서(Context7)를 조회한다. 기억으로 쓰지 않는다.
 - 버전은 아래 표를 따른다. 표에 없는 의존성을 추가하려면 `plan.md` 1.8에 근거를 적고 나서 추가한다.
