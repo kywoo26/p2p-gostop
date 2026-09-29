@@ -58,8 +58,13 @@ export type GuestMessage =
       /** 게스트가 마지막으로 본 호스트 세대 (호스트 복원 감지용, 진단) */
       readonly epoch?: string;
     }
-  | { readonly t: 'action'; readonly seq: number; readonly payload: Action }
-  | { readonly t: 'push'; readonly seq: number }
+  | {
+      readonly t: 'action';
+      readonly seq: number;
+      readonly payload: Action;
+      readonly requestId?: number;
+    }
+  | { readonly t: 'push'; readonly seq: number; readonly requestId?: number }
   | { readonly t: 'ping' }
   | { readonly t: 'log'; readonly entries: readonly string[] }
   | { readonly t: 'commitGuest'; readonly round: number; readonly hash: string }
@@ -92,6 +97,8 @@ export type HostMessage =
       readonly ledger: LedgerSummary;
       readonly settlement?: SettlementView;
       readonly status: RoundStatus;
+      /** 해당 action/push 요청의 응답일 때만 포함 */
+      readonly requestId?: number;
     }
   | {
       readonly t: 'events';
@@ -102,14 +109,21 @@ export type HostMessage =
       readonly ledger: LedgerSummary;
       readonly settlement?: SettlementView;
       readonly status: RoundStatus;
+      readonly requestId?: number;
     }
   /** 뷰는 그대로이고 단계·준비·파산 상태만 바뀜 */
-  | { readonly t: 'status'; readonly seq: number; readonly status: RoundStatus }
+  | {
+      readonly t: 'status';
+      readonly seq: number;
+      readonly status: RoundStatus;
+      readonly requestId?: number;
+    }
   | {
       readonly t: 'reject';
       readonly seq: number;
       readonly reason: ErrorCode;
       readonly message: string;
+      readonly requestId?: number;
     }
   | { readonly t: 'pong' }
   | { readonly t: 'commitHost'; readonly round: number; readonly hash: string }
