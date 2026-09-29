@@ -379,6 +379,19 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | NP-09 | 완료 | P/src/codec.ts·host.ts, W/src/game/diagnostics.ts, K/log/LogBuffer.kt·BridgeLogs.kt; KT/log/Utf8Test.kt·BridgeLogsTest.kt, P/test/m4.test.ts | — | M0 |
 | NP-10 | 미구현 | P/src/host.ts·messages.ts에 결정 ID/deadline/decisionReady 계약 없음 | 단일 호스트 결정 시계·경합/복귀 계약 제안 #123 | — |
 
+### 원격 개정안 RP-02 서버 상태 (별도 분모, Draft PR #161)
+
+이 표는 §13의 신규 RP 접미 ID를 기존 86개 집계와 분리한다. 서버 구현·자동 검증 상태이며 웹/Android 연결·Funnel 실측은 완료 판정에 포함하지 않는다.
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목 |
+|---|---|---|---|
+| NP-RP-01/02 | 부분 | `packages/relay-dev/src/{auth,index}.ts`, `test/public-auth.test.ts`: 방 생성·역할 첫 프레임 인증·교체 전 검사 | RP-04A/B의 실제 WSS 호스트·게스트 연결 |
+| NP-RP-03/04 | 부분 | `src/{rooms,index}.ts`, `test/{rooms,public-net}.test.ts`: 초대 claim lease·원자성·코드 대기/수락·동일 초기 응답 | RP-05A/B 링크 fragment 처리·코드 입력 UX |
+| NP-RP-05/06 | 부분 | `src/{limits,rooms,index}.ts`, relay 기존/신규 테스트: 좌석·미인증·속도·큐·TTL·ping 제한 | RP-07 장시간/단절 복구 통합 |
+| NP-RP-07 | 부분 | 메모리 방 상태·토큰 해시, 게임 프레임 무로그; `test/public-net.test.ts` | 운영 PC 재시작·로그 검증 RP-03A/07 |
+| NP-RP-08 | 부분 | `src/static.ts`, `test/static.test.ts`: 최소 health·버전 응답 | RP-04A의 원격 화면 진입 시 제한 조회 |
+| NF-RP-01/02/03/06 | 부분 | Origin 검사·역할 분리·상한·버전 경로/호환 표, `test/{public-auth,public-net,static}.test.ts` | 공개 TLS/Funnel·실기기·동일 artifact 배포·복귀 실측 |
+
 ### AI·머니 (AI/MN)
 
 | ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
