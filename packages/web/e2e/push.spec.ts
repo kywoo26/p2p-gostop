@@ -341,7 +341,8 @@ test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 �
     await guest.close();
     await expect(host.getByText(/연결 끊김/)).toBeVisible();
     await host.clock.setFixedTime(new Date(Date.now() + 181_000));
-    await expect(host.locator('[data-menu="accept-absent"]')).toBeVisible();
+    // 호스트 부재 시계는 5초 간격이라 병렬 E2E 부하에서 기본 5초 기대 시간과 경합한다.
+    await expect(host.locator('[data-menu="accept-absent"]')).toBeVisible({ timeout: 10_000 });
     expect(await host.getByTestId('match').getAttribute('data-rounds-played')).toBe(before);
     await host.locator('[data-menu="accept-absent"]').click();
     await expect(host.getByTestId('match')).toHaveAttribute(

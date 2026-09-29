@@ -29,7 +29,12 @@ import {
 } from '@p2p-gostop/protocol';
 import { getBridge } from '../bridge/bridge.ts';
 import { pushOffer, toRecordRow } from '../game/adapter.ts';
-import type { GameController, GameStats, PushDecision } from '../game/controller.ts';
+import {
+  AutoChoice,
+  type GameController,
+  type GameStats,
+  type PushDecision,
+} from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import type { RecordRow } from '../lib/view-types.ts';
@@ -104,6 +109,14 @@ export class HostGame implements GameController {
   private settledRound = 0;
   private clock: ReturnType<typeof setInterval> | null = null;
   private disposed = false;
+  private autoHeld = true;
+  private readonly autoChoice = new AutoChoice(
+    () => ({ view: this.board(), ready: !this.autoHeld && this.canAct && this.link === 'open' }),
+    (action) => this.submit(action),
+    (action) => {
+      if (action.type !== 'chooseTarget') this.playback.showToast('유일한 수 자동 진행');
+    },
+  );
 
   constructor(options: HostOptions) {
     this.config = $state.raw(options.resume?.config ?? options.config);
@@ -203,6 +216,7 @@ export class HostGame implements GameController {
     const state = this.state;
     return (
       this.stage === 'playing' &&
+      this.link === 'open' &&
       this.playback.idle &&
       this.guestOnline &&
       state !== null &&
@@ -538,6 +552,11 @@ export class HostGame implements GameController {
     this.playback.attach(root);
   }
 
+  autoAdvance(held: boolean): void {
+    this.autoHeld = held;
+    this.autoChoice.advance(held);
+  }
+
   /** 정산 화면 → 다음 판 (호스트가 시작한다, #26) */
   nextRound(): void {
     if (this.stage !== 'settled' || this.session?.settlement === null) return;
@@ -599,6 +618,7 @@ export class HostGame implements GameController {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.autoChoice.dispose();
     if (this.clock !== null) clearInterval(this.clock);
     this.ws?.dispose();
     this.playback.dispose();
