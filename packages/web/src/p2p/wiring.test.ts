@@ -5,6 +5,7 @@ import { PRESETS, type Action, type CardId } from '@p2p-gostop/engine';
 import {
   createMemoryTransportPair,
   decode,
+  type DecisionClock,
   type BoardView,
   type HostMessage,
   type Message,
@@ -25,6 +26,8 @@ const CONFIG: HostConfig = {
   hostName: '호스트',
   timerDecisionMs: null,
 };
+
+const TIMED_CONFIG: HostConfig = { ...CONFIG, timerDecisionMs: 5_000 };
 
 function lcg(seed: number) {
   let x = seed >>> 0;
@@ -90,6 +93,119 @@ async function playOneRound(host: HostGame, guest: GuestGame): Promise<void> {
   }
   throw new Error('한 판이 끝나지 않았습니다');
 }
+
+async function startTimedDecision(host: HostGame, guest: GuestGame): Promise<DecisionClock> {
+  expect(host.start()).toBe(true);
+  await settle();
+  for (let step = 0; step < 4 && host.decisionClock === null; step++) {
+    const actor = host.canAct ? host : guest;
+    const action = actor.playback.board.legal[0];
+    expect(action).toBeDefined();
+    expect(actor.submit(action!)).toBe(true);
+    await settle();
+  }
+  expect(host.decisionClock?.state).toBe('preparing');
+  host.decisionRendered();
+  guest.decisionRendered();
+  await settle();
+  expect(host.decisionClock?.state).toBe('running');
+  return host.decisionClock!;
+}
+
+test('새 로비의 v2 첫 hello에도 VERSION_MISMATCH와 새로고침 안내를 보낸다 (NP-04)', () => {
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({
+    config: TIMED_CONFIG,
+    transport: hostWire,
+    clock: false,
+    persist: false,
+  });
+  guestWire.send({ t: 'hello', v: 2, name: '옛 게스트' });
+  expect(hostWire.sent.at(-1)).toMatchObject({
+    t: 'reject',
+    reason: 'VERSION_MISMATCH',
+    message: expect.stringContaining('새로고침'),
+  });
+  expect(host.stage).toBe('lobby');
+  host.dispose();
+});
+
+test('소켓 닫힘은 현재 단조 시각에서 잔여량을 보존하고 중복 닫힘으로 환급하지 않는다 (NP-10)', async () => {
+  let now = 0;
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({
+    config: TIMED_CONFIG,
+    transport: hostWire,
+    clock: false,
+    persist: false,
+    now: () => now,
+  });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    clock: false,
+    persist: false,
+    now: () => now,
+  });
+  try {
+    await settle();
+    const clock = await startTimedDecision(host, guest);
+    expect(clock.deadlineMs).toBe(5_000);
+    now = 499;
+    hostWire.disconnect();
+    expect(host.decisionClock?.state).toBe('paused');
+    expect(host.decisionClock?.remainingMs).toBe(4_501);
+    now = 999;
+    hostWire.disconnect();
+    expect(host.decisionClock?.remainingMs).toBe(4_501);
+  } finally {
+    guest.dispose();
+    host.dispose();
+  }
+});
+
+test('게스트 hidden→visible은 열린 소켓에서도 hello·snapshot·새 offer를 시작한다 (NP-10)', async () => {
+  let now = 0;
+  const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+  const [hostWire, guestWire] = createMemoryTransportPair();
+  const host = new HostGame({
+    config: TIMED_CONFIG,
+    transport: hostWire,
+    clock: false,
+    persist: false,
+    now: () => now,
+  });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    persist: false,
+    now: () => now,
+  });
+  try {
+    await settle();
+    const before = await startTimedDecision(host, guest);
+    visibility.mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(host.decisionClock?.state).toBe('paused');
+    now = 500;
+    visibility.mockReturnValue('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await settle();
+    host.decisionRendered();
+    guest.decisionRendered();
+    await settle();
+    expect(guestWire.sent.some((m) => m.t === 'hello' && m.lastSeq === guest.seq)).toBe(true);
+    expect(host.decisionClock?.key).toEqual(before.key);
+    expect(host.decisionClock?.attempt).toBeGreaterThan(before.attempt);
+    expect(host.decisionClock?.state).toBe('running');
+  } finally {
+    guest.dispose();
+    host.dispose();
+    visibility.mockRestore();
+  }
+});
 
 test.each([
   { secretByte: 0, stage: 'playing' },

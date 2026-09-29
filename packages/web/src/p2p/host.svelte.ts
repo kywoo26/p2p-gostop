@@ -2,7 +2,7 @@
 // - 로비: 게스트의 hello가 오면 그 이름으로 protocol HostSession(autoStart:false)을 만들어 welcome을 보낸다.
 //   규칙·금액·이름이 바뀌면 같은 토큰으로 세션을 다시 만들고 마지막 hello를 다시 넘겨 welcome을 새로 보낸다.
 //   "시작"은 HostSession.start()다(로비 이후 토큰 없는 접속은 세션이 거절한다, NF-06).
-// - 게임: HostSession(v2)이 권위 엔진·원장·판 사이 대기(settled)·파산·재동기화를 맡는다. 화면은 솔로와 같은
+// - 게임: HostSession(v3)이 권위 엔진·원장·판 사이 대기(settled)·파산·재동기화를 맡는다. 화면은 솔로와 같은
 //   재생 큐(Playback)를 쓴다. 호스트 좌석이 볼 이벤트는 게스트로 나가는 events를 전송 층에서 지켜보며 같은 액션을
 //   엔진 reduce로 다시 계산해(순수 함수) 좌석 0으로 가린다. 판이 끝나면(settled·bankrupt) 정산 화면을 띄운다.
 // - 연결: 중계 알림(WsTransport onRelay)과 60초 시계(NP-05)로 게스트 연결을 보이고, 3분 넘게 돌아오지 않으면
@@ -151,7 +151,11 @@ export class HostGame implements GameController {
       this.transport = ws;
     }
     this.transport.onMessage((raw) => this.incoming(raw));
-    this.transport.onClose(() => this.port?.closes.forEach((h) => h()));
+    this.transport.onClose(() => {
+      // 닫힘도 입력과 같은 단조 시각에서 처리한다. 오래된 tick으로 잔여 예산을 환급하지 않는다.
+      this.session?.advanceTime(this.now());
+      this.port?.closes.forEach((h) => h());
+    });
     this.transport.onRelay?.((notice) => this.onRelay(notice));
     this.playback = new Playback(emptyBoard(ME, this.names, this.balances), {
       viewer: ME,
@@ -430,6 +434,15 @@ export class HostGame implements GameController {
   private incoming(raw: string): void {
     this.session?.advanceTime(this.now());
     const parsed = decode(raw, 'guest');
+    if (!parsed.ok && parsed.reason === 'VERSION_MISMATCH' && this.session === null) {
+      this.transport.send({
+        t: 'reject',
+        seq: 0,
+        reason: 'VERSION_MISMATCH',
+        message: '앱 버전이 다릅니다. 페이지를 새로고침해 주세요.',
+      });
+      return;
+    }
     const m = parsed.ok ? parsed.message : null;
     if (m?.t === 'hello') {
       if (this.guestName !== m.name) log.info(`게스트 입장: ${m.name}`);

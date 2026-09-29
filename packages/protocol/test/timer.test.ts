@@ -2,11 +2,14 @@
 import { describe, expect, it } from 'vitest';
 import { PRESETS, legalActions, type Action } from '@p2p-gostop/engine';
 import {
+  checkRound,
   createMemoryTransportPair,
   GuestSession,
   HostSession,
   timeoutAction,
+  timeoutDigest,
   type BoardView,
+  type TimeoutResult,
 } from '../src/index.ts';
 import { secrets } from './helpers.ts';
 
@@ -54,6 +57,157 @@ function manual(g: ReturnType<typeof game>, action: Action): boolean {
   g.guest.sendAction(action);
   return g.host.seq > before;
 }
+
+it('초과 이력 중간 유실은 0부터 연속 페이지로 회복하고 다음 판 전에 검증한다', () => {
+  const g = game();
+  for (let step = 0; step < 40 && g.host.timeoutHistory.length < 2; step++) {
+    const clock = g.host.decisionClock;
+    if (clock?.state === 'preparing') ready(g);
+    const running = g.host.decisionClock;
+    let advanced = false;
+    if (running?.state === 'running') {
+      healthy(g.host, running.hostNowMs + 500, running.deadlineMs!);
+      advanced = g.guest.ackExpiry(g.guest.seq, true);
+    } else {
+      const action = [...legalActions(g.host.state!, 0), ...legalActions(g.host.state!, 1)][0];
+      advanced = action !== undefined && manual(g, action);
+    }
+    expect(advanced).toBe(true);
+  }
+  expect(g.host.timeoutHistory.length).toBeGreaterThanOrEqual(2);
+  expect(g.guest.timeoutHistory.length).toBeGreaterThanOrEqual(2);
+  const missing = g.guest.timeoutHistory.shift()!;
+  expect(g.guest.timeoutHistory.some((entry) => entry.actionIndex > missing.actionIndex)).toBe(
+    true,
+  );
+  const send = g.hostWire.send.bind(g.hostWire);
+  const withheld: Parameters<typeof g.hostWire.send>[0][] = [];
+  g.hostWire.send = (message) => {
+    if (message.t === 'timeoutPage') withheld.push(message);
+    else send(message);
+  };
+  for (let step = 0; step < 400 && g.host.stage === 'playing'; step++) {
+    if (g.host.decisionClock?.state === 'preparing') ready(g);
+    const legal = [...legalActions(g.host.state!, 0), ...legalActions(g.host.state!, 1)];
+    const action = legal.find((item) => item.type === 'stop') ?? legal[0];
+    expect(action).toBeDefined();
+    expect(manual(g, action!)).toBe(true);
+  }
+  expect(g.host.stage).not.toBe('playing');
+  expect(g.guestWire.sent.some((m) => m.t === 'timeoutGet' && m.from === 0)).toBe(true);
+  expect(withheld).toHaveLength(1);
+  expect(g.guest.checks).toHaveLength(0);
+  expect(g.host.nextRound()).toBe(true);
+  expect(g.guestWire.sent.some((m) => m.t === 'commitGuest' && m.round === 2)).toBe(false);
+  for (const page of withheld) send(page);
+  expect(g.guest.timeoutHistory.map((entry) => entry.actionIndex)).toEqual(
+    g.host.timeoutHistory.map((entry) => entry.actionIndex),
+  );
+  expect(g.guest.checks.at(-1)?.result).toBe('verified');
+  expect(g.guestWire.sent.some((m) => m.t === 'commitGuest' && m.round === 2)).toBe(true);
+});
+
+it('관찰한 마감·확인과 다른 0ms 초과 기록은 digest가 맞아도 실패하고 관찰 소실은 시간 검증 불가로 남긴다', () => {
+  const g = game();
+  ready(g);
+  healthy(g.host, 500, 5_000);
+  expect(g.guest.ackExpiry(g.guest.seq, true)).toBe(true);
+  for (let step = 0; step < 400 && g.host.stage === 'playing'; step++) {
+    if (g.host.decisionClock?.state === 'preparing') ready(g);
+    const legal = [...legalActions(g.host.state!, 0), ...legalActions(g.host.state!, 1)];
+    const action = legal.find((item) => item.type === 'stop') ?? legal[0];
+    expect(action).toBeDefined();
+    expect(manual(g, action!)).toBe(true);
+  }
+  const reveal = g.hostWire.sent.findLast((m) => m.t === 'revealHost');
+  expect(reveal?.t).toBe('revealHost');
+  if (reveal?.t !== 'revealHost') return;
+  const observed = g.guest.toJSON().observations.find((o) => o.round === reveal.round)!;
+  const input = {
+    commitments: { host: reveal.hostHash, guest: reveal.guestHash },
+    reveals: { host: reveal.secret, guest: reveal.guestSecret },
+    seed: reveal.seed,
+    actions: reveal.actions,
+    rules: PRESETS.standard,
+    options: reveal.options,
+    round: reveal.round,
+    firstSeq: reveal.firstSeq,
+    observed,
+    timeoutResults: g.host.timeoutHistory,
+  };
+  expect(checkRound(input)).toEqual({ ok: true, time: 'verified' });
+  expect(g.guest.checks.at(-1)).toEqual({
+    round: reveal.round,
+    result: 'verified',
+    time: 'verified',
+  });
+  const tampered = g.host.timeoutHistory.map((entry) => ({
+    ...entry,
+    deadlineMs: 0,
+    confirmedAtMs: 0,
+  }));
+  expect(checkRound({ ...input, timeoutResults: tampered })).toEqual({
+    ok: false,
+    reason: 'actions',
+  });
+  const afterAckWindow = g.host.timeoutHistory.map((entry) => ({
+    ...entry,
+    confirmedAtMs: observed.timing!.checks[0]!.confirmByMs + 1,
+  }));
+  expect(checkRound({ ...input, timeoutResults: afterAckWindow })).toEqual({
+    ok: false,
+    reason: 'actions',
+  });
+  expect(
+    checkRound({ ...input, observed: { ...observed, timing: { ...observed.timing!, acks: [] } } }),
+  ).toEqual({ ok: true, time: 'unverifiable' });
+  expect(
+    checkRound({
+      ...input,
+      observed: { ...observed, timing: { ...observed.timing!, gap: true } },
+      timeoutResults: afterAckWindow,
+    }),
+  ).toEqual({ ok: true, time: 'unverifiable' });
+  const { timing: _lost, ...withoutTiming } = observed;
+  expect(checkRound({ ...input, observed: withoutTiming })).toEqual({
+    ok: true,
+    time: 'unverifiable',
+  });
+  expect(
+    checkRound({
+      ...input,
+      observed: {
+        ...observed,
+        timing: { ...observed.timing!, settings: { decisionMs: null, policy: 'fixed-v1' } },
+      },
+    }),
+  ).toEqual({ ok: false, reason: 'actions' });
+});
+
+it('GuestSession은 0ms로 변조한 timeoutResult와 맞춘 reveal digest를 거부한다', () => {
+  const g = game();
+  const send = g.hostWire.send.bind(g.hostWire);
+  let forged: TimeoutResult | null = null;
+  g.hostWire.send = (message) => {
+    if ((message.t === 'events' || message.t === 'snapshot') && message.timeoutResult) {
+      forged = { ...message.timeoutResult, deadlineMs: 0, confirmedAtMs: 0 };
+      send({ ...message, timeoutResult: forged });
+    } else if (message.t === 'revealHost' && forged !== null) {
+      send({ ...message, timeoutDigest: timeoutDigest([forged]) });
+    } else send(message);
+  };
+  ready(g);
+  healthy(g.host, 500, 5_000);
+  expect(g.guest.ackExpiry(g.guest.seq, true)).toBe(true);
+  for (let step = 0; step < 400 && g.host.stage === 'playing'; step++) {
+    if (g.host.decisionClock?.state === 'preparing') ready(g);
+    const legal = [...legalActions(g.host.state!, 0), ...legalActions(g.host.state!, 1)];
+    const action = legal.find((item) => item.type === 'stop') ?? legal[0];
+    expect(action).toBeDefined();
+    expect(manual(g, action!)).toBe(true);
+  }
+  expect(g.guest.checks.at(-1)).toEqual({ round: 1, result: 'failed', reason: 'actions' });
+});
 
 describe('NP-10 호스트 결정 시계', () => {
   it('양쪽 준비 후 한 번만 시작하고 deadline 이전 수동 입력을 먼저 소비한다', () => {

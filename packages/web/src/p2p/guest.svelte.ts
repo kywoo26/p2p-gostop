@@ -1,5 +1,5 @@
 // 게스트 모드 (spec 2.2·2.3·2.4, FR-04·05·30, NP-02~06·09, NF-04·05). 좌석 1 = 이 기기(iPhone Safari).
-// - protocol GuestSession(v2)이 hello·커밋 교환·순번·재동기화·공정성 검증을 맡는다. 호스트 이벤트는 이미 좌석 1로 가려져 있다.
+// - protocol GuestSession(v3)이 hello·커밋 교환·순번·재동기화·공정성 검증을 맡는다. 호스트 이벤트는 이미 좌석 1로 가려져 있다.
 // - 화면은 솔로·호스트와 같은 재생 큐(Playback)로 이벤트 묶음을 재생하고 스냅샷으로 보정한다(spec 6.4). 게스트 화면은
 //   guest.view와 view.legal만 보고 액션을 만든다(호스트가 다시 검사한다).
 // - 세션 토큰·이름은 URL 프래그먼트(#g=…&n=…), 커밋·관찰 기록은 탭 수명 저장소(sessionStorage)에만 둔다(MN-05: 게스트
@@ -187,6 +187,8 @@ export class GuestGame implements GameController {
   private readonly onVisible = () => {
     if (document.visibilityState === 'visible') {
       this.tick();
+      // 소켓이 열린 채 숨김→복귀할 때도 hello로 재인증·snapshot·새 offer를 요청한다.
+      this.session.join();
       this.decisionRendered();
     } else this.session.decisionUnavailable('background');
   };
@@ -344,6 +346,9 @@ export class GuestGame implements GameController {
     const round = this.settledRound;
     const check = this.checks.findLast((c) => c.round === round);
     if (check !== undefined) lines.push(`${round}판 ${CHECK_LABEL[check.result]}`);
+    if (check?.result === 'verified' && check.time === 'verified') lines.push('시간 기록 일치');
+    if (check?.result === 'verified' && check.time === 'unverifiable')
+      lines.push('시간 검증 불가 (관찰 기록 없음)');
     if (this.stage === 'bankrupt' && !this.bankrupt)
       lines.push(`${this.names[0]}의 재충전·종료 선택을 기다리는 중`);
     if (this.endReason !== null) lines.push(this.notice ?? '세션이 끝났습니다');

@@ -21,7 +21,7 @@ import {
 import { combineSeed, commit, fromHex, sha256, toHex, utf8 } from './crypto.ts';
 import { toBoardView } from './view.ts';
 import { timeoutAction } from './timer-policy.ts';
-import type { TimeoutResult } from './messages.ts';
+import type { DecisionKey, TimeoutResult, TimerSettings } from './messages.ts';
 import type { BoardView, SettlementView } from './view-types.ts';
 
 export interface Commitments {
@@ -44,6 +44,25 @@ export interface ObservedRound {
   readonly sent: readonly Action[];
   /** 받은 정산 요약 */
   readonly settlement: string | null;
+  /** 실제 수신·송신한 시간 증거. 옛 저장본에는 없을 수 있다. */
+  readonly timing?: {
+    readonly settings: TimerSettings | null;
+    /** 소켓/렌더러 공백에서 놓친 clock·확인이 있을 수 있다. */
+    readonly gap: boolean;
+    readonly running: readonly {
+      readonly key: DecisionKey;
+      readonly attempt: number;
+      readonly deadlineMs: number;
+      readonly hostNowMs: number;
+      readonly recoveryGrantMs: number;
+    }[];
+    readonly checks: readonly {
+      readonly key: DecisionKey;
+      readonly attempt: number;
+      readonly confirmByMs: number;
+    }[];
+    readonly acks: readonly { readonly key: DecisionKey; readonly attempt: number }[];
+  };
 }
 
 export type VerifyFailure =
@@ -60,7 +79,7 @@ export type VerifyFailure =
   /** 판 번호가 1보다 크게 뛰었다 */
   | 'roundSkip';
 export type VerifyResult =
-  | { readonly ok: true }
+  | { readonly ok: true; readonly time?: 'verified' | 'unverifiable' }
   | { readonly ok: false; readonly reason: VerifyFailure };
 
 /** 키 순서와 무관한 JSON (파싱한 객체와 엔진 객체의 키 순서가 달라도 같은 요약이 나오게) */
@@ -163,6 +182,73 @@ export interface RoundCheckInput {
   readonly timeoutResults?: readonly TimeoutResult[];
 }
 
+function sameKey(a: DecisionKey, b: DecisionKey): boolean {
+  return (
+    a.epoch === b.epoch &&
+    a.round === b.round &&
+    a.decisionId === b.decisionId &&
+    a.baseSeq === b.baseSeq
+  );
+}
+
+/** 실제 경과시간의 증명이 아니라 게스트가 보존한 호스트 시계·확인 교환과의 모순 검사다. */
+function checkTimeoutTime(
+  results: readonly TimeoutResult[],
+  observed: ObservedRound,
+): 'verified' | 'unverifiable' | 'conflict' {
+  if (results.length === 0) return 'verified';
+  const timing = observed.timing;
+  if (timing === undefined || timing.settings === null) return 'unverifiable';
+  const decisionMs = timing.settings.decisionMs;
+  if (decisionMs === null) return 'conflict';
+  let incomplete = false;
+  for (const result of results) {
+    const checks = timing.checks.filter((check) => sameKey(check.key, result.key));
+    const acked = checks.filter((check) =>
+      timing.acks.some((ack) => sameKey(ack.key, check.key) && ack.attempt === check.attempt),
+    );
+    const matchingWindow = acked.filter(
+      (check) =>
+        result.confirmedAtMs >= check.confirmByMs - 2_000 &&
+        result.confirmedAtMs <= check.confirmByMs,
+    );
+    if (acked.length > 0) {
+      const beforeObservedCheck =
+        result.confirmedAtMs < Math.min(...acked.map((check) => check.confirmByMs - 2_000));
+      const afterObservedCheck =
+        result.confirmedAtMs > Math.max(...acked.map((check) => check.confirmByMs));
+      if (beforeObservedCheck || afterObservedCheck) {
+        if (!timing.gap) return 'conflict';
+        incomplete = true;
+        continue;
+      }
+    }
+    if (matchingWindow.length === 0) {
+      incomplete = true;
+      continue;
+    }
+    const clocks = timing.running.filter(
+      (clock) =>
+        sameKey(clock.key, result.key) &&
+        matchingWindow.some((check) => check.attempt === clock.attempt),
+    );
+    if (clocks.length === 0) {
+      incomplete = true;
+      continue;
+    }
+    if (
+      clocks.some(
+        (clock) =>
+          clock.deadlineMs !== result.deadlineMs ||
+          clock.deadlineMs < clock.hostNowMs ||
+          clock.deadlineMs - clock.hostNowMs > decisionMs + clock.recoveryGrantMs,
+      )
+    )
+      return 'conflict';
+  }
+  return incomplete ? 'unverifiable' : 'verified';
+}
+
 /** commit-reveal·시드·리플레이·관찰 대조를 모두 검사하고 실패 이유를 돌려준다. 예외를 던지지 않는다 */
 export function checkRound(input: RoundCheckInput): VerifyResult {
   try {
@@ -185,9 +271,11 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
       return fail('options');
     const viewer = input.viewer ?? 1;
     const observed = input.observed;
+    const timeouts = input.timeoutResults ?? [];
     if (observed === undefined) {
       const result = replay(input.rules, input.seed, input.actions, input.options);
-      return result.ok && result.state.phase === 'end' ? { ok: true } : fail('replay');
+      if (!result.ok || result.state.phase !== 'end') return fail('replay');
+      return timeouts.length > 0 ? { ok: true, time: 'unverifiable' } : { ok: true };
     }
     const firstSeq = input.firstSeq ?? 1;
     const start = newRound(input.rules, input.seed, input.options);
@@ -201,7 +289,6 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
       layouts.set(seq, set);
     };
     record();
-    const timeouts = input.timeoutResults ?? [];
     const timeoutByIndex = new Map<number, TimeoutResult>();
     for (const entry of timeouts) {
       if (
@@ -255,7 +342,9 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
       if (!layouts.get(Number(key))?.has(digest)) return fail('views');
     if (observed.settlement !== null && settlementDigest(settle(state)) !== observed.settlement)
       return fail('settlement');
-    return { ok: true };
+    const time = checkTimeoutTime(timeouts, observed);
+    if (time === 'conflict') return fail('actions');
+    return timeouts.length === 0 ? { ok: true } : { ok: true, time };
   } catch {
     return fail('replay');
   }
