@@ -67,6 +67,11 @@ export interface GuestSessionOptions {
   readonly lastSeq?: number;
   /** 새로고침 전 toJSON() 결과 */
   readonly restore?: GuestSessionState;
+  /**
+   * 요청(action·ready·bankruptcy·ledgerGet)에 호스트 응답이 이 시간(ms) 안에 없으면 hello를 다시 보내 소켓을 다시
+   * 인증하고 요청을 다시 보낸다. 시각은 advanceTime(nowMs)으로 넣는다. 기본 5000
+   */
+  readonly ackTimeoutMs?: number;
   readonly log?: (line: string) => void;
 }
 
@@ -113,6 +118,13 @@ export class GuestSession {
    */
   private linked = false;
   private readonly outbox = new Map<string, GuestMessage>();
+  /**
+   * 보냈지만 호스트 응답을 아직 못 본 요청과 보낸 시각. ping에는 답하면서 요청을 버리는 호스트(인증을 잃은 소켓 등, #40)를
+   * 알아채기 위한 감시다. 응답이 오면 지우고, 시간이 지나면 hello로 다시 인증한 뒤 다시 보낸다.
+   */
+  private readonly inflight = new Map<string, { message: GuestMessage; since: number }>();
+  private now = 0;
+  private readonly ackTimeout: number;
   private observations: MutableObservation[] = [];
   private readonly changeHandlers = new Set<(guest: GuestSession) => void>();
   private readonly logLine: (line: string) => void;
@@ -121,6 +133,7 @@ export class GuestSession {
     this.name = options.name;
     this.random32 = options.random32;
     this.logLine = options.log ?? (() => {});
+    this.ackTimeout = options.ackTimeoutMs ?? 5_000;
     this.token = options.sessionToken;
     this.seq = options.lastSeq ?? 0;
     const saved = options.restore;
@@ -215,6 +228,7 @@ export class GuestSession {
     this.ended = null;
     this.connection = 'joining';
     this.outbox.clear();
+    this.inflight.clear();
     this.join();
     this.changed();
   }
@@ -241,8 +255,38 @@ export class GuestSession {
   }
   /** 게임 요청: 인증된 소켓이면 바로, 아니면 welcome 뒤로 미룬다 */
   private sendGame(message: GuestMessage): void {
-    if (this.linked) this.send(message);
-    else this.outbox.set(message.t, message);
+    if (this.linked) {
+      this.inflight.set(message.t, { message, since: this.now });
+      this.send(message);
+    } else this.outbox.set(message.t, message);
+  }
+  /** 받은 호스트 메시지가 응답해 주는 요청을 감시 목록에서 지운다 */
+  private settle(t: HostMessage['t']): void {
+    const answers: Record<string, readonly string[]> = {
+      events: ['action', 'bankruptcy'],
+      snapshot: ['action', 'bankruptcy', 'ready'],
+      reject: ['action', 'bankruptcy', 'ready', 'ledgerGet'],
+      status: ['ready', 'bankruptcy'],
+      ledgerPage: ['ledgerGet'],
+      sessionEnd: ['action', 'bankruptcy', 'ready', 'ledgerGet'],
+    };
+    for (const request of answers[t] ?? []) this.inflight.delete(request);
+  }
+  /**
+   * 외부 시계가 호출한다(호스트의 advanceTime과 같은 방식). 응답 없는 요청이 ackTimeoutMs를 넘으면 hello를 다시 보내고
+   * 요청은 welcome 뒤에 다시 보낸다. 호스트가 이미 적용했으면 다시 보낸 액션은 STALE_SEQ로 무해하게 거부된다.
+   */
+  advanceTime(nowMs: number): void {
+    if (nowMs < this.now) return;
+    this.now = nowMs;
+    const stale = [...this.inflight.values()].filter((f) => nowMs - f.since >= this.ackTimeout);
+    if (stale.length === 0) return;
+    this.logLine(`응답 없는 요청 ${stale.map((f) => f.message.t).join(',')}: hello로 다시 인증`);
+    for (const { message } of this.inflight.values()) this.outbox.set(message.t, message);
+    this.inflight.clear();
+    this.linked = false;
+    this.join();
+    this.changed();
   }
   sendLogs(entries: readonly string[]): void {
     let batch: string[] = [];
@@ -291,8 +335,9 @@ export class GuestSession {
   // ---- 수신 ----
 
   private relayNotice(notice: RelayNotice): void {
-    // 새 소켓(present)이거나 호스트 소켓이 바뀌었다(joined·left·absent): hello로 다시 인증할 때까지 미룬다.
-    this.linked = false;
+    // 새 소켓(present)이거나 호스트 소켓이 바뀌었다(joined·left): hello로 다시 인증할 때까지 미룬다.
+    // absent는 프레임 하나를 전달하지 못했다는 뜻일 뿐이라 인증 상태를 바꾸지 않는다(#40).
+    if (notice.peer !== 'absent') this.linked = false;
     this.hostPresent = notice.peer === 'present' || notice.peer === 'joined';
     if (this.hostPresent) this.join();
     this.changed();
@@ -488,11 +533,13 @@ export class GuestSession {
       this.logLine(`welcome 전 ${m.t} 무시`);
       return;
     }
+    this.settle(m.t);
     switch (m.t) {
       case 'welcome':
         this.welcome(m);
         this.linked = true;
-        for (const pending of this.outbox.values()) this.send(pending);
+        this.inflight.clear();
+        for (const pending of this.outbox.values()) this.sendGame(pending);
         this.outbox.clear();
         break;
       case 'snapshot':
