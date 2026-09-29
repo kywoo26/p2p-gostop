@@ -19,6 +19,14 @@ export interface GameStats {
   readonly seq: number | null;
 }
 
+export interface PushDecision {
+  readonly winner: boolean;
+  readonly canPush: boolean;
+  readonly nextMultiplier: number;
+  readonly acceptAmount: number | null;
+  readonly forfeitedPoints: number | null;
+}
+
 export interface GameController {
   readonly mode: GameMode;
   readonly playback: Playback;
@@ -34,10 +42,15 @@ export interface GameController {
   readonly settlementNote?: string | null;
   /** 정산 화면의 "다음 판"을 잠근다 (상대의 파산 선택 대기) */
   readonly settlementWaiting?: boolean;
+  /** 판 종료 뒤 승자의 수동 받기/밀기 선택. loser는 기다린다. */
+  readonly pushDecision: PushDecision | null;
   readonly stats: GameStats;
   submit(action: Action, tapAt?: number): boolean;
   /** 정산 화면 → 다음 판 */
   nextRound(): void;
+  choosePush(push: boolean): void;
+  /** 3분 이상 부재한 게스트 승자의 대리 받기는 호스트가 명시적으로 고른다. */
+  acceptAbsentWinner?(): void;
   /** MN-02 재충전 */
   refill(): void;
   /** 세션 종료 */

@@ -1,0 +1,1442 @@
+{
+  "ppeok": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/ppeok-1x.webp",
+        "bytes": 238280,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/ppeok-1x.avif",
+        "bytes": 266225,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/ppeok-2x.webp",
+        "bytes": 588518,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/ppeok-2x.avif",
+        "bytes": 574009,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/ppeok-3x.webp",
+        "bytes": 588518,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/ppeok-3x.avif",
+        "bytes": 574009,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "frames": 64,
+    "columns": 8
+  },
+  "jjok": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/jjok-1x.webp",
+        "bytes": 139540,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/jjok-1x.avif",
+        "bytes": 177577,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/jjok-2x.webp",
+        "bytes": 350754,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/jjok-2x.avif",
+        "bytes": 372170,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/jjok-3x.webp",
+        "bytes": 350754,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/jjok-3x.avif",
+        "bytes": 372170,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "frames": 64,
+    "columns": 8
+  },
+  "ttadak": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/ttadak-1x.webp",
+        "bytes": 198290,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/ttadak-1x.avif",
+        "bytes": 253894,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/ttadak-2x.webp",
+        "bytes": 425680,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/ttadak-2x.avif",
+        "bytes": 498064,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/ttadak-3x.webp",
+        "bytes": 425680,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/ttadak-3x.avif",
+        "bytes": 498064,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "frames": 64,
+    "columns": 8
+  },
+  "bomb": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/bomb-1x.webp",
+        "bytes": 211582,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/bomb-1x.avif",
+        "bytes": 263102,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/bomb-2x.webp",
+        "bytes": 487806,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/bomb-2x.avif",
+        "bytes": 512843,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/bomb-3x.webp",
+        "bytes": 487806,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/bomb-3x.avif",
+        "bytes": 512843,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "frames": 64,
+    "columns": 8
+  },
+  "smoke": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/smoke-1x.webp",
+        "bytes": 107228,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/smoke-1x.avif",
+        "bytes": 122338,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/smoke-2x.webp",
+        "bytes": 216190,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/smoke-2x.avif",
+        "bytes": 248140,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/smoke-3x.webp",
+        "bytes": 216190,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/smoke-3x.avif",
+        "bytes": 248140,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "frames": 64,
+    "columns": 8
+  },
+  "glow": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/glow-1x.webp",
+        "bytes": 5064,
+        "format": "webp",
+        "scale": 1,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/glow-1x.avif",
+        "bytes": 5947,
+        "format": "avif",
+        "scale": 1,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/glow-2x.webp",
+        "bytes": 14928,
+        "format": "webp",
+        "scale": 2,
+        "width": 256,
+        "height": 256
+      },
+      {
+        "url": "/pro/glow-2x.avif",
+        "bytes": 16221,
+        "format": "avif",
+        "scale": 2,
+        "width": 256,
+        "height": 256
+      },
+      {
+        "url": "/pro/glow-3x.webp",
+        "bytes": 33416,
+        "format": "webp",
+        "scale": 3,
+        "width": 384,
+        "height": 384
+      },
+      {
+        "url": "/pro/glow-3x.avif",
+        "bytes": 33857,
+        "format": "avif",
+        "scale": 3,
+        "width": 384,
+        "height": 384
+      }
+    ]
+  },
+  "spark": {
+    "group": "effects",
+    "variants": [
+      {
+        "url": "/pro/spark-1x.webp",
+        "bytes": 6578,
+        "format": "webp",
+        "scale": 1,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/spark-1x.avif",
+        "bytes": 6726,
+        "format": "avif",
+        "scale": 1,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/spark-2x.webp",
+        "bytes": 19116,
+        "format": "webp",
+        "scale": 2,
+        "width": 256,
+        "height": 256
+      },
+      {
+        "url": "/pro/spark-2x.avif",
+        "bytes": 18969,
+        "format": "avif",
+        "scale": 2,
+        "width": 256,
+        "height": 256
+      },
+      {
+        "url": "/pro/spark-3x.webp",
+        "bytes": 38986,
+        "format": "webp",
+        "scale": 3,
+        "width": 384,
+        "height": 384
+      },
+      {
+        "url": "/pro/spark-3x.avif",
+        "bytes": 43279,
+        "format": "avif",
+        "scale": 3,
+        "width": 384,
+        "height": 384
+      }
+    ]
+  },
+  "card": {
+    "group": "audio",
+    "variants": [
+      {
+        "url": "/pro/card.ogg",
+        "bytes": 8260,
+        "format": "ogg",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "url": "/pro/card.m4a",
+        "bytes": 8545,
+        "format": "m4a",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      }
+    ]
+  },
+  "chips": {
+    "group": "audio",
+    "variants": [
+      {
+        "url": "/pro/chips.ogg",
+        "bytes": 5861,
+        "format": "ogg",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "url": "/pro/chips.m4a",
+        "bytes": 4259,
+        "format": "m4a",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      }
+    ]
+  },
+  "hit": {
+    "group": "audio",
+    "variants": [
+      {
+        "url": "/pro/hit.ogg",
+        "bytes": 4440,
+        "format": "ogg",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "url": "/pro/hit.m4a",
+        "bytes": 4822,
+        "format": "m4a",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      }
+    ]
+  },
+  "success": {
+    "group": "audio",
+    "variants": [
+      {
+        "url": "/pro/success.ogg",
+        "bytes": 7143,
+        "format": "ogg",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "url": "/pro/success.m4a",
+        "bytes": 8000,
+        "format": "m4a",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      }
+    ]
+  },
+  "go": {
+    "group": "audio",
+    "variants": [
+      {
+        "url": "/pro/go.ogg",
+        "bytes": 5449,
+        "format": "ogg",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      },
+      {
+        "url": "/pro/go.m4a",
+        "bytes": 3015,
+        "format": "m4a",
+        "scale": 1,
+        "width": 0,
+        "height": 0
+      }
+    ]
+  },
+  "felt": {
+    "group": "shared",
+    "variants": [
+      {
+        "url": "/pro/felt-1x.webp",
+        "bytes": 14090,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/felt-1x.avif",
+        "bytes": 3836,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/felt-2x.webp",
+        "bytes": 59048,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/felt-2x.avif",
+        "bytes": 18677,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/felt-3x.webp",
+        "bytes": 59048,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/felt-3x.avif",
+        "bytes": 18677,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ]
+  },
+  "leather": {
+    "group": "shared",
+    "variants": [
+      {
+        "url": "/pro/leather-1x.webp",
+        "bytes": 1428,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/leather-1x.avif",
+        "bytes": 377,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/leather-2x.webp",
+        "bytes": 6406,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/leather-2x.avif",
+        "bytes": 378,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/leather-3x.webp",
+        "bytes": 6406,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/leather-3x.avif",
+        "bytes": 378,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ]
+  },
+  "gold": {
+    "group": "shared",
+    "variants": [
+      {
+        "url": "/pro/gold-1x.webp",
+        "bytes": 874,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/gold-1x.avif",
+        "bytes": 485,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/gold-2x.webp",
+        "bytes": 3002,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/gold-2x.avif",
+        "bytes": 796,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/gold-3x.webp",
+        "bytes": 3002,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/gold-3x.avif",
+        "bytes": 796,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ]
+  },
+  "wood": {
+    "group": "shared",
+    "variants": [
+      {
+        "url": "/pro/wood-1x.webp",
+        "bytes": 11032,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/wood-1x.avif",
+        "bytes": 3792,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 512
+      },
+      {
+        "url": "/pro/wood-2x.webp",
+        "bytes": 46782,
+        "format": "webp",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/wood-2x.avif",
+        "bytes": 15004,
+        "format": "avif",
+        "scale": 2,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/wood-3x.webp",
+        "bytes": 46782,
+        "format": "webp",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      },
+      {
+        "url": "/pro/wood-3x.avif",
+        "bytes": 15004,
+        "format": "avif",
+        "scale": 3,
+        "width": 1024,
+        "height": 1024
+      }
+    ]
+  },
+  "key-art": {
+    "group": "home",
+    "variants": [
+      {
+        "url": "/pro/key-art-1x.webp",
+        "bytes": 54482,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 400
+      },
+      {
+        "url": "/pro/key-art-1x.avif",
+        "bytes": 29725,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 400
+      },
+      {
+        "url": "/pro/key-art-2x.webp",
+        "bytes": 121362,
+        "format": "webp",
+        "scale": 2,
+        "width": 792,
+        "height": 618
+      },
+      {
+        "url": "/pro/key-art-2x.avif",
+        "bytes": 61644,
+        "format": "avif",
+        "scale": 2,
+        "width": 792,
+        "height": 618
+      },
+      {
+        "url": "/pro/key-art-3x.webp",
+        "bytes": 121362,
+        "format": "webp",
+        "scale": 3,
+        "width": 792,
+        "height": 618
+      },
+      {
+        "url": "/pro/key-art-3x.avif",
+        "bytes": 61644,
+        "format": "avif",
+        "scale": 3,
+        "width": 792,
+        "height": 618
+      }
+    ]
+  },
+  "settlement-art": {
+    "group": "settlement",
+    "variants": [
+      {
+        "url": "/pro/settlement-art-1x.webp",
+        "bytes": 39144,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 300
+      },
+      {
+        "url": "/pro/settlement-art-1x.avif",
+        "bytes": 21226,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 300
+      },
+      {
+        "url": "/pro/settlement-art-2x.webp",
+        "bytes": 87656,
+        "format": "webp",
+        "scale": 2,
+        "width": 792,
+        "height": 464
+      },
+      {
+        "url": "/pro/settlement-art-2x.avif",
+        "bytes": 44078,
+        "format": "avif",
+        "scale": 2,
+        "width": 792,
+        "height": 464
+      },
+      {
+        "url": "/pro/settlement-art-3x.webp",
+        "bytes": 87656,
+        "format": "webp",
+        "scale": 3,
+        "width": 792,
+        "height": 464
+      },
+      {
+        "url": "/pro/settlement-art-3x.avif",
+        "bytes": 44078,
+        "format": "avif",
+        "scale": 3,
+        "width": 792,
+        "height": 464
+      }
+    ]
+  },
+  "avatar-01": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-01-1x.webp",
+        "bytes": 2238,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-01-1x.avif",
+        "bytes": 2923,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-01-2x.webp",
+        "bytes": 5312,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-01-2x.avif",
+        "bytes": 5879,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-01-3x.webp",
+        "bytes": 8476,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-01-3x.avif",
+        "bytes": 8886,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-02": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-02-1x.webp",
+        "bytes": 2544,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-02-1x.avif",
+        "bytes": 3244,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-02-2x.webp",
+        "bytes": 6102,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-02-2x.avif",
+        "bytes": 6593,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-02-3x.webp",
+        "bytes": 9946,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-02-3x.avif",
+        "bytes": 9906,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-03": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-03-1x.webp",
+        "bytes": 3160,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-03-1x.avif",
+        "bytes": 3625,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-03-2x.webp",
+        "bytes": 8542,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-03-2x.avif",
+        "bytes": 8603,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-03-3x.webp",
+        "bytes": 14146,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-03-3x.avif",
+        "bytes": 13427,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-04": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-04-1x.webp",
+        "bytes": 3014,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-04-1x.avif",
+        "bytes": 3542,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-04-2x.webp",
+        "bytes": 7606,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-04-2x.avif",
+        "bytes": 7580,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-04-3x.webp",
+        "bytes": 13046,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-04-3x.avif",
+        "bytes": 11894,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-05": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-05-1x.webp",
+        "bytes": 2586,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-05-1x.avif",
+        "bytes": 3189,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-05-2x.webp",
+        "bytes": 5682,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-05-2x.avif",
+        "bytes": 6262,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-05-3x.webp",
+        "bytes": 9032,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-05-3x.avif",
+        "bytes": 9197,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-06": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-06-1x.webp",
+        "bytes": 2754,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-06-1x.avif",
+        "bytes": 3264,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-06-2x.webp",
+        "bytes": 6934,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-06-2x.avif",
+        "bytes": 7049,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-06-3x.webp",
+        "bytes": 11234,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-06-3x.avif",
+        "bytes": 10814,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-07": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-07-1x.webp",
+        "bytes": 2786,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-07-1x.avif",
+        "bytes": 3394,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-07-2x.webp",
+        "bytes": 7068,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-07-2x.avif",
+        "bytes": 7412,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-07-3x.webp",
+        "bytes": 11506,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-07-3x.avif",
+        "bytes": 11518,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-08": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-08-1x.webp",
+        "bytes": 2144,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-08-1x.avif",
+        "bytes": 2933,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-08-2x.webp",
+        "bytes": 5232,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-08-2x.avif",
+        "bytes": 5981,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-08-3x.webp",
+        "bytes": 8594,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-08-3x.avif",
+        "bytes": 9189,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-09": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-09-1x.webp",
+        "bytes": 2550,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-09-1x.avif",
+        "bytes": 3131,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-09-2x.webp",
+        "bytes": 5988,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-09-2x.avif",
+        "bytes": 6440,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-09-3x.webp",
+        "bytes": 9530,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-09-3x.avif",
+        "bytes": 9699,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-10": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-10-1x.webp",
+        "bytes": 2658,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-10-1x.avif",
+        "bytes": 3231,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-10-2x.webp",
+        "bytes": 6330,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-10-2x.avif",
+        "bytes": 6648,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-10-3x.webp",
+        "bytes": 10292,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-10-3x.avif",
+        "bytes": 10162,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-11": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-11-1x.webp",
+        "bytes": 1978,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-11-1x.avif",
+        "bytes": 2762,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-11-2x.webp",
+        "bytes": 4394,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-11-2x.avif",
+        "bytes": 5236,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-11-3x.webp",
+        "bytes": 6996,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-11-3x.avif",
+        "bytes": 7786,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-12": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-12-1x.webp",
+        "bytes": 2644,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-12-1x.avif",
+        "bytes": 3275,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-12-2x.webp",
+        "bytes": 6792,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-12-2x.avif",
+        "bytes": 6988,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-12-3x.webp",
+        "bytes": 11234,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-12-3x.avif",
+        "bytes": 11032,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  }
+}

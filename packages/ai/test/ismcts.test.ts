@@ -16,6 +16,8 @@ import {
   actingSeat,
   analyzeGoStop,
   utility,
+  ruleGoStop,
+  withWeights,
 } from '../src/index.ts';
 import { randomState } from './helpers.ts';
 
@@ -125,7 +127,10 @@ describe('고/스톱 기대값 비교 (AI-06)', () => {
     const a = analyzeGoStop(view, new Rng(5), 200, DEFAULT_WEIGHTS);
     expect(a.stopPoints).toBe(previewStop(state, 0).finalPoints);
     expect(a.pWin + a.pLose + a.pNagari).toBeCloseTo(1, 9);
-    expect(a.goEv).toBeCloseTo(a.pWin * a.meanGain - a.pLose * a.meanLoss, 9);
+    expect(a.goEv).toBeCloseTo(
+      a.pWin * a.meanGain - a.pLose * a.meanLoss + a.pNagari * a.meanNagari,
+      9,
+    );
     expect(a.samples).toBe(200);
   });
 
@@ -149,13 +154,21 @@ describe('고/스톱 기대값 비교 (AI-06)', () => {
     expect(action.type).toBe('go');
   });
 
-  it('결정 규칙: EV(고) > 스톱 × (1 + evMargin)일 때만 고', () => {
+  it('과감성 1은 순액 EV를 비교하며 같은 표본에서 여유만 줄인다 (AI-06·08)', () => {
     for (const seed of [1, 2, 3]) {
       const view = playerView(goStopState({}), 0);
       const a = analyzeGoStop(view, new Rng(seed), 100, DEFAULT_WEIGHTS);
-      const expected =
-        a.goEv > a.stopPoints * (1 + DEFAULT_WEIGHTS.goStop.evMargin) ? 'go' : 'stop';
+      const cautious = analyzeGoStop(
+        view,
+        new Rng(seed),
+        100,
+        withWeights(DEFAULT_WEIGHTS, { goStop: { bold: 0.5 } }),
+      );
+      const expected = a.goEv > a.stopPoints ? 'go' : 'stop';
       expect(a.decision).toBe(expected);
+      expect(cautious.goEv).toBe(a.goEv);
+      expect(cautious.threshold).toBeGreaterThan(a.threshold);
+      expect(analyzeGoStop(view, new Rng(seed), 100, DEFAULT_WEIGHTS)).toEqual(a);
     }
   });
 
@@ -180,5 +193,91 @@ describe('고/스톱 기대값 비교 (AI-06)', () => {
     expect(a?.pLose).toBeGreaterThan(0.3);
     expect(a?.goEv).toBeLessThan(a?.stopPoints ?? 0);
     expect(action.type).toBe('stop');
+  });
+
+  it('표본 0·음수·소수는 NaN 분석 대신 거부한다', () => {
+    const view = playerView(goStopState({}), 0);
+    for (const n of [0, -1, 0.5]) {
+      expect(() => analyzeGoStop(view, new Rng(1), n, DEFAULT_WEIGHTS)).toThrow('표본');
+    }
+  });
+
+  it('기한이 지나면 완료한 표본으로 합법적인 결정을 돌려준다', () => {
+    const view = playerView(goStopState({}), 0);
+    const a = analyzeGoStop(view, new Rng(1), 2000, DEFAULT_WEIGHTS, { now: () => 1, until: 0 });
+    expect(a.samples).toBe(16);
+    expect(Number.isFinite(a.goEv)).toBe(true);
+    expect(view.legal.some((action) => action.type === a.decision)).toBe(true);
+  });
+});
+
+describe('보통의 과감한 고/스톱 (AI-03·06)', () => {
+  it('피박 기회는 피 가치 1~5일 때만 추가 고: 0장 예외·광 1장 보유를 반영한다 (G6·G7)', () => {
+    const pi = [19, 22, 23, 26, 27];
+    for (const count of [0, 1, 5]) {
+      const state = createScenario({
+        hands: [
+          [9, 17, 21, 25],
+          [24, 29, 30, 31],
+        ],
+        floor: [10],
+        deck: [42, 43, 46, 47],
+        captured: [
+          [0, 8, 28, 40, 1, 5, 2, 3, 6, 7, 11, 14, 15, 18],
+          [44, ...pi.slice(0, count)],
+        ],
+      });
+      const seats: GameState['seats'] = [{ ...state.seats[0], goCount: 2 }, state.seats[1]];
+      expect(ruleGoStop({ ...state, seats }, 0, DEFAULT_WEIGHTS)).toBe(count === 0 ? 'stop' : 'go');
+    }
+  });
+
+  it('내 피박 위험과 상대 3점이 겹치면 상한 전 스톱한다 (G4·G6)', () => {
+    const state = createScenario({
+      hands: [
+        [9, 17, 21, 25],
+        [24, 29, 30, 31],
+      ],
+      floor: [10],
+      deck: [42, 43, 46, 47],
+      captured: [
+        [0, 8, 28, 40, 1, 5, 2],
+        [3, 6, 7, 11, 14, 15, 18, 19, 22, 23, 26, 27],
+      ],
+    });
+    expect(state.seats[1].score.total).toBe(3);
+    expect(ruleGoStop(state, 0, DEFAULT_WEIGHTS)).toBe('stop');
+  });
+
+  it('상대 위험이 낮으면 1고 뒤에도 고하고, 광박 기회에는 2고 뒤 한 번 더 간다', () => {
+    const state = goStopState({});
+    for (const goCount of [0, 1, 2]) {
+      const seats: GameState['seats'] = [{ ...state.seats[0], goCount }, state.seats[1]];
+      expect(ruleGoStop({ ...state, seats }, 0, DEFAULT_WEIGHTS)).toBe('go');
+    }
+    const seats: GameState['seats'] = [{ ...state.seats[0], goCount: 3 }, state.seats[1]];
+    expect(ruleGoStop({ ...state, seats }, 0, DEFAULT_WEIGHTS)).toBe('stop');
+  });
+
+  it('남은 턴·더미가 부족하면 저위험 박 기회여도 스톱한다', () => {
+    const state = goStopState({});
+    expect(ruleGoStop({ ...state, deck: state.deck.slice(0, 1) }, 0, DEFAULT_WEIGHTS)).toBe('stop');
+    const seats: GameState['seats'] = [
+      { ...state.seats[0], hand: state.seats[0].hand.slice(0, 1) },
+      state.seats[1],
+    ];
+    expect(ruleGoStop({ ...state, seats }, 0, DEFAULT_WEIGHTS)).toBe('stop');
+  });
+
+  it('상대 득점 위험이 높으면 고 횟수 상한 전에도 스톱한다', () => {
+    const state = goStopState({});
+    const seats: GameState['seats'] = [
+      state.seats[0],
+      {
+        ...state.seats[1],
+        score: { ...state.seats[1].score, total: 5 },
+      },
+    ];
+    expect(ruleGoStop({ ...state, seats }, 0, DEFAULT_WEIGHTS)).toBe('stop');
   });
 });

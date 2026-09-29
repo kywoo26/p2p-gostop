@@ -7,8 +7,8 @@ import { describe, expect, test } from 'vitest';
 import { isDealBatch } from '../game/display.ts';
 import { sessionAct, type SessionState } from '../game/session.ts';
 import { playRandom, VIEWER } from '../ui/random-play.test-helper.ts';
-import { planTurn, TURN_PLAN_MS } from './choreo.ts';
-import { DUR } from './durations.ts';
+import { planTurn, TURN_PLAN_MS, waitHold, skip } from './choreo.ts';
+import { DUR, NORMAL_DUR } from './durations.ts';
 
 /** 무작위 판을 두며 액션마다 그 액션이 낸 (보는 좌석 기준) 이벤트 묶음을 모은다 */
 function batches(seed: number, rules: RuleOptions, rounds: number): EngineEvent[][] {
@@ -108,5 +108,43 @@ describe('턴 애니메이션 계획 (빠름, AC-06)', () => {
   test('계획 상한 + 프레임 몫이 spec 6.4 턴 예산 안이다', () => {
     expect(TURN_PLAN_MS).toBeLessThan(DUR.turnBudget);
     expect(DUR.turnBudget - TURN_PLAN_MS).toBeGreaterThanOrEqual(150);
+  });
+});
+
+describe('보통 단계 정지 (UX-15~17)', () => {
+  test('내기·매칭·공개·획득 뒤에 독립적인 정지가 있다', () => {
+    const plan = planTurn(
+      [
+        ev('CardPlayed', { seat: 0, cards: [0], bonus: false }),
+        ev('Matched', { seat: 0, cards: [0, 1], source: 'play', target: 1 }),
+        ev('CardFlipped', { seat: 0, cards: [4] }),
+        ev('Matched', { seat: 0, cards: [4, 5], source: 'flip', target: 5 }),
+        ev('Captured', { seat: 0, cards: [0, 1, 4, 5], to: 0 }),
+      ],
+      true,
+    );
+    expect(plan.factor).toBe(1);
+    expect(plan.holdMs).toEqual([
+      NORMAL_DUR.playHold,
+      NORMAL_DUR.matchHold,
+      NORMAL_DUR.revealHold,
+      NORMAL_DUR.matchHold,
+      NORMAL_DUR.captureHold,
+    ]);
+    expect(plan.plannedMs).toBe(270 + 100 + 280 + 100 + 420 + 910);
+  });
+
+  test('정지는 스킵하면 곧바로 끝난다', async () => {
+    const root = document.createElement('div');
+    document.body.append(root);
+    try {
+      const pending = waitHold(root, 10_000);
+      skip(root);
+      await pending;
+      expect(root.style.getPropertyValue('--dur-scale')).toBe('0');
+      await waitHold(root, 10_000);
+    } finally {
+      root.remove();
+    }
   });
 });

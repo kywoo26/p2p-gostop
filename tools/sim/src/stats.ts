@@ -3,6 +3,7 @@ import { Rng, mixSeed } from '@p2p-gostop/ai';
 import { applyInstantPayout, applySettlement, createLedger, PRESETS } from '@p2p-gostop/engine';
 import type { SimConfig } from './config.ts';
 import type { RoundRecord } from './runner.ts';
+import type { GoStopRecord } from './gostop.ts';
 
 export interface Distribution {
   readonly n: number;
@@ -228,6 +229,9 @@ export interface Summary {
   readonly nagariRate: number;
   /** A 관점 판당 평균 순액(점) */
   readonly meanNetA: number;
+  /** 상한 없는 독립 판 정산 순액 × 점당(냥). 세션도 원장 상한 적용 전 값이다. */
+  readonly meanNetMoneyA: number;
+  readonly boldness: { readonly a: BoldnessStats; readonly b: BoldnessStats };
   /** 실제 이동이 있는 판의 순액 크기(점, 나가리·무이동 밀기 제외, 즉시 정산 포함) */
   readonly payoutPoints: Distribution;
   /** 같은 분포 × 점당 */
@@ -264,6 +268,66 @@ function histogram(values: readonly (string | number)[]): Record<string, number>
   );
 }
 
+export interface StopRate {
+  readonly stops: number;
+  readonly opportunities: number;
+  /** 선택 기회가 없으면 null: 0%로 오인하지 않는다. */
+  readonly rate: number | null;
+}
+
+export interface BoldnessStats {
+  readonly roundGoCounts: Readonly<Record<string, number>>;
+  readonly choices: Readonly<Record<string, number>>;
+  readonly firstSevenStop: StopRate;
+  readonly firstThreeStop: StopRate;
+  readonly afterOneGoStop: StopRate;
+  readonly lowRiskStop: StopRate;
+  readonly stopScores: Readonly<Record<string, number>>;
+  readonly stopOpponentScores: Readonly<Record<string, number>>;
+  readonly stopOpponentPotential: Distribution;
+  readonly stopOpponentPi: Distribution;
+  readonly stopTurnsLeft: Distribution;
+  readonly stopWithBakChance: number;
+}
+
+function stopRate(records: readonly GoStopRecord[]): StopRate {
+  const stops = records.filter((r) => r.choice === 'stop').length;
+  return {
+    stops,
+    opportunities: records.length,
+    rate: records.length === 0 ? null : stops / records.length,
+  };
+}
+
+function boldness(records: readonly RoundRecord[], side: 'a' | 'b'): BoldnessStats {
+  const decisions = records.flatMap((r) => (side === 'a' ? r.goStopA : r.goStopB));
+  const stops = decisions.filter((r) => r.choice === 'stop');
+  return {
+    roundGoCounts: histogram(
+      records.map((r) => {
+        const n = side === 'a' ? r.goA : r.goB;
+        return n >= 3 ? '3+' : String(n);
+      }),
+    ),
+    choices: histogram(decisions.map((r) => r.choice)),
+    firstSevenStop: stopRate(decisions.filter((r) => r.goCount === 0 && r.score === 7)),
+    firstThreeStop: stopRate(decisions.filter((r) => r.goCount === 0 && r.score === 3)),
+    afterOneGoStop: stopRate(decisions.filter((r) => r.goCount === 1)),
+    // 전후에 고정한 체감 지표: 상대 3점 이하·잠재력 7 미만, 내 박 위험 없음, 두 턴 이상.
+    lowRiskStop: stopRate(
+      decisions.filter(
+        (r) => r.opponentScore <= 3 && r.opponentPotential < 7 && !r.ownBakRisk && r.turnsLeft >= 2,
+      ),
+    ),
+    stopScores: histogram(stops.map((r) => r.score)),
+    stopOpponentScores: histogram(stops.map((r) => r.opponentScore)),
+    stopOpponentPotential: distribution(stops.map((r) => r.opponentPotential)),
+    stopOpponentPi: distribution(stops.map((r) => r.opponentPi)),
+    stopTurnsLeft: distribution(stops.map((r) => r.turnsLeft)),
+    stopWithBakChance: stops.filter((r) => r.bakChance).length,
+  };
+}
+
 /** 요약에는 가중치 내용 대신 경로만 남긴다 */
 function strip(side: SimConfig['a']): Omit<SimConfig['a'], 'weights'> {
   const { weights: _weights, ...kept } = side;
@@ -296,6 +360,8 @@ export function summarize(
     winRateA95: [rate - half, rate + half],
     nagariRate: n === 0 ? 0 : nagari / n,
     meanNetA: n === 0 ? 0 : netsA.reduce((x, y) => x + y, 0) / n,
+    meanNetMoneyA: n === 0 ? 0 : (netsA.reduce((x, y) => x + y, 0) * config.perPoint) / n,
+    boldness: { a: boldness(records, 'a'), b: boldness(records, 'b') },
     payoutPoints: distribution(payouts),
     payoutMoney: distribution(payouts.map((p) => p * config.perPoint)),
     multipliers: histogram(decisiveRecords.map((r) => r.multiplier)),
@@ -323,6 +389,8 @@ export function summarize(
 
 const f = (x: number, d = 2): string => x.toFixed(d);
 const pct = (x: number): string => `${(x * 100).toFixed(1)}%`;
+const rateText = (r: StopRate): string =>
+  `${r.stops}/${r.opportunities} (${r.rate === null ? '해당 없음' : pct(r.rate)})`;
 const money = (x: number): string => Math.round(x).toLocaleString('en-US');
 
 function distRow(name: string, d: Distribution, fmt: (x: number) => string): string {
@@ -345,6 +413,7 @@ export function toMarkdown(s: Summary): string {
     `| **A 승률 (승/(승+패))** | **${pct(s.winRateA)}** (95% CI ${pct(s.winRateA95[0])}–${pct(s.winRateA95[1])}) |`,
     `| 나가리 비율 | ${pct(s.nagariRate)} |`,
     `| A 판당 평균 순액 | ${f(s.meanNetA)}점 |`,
+    `| A 판당 평균 순액(상한 전) | ${f(s.meanNetMoneyA)}냥 |`,
     `| 3뻑 / 총통 / 즉시정산 판 비율 | ${pct(s.frequencies.threePpeok)} / ${pct(s.frequencies.chongtong)} / ${pct(s.frequencies.instantPayoutRounds)} |`,
     `| 판당 뻑 수 | ${f(s.frequencies.ppeokPerRound)} |`,
     `| 밀기 비율 | ${pct(s.frequencies.pushedRounds)} |`,
@@ -371,6 +440,20 @@ export function toMarkdown(s: Summary): string {
     `승자 고 횟수: ${Object.entries(s.goCounts)
       .map(([k, v]) => `${k}고 ${v}`)
       .join(', ')}`,
+    '',
+    '고/스톱 체감 지표(정책별, 승패·나가리 모두 포함):',
+    '',
+    '| 정책 | 판별 고 횟수 0 / 1 / 2 / 3+ | 7점 첫 선택 스톱 | 1고 후 스톱 | 저위험 선택 스톱 | 스톱 시 상대 잠재력 평균 |',
+    '|---|---|---|---|---|---|',
+    ...(['a', 'b'] as const).map((k) => {
+      const b = s.boldness[k];
+      return `| ${k.toUpperCase()} ${c[k].policy} | ${['0', '1', '2', '3+'].map((n) => b.roundGoCounts[n] ?? 0).join(' / ')} | ${rateText(b.firstSevenStop)} | ${rateText(b.afterOneGoStop)} | ${rateText(b.lowRiskStop)} | ${f(b.stopOpponentPotential.mean)} |`;
+    }),
+    '',
+    ...(['a', 'b'] as const).map((k) => {
+      const b = s.boldness[k];
+      return `${k.toUpperCase()} 스톱 시 점수 분포: ${JSON.stringify(b.stopScores)}, 상대 점수 분포: ${JSON.stringify(b.stopOpponentScores)}, 상대 피 평균 ${f(b.stopOpponentPi.mean)}, 남은 턴 평균 ${f(b.stopTurnsLeft.mean)}`;
+    }),
     '',
     '결정 시간(ms, 합법 수 2개 이상인 결정):',
     '',

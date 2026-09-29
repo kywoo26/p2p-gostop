@@ -1,17 +1,17 @@
 // 카드 애니메이션 헬퍼: Web Animations API + FLIP (plan.md 1.6, agent-era-stack.md 3.3·3.4).
 // - transform·opacity만 움직인다. top/left/width, 그림자, filter는 애니메이션하지 않는다.
 // - will-change는 움직이는 동안만 걸고 끝나면(취소 포함) 지운다(iOS WebKit 메모리).
-// - 시간은 "빠름" 기준 ms로 받고 요소의 --dur-scale을 곱한다. 0이면 즉시 끝난다(E2E·동작 줄이기).
+// - 기본 이동은 선택한 시간표의 ms를 쓰고 요소의 --dur-scale을 곱한다. 0이면 즉시 끝난다.
 // - 건너뛰기(spec 6.3 "화면을 탭하면 남은 애니메이션을 즉시 완료"): 보드 루트에 --dur-scale: 0을 걸고
 //   finishAll(보드 루트)를 부르면 진행 중인 것은 끝나고, 이후 시작하는 것은 0ms가 된다.
-import { DUR, scaledMs } from './durations.ts';
+import { baseMs, scaledMs } from './durations.ts';
 
 const DEFAULT_EASING = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
 
 interface TimingOptions {
-  /** "빠름" 기준 ms. --dur-scale이 곱해진다 */
+  /** 선택한 시간표의 ms. --dur-scale이 곱해진다 */
   readonly duration?: number;
-  /** "빠름" 기준 ms. --dur-scale이 곱해진다 (스태거용) */
+  /** 선택한 시간표의 ms. --dur-scale이 곱해진다 (스태거용) */
   readonly delay?: number;
   readonly easing?: string;
 }
@@ -106,7 +106,7 @@ export function flipMove(
       },
     ],
     opts,
-    DUR.handToFloor,
+    baseMs('handToFloor', el),
   );
 }
 
@@ -128,7 +128,7 @@ export function flipCard(el: HTMLElement, opts: FlipCardOptions = {}): Animation
       back,
       [{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0, offset: 0.5 }, { opacity: 0 }],
       opts,
-      DUR.flip,
+      baseMs('flip', el),
     );
   }
   return run(
@@ -139,7 +139,7 @@ export function flipCard(el: HTMLElement, opts: FlipCardOptions = {}): Animation
       { transform: `${base} scaleX(1)`.trim() },
     ],
     opts,
-    DUR.flip,
+    baseMs('flip', el),
   );
 }
 

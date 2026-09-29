@@ -25,6 +25,15 @@ export {
 } from './deal.ts';
 export { legalActions, sameAction } from './legal.ts';
 export {
+  equivalentTargets,
+  guaranteedCaptures,
+  uniqueLegalAction,
+  type CaptureAssessment,
+  type CaptureCertainty,
+  type CaptureReason,
+  type EquivalentTargets,
+} from './interaction-assist.ts';
+export {
   applyInstantPayout,
   applySettlement,
   createLedger,

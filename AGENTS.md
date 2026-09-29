@@ -31,8 +31,9 @@
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
 | androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
+| 자산 변환(dev 전용, PA-03) | Ubuntu python3-pil 10.2.0-1ubuntu1.3 / ffmpeg 7:6.1.1-3ubuntu5 / libavif-bin 1.0.4-1ubuntu3. 앱 런타임 의존성 없음 |
 | Docker 이미지 | 단일 개발 이미지 `p2p-gostop-dev`(`docker/Dockerfile`, 태그는 `compose.yaml`): 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble` + JDK `eclipse-temurin:21.0.12.1_1-jdk-noble` + Android cmdline-tools 23.0(16111833, SHA-256 고정)로 설치한 `platforms;android-36`·`build-tools;36.0.0`·`platform-tools` |
-| GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(ci.yml의 Gradle 홈), softprops/action-gh-release@v3. setup-java@v6·gradle/actions/setup-gradle@v6는 release.yml의 서명 빌드에만 남는다(ci.yml은 개발 이미지로 돈다) |
+| GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(npm), gradle/actions/setup-gradle@v6, docker/setup-docker-action@v5, docker/setup-buildx-action@v4, docker/build-push-action@v7, softprops/action-gh-release@v3. 빌드·테스트는 개발 이미지 안에서 실행 |
 
 ## 3. 금지 목록 (에이전트가 자주 틀리는 것)
 - **Svelte 4 문법 금지**: `export let`, `$:`, `on:click`, `createEventDispatcher`, `<slot>`. Svelte 5 runes(`$state`, `$derived`, `$effect`, `$props`), `onclick`, `{@render children()}`, snippets를 쓴다.
@@ -46,6 +47,7 @@
 
 ## 4. 구조와 관례
 - 모노레포: `packages/{engine,ai,protocol,web,relay-dev}`, `tools/sim`, `android/`, `docker/`, `docs/`. 의존 방향: engine ← ai ← web, engine ← protocol ← web. android는 TS 패키지에 의존하지 않고 `packages/web/dist`만 `android/app/src/main/assets/web`으로 복사.
+- import 경계: [허용표·probe·갱신 규칙](docs/reviews/refactor-import-boundaries.md)을 따른다(공개 하위 경로는 `engine/testing`·`web/net`만). `import()`는 따옴표 문자열만 허용하며 템플릿·계산된 경로는 금지한다. workspace/exports 변경 시 허용표·린트·probe를 함께 갱신하고 `docker compose run --rm dev npm run lint`로 검사한다.
 - 엔진 API: `reduce(state, action) → {ok:true, state, events} | {ok:false, reason, message}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules?)`. 모두 순수 함수, 시드 PRNG는 상태 안.
 - 웹: Svelte scoped CSS + `src/styles/tokens.css`(OKLCH, `--dur-*`). 카드 애니메이션은 `src/anim/`의 WAAPI FLIP 헬퍼, 모달·배너는 Svelte transition. 카드는 `<img>`로 svgo 최적화 SVG.
 - 테스트: JSON 규칙 벡터(`packages/engine/test/vectors/*.json`, 각 항목에 규칙 ID R/B/S/E/G/M와 한국어 설명) + fast-check 속성 테스트. 특수 이벤트는 정상·경계·반례 3종. "서로 다른 월 두 쌍 먹기는 따닥이 아니다" 반례 필수.

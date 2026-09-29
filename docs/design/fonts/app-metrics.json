@@ -1,0 +1,37 @@
+{
+  "source": "Pretendard.woff2",
+  "family": "GostopSans",
+  "inputBytes": 2057688,
+  "subsetBytes": 142716,
+  "inputSha256": "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4",
+  "subsetSha256": "206f25e1889ffdc54e3a4e63ce87d9c0ce09eb5eaf7ee6c22f5b2e4441de888a",
+  "licenseSha256": "d31ddd9f2bed32fd7e302a205cf2380ba0de6529152d239ef99cfb6f261bfc04",
+  "corpusSha256": "7815fcaacd91a133b268f39ce1c34743b1e138c5fdc2f82e459950fa4628a617",
+  "tnum": true,
+  "defaultDigitWidths": [
+    1220,
+    898,
+    1202,
+    1264,
+    1278,
+    1222,
+    1256,
+    1130,
+    1242,
+    1256
+  ],
+  "tabularDigitWidths": [
+    1258,
+    1258,
+    1258,
+    1258,
+    1258,
+    1258,
+    1258,
+    1258,
+    1258,
+    1258
+  ],
+  "missing": "",
+  "maxBytes": 163840
+}

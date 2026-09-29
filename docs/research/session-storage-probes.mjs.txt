@@ -1,0 +1,41 @@
+// Docker / Node 전용. 동일 fixture·변이 입력에 대한 수용/거부와 반환 JSON을 함께 해시한다.
+// docker compose run --rm -T dev node --input-type=module < docs/research/session-storage-probes.mjs.txt
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync } from 'node:fs';
+import { parseSession } from './packages/web/src/game/session.ts';
+
+const dir = 'packages/web/src/storage/fixtures';
+const hash = createHash('sha256');
+let total = 0, accepted = 0;
+function check(label, raw) {
+  // 저장 경계의 입력은 JSON이다. 배열 원소 삭제도 실제 저장과 같이 null로 정규화한다.
+  const parsed = parseSession(JSON.parse(JSON.stringify(raw)));
+  total++;
+  if (parsed !== null) accepted++;
+  hash.update(JSON.stringify([label, parsed]) + '\n');
+}
+function paths(value, prefix = []) {
+  if (value === null || typeof value !== 'object') return [];
+  // 배열은 첫 원소의 모양을 대표로 검사한다. 모든 원소/조합을 열거하는 검사는 아니다.
+  const keys = Array.isArray(value) ? Object.keys(value).slice(0, 1) : Object.keys(value);
+  return keys.flatMap(key => [[...prefix, key], ...paths(value[key], [...prefix, key])]);
+}
+for (const file of readdirSync(dir).filter(f => f.endsWith('.json')).sort()) {
+  const original = JSON.parse(readFileSync(`${dir}/${file}`, 'utf8')).session;
+  check(file, original);
+  for (const path of paths(original)) {
+    for (const replacement of [undefined, null, {}, [], '', 'invalid', -1, 0, 1, 51, 1.5, Number.MAX_SAFE_INTEGER + 1, true]) {
+      const raw = structuredClone(original);
+      let parent = raw;
+      for (const key of path.slice(0, -1)) parent = parent[key];
+      if (replacement === undefined) delete parent[path.at(-1)];
+      else parent[path.at(-1)] = replacement;
+      check(`${file}:${path.join('.')}:${String(replacement)}`, raw);
+    }
+  }
+  const extras = structuredClone(original);
+  extras.extra = { retained: true };
+  extras.game.seats[0].extra = [1, 2];
+  check(`${file}:unknown-fields`, extras);
+}
+console.log(JSON.stringify({total, accepted, rejected: total - accepted, sha256: hash.digest('hex')}));

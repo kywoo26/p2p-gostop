@@ -77,7 +77,8 @@ export function decode(raw: unknown, from: Role): ParseResult<Message> {
       return { ok: false, reason: 'VERSION_MISMATCH' };
     const parsed = (from === 'guest' ? guestSchema : hostSchema).safeParse(value);
     if (!parsed.success) return { ok: false, reason: 'MALFORMED' };
-    // zod 출력의 선택 필드(`?: T | undefined`)를 exactOptionalPropertyTypes 메시지 타입으로 좁힌다. 모양은 스키마가 보장한다.
+    // JSON의 선택 필드(`?: T | undefined`)를 exactOptionalPropertyTypes 공개 타입으로 좁힌다.
+    // schema-contracts.test.ts가 검증 대상 필드의 정합을 검사한다. rules·이벤트 종류별 필드는 아직 느슨하다(R3b).
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const message = parsed.data as Message;
     if (bytes > messageLimit(message.t)) return { ok: false, reason: 'TOO_LARGE' };
