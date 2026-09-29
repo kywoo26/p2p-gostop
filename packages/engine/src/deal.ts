@@ -7,7 +7,8 @@ import { createRng, nextInt, shuffleWith, type Seed } from './rng.ts';
 import type { RuleOptions } from './rules.ts';
 import { scoreCaptured } from './score.ts';
 import type { EngineEvent, GameState, Seat } from './state.ts';
-import { endRound, offerChongtong, promptPlay, recomputeScores } from './turn.ts';
+import { endRound, recomputeScores } from './round-end.ts';
+import { offerChongtong, promptPlay } from './turn.ts';
 
 export const HAND_SIZE = 10;
 export const FLOOR_SIZE = 8;
