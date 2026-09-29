@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import type { RelayHealthError } from './index.ts';
 import {
   checkPublicHealth,
@@ -251,19 +252,29 @@ describe('NP-RP-02/08 설정과 health', () => {
       expect(init?.credentials).toBe('omit');
       expect(init?.signal).toBeInstanceOf(AbortSignal);
       expect(String(_input)).toBe(`${origin}/health`);
-      return Response.json({ relay: 'p2p-gostop', ready: true, controlVersion: 1, wireVersion: 2 });
+      return Response.json({
+        relay: 'p2p-gostop',
+        ready: true,
+        controlVersion: 1,
+        wireVersion: PROTOCOL_VERSION,
+      });
     });
     expect(fetcher).not.toHaveBeenCalled();
     await expect(checkPublicHealth(origin, signal, fetcher)).resolves.toEqual({
       relay: 'p2p-gostop',
       ready: true,
       controlVersion: 1,
-      wireVersion: 2,
+      wireVersion: PROTOCOL_VERSION,
     });
     expect(fetcher).toHaveBeenCalledOnce();
     await expect(
       checkPublicHealth(origin, signal, async () =>
-        Response.json({ relay: 'p2p-gostop', ready: true, controlVersion: 1, wireVersion: 3 }),
+        Response.json({
+          relay: 'p2p-gostop',
+          ready: true,
+          controlVersion: 1,
+          wireVersion: PROTOCOL_VERSION + 1,
+        }),
       ),
     ).rejects.toThrow();
   });
