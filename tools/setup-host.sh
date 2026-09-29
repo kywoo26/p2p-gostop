@@ -1,35 +1,120 @@
 #!/usr/bin/env bash
-# 호스트 로컬 표준 준비 (AGENTS.md §5, plan §2). 처음 한 번, 그리고 @playwright/test 버전이 바뀐 뒤 실행한다.
-#   tools/host/setup.sh
-# sudo를 부르지 않는다. 시스템 의존성이 빠졌으면 사람이 실행할 명령만 출력하고 실패한다.
+# 호스트 툴체인 준비 (AGENTS.md §5, plan §2). 처음 한 번, 그리고 .nvmrc·@playwright/test·Android 설정이 바뀐 뒤 실행한다.
+#   tools/setup-host.sh
+# 대상: Ubuntu 24.04(WSL2 포함, CI 러너와 같은 배포판). 여러 번 실행해도 이미 된 단계는 건너뛴다.
+# 설치하는 것(버전은 AGENTS.md §2 표):
+#   - Node: .nvmrc 버전 (nvm install)
+#   - npm 의존성: npm ci (node_modules가 없을 때)
+#   - apt(sudo): Playwright Chromium·WebKit 시스템 라이브러리(npx playwright install-deps),
+#     openjdk-21-jdk-headless(Gradle), python3-pil·ffmpeg·libavif-bin(자산 변환, PA-03), unzip
+#   - Playwright 브라우저: ~/.cache/ms-playwright (npx playwright install)
+#   - Android SDK: $ANDROID_HOME(기본 ~/Android/Sdk)에 cmdline-tools + platforms;android-36·build-tools;36.0.0·platform-tools
+# sudo 암호나 SDK 라이선스 동의는 터미널에서 직접 실행할 때만 묻는다. 비대화형이면 그 단계를 보류로 남기고 끝에 알린다.
 set -euo pipefail
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/.."
 
-# 1) Node: package.json engines(>=24.20.0 <25). nvm 공식 절차(https://github.com/nvm-sh/nvm#nvmrc): nvm install → nvm use (.nvmrc)
-node_version=$(node -p 'process.versions.node' 2>/dev/null || echo none)
-if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number); process.exit(a===24&&b>=20?0:1)' 2>/dev/null; then
-  echo "Node ${node_version}은 engines(>=24.20.0 <25) 밖입니다. 'nvm install && nvm use' 후 다시 실행하세요." >&2
-  exit 1
+pending=()
+step() { printf '\n== %s\n' "$*"; }
+interactive() { [[ -t 0 && -t 1 ]]; }
+can_sudo() { [[ $(id -u) == 0 ]] || sudo -n true 2>/dev/null || interactive; }
+as_root() { if [[ $(id -u) == 0 ]]; then "$@"; else sudo "$@"; fi; }
+
+if ! grep -qs 'VERSION_ID="24.04"' /etc/os-release; then
+  echo "경고: Ubuntu 24.04가 아니다. Playwright 의존성·apt 버전이 CI(ubuntu-24.04)와 다를 수 있다." >&2
 fi
-echo "Node ${node_version} (engines 충족)"
 
-# 2) 의존성: node_modules가 없으면 설치한다(lock 변경 뒤에는 직접 npm ci).
-[[ -d node_modules ]] || npm ci
+want_node=$(cat .nvmrc)
+step "Node $want_node (.nvmrc)"
+if [[ "$(node -v 2>/dev/null)" != "v$want_node" ]]; then
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+    echo "nvm이 없다. 공식 설치(https://github.com/nvm-sh/nvm#installing-and-updating) 뒤 다시 실행한다." >&2
+    exit 1
+  fi
+  # shellcheck source=/dev/null
+  . "$NVM_DIR/nvm.sh"
+  nvm install # .nvmrc를 읽는다. 이 스크립트 안에서만 전환되므로 셸에서는 'nvm use'.
+fi
+echo "node $(node -v), npm $(npm -v)"
 
-# 3) Playwright 브라우저: lock의 playwright 버전에 맞는 빌드를 ~/.cache/ms-playwright에 받는다(sudo 불필요).
+step "npm 의존성"
+if [[ -d node_modules ]]; then echo "node_modules 있음 (lock이 바뀌었으면 npm ci)"; else npm ci; fi
+
+step "apt 패키지 (sudo)"
+apt_pkgs=(openjdk-21-jdk-headless python3-pil ffmpeg libavif-bin unzip)
+missing=()
+for p in "${apt_pkgs[@]}"; do
+  dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed' || missing+=("$p")
+done
+pw_deps_ok=true
+npx playwright install-deps --dry-run chromium webkit >/dev/null 2>&1 || pw_deps_ok=false
+if [[ ${#missing[@]} == 0 && $pw_deps_ok == true ]]; then
+  echo "모두 설치됨"
+elif can_sudo; then
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "설치: ${missing[*]}"
+    as_root apt-get update
+    as_root apt-get install -y --no-install-recommends "${missing[@]}"
+  fi
+  if [[ $pw_deps_ok == false ]]; then
+    echo "설치: Playwright Chromium·WebKit 시스템 라이브러리 (npx playwright install-deps chromium webkit)"
+    npx playwright install-deps chromium webkit # 공식 명령. root가 아니면 내부에서 sudo를 부른다.
+  fi
+else
+  [[ ${#missing[@]} -gt 0 ]] && echo "보류: ${missing[*]}"
+  [[ $pw_deps_ok == false ]] && echo "보류: Playwright Chromium·WebKit 시스템 라이브러리"
+  pending+=("apt(sudo): 터미널에서 tools/setup-host.sh를 다시 실행")
+fi
+
+step "Playwright 브라우저 (Chromium·WebKit)"
 npx playwright install chromium webkit
 
-# 4) WebKit 시스템 라이브러리 확인: 실제로 띄워 본다.
-if node --input-type=module -e "import { webkit } from 'playwright'; await (await webkit.launch()).close();" 2>/dev/null; then
-  echo "Chromium·WebKit 준비 완료: npm run verify"
+step "Android SDK"
+export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
+# cmdline-tools 23.0: https://dl.google.com/android/repository/repository2-3.xml 의 cmdline-tools;23.0
+cmdline_build=16111833
+cmdline_sha256=0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8
+sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+if [[ ! -x "$sdkmanager" ]]; then
+  echo "설치: cmdline-tools $cmdline_build → $ANDROID_HOME/cmdline-tools/latest"
+  tmp=$(mktemp -d)
+  curl -fsSLo "$tmp/tools.zip" "https://dl.google.com/android/repository/commandlinetools-linux-${cmdline_build}_latest.zip"
+  echo "$cmdline_sha256  $tmp/tools.zip" | sha256sum -c -
+  unzip -q "$tmp/tools.zip" -d "$tmp"
+  mkdir -p "$ANDROID_HOME/cmdline-tools"
+  mv "$tmp/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+  rm -rf "$tmp"
+fi
+sdk_pkgs=("platforms;android-36" "build-tools;36.0.0" "platform-tools")
+if [[ -f "$ANDROID_HOME/licenses/android-sdk-license" ]]; then
+  for p in "${sdk_pkgs[@]}"; do
+    if [[ ! -d "$ANDROID_HOME/${p//;//}" ]]; then
+      echo "설치: $p"
+      "$sdkmanager" --sdk_root="$ANDROID_HOME" --install "$p" >/dev/null
+    fi
+  done
+  echo "SDK: $(ls "$ANDROID_HOME/platforms") / build-tools $(ls "$ANDROID_HOME/build-tools")"
+elif interactive; then
+  echo "SDK 라이선스 동의가 필요하다(사용자 동의). 동의 뒤 SDK 패키지를 설치한다."
+  "$sdkmanager" --sdk_root="$ANDROID_HOME" --licenses
+  exec "$0"
 else
-  cat >&2 <<'MESSAGE'
-WebKit 시스템 라이브러리가 없습니다(GStreamer·GTK4 등, apt). 사람이 한 번 Playwright 공식 명령을 실행합니다
-(https://playwright.dev/docs/browsers#install-system-dependencies, root가 아니면 Playwright가 sudo 암호를 묻는다):
-  npx playwright install --with-deps chromium webkit
-에이전트는 sudo를 쓰지 않는다. 설치 전에는 WebKit이 필요한 검증을 이미지에서 돌린다:
-  docker compose run --rm dev npm run test:browser
-  docker compose run --rm dev npm run e2e -w packages/web
-MESSAGE
+  pending+=("Android SDK 라이선스 동의: $sdkmanager --sdk_root=\"$ANDROID_HOME\" --licenses")
+fi
+# Gradle(AGP)은 ANDROID_HOME으로 SDK를 찾는다. 셸 설정에 한 번만 추가한다.
+case "${SHELL##*/}" in zsh) rc="$HOME/.zshenv" ;; *) rc="$HOME/.bashrc" ;; esac
+if ! grep -qs 'ANDROID_HOME=' "$rc"; then
+  echo "export ANDROID_HOME=\"$ANDROID_HOME\" # p2p-gostop tools/setup-host.sh" >> "$rc"
+  echo "추가: $rc 에 ANDROID_HOME (새 셸부터 적용)"
+fi
+
+step "요약"
+echo "node $(node -v) · npm $(npm -v) · playwright $(npx playwright --version)"
+javac -version 2>&1 || echo "javac 없음"
+dpkg-query -W -f='${Package} ${Version}\n' python3-pil ffmpeg libavif-bin 2>/dev/null || true
+if [[ ${#pending[@]} -gt 0 ]]; then
+  printf '\n보류된 단계 (사람이 터미널에서 실행):\n'
+  printf '  - %s\n' "${pending[@]}"
   exit 1
 fi
+echo "준비 완료: npm run verify"
