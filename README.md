@@ -49,7 +49,6 @@ docker compose run --rm dev bash                    # 컨테이너 셸
 - `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. 없는 태그면 다음 `run`이 자동으로 빌드한다(오프라인에서도 기존 이미지로 계속 작업할 수 있게 매번 빌드하지 않는다).
 - CI(`ci.yml`)는 같은 이미지를 러너에서 빌드해 위와 같은 명령을 돌린다.
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
-- 루트의 옛 셸 래퍼는 폐기되었다(새 명령을 안내하고 실패한다, M6에서 삭제).
 - **기존 체크아웃 전환**: 옛 개발 컨테이너를 내린 뒤 확인한다. 옛 명명 볼륨이 붙었던 자리의 `node_modules` 디렉터리가 호스트에 root 소유로 남을 수 있다. 먼저 `ls -ld node_modules`로 확인한다. 비어 있으면 `rmdir node_modules`(비어 있지 않으면 실패하므로 내용을 지우지 않음) 후 `docker compose run --rm dev npm ci`를 실행한다. 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 해당 디렉터리의 소유권만 복구한 뒤 `npm ci`를 다시 실행한다. 새 이미지의 진입점은 쓰기 불가 디렉터리를 감지해 이 절차를 안내한다.
 - 옛 Compose 볼륨(`*_node_modules`, `*_android-home`)은 위 호스트 디렉터리와 별개다. 필요 없으면 옛 컨테이너를 내리고 `docker volume ls --format '{{.Name}}'`로 이름을 확인한 뒤 `docker volume rm <확인한_옛_볼륨_이름>`으로 개별 삭제한다. 새 공용 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)은 이 정리 대상이 아니다.
 
