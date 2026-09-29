@@ -64,6 +64,17 @@ describe('NP-RP-01 공개 transport', () => {
     expect(parseRelayControl('{"message":"relay-claim-pending","t":"hello"}').isControl).toBe(
       false,
     );
+    expect(
+      parseRelayControl(JSON.stringify({ t: 'relay-join-request', requestId, nickname: '친구' }))
+        .value,
+    ).toEqual({ t: 'relay-join-request', requestId, nickname: '친구' });
+    expect(parseRelayControl(JSON.stringify({ t: 'relay-join-request', requestId })).value).toEqual(
+      { t: 'relay-join-request', requestId },
+    );
+    expect(
+      parseRelayControl(JSON.stringify({ t: 'relay-join-request', requestId, nickname: '\n' }))
+        .value,
+    ).toBeNull();
   });
   it('설정 origin만 WSS에 사용하고 토큰을 URL·로그에서 제외한다', () => {
     expect(publicWsUrl(endpoint)).toBe(`wss://relay.example.test/ws?role=host&room=${room}`);
@@ -130,7 +141,7 @@ describe('NP-RP-01 공개 transport', () => {
     transport.dispose();
   });
 
-  it('호스트 제어 콜백과 relay-accept 송신은 게임 프레임과 격리한다', () => {
+  it('호스트 제어 콜백과 relay-accept/deny 송신은 게임 프레임과 격리한다', () => {
     const transport = createPublicTransport(endpoint, { socketFactory, ...noDom });
     const messages: string[] = [];
     const controls: string[] = [];
@@ -144,6 +155,8 @@ describe('NP-RP-01 공개 transport', () => {
     expect(sockets[0]!.sent[1]).toBe(
       JSON.stringify({ t: 'relay-accept', requestId, token: resumeToken }),
     );
+    expect(transport.sendControl({ t: 'relay-deny', requestId })).toBe(true);
+    expect(sockets[0]!.sent[2]).toBe(JSON.stringify({ t: 'relay-deny', requestId }));
     expect(controls).toEqual(['relay-claim', 'relay-join-request']);
     expect(messages).toEqual([]);
     transport.dispose();
@@ -159,6 +172,12 @@ describe('NP-RP-01 공개 transport', () => {
     sockets[0]!.receive(JSON.stringify({ t: 'relay-accepted', token: resumeToken, roomId: room }));
     expect(controls).toEqual(['relay-join-pending', 'relay-accepted']);
     join.dispose();
+    const denied = createPublicJoinChannel(origin, origin, 'ABCD-EFGH-JKLM', socketFactory);
+    const deniedControls: string[] = [];
+    denied.onControl((control) => deniedControls.push(control.t));
+    sockets[1]!.receive('{"t":"relay-join-denied"}');
+    expect(deniedControls).toEqual(['relay-join-denied']);
+    denied.dispose();
   });
 
   it('가짜 공개 중계가 인증 뒤 기존 게임 프레임을 그대로 전달한다', () => {
