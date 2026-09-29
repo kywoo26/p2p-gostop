@@ -178,6 +178,10 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 
 ## 5. 에이전트용 변경 위치 지도와 소유권
 
+2026-09-29 사용자 인계: v0.2.2-A `feat/push-settle`이 `web/src/game/{session.ts,solo.svelte.ts,controller.ts,adapter.ts,ai-core.ts}`, `p2p/{host,guest}.svelte.ts`, `routes/Settlement.svelte`, `ui/settle-labels.ts`, `workers/ai.worker.ts`를 소유한다. 해당 PR 병합 전에는 **web/src/game·web/src/p2p 리팩토링을 보류**한다. 예외는 #96의 `p2p/wiring.test.ts` 결정적 대기 수정(PR #97)이다.
+
+현재 자유 영역은 engine/protocol/ai/sim/relay-dev와 `web/src/{net,lib,cards,storage}`다. #91·#93 병합 완료(main `ae1df57` 기준); 아래 표의 과거 선행 조건보다 이 인계가 우선한다. 진행한 후속 작업은 R2(PR #98)와 R3a(PR #99)이며 새 소유 영역과 겹치지 않는다.
+
 | 바꾸려는 것 | 읽을 정본 → 구현 → 검사 | 착수 조건 |
 |---|---|---|
 | 규칙·점수·정산 | rules §12 → engine/{rules,score,settle,turn} → test/vectors·properties | 자유 영역; 기능 변경은 리팩토링 PR에서 제외 |
