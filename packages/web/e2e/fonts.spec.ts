@@ -7,7 +7,9 @@ for (const [width, height] of [
   [430, 822],
   [412, 915],
 ]) {
-  test(`A 폰트 ${width}×${height}: 로컬1종·가변 숫자·대비·초점`, async ({ page }) => {
+  test(`A 폰트 ${width}×${height}: 로컬1종·가변 숫자·대비·초점 @fonts ${width === 360 ? '' : '@full'}`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: width!, height: height! });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const external: string[] = [];
@@ -90,7 +92,7 @@ for (const [width, height] of [
   });
 }
 
-test('A OFL 원문: 로컬 고지·키보드 열기·원 저작권', async ({ page }) => {
+test('A OFL 원문: 로컬 고지·키보드 열기·원 저작권 @fonts', async ({ page }) => {
   await page.goto('./#/license');
   await expect(page.getByRole('heading', { name: '글꼴' })).toBeVisible();
   const summary = page.getByText('폰트 라이선스 원문', { exact: true });

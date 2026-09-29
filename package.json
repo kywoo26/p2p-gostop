@@ -22,7 +22,8 @@
     "e2e": "npm run e2e -w packages/web",
     "sim": "npm run sim -w tools/sim --",
     "android": "android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=4",
-    "verify": "npm run lint && npm run check && npm test && npm run test:browser && npm run build && npm run e2e && npm run android"
+    "verify": "npm run lint && npm run check && npm test && npm run test:browser && npm run build && npm run e2e && npm run android",
+    "e2e:smoke": "npm run e2e:smoke -w packages/web"
   },
   "devDependencies": {
     "knip": "6.38.0",
