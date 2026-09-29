@@ -101,7 +101,7 @@ export function viewDigest(view: BoardView): string {
         goCount: s.goCount,
         shakes: s.shakes,
         bombs: s.bombs,
-        bombTokens: s.bombTokens,
+        // v2 저장 관찰 해시 호환: 표시용 bombTokens는 검증 요약에 넣지 않는다.
         gukjinAsPi: s.gukjinAsPi,
         revealed: s.revealed,
         ppeokCount: s.ppeokCount,

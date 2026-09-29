@@ -107,6 +107,23 @@ test('길게 누른 폭탄 카드는 한 장만, 일반 카드는 미리보기�
   expect(onaction).toHaveBeenCalledTimes(1);
 });
 
+for (const cancel of ['pointerleave', 'pointercancel'] as const) {
+  for (const key of ['{Enter}', ' '] as const) {
+    test(`${cancel} 뒤 click이 없어도 첫 ${key === ' ' ? 'Space' : 'Enter'}로 즉시 낸다`, async () => {
+      const onaction = vi.fn();
+      const screen = await render(Board, { view: layoutFixture('play'), onaction });
+      const card = screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!;
+      pointer(card, 'pointerdown');
+      pointer(card, cancel);
+      expect(onaction).not.toHaveBeenCalled();
+      card.focus();
+      await userEvent.keyboard(key);
+      expect(onaction).toHaveBeenCalledTimes(1);
+      expect(onaction.mock.calls[0]?.[0]).toEqual({ type: 'play', seat: 0, card: 6 });
+    });
+  }
+}
+
 test('120ms 재탭 취소는 일반·폭탄 모두 전송 전만 적용하고 busy·뷰 교체 때 폐기', async () => {
   const onaction = vi.fn();
   const screen = await render(Board, {

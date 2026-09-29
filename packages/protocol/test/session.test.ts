@@ -20,6 +20,7 @@ import {
   decode,
   encode,
   ledgerDelta,
+  viewDigest,
   type HostMessage,
   type QueuedLink,
   type QueuedTransport,
@@ -378,6 +379,40 @@ describe('#16 commit-reveal 검증은 게스트가 본 판과 묶인다', () => 
       playRound(h, picker);
       expect(h.guest.checks.at(-1)).toEqual({ round: 2, result: 'verified' });
     }
+  });
+
+  it('기존 v2 관찰 해시 5개를 복원한 뒤 새 형식 뷰를 받아도 정상 판을 검증한다 (NP-06)', () => {
+    const h = setup({ seed: 11 });
+    const picker = new Picker(11);
+    h.guest.join();
+    h.link.flush();
+    for (let i = 0; i < 8; i++) {
+      move(h, picker);
+      h.link.flush();
+    }
+    const saved = viaJson(h.guest.toJSON());
+    const oldViews = Object.values(saved.observations[0]!.views).slice(0, 5);
+    expect(oldViews).toEqual([
+      '99dbcff0e95ec9e6',
+      '99dbcff0e95ec9e6',
+      '063148e0d4f22f8e',
+      '0bdb386b44526b01',
+      'ce8ab20417339aa1',
+    ]);
+    const legacyView = structuredClone(h.guest.view!);
+    for (const seat of legacyView.seats) Reflect.deleteProperty(seat, 'bombTokens');
+    expect(viewDigest(h.guest.view!)).toBe(viewDigest(legacyView));
+    h.gw.reset();
+    h.guest = new GuestSession(h.gw, {
+      name: '게스트',
+      random32: secrets(7777),
+      restore: saved,
+    });
+    h.link.notify(1, 'present');
+    h.link.flush();
+    playRound(h, picker);
+    expect(commitInvalid(h)).toBe(0);
+    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
   });
 });
 

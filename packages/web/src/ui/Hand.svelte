@@ -161,10 +161,12 @@
     const press = pressed;
     pressed = null;
     onpreview?.(null);
-    if (suppressClick) {
+    // 취소된 포인터의 합성 click만 막는다. 뒤따르는 click 없이 키보드가 눌리면 첫 입력부터 수락한다.
+    if (suppressClick && event.detail !== 0) {
       suppressClick = false;
       return;
     }
+    suppressClick = false;
     if (!playable.includes(id)) return;
     // 키보드(Enter·Space)와 스크립트 click은 누르기 없이 온다(detail 0): 그대로 낸다
     if (event.detail !== 0) {
