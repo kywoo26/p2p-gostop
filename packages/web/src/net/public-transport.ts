@@ -187,6 +187,20 @@ export interface HealthResult {
   readonly wireVersion: number;
 }
 
+/** 화면 안내용 코드. cors는 동일 주소의 읽기 없는 진단 GET이 도달했을 때의 추정이다. */
+export type RelayHealthErrorCode =
+  'cancelled' | 'timeout' | 'cors' | 'network' | 'http' | 'invalidResponse' | 'incompatible';
+
+export class RelayHealthError extends Error {
+  constructor(
+    readonly code: RelayHealthErrorCode,
+    options?: ErrorOptions,
+  ) {
+    super(`relay health ${code}`, options);
+    this.name = 'RelayHealthError';
+  }
+}
+
 /** 원격 화면 진입/수동 재시도에서만 호출한다. 호출자는 화면 종료 때 signal을 취소한다. */
 export async function checkPublicHealth(
   baseUrl: string,
@@ -194,22 +208,63 @@ export async function checkPublicHealth(
   fetcher: typeof fetch = fetch,
 ): Promise<HealthResult> {
   const origin = parseRelayOrigin(baseUrl);
+  const healthUrl = new URL('/health', origin);
   const controller = new AbortController();
   const cancel = () => controller.abort();
   signal.addEventListener('abort', cancel, { once: true });
   if (signal.aborted) cancel();
-  const timeout = setTimeout(cancel, 5_000);
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    cancel();
+  }, 5_000);
   try {
-    const response = await fetcher(new URL('/health', origin), {
-      method: 'GET',
-      redirect: 'error',
-      cache: 'no-store',
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetcher(healthUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        redirect: 'error',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (signal.aborted) throw new RelayHealthError('cancelled', { cause: error });
+      if (timedOut || controller.signal.aborted)
+        throw new RelayHealthError('timeout', { cause: error });
+      // Fetch는 CORS 거절과 접속 실패를 모두 reject한다. 같은 공개 health에
+      // 자격 없는 읽기 불가 GET만 한 번 시도해 서버 도달 여부를 가른다.
+      try {
+        await fetcher(healthUrl, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials: 'omit',
+          redirect: 'error',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        throw new RelayHealthError('cors', { cause: error });
+      } catch (probeError) {
+        if (probeError instanceof RelayHealthError) throw probeError;
+        if (signal.aborted) throw new RelayHealthError('cancelled', { cause: error });
+        if (timedOut || controller.signal.aborted)
+          throw new RelayHealthError('timeout', { cause: error });
+        throw new RelayHealthError('network', { cause: error });
+      }
+    }
     if (!response.ok || (response.url && new URL(response.url).origin !== origin))
-      throw new Error('relay health failed');
-    const value: unknown = await response.json();
-    if (typeof value !== 'object' || value === null) throw new Error('invalid relay health');
+      throw new RelayHealthError('http');
+    let value: unknown;
+    try {
+      value = await response.json();
+    } catch (error) {
+      if (signal.aborted) throw new RelayHealthError('cancelled', { cause: error });
+      if (timedOut || controller.signal.aborted)
+        throw new RelayHealthError('timeout', { cause: error });
+      throw new RelayHealthError('invalidResponse', { cause: error });
+    }
+    if (typeof value !== 'object' || value === null) throw new RelayHealthError('invalidResponse');
     const record = value as Record<string, unknown>;
     if (
       record.relay !== 'p2p-gostop' ||
@@ -217,7 +272,7 @@ export async function checkPublicHealth(
       record.wireVersion !== PROTOCOL_VERSION ||
       typeof record.controlVersion !== 'number'
     )
-      throw new Error('incompatible relay health');
+      throw new RelayHealthError('incompatible');
     return {
       relay: 'p2p-gostop',
       ready: true,

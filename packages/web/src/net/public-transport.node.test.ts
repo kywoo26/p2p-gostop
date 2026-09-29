@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RelayHealthError } from './index.ts';
 import {
   checkPublicHealth,
   createPublicJoinChannel,
@@ -217,6 +218,8 @@ describe('NP-RP-02/08 설정과 health', () => {
     const signal = new AbortController().signal;
     const fetcher = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       expect(init?.redirect).toBe('error');
+      expect(init?.mode).toBe('cors');
+      expect(init?.credentials).toBe('omit');
       expect(init?.signal).toBeInstanceOf(AbortSignal);
       expect(String(_input)).toBe(`${origin}/health`);
       return Response.json({ relay: 'p2p-gostop', ready: true, controlVersion: 1, wireVersion: 2 });
@@ -234,5 +237,25 @@ describe('NP-RP-02/08 설정과 health', () => {
         Response.json({ relay: 'p2p-gostop', ready: true, controlVersion: 1, wireVersion: 3 }),
       ),
     ).rejects.toThrow();
+  });
+
+  it('CORS 거절과 서버 연결 실패를 읽기 없는 health 진단으로 구분한다', async () => {
+    const signal = new AbortController().signal;
+    const modes: RequestMode[] = [];
+    const blocked: typeof fetch = async (_input, init) => {
+      modes.push(init?.mode ?? 'same-origin');
+      expect(init?.credentials).toBe('omit');
+      if (init?.mode === 'cors') throw new TypeError('Failed to fetch');
+      return Response.json({});
+    };
+    await expect(checkPublicHealth(origin, signal, blocked)).rejects.toMatchObject({
+      code: 'cors',
+    } satisfies Partial<RelayHealthError>);
+    expect(modes).toEqual(['cors', 'no-cors']);
+    await expect(
+      checkPublicHealth(origin, signal, async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+    ).rejects.toMatchObject({ code: 'network' } satisfies Partial<RelayHealthError>);
   });
 });
