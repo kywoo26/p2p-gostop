@@ -54,30 +54,35 @@ async function startRelay(
       PORT: '0',
     },
   });
-  const port = await new Promise<number>((done, reject) => {
-    let output = '';
-    const timer = setTimeout(() => reject(new Error(`relay start timeout: ${output}`)), 10_000);
-    child.stdout.on('data', (chunk: Buffer) => {
-      output += chunk.toString();
-      const match = /public listening on 127\.0\.0\.1:(\d+)\/ws/.exec(output);
-      if (match?.[1]) {
+  try {
+    const port = await new Promise<number>((done, reject) => {
+      let output = '';
+      const timer = setTimeout(() => reject(new Error(`relay start timeout: ${output}`)), 10_000);
+      child.stdout.on('data', (chunk: Buffer) => {
+        output += chunk.toString();
+        const match = /public listening on 127\.0\.0\.1:(\d+)\/ws/.exec(output);
+        if (match?.[1]) {
+          clearTimeout(timer);
+          done(Number(match[1]));
+        }
+      });
+      child.stderr.on('data', (chunk: Buffer) => {
+        output += chunk.toString();
+      });
+      child.once('error', (error) => {
         clearTimeout(timer);
-        done(Number(match[1]));
-      }
+        reject(error);
+      });
+      child.once('exit', (code) => {
+        clearTimeout(timer);
+        reject(new Error(`relay exited ${code}: ${output}`));
+      });
     });
-    child.stderr.on('data', (chunk: Buffer) => {
-      output += chunk.toString();
-    });
-    child.once('error', (error) => {
-      clearTimeout(timer);
-      reject(error);
-    });
-    child.once('exit', (code) => {
-      clearTimeout(timer);
-      reject(new Error(`relay exited ${code}: ${output}`));
-    });
-  });
-  return { process: child, port };
+    return { process: child, port };
+  } catch (error) {
+    child.kill('SIGTERM');
+    throw error;
+  }
 }
 
 async function startTlsProxy(
@@ -159,13 +164,15 @@ test('실제 공개 중계로 방 생성, 코드 승인, 게스트 좌석 획득
   let relay: Awaited<ReturnType<typeof startRelay>> | undefined;
   let proxy: Awaited<ReturnType<typeof startTlsProxy>> | undefined;
   let guest: ReturnType<typeof createRemoteGuest> | undefined;
+  let deniedGuest: ReturnType<typeof createRemoteGuest> | undefined;
   let welcomed = false;
   try {
     relay = await startRelay(directory, secret);
     proxy = await startTlsProxy(directory, relay.port);
+    const relayOrigin = proxy.origin;
     await page.goto('./');
     await page.getByRole('button', { name: '친구와 원격 대전' }).click();
-    await page.getByRole('textbox', { name: '중계 URL' }).fill(proxy.origin);
+    await page.getByRole('textbox', { name: '중계 URL' }).fill(relayOrigin);
     await page.getByLabel('생성 자격').fill(secret);
     await page.getByRole('button', { name: '원격 설정 저장' }).click();
     await page.getByRole('link', { name: '뒤로' }).click();
@@ -216,23 +223,31 @@ test('실제 공개 중계로 방 생성, 코드 승인, 게스트 좌석 획득
     await page.getByRole('link', { name: '뒤로' }).click();
     await page.getByRole('button', { name: '친구와 원격 대전' }).click();
     await expect(page.getByRole('heading', { name: '원격 방 열기' })).toBeVisible();
-    guest = createRemoteGuest({
-      allowedOrigin: proxy.origin,
-      storage: memory(),
-      socketFactory: (url) =>
-        new WebSocket(url, {
-          origin: appOrigin,
-          rejectUnauthorized: false,
-        }) as unknown as globalThis.WebSocket,
-      onTransport: (transport, nickname) => {
-        transport.onMessage((raw) => {
-          if (raw.includes('"t":"welcome"')) welcomed = true;
-        });
-        transport.send({ t: 'hello', v: PROTOCOL_VERSION, name: nickname });
-      },
-    });
-    const joining = guest.joinByCode(proxy.origin, code, '코드친구');
-    await expect(page.getByText(/코드 참여/)).toBeVisible();
+    const makeGuest = () =>
+      createRemoteGuest({
+        allowedOrigin: relayOrigin,
+        storage: memory(),
+        socketFactory: (url) =>
+          new WebSocket(url, {
+            origin: appOrigin,
+            rejectUnauthorized: false,
+          }) as unknown as globalThis.WebSocket,
+        onTransport: (transport, nickname) => {
+          transport.onMessage((raw) => {
+            if (raw.includes('"t":"welcome"')) welcomed = true;
+          });
+          transport.send({ t: 'hello', v: PROTOCOL_VERSION, name: nickname });
+        },
+      });
+    deniedGuest = makeGuest();
+    const deniedJoining = deniedGuest.joinByCode(relayOrigin, code, '거절친구');
+    await expect(page.getByText(/거절친구 · 코드 참여/)).toBeVisible();
+    await page.getByRole('button', { name: '거절' }).click();
+    expect(await deniedJoining).toEqual({ ok: false, code: 'denied' });
+    await expect(page.getByText(/거절친구 · 코드 참여/)).not.toBeVisible();
+    guest = makeGuest();
+    const joining = guest.joinByCode(relayOrigin, code, '코드친구');
+    await expect(page.getByText(/코드친구 · 코드 참여/)).toBeVisible();
     await page.getByRole('button', { name: '수락' }).click();
     expect(await joining).toEqual({ ok: true });
     await expect(page.getByRole('status').filter({ hasText: '코드친구 · 연결됨' })).toBeVisible();
@@ -240,6 +255,7 @@ test('실제 공개 중계로 방 생성, 코드 승인, 게스트 좌석 획득
     await expect.poll(() => welcomed).toBe(true);
   } finally {
     guest?.leave();
+    deniedGuest?.leave();
     for (const socket of proxy?.sockets ?? []) socket.destroy();
     await new Promise<void>((done) => proxy?.server.close(() => done()) ?? done());
     if (relay && relay.process.exitCode === null) {

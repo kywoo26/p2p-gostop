@@ -79,6 +79,17 @@ test('코드 참여는 요청을 수락해야 연결 상태가 된다 (FR-RP-02/
   remote.set({
     requests: [
       {
+        id: 'nameless',
+        kind: 'code',
+        receivedAt: Date.now(),
+        expiresAt: Date.now() + 60_000,
+      },
+    ],
+  });
+  await expect.element(screen.getByText(/이름 미입력 · 코드 참여/)).toBeVisible();
+  remote.set({
+    requests: [
+      {
         id: 'one',
         kind: 'code',
         nickname: '친구',
@@ -88,6 +99,7 @@ test('코드 참여는 요청을 수락해야 연결 상태가 된다 (FR-RP-02/
     ],
   });
   await expect.element(screen.getByText(/친구 · 코드 참여/)).toBeVisible();
+  await expect.element(screen.getByText(/이름 미입력/)).not.toBeInTheDocument();
   await screen.getByRole('button', { name: '수락' }).click();
   expect(remote.calls).toContain('accept:one');
   await expect.element(screen.getByRole('status')).toHaveTextContent('친구 · 연결됨');

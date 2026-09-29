@@ -22,8 +22,9 @@ export class FakeRemoteHost implements RemoteHostController {
     for (const listener of this.listeners) listener(this.snapshot);
   }
 
-  async checkHealth() {
+  async checkHealth(options?: { signal?: AbortSignal }) {
     this.calls.push('checkHealth');
+    options?.signal?.throwIfAborted();
     return {
       relay: 'p2p-gostop' as const,
       ready: true as const,
