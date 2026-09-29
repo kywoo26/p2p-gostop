@@ -410,7 +410,9 @@ test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53,
       if (!seat) return null;
       const timer = element.getBoundingClientRect();
       const panel = seat.getBoundingClientRect();
-      const overlaps = [...seat.querySelectorAll('.identity,.score,.go,.multiplier,.money')]
+      const overlaps = [
+        ...seat.querySelectorAll('.who,.name,.counters,.score,.go,.multiplier,.balance,.delta'),
+      ]
         .filter((other) => {
           const box = other.getBoundingClientRect();
           return (
