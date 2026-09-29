@@ -2,7 +2,7 @@
 // - 로비: 게스트의 hello가 오면 그 이름으로 protocol HostSession(autoStart:false)을 만들어 welcome을 보낸다.
 //   규칙·금액·이름이 바뀌면 같은 토큰으로 세션을 다시 만들고 마지막 hello를 다시 넘겨 welcome을 새로 보낸다.
 //   "시작"은 HostSession.start()다(로비 이후 토큰 없는 접속은 세션이 거절한다, NF-06).
-// - 게임: HostSession(v2)이 권위 엔진·원장·판 사이 대기(settled)·파산·재동기화를 맡는다. 화면은 솔로와 같은
+// - 게임: HostSession(v3)이 권위 엔진·원장·판 사이 대기(settled)·파산·재동기화를 맡는다. 화면은 솔로와 같은
 //   재생 큐(Playback)를 쓴다. 호스트 좌석이 볼 이벤트는 게스트로 나가는 events를 전송 층에서 지켜보며 같은 액션을
 //   엔진 reduce로 다시 계산해(순수 함수) 좌석 0으로 가린다. 판이 끝나면(settled·bankrupt) 정산 화면을 띄운다.
 // - 연결: 중계 알림(WsTransport onRelay)과 60초 시계(NP-05)로 게스트 연결을 보이고, 3분 넘게 돌아오지 않으면
@@ -26,6 +26,7 @@ import {
   type RelayNotice,
   type SessionStage,
   type Transport,
+  type DecisionClock,
 } from '@p2p-gostop/protocol';
 import { getBridge } from '../bridge/bridge.ts';
 import { pushOffer, toRecordRow } from '../game/adapter.ts';
@@ -42,7 +43,7 @@ import { WsTransport } from '../net/index.ts';
 import { emptyBoard, random32, randomHex, vibrateFor } from './common.ts';
 import { linkStateOf, openLink, type LinkState, type RelayPeer } from './link.ts';
 import type { RelayAddress } from './role.ts';
-import { HostSaveStore, type HostConfig, type HostSave } from './host-save.ts';
+import { HostSaveStore, saveTimerPreference, type HostConfig, type HostSave } from './host-save.ts';
 import { hostBoard, hostEvents, hostSummary, type PendingAction } from './host-view.ts';
 import { SessionPort } from './session-port.ts';
 
@@ -54,7 +55,7 @@ const GUEST: Seat = 1;
 /** spec 2.4: 게스트가 이만큼 돌아오지 않으면 호스트에 선택지를 보인다 */
 const WAIT_PROMPT_MS = 3 * 60_000;
 /** NP-05 시계 주기 (60초 판정의 해상도) */
-const CLOCK_MS = 5_000;
+const CLOCK_MS = 500;
 
 export type HostPhase = 'lobby' | 'playing' | 'ended';
 
@@ -79,6 +80,7 @@ export class HostGame implements GameController {
   /** 중계 알림으로 본 게스트 소켓 (알림이 없는 중계면 null) */
   peer = $state<RelayPeer | null>(null);
   config: HostConfig;
+  timerSaveFailed = $state(false);
   stage = $state<SessionStage>('lobby');
   roundsPlayed = $state(0);
   balances = $state.raw<readonly [number, number]>([0, 0]);
@@ -89,6 +91,7 @@ export class HostGame implements GameController {
   offlineSince = $state<number | null>(null);
   /** 3분 대기 선택지 (spec 2.4) */
   waitPrompt = $state(false);
+  private timerWaitDismissed = false;
   /** 게스트가 settled에서 다음 판을 요청했다 */
   guestReady = $state(false);
   /** 파산으로 선택을 기다리는 좌석 */
@@ -122,7 +125,7 @@ export class HostGame implements GameController {
   constructor(options: HostOptions) {
     this.config = $state.raw(options.resume?.config ?? options.config);
     this.resume = options.resume ?? null;
-    this.now = options.now ?? (() => Date.now());
+    this.now = options.now ?? (() => performance.now());
     this.saves = new HostSaveStore(options.persist ?? true);
     this.token = this.resume?.state.token ?? randomHex();
     this.balances = this.resume?.state.ledger.balances ?? [
@@ -162,7 +165,11 @@ export class HostGame implements GameController {
       this.transport = ws;
     }
     this.transport.onMessage((raw) => this.incoming(raw));
-    this.transport.onClose(() => this.port?.closes.forEach((h) => h()));
+    this.transport.onClose(() => {
+      // 닫힘도 입력과 같은 단조 시각에서 처리한다. 오래된 tick으로 잔여 예산을 환급하지 않는다.
+      this.session?.advanceTime(this.now());
+      this.port?.closes.forEach((h) => h());
+    });
     this.transport.onRelay?.((notice) => this.onRelay(notice));
     this.playback = new Playback(emptyBoard(ME, this.names, this.balances), {
       viewer: ME,
@@ -170,7 +177,16 @@ export class HostGame implements GameController {
       onBanner: vibrateFor,
     });
     if (options.clock ?? true) this.clock = setInterval(() => this.tick(), CLOCK_MS);
+    if (options.clock ?? true) document.addEventListener('visibilitychange', this.onVisible);
   }
+  private readonly onVisible = () => {
+    const session = this.session;
+    if (session === null) return;
+    session.advanceTime(this.now());
+    if (document.visibilityState !== 'visible') session.pauseDecision('hostBackground');
+    else session.resumeDecision();
+    this.afterChange();
+  };
 
   // ---- 표시 값 ----
 
@@ -235,7 +251,8 @@ export class HostGame implements GameController {
       this.guestOnline &&
       state !== null &&
       state.phase !== 'end' &&
-      legalActions(state, ME).length > 0
+      legalActions(state, ME).length > 0 &&
+      (this.session?.canInput(ME) ?? true)
     );
   }
 
@@ -259,9 +276,13 @@ export class HostGame implements GameController {
     if (this.phase === 'playing' && !this.guestOnline) {
       const name = this.guestName ?? '상대';
       const since = this.offlineSince;
-      const minutes = since === null ? 0 : Math.floor((this.now() - since) / 60_000);
+      const minutes = since === null ? 0 : Math.floor((Date.now() - since) / 60_000);
       return `${name} 연결 끊김 — 돌아오기를 기다리는 중${minutes > 0 ? ` (${minutes}분)` : ''}`;
     }
+    if (this.session?.decisionClock?.state === 'paused')
+      return this.session.decisionClock.pauseReason === 'clockUnknown'
+        ? '호스트 대기 · 시간 확인 필요'
+        : '호스트 대기 · 남은 시간 보존';
     if (this.stage === 'handshake' && this.playback.idle) return '판을 나누는 중…';
     return null;
   }
@@ -301,13 +322,48 @@ export class HostGame implements GameController {
   private board(): BoardView | null {
     return hostBoard(this.session);
   }
+  get decisionClock(): DecisionClock | null {
+    void this.version;
+    return this.session?.decisionClock ?? null;
+  }
+  get timeoutResult() {
+    void this.version;
+    return this.session?.timeoutHistory.at(-1) ?? null;
+  }
+  get timerDecisionMs(): number | null {
+    if (this.session !== null) return this.session.timerSettings.decisionMs;
+    return this.config.timerDecisionMs === undefined ? 10_000 : this.config.timerDecisionMs;
+  }
+  get timerRemainingMs(): number | null {
+    const clock = this.decisionClock;
+    if (clock === null) return null;
+    return clock.state === 'running' && clock.deadlineMs !== null
+      ? Math.max(0, clock.deadlineMs - this.now())
+      : clock.remainingMs;
+  }
+  decisionRendered(): void {
+    const clock = this.session?.decisionClock;
+    if (
+      clock === null ||
+      clock === undefined ||
+      !this.playback.idle ||
+      document.visibilityState !== 'visible'
+    )
+      return;
+    if (this.playback.board.eventSeq < clock.key.baseSeq) return;
+    this.session?.decisionReady(0, clock.key, clock.attempt, this.playback.board.eventSeq);
+  }
 
   // ---- 로비 ----
 
   /** 로비에서 규칙·금액·이름을 바꾼다. 게스트가 있으면 세션을 다시 만들어 welcome을 새로 보낸다 (FR-05, FR-24) */
   configure(config: HostConfig): void {
     if (this.stage !== 'lobby' || this.resume !== null) return;
+    const timerChanged =
+      config.timerDecisionMs !== undefined &&
+      config.timerDecisionMs !== this.config.timerDecisionMs;
     this.config = config;
+    if (timerChanged) this.timerSaveFailed = !saveTimerPreference(config.timerDecisionMs!);
     this.balances = [config.startBalance, config.startBalance];
     this.playback.reset(emptyBoard(ME, this.names, this.balances));
     if (this.lastHello !== null) this.openSession(this.guestName ?? '상대');
@@ -333,6 +389,10 @@ export class HostGame implements GameController {
       perPoint: c.perPoint,
       startBalance: c.startBalance,
       autoStart: false,
+      timerSettings: {
+        decisionMs: c.timerDecisionMs === undefined ? 10_000 : c.timerDecisionMs,
+        policy: 'fixed-v1',
+      },
       ...(c.unit ? { unit: c.unit } : {}),
       log: (line) => log.info(`세션 ${line}`),
     });
@@ -386,7 +446,17 @@ export class HostGame implements GameController {
   // ---- 전송 ----
 
   private incoming(raw: string): void {
+    this.session?.advanceTime(this.now());
     const parsed = decode(raw, 'guest');
+    if (!parsed.ok && parsed.reason === 'VERSION_MISMATCH' && this.session === null) {
+      this.transport.send({
+        t: 'reject',
+        seq: 0,
+        reason: 'VERSION_MISMATCH',
+        message: '앱 버전이 다릅니다. 페이지를 새로고침해 주세요.',
+      });
+      return;
+    }
     const m = parsed.ok ? parsed.message : null;
     if (m?.t === 'hello') {
       if (this.guestName !== m.name) log.info(`게스트 입장: ${m.name}`);
@@ -483,6 +553,7 @@ export class HostGame implements GameController {
   }
 
   private onRelay(notice: RelayNotice): void {
+    this.session?.advanceTime(this.now());
     this.peer = notice.peer;
     if (notice.peer === 'left' || notice.peer === 'absent')
       log.warn(`게스트 소켓 ${notice.peer === 'left' ? '떠남' : '없음'}`);
@@ -520,13 +591,24 @@ export class HostGame implements GameController {
 
   private updateOffline(): void {
     if (this.phase !== 'playing') return;
+    if (this.session?.decisionClock?.pauseReason === 'clockUnknown') {
+      if (!this.timerWaitDismissed) this.waitPrompt = true;
+      return;
+    }
+    const unavailable = this.session?.unavailableSinceMs ?? null;
+    if (this.session?.decisionClock?.state === 'paused' && unavailable !== null) {
+      if (!this.timerWaitDismissed && this.now() - unavailable >= WAIT_PROMPT_MS)
+        this.waitPrompt = true;
+      return;
+    }
+    this.timerWaitDismissed = false;
     if (this.guestOnline) {
       if (this.offlineSince !== null) log.info('게스트 복귀');
       this.offlineSince = null;
       this.waitPrompt = false;
     } else if (this.offlineSince === null) {
-      this.offlineSince = this.now();
-    } else if (!this.waitPrompt && this.now() - this.offlineSince >= WAIT_PROMPT_MS) {
+      this.offlineSince = Date.now();
+    } else if (!this.waitPrompt && Date.now() - this.offlineSince >= WAIT_PROMPT_MS) {
       this.waitPrompt = true;
     }
   }
@@ -534,12 +616,18 @@ export class HostGame implements GameController {
   /** NP-05: 외부 시계. 60초 무응답이면 세션이 끊김으로 표시한다 */
   tick(): void {
     this.session?.advanceTime(this.now());
+    if (
+      document.visibilityState === 'visible' &&
+      this.session?.decisionClock?.pauseReason === 'hostGap'
+    )
+      this.session.resumeDecision();
     this.afterChange();
   }
 
   // ---- 입력 ----
 
   submit(action: Action, tapAt: number = performance.now()): boolean {
+    this.session?.advanceTime(this.now());
     const session = this.session;
     const before = session?.state ?? null;
     if (!this.canAct || session === null || before === null || action.seat !== ME) return false;
@@ -603,8 +691,21 @@ export class HostGame implements GameController {
 
   /** 3분 대기 선택지: 계속 기다린다 */
   keepWaiting(): void {
-    this.offlineSince = this.now();
+    this.offlineSince = Date.now();
+    this.timerWaitDismissed = true;
     this.waitPrompt = false;
+  }
+
+  abortRound(): void {
+    if (!this.waitPrompt) return;
+    const reason =
+      this.session?.decisionClock?.pauseReason === 'clockUnknown'
+        ? '호스트 시계 연속성을 확인할 수 없음'
+        : '장시간 연결 중단';
+    if (this.session?.abortRound(reason)) {
+      this.waitPrompt = false;
+      this.afterChange();
+    }
   }
 
   /** 세션 종료: 게스트에 알리고(sessionEnd) 저장을 끝남으로 둔 뒤 연결을 닫는다 */
@@ -634,6 +735,7 @@ export class HostGame implements GameController {
     this.disposed = true;
     this.autoChoice.dispose();
     if (this.clock !== null) clearInterval(this.clock);
+    document.removeEventListener('visibilitychange', this.onVisible);
     this.ws?.dispose();
     this.playback.dispose();
   }

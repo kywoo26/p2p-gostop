@@ -257,6 +257,7 @@
       host?.stage === 'lobby' &&
       host.resumable === null &&
       ('preset' in patch ||
+        'customRules' in patch ||
         'gukjinAsk' in patch ||
         'perPoint' in patch ||
         'startBalance' in patch ||
@@ -297,111 +298,113 @@
   onunhandledrejection={(e) => onError(`처리되지 않은 Promise 거부: ${String(e.reason)}`)}
 />
 
-{#if remoteJoin && remoteGuest !== null}
-  <GuestApp
-    remoteController={remoteGuest}
-    createRemoteController={makeRemoteGuest}
-    {invitationUrl}
-    {hasRemoteResume}
-    initialRemoteOrigin={remoteOrigin}
-  />
-{:else if mode === 'guest' && galleryPage === null}
-  <GuestApp />
-{:else if galleryPage !== null}
-  <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, plan.md 1.2) -->
-  {#await import('./routes/dev/gallery/Gallery.svelte') then { default: Gallery }}
-    <Gallery page={galleryPage} />
-  {/await}
-{:else if route === '/license'}
-  <License />
-{:else if route === '/solo'}
-  <SoloSetup />
-{:else if route === '/game'}
-  {#if current.solo !== null}
-    <Game
-      controller={current.solo}
-      menu={SOLO_MENU}
-      onmenu={soloMenu}
-      onend={() => endSolo(true)}
-      ended={current.solo.state.phase === 'ended'}
-      onfresh={() => (location.hash = '#/solo')}
-      onrecords={() => (location.hash = '#/records')}
-      {backToken}
+<div class="app-root" data-effect-intensity={settings.value.effectIntensity}>
+  {#if remoteJoin && remoteGuest !== null}
+    <GuestApp
+      remoteController={remoteGuest}
+      createRemoteController={makeRemoteGuest}
+      {invitationUrl}
+      {hasRemoteResume}
+      initialRemoteOrigin={remoteOrigin}
+    />
+  {:else if mode === 'guest' && galleryPage === null}
+    <GuestApp />
+  {:else if galleryPage !== null}
+    <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, plan.md 1.2) -->
+    {#await import('./routes/dev/gallery/Gallery.svelte') then { default: Gallery }}
+      <Gallery page={galleryPage} />
+    {/await}
+  {:else if route === '/license'}
+    <License />
+  {:else if route === '/solo'}
+    <SoloSetup />
+  {:else if route === '/game'}
+    {#if current.solo !== null}
+      <Game
+        controller={current.solo}
+        menu={SOLO_MENU}
+        onmenu={soloMenu}
+        onend={() => endSolo(true)}
+        ended={current.solo.state.phase === 'ended'}
+        onfresh={() => (location.hash = '#/solo')}
+        onrecords={() => (location.hash = '#/records')}
+        {backToken}
+      />
+    {:else}
+      <Screen title="혼자 연습">
+        <p>{current.saveError ?? '진행 중인 게임이 없습니다.'}</p>
+        {#snippet actions()}
+          <a class="button primary" href="#/solo">새 게임</a>
+        {/snippet}
+      </Screen>
+    {/if}
+  {:else if route === '/versus'}
+    <Versus />
+  {:else if route === '/match'}
+    {#if host !== null && host.phase !== 'lobby'}
+      <Game
+        controller={host}
+        menu={HOST_MENU}
+        onmenu={hostMenu}
+        onend={endMatch}
+        onreconnect={() => host?.reconnect()}
+        waiting={host.waitPrompt}
+        onwait={() => host.keepWaiting()}
+        warning={hotspot.info.warning}
+        {backToken}
+      />
+    {:else}
+      <Screen title="친구와 대전">
+        <p>진행 중인 대전이 없습니다.</p>
+        {#snippet actions()}
+          <a class="button primary" href="#/versus">방 열기</a>
+        {/snippet}
+      </Screen>
+    {/if}
+  {:else if route === '/records'}
+    <Records view={records} />
+  {:else if route === '/settings'}
+    <Settings
+      settings={settings.value}
+      sessionActive={current.resumable !== null || match !== null}
+      onchange={changeSettings}
+      back={returnFromSettings ?? '#/'}
+    />
+  {:else if route === '/diagnostics'}
+    <Diagnostics
+      view={diagnosticsView(
+        host !== null ? 'host' : 'solo',
+        host === null
+          ? []
+          : [
+              {
+                label: '중계 연결 (호스트)',
+                ok: host.link === 'open',
+                detail: host.link,
+              },
+              {
+                label: '게스트',
+                ok: host.guestName === null ? null : host.guestOnline,
+                detail:
+                  host.guestName === null
+                    ? '없음'
+                    : `${host.guestName} · ${host.guestOnline ? '연결됨' : '끊김'}`,
+              },
+            ],
+      )}
+      guestLog={host?.guestLogs() ?? []}
+      back={match !== null ? '#/match' : '#/'}
+      onshare={bridge.isNative ? share : undefined}
+      ondevice={bridge.isNative ? () => void bridge.openDiagnostics() : undefined}
+      status={shareStatus}
     />
   {:else}
-    <Screen title="혼자 연습">
-      <p>{current.saveError ?? '진행 중인 게임이 없습니다.'}</p>
-      {#snippet actions()}
-        <a class="button primary" href="#/solo">새 게임</a>
-      {/snippet}
-    </Screen>
+    {#if current.saveError}<p role="alert" class="storage-error">
+        {current.saveError} <a href="#/solo">저장 상태 확인</a>
+      </p>{/if}
+    <Home {resume} onresume={resumeSolo} {match} onmatch={() => (location.hash = '#/match')} />
   {/if}
-{:else if route === '/versus'}
-  <Versus />
-{:else if route === '/match'}
-  {#if host !== null && host.phase !== 'lobby'}
-    <Game
-      controller={host}
-      menu={HOST_MENU}
-      onmenu={hostMenu}
-      onend={endMatch}
-      onreconnect={() => host?.reconnect()}
-      waiting={host.waitPrompt}
-      onwait={() => host.keepWaiting()}
-      warning={hotspot.info.warning}
-      {backToken}
-    />
-  {:else}
-    <Screen title="친구와 대전">
-      <p>진행 중인 대전이 없습니다.</p>
-      {#snippet actions()}
-        <a class="button primary" href="#/versus">방 열기</a>
-      {/snippet}
-    </Screen>
-  {/if}
-{:else if route === '/records'}
-  <Records view={records} />
-{:else if route === '/settings'}
-  <Settings
-    settings={settings.value}
-    sessionActive={current.resumable !== null || match !== null}
-    onchange={changeSettings}
-    back={returnFromSettings ?? '#/'}
-  />
-{:else if route === '/diagnostics'}
-  <Diagnostics
-    view={diagnosticsView(
-      host !== null ? 'host' : 'solo',
-      host === null
-        ? []
-        : [
-            {
-              label: '중계 연결 (호스트)',
-              ok: host.link === 'open',
-              detail: host.link,
-            },
-            {
-              label: '게스트',
-              ok: host.guestName === null ? null : host.guestOnline,
-              detail:
-                host.guestName === null
-                  ? '없음'
-                  : `${host.guestName} · ${host.guestOnline ? '연결됨' : '끊김'}`,
-            },
-          ],
-    )}
-    guestLog={host?.guestLogs() ?? []}
-    back={match !== null ? '#/match' : '#/'}
-    onshare={bridge.isNative ? share : undefined}
-    ondevice={bridge.isNative ? () => void bridge.openDiagnostics() : undefined}
-    status={shareStatus}
-  />
-{:else}
-  {#if current.saveError}<p role="alert" class="storage-error">
-      {current.saveError} <a href="#/solo">저장 상태 확인</a>
-    </p>{/if}
-  <Home {resume} onresume={resumeSolo} {match} onmatch={() => (location.hash = '#/match')} />
-{/if}
+</div>
 
 <style>
   .storage-error {

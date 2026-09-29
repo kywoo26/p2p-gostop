@@ -97,6 +97,8 @@ for await (const file of walk(DIST)) {
   total += size;
   sizes.push([relative(DIST, file), size]);
   if (TEXT_EXTENSIONS.has(extname(file))) {
+    // 오프라인 고지 원문은 클릭해 읽는 정적 텍스트이며 URL은 요청 대상이 아니다.
+    if (relative(DIST, file) === 'oss/NOTICE.txt') continue;
     const text = await readFile(file, 'utf8');
     for (const match of text.matchAll(URL_PATTERN)) {
       if (isExternal(match[0])) external.push(`${relative(DIST, file)}: ${match[0]}`);

@@ -316,6 +316,7 @@ test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 �
     const guest = await (await guestBrowser.newContext()).newPage();
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
+    await host.clock.install();
     await host.goto(`${base}/${query}&role=host#/`);
     await host.getByRole('button', { name: '친구와 대전' }).click();
     await host.getByRole('combobox', { name: '규칙' }).selectOption('arcade');
@@ -340,7 +341,7 @@ test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 �
     const before = await host.getByTestId('match').getAttribute('data-rounds-played');
     await guest.close();
     await expect(host.getByText(/연결 끊김/)).toBeVisible();
-    await host.clock.setFixedTime(new Date(Date.now() + 181_000));
+    await host.clock.fastForward(181_000);
     // 호스트 부재 시계는 5초 간격이라 병렬 E2E 부하에서 기본 5초 기대 시간과 경합한다.
     await expect(host.locator('[data-menu="accept-absent"]')).toBeVisible({ timeout: 10_000 });
     expect(await host.getByTestId('match').getAttribute('data-rounds-played')).toBe(before);
