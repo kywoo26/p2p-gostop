@@ -26,6 +26,7 @@ export {
 export { evaluate, evaluateState, terminalPoints } from './evaluator.ts';
 export { actingSeat, determinize, unknownCards } from './knowledge.ts';
 export { heuristicAction, rollout, ruleGoStop } from './rollout.ts';
+export { analyzePush, easyPush, type PushAnalysis } from './push.ts';
 export { RandomPolicy } from './policies/random.ts';
 export { HeuristicPolicy } from './policies/heuristic.ts';
 export { EasyPolicy, type EasyOptions } from './policies/easy.ts';
