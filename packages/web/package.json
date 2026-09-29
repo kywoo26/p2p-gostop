@@ -18,8 +18,7 @@
     "format": "prettier --write .",
     "test:browser": "vitest run",
     "test:net": "vitest run --config src/net/vitest.config.ts",
-    "e2e": "playwright test",
-    "e2e:visual": "playwright test --grep @visual"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@p2p-gostop/ai": "0.0.0",

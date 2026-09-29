@@ -59,7 +59,7 @@ for (const { name, hash, viewports = [PORTRAIT], mask = [] } of PAGES) {
   for (const viewport of viewports) {
     const id = viewports.length > 1 ? `${name}-${viewport.width}x${viewport.height}` : name;
 
-    test(`갤러리 ${id}: 스크린샷·axe`, { tag: '@visual' }, async ({ page }, info) => {
+    test(`갤러리 ${id}: 스크린샷·axe`, async ({ page }, info) => {
       await page.setViewportSize(viewport);
       await page.goto(`./${hash}`);
       await expect(page.getByRole('heading').first()).toBeVisible();
