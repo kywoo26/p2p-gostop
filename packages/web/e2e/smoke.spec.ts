@@ -11,6 +11,15 @@ test.beforeEach(async ({ page, baseURL }) => {
   });
 });
 
+test('홈 화면: 메뉴 6개와 빌드 식별자 (spec 6.2) @smoke', async ({ page }) => {
+  await page.goto('./');
+  await expect(page.getByRole('heading', { name: '맞고 P2P' })).toBeVisible();
+  for (const name of ['핫스팟 대전', '친구와 원격 대전', '혼자 연습', '기록', '설정', '진단']) {
+    await expect(page.getByRole('button', { name })).toBeVisible();
+  }
+  await expect(page.getByTestId('build-id')).toHaveText(/빌드 (\w{7}|dev)/);
+});
+
 test('개발 갤러리: 목차·토큰, 카드 페이지 @smoke', async ({ page }) => {
   await page.goto('./#/dev/gallery');
   await expect(page.getByRole('heading', { name: '개발 갤러리' })).toBeVisible();
@@ -34,6 +43,6 @@ test('홈 → 라이선스 화면 (spec 6.6, NF-07) @smoke', async ({ page }) =>
 test('해시 라우팅: 갤러리에서 홈으로 @smoke', async ({ page }) => {
   await page.goto('./#/dev/gallery');
   await page.getByRole('link', { name: '홈으로' }).click();
-  await expect(page.getByRole('button', { name: '친구와 대전' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '핫스팟 대전' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '개발 갤러리' })).toHaveCount(0);
 });

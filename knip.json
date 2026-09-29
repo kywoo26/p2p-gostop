@@ -15,6 +15,7 @@
     "packages/*": {},
     "tools/*": {},
     "packages/web": {
+      "ignoreBinaries": ["openssl"],
       "entry": [
         "scripts/*.mjs",
         "svgo.config.d.mts",

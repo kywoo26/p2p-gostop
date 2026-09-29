@@ -6,6 +6,12 @@
   import { formatMoney } from '../lib/format.ts';
   import type { SpeedSetting } from '../lib/view-types.ts';
   import {
+    clearRemoteHostSettings,
+    loadRemoteHostSettings,
+    parseRelayOrigin,
+    saveRemoteHostSettings,
+  } from '../net/index.ts';
+  import {
     effectiveRules,
     effectiveStartBalance,
     presetSettingsPatch,
@@ -57,9 +63,82 @@
     `대박판 ${rules.jackpotRound === null ? '끔' : `${rules.jackpotRound.every}판마다 ×${rules.jackpotRound.multiplier}`}`,
     `나가리 배수 상한 ${rules.nagariCap === null ? '없음' : `×${rules.nagariCap}`}`,
   ]);
+
+  const savedRemote =
+    typeof localStorage === 'undefined' ? null : loadRemoteHostSettings(localStorage);
+  let relayOrigin = $state(savedRemote?.baseUrl ?? '');
+  let creationSecret = $state('');
+  let secretSaved = $state(savedRemote !== null);
+  let remoteStatus = $state('');
+
+  function saveRemote() {
+    try {
+      const baseUrl = parseRelayOrigin(relayOrigin.trim());
+      const secret =
+        creationSecret || (secretSaved ? loadRemoteHostSettings(localStorage)?.creationSecret : '');
+      saveRemoteHostSettings(localStorage, { baseUrl, creationSecret: secret ?? '' });
+      relayOrigin = baseUrl;
+      creationSecret = '';
+      secretSaved = true;
+      remoteStatus = '원격 설정을 이 기기에 저장했습니다.';
+    } catch {
+      remoteStatus = 'HTTPS 중계 주소와 43자 생성 자격을 확인하세요.';
+    }
+  }
+
+  function clearRemote() {
+    clearRemoteHostSettings(localStorage);
+    relayOrigin = '';
+    creationSecret = '';
+    secretSaved = false;
+    remoteStatus = '원격 설정 지우기 완료.';
+  }
 </script>
 
 <Screen title="설정" {back}>
+  <fieldset>
+    <legend>원격 대전 호스트 설정</legend>
+    <p class="help">PC 중계의 HTTPS 주소와 방 생성 자격을 이 기기에만 저장합니다.</p>
+    <label class="row remote-row">
+      <span>중계 URL</span>
+      <input
+        type="url"
+        inputmode="url"
+        autocomplete="url"
+        placeholder="HTTPS 중계 주소"
+        bind:value={relayOrigin}
+        disabled={sessionActive}
+      />
+    </label>
+    <label class="row remote-row">
+      <span>생성 자격</span>
+      <input
+        type="password"
+        autocomplete="off"
+        minlength="43"
+        maxlength="43"
+        placeholder={secretSaved ? '●●●●●●●●●●●● (저장됨)' : '43자 생성 자격'}
+        bind:value={creationSecret}
+        disabled={sessionActive}
+      />
+    </label>
+    {#if secretSaved}<p class="help">
+        생성 자격 저장됨. 새 값을 입력하지 않으면 기존 값을 유지합니다.
+      </p>{/if}
+    <div class="remote-actions">
+      <button class="button primary" type="button" disabled={sessionActive} onclick={saveRemote}
+        >원격 설정 저장</button
+      >
+      {#if secretSaved}<button
+          class="button"
+          type="button"
+          onclick={clearRemote}
+          disabled={sessionActive}>원격 설정 지우기</button
+        >{/if}
+    </div>
+    {#if sessionActive}<p class="help">대전 중에는 원격 설정을 변경할 수 없습니다.</p>{/if}
+    {#if remoteStatus}<p role="status">{remoteStatus}</p>{/if}
+  </fieldset>
   <fieldset>
     <legend>규칙 프리셋</legend>
     <div class="segmented">
@@ -249,6 +328,24 @@
 </Screen>
 
 <style>
+  .remote-row {
+    flex-wrap: wrap;
+  }
+  .remote-row input {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--touch-min);
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+  }
+  .remote-actions {
+    display: grid;
+    gap: var(--space-2);
+  }
   fieldset {
     display: grid;
     gap: var(--space-1);

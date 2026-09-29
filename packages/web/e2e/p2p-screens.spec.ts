@@ -42,11 +42,11 @@ test('루프백 `/`와 `/?role=host`는 호스트 앱 홈 (Android WebView), `?r
   page,
 }) => {
   await page.goto('./');
-  await expect(page.getByRole('button', { name: '친구와 대전' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '핫스팟 대전' })).toBeVisible();
   await expect(page.getByRole('button', { name: '혼자 연습' })).toBeVisible();
   await page.goto('./?role=host&build=abc1234');
   await expect(page.getByRole('heading', { name: '맞고 P2P' })).toBeVisible();
-  await page.getByRole('button', { name: '친구와 대전' }).click();
+  await page.getByRole('button', { name: '핫스팟 대전' }).click();
   await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
   await page.goto('./?role=guest');
   await expect(page.getByRole('heading', { name: '게임 참가' })).toBeVisible();

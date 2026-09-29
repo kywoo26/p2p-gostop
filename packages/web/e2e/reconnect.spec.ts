@@ -114,7 +114,7 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
     });
 
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await host.getByRole('button', { name: '핫스팟 대전' }).click();
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();
@@ -199,7 +199,7 @@ test('4001 교체 뒤 자동 재접속 없이 메뉴에서 나가고 호스트�
     let sockets = 0;
     guest.on('websocket', () => sockets++);
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await host.getByRole('button', { name: '핫스팟 대전' }).click();
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();
@@ -220,7 +220,7 @@ test('4001 교체 뒤 자동 재접속 없이 메뉴에서 나가고 호스트�
     await expect(guest.getByRole('heading', { name: '게임 참가' })).toBeVisible();
     await host.getByTestId('game-menu').click();
     await host.locator('[data-menu="home"]').click();
-    await expect(host.getByRole('button', { name: '친구와 대전' })).toBeVisible();
+    await expect(host.getByRole('button', { name: '핫스팟 대전' })).toBeVisible();
   } finally {
     await guestBrowser.close();
     await hostBrowser.close();
