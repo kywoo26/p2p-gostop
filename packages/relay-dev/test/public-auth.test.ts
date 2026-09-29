@@ -39,6 +39,11 @@ function next(ws: WebSocket): Promise<string> {
 function closed(ws: WebSocket): Promise<number> {
   return new Promise((resolve) => ws.once('close', (code) => resolve(code)));
 }
+function closedWithReason(ws: WebSocket): Promise<{ code: number; reason: string }> {
+  return new Promise((resolve) =>
+    ws.once('close', (code, reason) => resolve({ code, reason: reason.toString('utf8') })),
+  );
+}
 
 it('256-bit 생성 키, 역할 범위, 인증 전 무전달 및 위조 교체 방지', async () => {
   relay = await startRelay({ publicMode: { creationSecret: secret, allowedOrigins: [origin] } });
@@ -141,7 +146,7 @@ it('역할 해시와 만료를 구분한다', () => {
   expect(auth.authenticate(room, 'guest', guestToken)).toBe('invite');
   expect(auth.authenticate(room, 'host', guestToken)).toBeNull();
   expect(auth.authenticate(room, 'guest', hostToken)).toBeNull();
-  expect(auth.authenticate(room, 'guest', guestToken, Date.now() + 20_000)).toBeNull();
+  expect(auth.authenticate(room, 'guest', guestToken, Date.now() + 20_000)).toBe('expired');
   expect(auth.register(room, hostToken, secret, 'resume', Date.now() + 10_000)).toBe(false);
   expect(auth.registerGuest(room, hostToken, 'resume', Date.now() + 10_000)).toBe(false);
   expect(auth.registerGuest(room, secret, 'resume', Date.now() + 10_000)).toBe(false);
@@ -151,4 +156,73 @@ it('역할 해시와 만료를 구분한다', () => {
   expect(auth.authenticate(other.room, 'guest', hostToken)).toBeNull();
   auth.rooms.delete(room.id);
   expect(auth.registerGuest(other.room, hostToken, 'resume', Date.now() + 10_000)).toBe(false);
+});
+
+it('등록 뒤 만료된 초대·복귀 토큰은 정리 후에도 4003, 위조 토큰은 1008이다', async () => {
+  let at = 1_000_000;
+  const clock = {
+    now: () => at,
+    timeout(callback: () => void, delay: number) {
+      const timer = setTimeout(callback, delay);
+      return { cancel: () => clearTimeout(timer), unref: () => timer.unref() };
+    },
+    interval(callback: () => void, delay: number) {
+      const timer = setInterval(callback, delay);
+      return { cancel: () => clearInterval(timer), unref: () => timer.unref() };
+    },
+  };
+  relay = await startRelay({
+    publicMode: { creationSecret: secret, allowedOrigins: [origin], clock },
+  });
+  const base = `http://127.0.0.1:${relay.port}`;
+  const created = await fetch(`${base}/api/rooms`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const result: unknown = await created.json();
+  if (
+    !result ||
+    typeof result !== 'object' ||
+    !('roomId' in result) ||
+    !('hostToken' in result) ||
+    typeof result.roomId !== 'string' ||
+    typeof result.hostToken !== 'string'
+  )
+    throw new Error('invalid response');
+  const { roomId, hostToken } = result;
+  const invite = randomBytes(32).toString('base64url');
+  const resume = randomBytes(32).toString('base64url');
+  for (const [guestToken, permission] of [
+    [invite, 'invite'],
+    [resume, 'resume'],
+  ])
+    expect(
+      (
+        await fetch(`${base}/api/rooms/${roomId}/credentials`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${hostToken}` },
+          body: JSON.stringify({ token: guestToken, permission, expiresAt: at + 1_000 }),
+        })
+      ).status,
+    ).toBe(201);
+  at += 1_001;
+  // 방 생성 API가 정리 스케줄과 같은 자격 정리 경로를 실행한다.
+  expect(
+    (
+      await fetch(`${base}/api/rooms`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${secret}` },
+      })
+    ).status,
+  ).toBe(201);
+  for (const guestToken of [invite, resume]) {
+    const ws = await connect(relay.port, 'guest', roomId);
+    const close = closedWithReason(ws);
+    ws.send(JSON.stringify({ t: 'relay-auth', token: guestToken }));
+    expect(await close).toEqual({ code: 4003, reason: 'expired' });
+  }
+  const forged = await connect(relay.port, 'guest', roomId);
+  const rejected = closedWithReason(forged);
+  forged.send(JSON.stringify({ t: 'relay-auth', token: randomBytes(32).toString('base64url') }));
+  expect(await rejected).toEqual({ code: 1008, reason: '' });
 });

@@ -94,6 +94,24 @@ function requestUrl(raw: string | undefined): URL | null {
   }
 }
 
+function joinNickname(raw: string | null): string | undefined {
+  if (raw === null) return undefined;
+  const cleaned = raw
+    .replace(/[\p{Cc}\p{Zl}\p{Zp}]/gu, '')
+    .replace(/\s+/gu, ' ')
+    .trim();
+  let nickname = '';
+  let length = 0;
+  for (const { segment } of new Intl.Segmenter('ko', { granularity: 'grapheme' }).segment(
+    cleaned,
+  )) {
+    if (length >= 20) break;
+    nickname += segment;
+    length++;
+  }
+  return nickname.trimEnd() || undefined;
+}
+
 function isReservedControlFrame(raw: string): boolean {
   if (isRelayFrame(raw)) return true;
   try {
@@ -251,6 +269,7 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
       socket: WebSocket;
       kind: 'invite' | 'code';
       inviteKey?: string;
+      nickname?: string;
       until: number;
     }
   >();
@@ -486,6 +505,7 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
     role = roleParam === 'host' || roleParam === 'guest' ? roleParam : null;
     roomId = url.searchParams.get('room');
     const code = url.searchParams.get('code') ?? '';
+    const nickname = join ? joinNickname(url.searchParams.get('name')) : undefined;
     const state = join ? rooms.byCode(code, now()) : roomId ? rooms.get(roomId, now()) : undefined;
     if (!join && ((role !== 'host' && role !== 'guest') || !state)) {
       socket.close(CLOSE_INVALID_ROLE);
@@ -535,11 +555,16 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
           roomId: state.room.id,
           socket,
           kind: 'code',
+          ...(nickname ? { nickname } : {}),
           until: now() + 60_000,
         });
         send(
           seats.get(state.room.id)?.host,
-          JSON.stringify({ t: 'relay-join-request', requestId: id }),
+          JSON.stringify({
+            t: 'relay-join-request',
+            requestId: id,
+            ...(nickname ? { nickname } : {}),
+          }),
         );
       }
       joinTimer = clock.timeout(() => {
@@ -574,6 +599,10 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
           current && (role === 'host' || role === 'guest')
             ? rooms.auth.authenticate(current.room, role, token, now())
             : null;
+        if (permission === 'expired') {
+          socket.close(4003, 'expired');
+          return;
+        }
         if (
           !current ||
           !permission ||
@@ -633,6 +662,20 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
           if (parsed && typeof parsed === 'object') control = parsed;
         } catch {
           /* game frame */
+        }
+        if (control?.t === 'relay-deny' && typeof control.requestId === 'string') {
+          const item = pending.get(control.requestId);
+          if (item?.roomId === current.room.id && item.until > now()) {
+            closePending(control.requestId);
+            send(
+              item.socket,
+              JSON.stringify({
+                t: item.kind === 'code' ? 'relay-join-denied' : 'relay-claim-denied',
+              }),
+            );
+            item.socket.close(1000);
+          }
+          return;
         }
         if (
           control?.t === 'relay-accept' &&
