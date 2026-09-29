@@ -5,7 +5,8 @@
   import { DUR } from '../../../anim/durations.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
-  import { bannerFor } from '../../../ui/banner.ts';
+  import { proEnabled } from '../../../pro-assets/runtime.ts';
+  import { bannerFor, type BannerKind } from '../../../ui/banner.ts';
   import Board from '../../../ui/Board.svelte';
   import Card from '../../../ui/Card.svelte';
   import type { CardSize } from '../../../ui/cards.ts';
@@ -98,6 +99,7 @@
 
   // 스냅샷을 결정적으로: 갤러리에 있는 동안 모든 --dur-*를 0으로(E2E 즉시 모드)
   $effect(() => {
+    if (proEnabled && new URLSearchParams(location.search).has('motion')) return;
     const root = document.documentElement;
     const previous = root.dataset['speed'];
     root.dataset['speed'] = 'instant';
@@ -108,7 +110,21 @@
   });
 </script>
 
-{#if page === 'board'}
+{#if proEnabled && page.startsWith('pro-')}
+  <Board
+    view={fixtures.board.states.play}
+    banner={{
+      kind: page.slice(4) as BannerKind,
+      text:
+        (
+          { ppeok: '뻑', jjok: '쪽', ttadak: '따닥', bomb: '폭탄', go: '고' } as Record<
+            string,
+            string
+          >
+        )[page.slice(4)] ?? '고',
+    }}
+  />
+{:else if page === 'board'}
   <Board view={fixtures.board.states.play} />
 {:else if page === 'board-target'}
   <Board view={fixtures.board.states.target} />

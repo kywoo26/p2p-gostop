@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { proEnabled, unlockAudio, playSound, stopAudio } from './pro-assets/runtime.ts';
   // 앱 진입점. 역할은 주소로 정한다(src/p2p/role.ts): 루프백 origin(Android WebView `/?build=…`, 개발 브라우저)은
   // 호스트 앱, 루프백이 아닌 origin(iPhone이 QR로 연 `http://<핫스팟 IP>:17777/`)이나 `?role=guest`는 게스트 화면.
   // 호스트 앱은 해시 라우팅(SvelteKit 아님, AGENTS.md 3장): 홈 / 혼자 연습 / 게임 / 친구와 대전(방 열기·대전) / 기록 /
@@ -51,7 +52,8 @@
     else document.documentElement.dataset['speed'] = speed;
   });
   $effect(() => {
-    sounds.enabled = settings.value.sound;
+    sounds.enabled = settings.value.sound && !proEnabled;
+    if (!settings.value.sound) stopAudio();
   });
 
   // 앱을 #/game으로 다시 열면 저장된 솔로 세션을 이어받는다 (MN-05)
@@ -196,9 +198,22 @@
   }
 </script>
 
+<svelte:document
+  onvisibilitychange={() => {
+    if (document.hidden) stopAudio();
+  }}
+/>
+
 <svelte:window
   onhashchange={onHashChange}
-  onpointerdown={() => sounds.unlock()}
+  onpointerdown={() => {
+    sounds.unlock();
+    unlockAudio();
+    playSound('card');
+  }}
+  onkeydown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') unlockAudio();
+  }}
   onerror={(e) => onError(`오류: ${e instanceof ErrorEvent ? e.message : e.type}`)}
   onunhandledrejection={(e) => onError(`처리되지 않은 Promise 거부: ${String(e.reason)}`)}
 />

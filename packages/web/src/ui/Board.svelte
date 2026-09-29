@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Scene from '../pro-assets/Scene.svelte';
   // 게임판 (spec 6.2): 상단 상대 정보·획득패, 중앙 바닥·더미, 하단 내 획득패·상태·손패, 오버레이(배너·선택 창).
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
   // 재생 중(busy)에는 입력을 받지 않고, 판을 탭하면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
@@ -147,6 +148,7 @@
   bind:this={root}
   onpointerdowncapture={skipIfBusy}
 >
+  <Scene scene="table" />
   <SeatBar
     who="상대"
     name={opponent.name}

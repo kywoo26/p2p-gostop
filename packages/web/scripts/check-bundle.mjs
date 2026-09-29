@@ -1,14 +1,17 @@
 // 번들 예산·외부 URL 검사 (spec NF-01·NF-03, AC-07, plan.md 1.8 "위생"). 의존성 없음.
-// - dist 전체 크기 ≤ 1.5MB (MiB 기준, 1,572,864 바이트)
+// - NF-03: dist ≤1.5MiB. PRO_ASSET_REVIEW=1 평가 전용 빌드만 초과 허용.
 // - 외부 URL(http(s)://, localhost·127.0.0.1 제외) 0건
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PRO_ATTRIBUTION_URLS } from '../src/pro-assets/credits.ts';
 import { ATTRIBUTION_URLS } from '../src/cards/attribution.ts';
 import { FONT_ATTRIBUTION_URLS } from '../src/fonts/attribution.ts';
 
-const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const LIMIT_BYTES = 1.5 * 1024 * 1024;
+const review = process.env['PRO_ASSET_REVIEW'] === '1';
+const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
+
 const TEXT_EXTENSIONS = new Set([
   '.html',
   '.js',
@@ -42,7 +45,11 @@ const MESSAGE_LINK_PREFIXES = ['https://svelte.dev/e/'];
  * 라이선스 화면에 글자로만 보여 주는 주소 (CC BY-SA 4.0 표기 의무, spec NF-07). 링크를 걸지 않고 요청하지 않는다.
  * 정확히 같은 문자열만 허용한다(src/cards/attribution.ts).
  */
-const DISPLAYED_URLS = new Set([...ATTRIBUTION_URLS, ...FONT_ATTRIBUTION_URLS]);
+const DISPLAYED_URLS = new Set([
+  ...ATTRIBUTION_URLS,
+  ...FONT_ATTRIBUTION_URLS,
+  ...PRO_ATTRIBUTION_URLS,
+]);
 const URL_PATTERN = /https?:\/\/[^\s"'`<>()\\{}|^]+/g;
 
 async function* walk(dir) {
@@ -96,13 +103,16 @@ for await (const file of walk(DIST)) {
 const kb = (n) => `${(n / 1024).toFixed(1)} KiB`;
 sizes.sort((a, b) => b[1] - a[1]);
 for (const [file, size] of sizes.slice(0, 10)) console.log(`  ${kb(size).padStart(12)}  ${file}`);
-console.log(`dist 합계 ${kb(total)} / 예산 ${kb(LIMIT_BYTES)} (${sizes.length}개 파일)`);
+console.log(
+  `dist 합계 ${kb(total)} / 예산 ${kb(LIMIT_BYTES)}${review ? ' (평가 전용: 예산 개정 승인 전)' : ''} (${sizes.length}개 파일)`,
+);
 
 let failed = false;
-if (total > LIMIT_BYTES) {
+if (total > LIMIT_BYTES && !review) {
   console.error(`실패: 번들 예산 초과 (${kb(total)} > ${kb(LIMIT_BYTES)})`);
   failed = true;
 }
+if (review) console.warn('평가용 초과 허용 — 본선 적용/릴리스 승인 아님');
 if (external.length > 0) {
   console.error(`실패: 외부 URL ${external.length}건 (spec NF-01)`);
   for (const line of external) console.error(`  ${line}`);

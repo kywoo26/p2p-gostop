@@ -45,3 +45,95 @@
   - region "앱 코드":
     - heading "앱 코드" [level=2]
     - paragraph: 앱 코드(엔진·UI)는 MIT 라이선스다. 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.
+  - region "게임 자산":
+    - heading "게임 자산" [level=2]
+    - paragraph: para · CC0-1.0
+    - code: https://opengameart.org/content/animated-particle-effects-1
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/particle-pack
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/casino-audio
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/impact-sounds
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: Kenney · CC0-1.0
+    - code: https://kenney.nl/assets/interface-sounds
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Fabric037
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Leather037
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Metal034
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: ambientCG / Lennart Demes · CC0-1.0
+    - code: https://ambientcg.com/view?id=Wood050
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding.
+    - paragraph: Katsushika Hokusai / The Metropolitan Museum of Art, JP660 (The Francis Lathrop Collection, Purchase, Frederick C. Hewitt Fund, 1911) · CC0-1.0
+    - code: https://www.metmuseum.org/art/collection/search/37107
+    - code: https://creativecommons.org/publicdomain/zero/1.0/
+    - paragraph: Public domain woodblock print; cropped, ink/paper duotone, resized and encoded.
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_January_Hikari.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_February_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_March_Hikari.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_April_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_May_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_June_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_July_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_August_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_September_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_October_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_November_Hikari.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - paragraph: Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr. · CC-BY-SA-4.0
+    - code: https://commons.wikimedia.org/wiki/File:Hwatu_December_Tane.svg
+    - code: https://creativecommons.org/licenses/by-sa/4.0/
+    - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
+    - link "파일별 출처 목록":
+      - /url: /pro/NOTICE.md
