@@ -1,11 +1,11 @@
 # OFL 폰트 서브셋 파이프라인 (VD-04, plan §1.8)
 
-**방향·폰트 미확정. 앱에 연결하지 않은 공통 도구.** 새 npm 의존성 없음. 원본 다운로드는 조사 단계만 허용하며 파이프라인 자체는 로컬 입력만 읽는다. [공식 FontTools subset API](https://fonttools.readthedocs.io/en/latest/subset/index.html), [공식 TTFont API](https://fonttools.readthedocs.io/en/latest/ttLib/ttFont.html)를 사용한다. Context7 `/fonttools/fonttools` 문서를 확인했다.
+**A 확정: Pretendard Variable v1.3.9 → 수정본 GostopSans.** 새 npm 의존성 없음. 원본 다운로드는 제작 단계만 허용하며 파이프라인 자체는 로컬 입력만 읽는다. [공식 FontTools subset API](https://fonttools.readthedocs.io/en/latest/subset/index.html), [공식 TTFont API](https://fonttools.readthedocs.io/en/latest/ttLib/ttFont.html)를 사용한다. Context7 `/fonttools/fonttools` 문서를 확인했다.
 
 | 입력/출력 | 계약 |
 |---|---|
 | `sources.json` | OFL-1.1 후보 4종, 고정 URL·원본/라이선스 SHA-256. 채택한 1종만 앱에 포함 |
-| `--corpus` | UTF-8 실제 UI 문자 집합. 끝 개행 제외, 숫자 0~9 항상 포함. 주석 포함 보수적 상한은 목업 조사에서만 사용 |
+| `--corpus` | UTF-8 UI 문자 집합. 끝 개행 제외, 숫자 0~9 항상 포함. 앱 생성기는 주석·갤러리를 포함한 보수적 상한 사용 |
 | `--family` | 원본/RFN과 다른 수정본 이름. 법적 RFN 목록 확인은 고지 검토에도 남김 |
 | `--inputs` | 원본 바이너리·라이선스 파일. 해시/OFL 원문 불일치면 중단 |
 | `--output` | `<family>.woff2`, `.css`, `.json`, `-OFL.txt`; CSS는 cmap 그대로 unicode-range, 로컬 상대 URL만 |
@@ -27,4 +27,22 @@ docker run --rm -v "$PWD:/work" -v /tmp/visual-research:/inputs:ro \
   sh -c 'pip install --quiet fonttools==4.61.1 brotli==1.2.0 && python /work/docs/design/fonts/subset_font.py --manifest /work/docs/design/fonts/sources.json --inputs /inputs --corpus /work/docs/design/mockups/fonts/corpus.txt --family VDPretendard --output /tmp/font-output && python /work/docs/design/fonts/test_subset.py'
 ```
 
-5개 검사: 4후보 roundtrip/결정적 출력·고지 보존, 원본 hash 변조 거부, 미지원 문자 거부, 예산 초과 시 쓰기 금지, tnum 제거 결과 거부. 문구가 바뀌면 코퍼스를 다시 생성하고 이 gate와 브라우저 렌더를 함께 돌린다. 최종 앱의 UI 문자열 카탈로그·오류/재접속/정산/보조 문구를 코퍼스로 연결하는 작업은 구현 PR에 남아 있다.
+5개 검사: 4후보 roundtrip/결정적 출력·고지 보존, 원본 hash 변조 거부, 미지원 문자 거부, 예산 초과 시 쓰기 금지, tnum 제거 결과 거부. 문구가 바뀌면 코퍼스를 다시 생성하고 이 gate와 브라우저 렌더를 함께 돌린다.
+
+## 확정 앱 산출물 재생성
+
+`sources.json`의 Pretendard 원본과 OFL 두 파일만 `/tmp/visual-research/{Pretendard.woff2,OFL.txt}`에 준비한다. 제작 의존성은 컨테이너에만 설치한다.
+
+```sh
+docker run --rm --user "$(id -u):$(id -g)" -e PYTHONUSERBASE=/tmp/python \
+  -v "$PWD:/work" -v /tmp/visual-research:/inputs:ro \
+  python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f \
+  sh -c 'pip install --quiet --user fonttools==4.61.1 brotli==1.2.0 && python /work/docs/design/fonts/build_app_font.py'
+docker compose run --rm dev npm run lint:fix
+docker compose run --rm dev npm run build -w packages/web
+docker compose run --rm dev npm run e2e -w packages/web -- e2e/fonts.spec.ts
+```
+
+`build_app_font.py`는 web의 비테스트 `.svelte`/`.ts`와 엔진 오류 문구(`reduce.ts`)의 한글을 모은다. 주석·갤러리도 포함해 실제 UI의 보수적 상한으로 잡고 ASCII와 지정 기호를 더한다. 코퍼스/해시는 이 문서 폴더, 배포 WOFF2/CSS/OFL은 `packages/web/src/styles/fonts`에 기록한다. 임의 이름과 그 밖의 유니코드는 시스템 fallback을 쓴다. 새 문구가 범위를 벗어나면 빌드의 `check-font.mjs`가 실패하므로 재생성해야 한다.
+
+현재 WOFF2 **142,800 B(139.5 KiB)**, 상한 160 KiB. CSS `unicode-range`, 가변 `wght` 45–930, `tnum`을 보존했다. Chromium/WebKit에서 400/500/700/800을 검사한다. Chromium은 24px 단일 숫자에서 최대 1px 편차가 있으므로 여러 자리의 완전한 폭 일치를 주장하지 않는다. 수치 열은 고정 폭·우측 정렬로 구현하며 실기기 검증은 별도다. [배포 고지](NOTICE.md), [측정 메타데이터](app-metrics.json).
