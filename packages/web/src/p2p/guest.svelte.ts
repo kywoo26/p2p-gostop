@@ -34,8 +34,9 @@ import {
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
+import { WsTransport } from '../net/index.ts';
 import { emptyBoard, random32 } from './common.ts';
-import { openLink, type LinkState } from './link.ts';
+import { linkStateOf, openLink, type LinkState } from './link.ts';
 import type { RelayAddress } from './role.ts';
 import { saveGuestState, writeTicket, type GuestTicket } from './ticket.ts';
 
@@ -60,7 +61,7 @@ export interface GuestOptions {
   readonly address?: RelayAddress;
   /** 테스트용 전송 (주면 WebSocket을 열지 않는다) */
   readonly transport?: Transport;
-  /** 토큰을 받으면 (기본: URL 프래그먼트에 쓴다) */
+  /** 토큰을 받으면 (LAN 기본: URL 프래그먼트, 원격: URL에 쓰지 않음) */
   readonly onTicket?: (ticket: GuestTicket) => void;
   /** false면 sessionStorage에 두지 않는다 (테스트) */
   readonly persist?: boolean;
@@ -132,14 +133,28 @@ export class GuestGame implements GameController {
 
   constructor(options: GuestOptions) {
     this.name = options.name;
-    this.onTicket = options.onTicket ?? writeTicket;
+    this.onTicket =
+      options.onTicket ?? (options.transport instanceof WsTransport ? () => {} : writeTicket);
     this.persist = options.persist ?? true;
     this.now = options.now ?? (() => performance.now());
     let inner: Transport;
     if (options.transport) {
-      this.ws = null;
       inner = options.transport;
-      this.link = 'open';
+      if (options.transport instanceof WsTransport) {
+        const remote = options.transport;
+        const off = remote.onConnection((event) => {
+          const state = linkStateOf(event);
+          if (state !== null) this.onLinkState(state);
+        });
+        this.ws = {
+          dispose: off,
+          reconnect: (force) => remote.reconnect(force),
+        };
+        this.link = remote.state === 'open' ? 'open' : 'connecting';
+      } else {
+        this.ws = null;
+        this.link = 'open';
+      }
     } else {
       const ws = openLink({
         role: 'guest',

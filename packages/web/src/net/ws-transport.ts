@@ -35,6 +35,10 @@ export interface WsTransportOptions {
   readonly role: Role;
   readonly host?: string;
   readonly port?: number;
+  /** 검증된 공개 중계 URL. 토큰은 URL에 넣지 않는다. */
+  readonly url?: string;
+  /** 공개 중계 역할 토큰. 게임 프로토콜에는 전달하지 않는다. */
+  readonly authToken?: string;
   readonly socketFactory?: SocketFactory;
   readonly scheduler?: Scheduler;
   readonly visibility?: Pick<
@@ -50,6 +54,80 @@ export interface WsTransportOptions {
 }
 
 export type StopReason = 'replaced' | 'policy';
+export type RelayControl =
+  | { readonly t: 'relay-claim-pending' }
+  | { readonly t: 'relay-claim-denied' }
+  | { readonly t: 'relay-claim'; readonly requestId: string }
+  | { readonly t: 'relay-join-request'; readonly requestId: string; readonly nickname?: string }
+  | { readonly t: 'relay-accepted'; readonly token: string; readonly roomId?: string }
+  | { readonly t: 'relay-join-pending' }
+  | { readonly t: 'relay-join-denied' }
+  | { readonly t: 'relay-join-unavailable' };
+
+export function parseRelayControl(raw: string): {
+  readonly isControl: boolean;
+  readonly value: RelayControl | null;
+} {
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (typeof value !== 'object' || value === null || Array.isArray(value))
+      return { isControl: false, value: null };
+    const control = value as Record<string, unknown>;
+    if (typeof control.t !== 'string' || !control.t.startsWith('relay-'))
+      return { isControl: false, value: null };
+    if (raw.length > 512) return { isControl: true, value: null };
+    const t = control.t;
+    if (
+      t === 'relay-claim-pending' ||
+      t === 'relay-claim-denied' ||
+      t === 'relay-join-pending' ||
+      t === 'relay-join-denied' ||
+      t === 'relay-join-unavailable'
+    )
+      return { isControl: true, value: { t } };
+    if (
+      t === 'relay-claim' &&
+      typeof control.requestId === 'string' &&
+      /^[A-Za-z0-9_-]{22}$/.test(control.requestId)
+    )
+      return { isControl: true, value: { t, requestId: control.requestId } };
+    if (
+      t === 'relay-join-request' &&
+      typeof control.requestId === 'string' &&
+      /^[A-Za-z0-9_-]{22}$/.test(control.requestId)
+    ) {
+      const nickname = control.nickname;
+      if (nickname === undefined)
+        return { isControl: true, value: { t, requestId: control.requestId } };
+      const characters = typeof nickname === 'string' ? Array.from(nickname) : [];
+      if (
+        typeof nickname !== 'string' ||
+        characters.length < 1 ||
+        characters.length > 20 ||
+        characters.some((character) => {
+          const code = character.codePointAt(0)!;
+          return code < 32 || (code >= 127 && code <= 159) || code === 8232 || code === 8233;
+        })
+      )
+        return { isControl: true, value: null };
+      return { isControl: true, value: { t, requestId: control.requestId, nickname } };
+    }
+    if (
+      t === 'relay-accepted' &&
+      typeof control.token === 'string' &&
+      /^[A-Za-z0-9_-]{43}$/.test(control.token)
+    ) {
+      const result: RelayControl =
+        typeof control.roomId === 'string' && /^[A-Za-z0-9_-]{22}$/.test(control.roomId)
+          ? { t, token: control.token, roomId: control.roomId }
+          : { t, token: control.token };
+      return { isControl: true, value: result };
+    }
+    return { isControl: true, value: null };
+  } catch {
+    return { isControl: false, value: null };
+  }
+}
 /** 연결 사건. socket은 이 전송이 연 소켓 번호(1부터) */
 export type ConnectionEvent =
   | { readonly type: 'connecting'; readonly socket: number }
@@ -72,10 +150,12 @@ const PING_INTERVAL_MS = 25_000;
 const PROBE_TIMEOUT_MS = 4_000;
 const MISSED_PINGS = 2;
 const POLICY_LIMIT = 3;
+const AUTH_TIMEOUT_MS = 5_000;
 
 export class WsTransport implements Transport {
   readonly url: string;
   private readonly role: Role;
+  private authToken: string | undefined;
   private readonly factory: SocketFactory;
   private readonly scheduler: Scheduler;
   private readonly log: (line: string) => void;
@@ -86,6 +166,7 @@ export class WsTransport implements Transport {
   private readonly messages = new Set<(raw: string) => void>();
   private readonly closes = new Set<() => void>();
   private readonly relays = new Set<(notice: RelayNotice) => void>();
+  private readonly controls = new Set<(control: RelayControl) => void>();
   private readonly connections = new Set<(event: ConnectionEvent) => void>();
   private readonly pending: Message[] = [];
   private socket: WebSocket | null = null;
@@ -93,6 +174,7 @@ export class WsTransport implements Transport {
   private retry: ReturnType<typeof setTimeout> | null = null;
   private heartbeat: ReturnType<typeof setInterval> | null = null;
   private probe: ReturnType<typeof setTimeout> | null = null;
+  private authTimer: ReturnType<typeof setTimeout> | null = null;
   private attempts = 0;
   private policyCloses = 0;
   private missed = 0;
@@ -101,8 +183,10 @@ export class WsTransport implements Transport {
   private peerValue: RelayPeerState | null = null;
   constructor(options: WsTransportOptions) {
     this.role = options.role;
+    this.authToken = options.authToken;
     const host = options.host ?? globalThis.location?.hostname ?? '127.0.0.1';
-    this.url = `ws://${host}:${options.port ?? RELAY_PORT}${RELAY_PATH}?role=${options.role}`;
+    this.url =
+      options.url ?? `ws://${host}:${options.port ?? RELAY_PORT}${RELAY_PATH}?role=${options.role}`;
     this.factory = options.socketFactory ?? ((url) => new WebSocket(url));
     this.scheduler = options.scheduler ?? globalThis;
     this.log = options.log ?? (() => {});
@@ -143,9 +227,11 @@ export class WsTransport implements Transport {
     if (this.retry !== null) this.scheduler.clearTimeout(this.retry);
     if (this.heartbeat !== null) this.scheduler.clearInterval(this.heartbeat);
     if (this.probe !== null) this.scheduler.clearTimeout(this.probe);
+    if (this.authTimer !== null) this.scheduler.clearTimeout(this.authTimer);
     this.retry = null;
     this.heartbeat = null;
     this.probe = null;
+    this.authTimer = null;
   }
   private rawSend(socket: WebSocket, message: Message): void {
     const encoded = tryEncode(message);
@@ -180,35 +266,58 @@ export class WsTransport implements Transport {
     this.emit({ type: 'connecting', socket: id });
     socket.addEventListener('open', () => {
       if (this.socket !== socket || this.stateValue === 'disposed') return;
-      this.attempts = 0;
-      this.stateValue = 'open';
-      this.log(`socket#${id} open`);
-      this.emit({ type: 'open', socket: id });
-      for (const item of this.pending.splice(0)) this.rawSend(socket, item);
-      if (this.role === 'guest') {
-        this.heartbeat = this.scheduler.setInterval(() => this.beat(socket, id), this.pingInterval);
+      if (this.authToken !== undefined) {
+        // NP-RP-01: 인증 확인 전에는 게임 프레임·relay 알림을 세션에 노출하지 않는다.
+        try {
+          socket.send(JSON.stringify({ t: 'relay-auth', token: this.authToken }));
+        } catch {
+          socket.close();
+          return;
+        }
+        if (this.socket === socket && this.stateValue !== 'open') {
+          this.authTimer = this.scheduler.setTimeout(() => {
+            if (this.socket === socket && this.stateValue !== 'open')
+              socket.close(RELAY_CLOSE_POLICY, 'auth timeout');
+          }, AUTH_TIMEOUT_MS);
+        }
+        return;
       }
+      this.openAuthenticated(socket, id);
     });
     socket.addEventListener('message', (event: MessageEvent) => {
       if (this.socket !== socket || typeof event.data !== 'string') return;
       const raw = event.data;
-      // 어떤 프레임이든 받으면 살아 있는 소켓이다.
-      this.missed = 0;
-      this.awaiting = false;
-      if (this.probe !== null) {
-        this.scheduler.clearTimeout(this.probe);
-        this.probe = null;
-      }
-      if (isRelayFrame(raw)) {
-        const notice = parseRelayNotice(raw);
-        if (notice === null) return;
-        this.peerValue = notice.peer;
-        this.log(`socket#${id} relay peer=${notice.peer}`);
-        this.emit({ type: 'peer', socket: id, peer: notice.peer });
-        for (const handler of this.relays) handler(notice);
+      if (this.authToken !== undefined && this.stateValue !== 'open') {
+        if (isRelayFrame(raw) && parseRelayNotice(raw) !== null) {
+          this.openAuthenticated(socket, id);
+          this.receive(raw, id);
+          return;
+        }
+        const control = parseRelayControl(raw);
+        if (
+          control.value?.t === 'relay-claim-pending' ||
+          control.value?.t === 'relay-claim-denied'
+        ) {
+          if (this.authTimer !== null) this.scheduler.clearTimeout(this.authTimer);
+          this.authTimer = null;
+          this.emitControl(control.value);
+          return;
+        }
+        if (control.value?.t === 'relay-accepted') {
+          this.authToken = control.value.token;
+          this.emitControl(control.value);
+          return;
+        }
+        this.log(`socket#${id} invalid pre-auth response`);
+        socket.close(RELAY_CLOSE_POLICY, 'invalid pre-auth response');
         return;
       }
-      for (const handler of this.messages) handler(raw);
+      const control = parseRelayControl(raw);
+      if (control.isControl) {
+        if (control.value !== null) this.emitControl(control.value);
+        return;
+      }
+      this.receive(raw, id);
     });
     socket.addEventListener('close', (event: CloseEvent) => {
       const stale = this.socket !== socket;
@@ -221,6 +330,40 @@ export class WsTransport implements Transport {
       this.onClosed(id, event.code, event.reason);
     });
     socket.addEventListener('error', () => this.log(`socket#${id} error`));
+  }
+  private openAuthenticated(socket: WebSocket, id: number): void {
+    if (this.authTimer !== null) this.scheduler.clearTimeout(this.authTimer);
+    this.authTimer = null;
+    this.attempts = 0;
+    this.stateValue = 'open';
+    this.log(`socket#${id} open`);
+    this.emit({ type: 'open', socket: id });
+    for (const item of this.pending.splice(0)) this.rawSend(socket, item);
+    if (this.role === 'guest') {
+      this.heartbeat = this.scheduler.setInterval(() => this.beat(socket, id), this.pingInterval);
+    }
+  }
+  private receive(raw: string, id: number): void {
+    // 어떤 프레임이든 받으면 살아 있는 소켓이다.
+    this.missed = 0;
+    this.awaiting = false;
+    if (this.probe !== null) {
+      this.scheduler.clearTimeout(this.probe);
+      this.probe = null;
+    }
+    if (isRelayFrame(raw)) {
+      const notice = parseRelayNotice(raw);
+      if (notice === null) return;
+      this.peerValue = notice.peer;
+      this.log(`socket#${id} relay peer=${notice.peer}`);
+      this.emit({ type: 'peer', socket: id, peer: notice.peer });
+      for (const handler of this.relays) handler(notice);
+      return;
+    }
+    for (const handler of this.messages) handler(raw);
+  }
+  private emitControl(control: RelayControl): void {
+    for (const handler of this.controls) handler(control);
   }
   private onClosed(id: number, code: number, reason: string): void {
     if (code === RELAY_CLOSE_REPLACED) {
@@ -273,6 +416,7 @@ export class WsTransport implements Transport {
   /** 화면 복귀: 닫혀 있으면 곧바로 재접속, 열려 있어 보이면 ping으로 확인 */
   private resume(): void {
     if (this.stateValue === 'disposed' || this.stateValue === 'stopped') return;
+    if (this.authToken !== undefined && this.stateValue === 'connecting') return;
     const socket = this.socket;
     // 최초 pageshow와 연결 시작이 겹쳐도 같은 역할의 소켓을 두 개 열지 않는다.
     if (socket?.readyState === 0) return;
@@ -303,7 +447,7 @@ export class WsTransport implements Transport {
   }
   send(message: Message): void {
     if (this.stateValue === 'disposed') return;
-    if (this.socket?.readyState === 1) {
+    if (this.socket?.readyState === 1 && this.stateValue === 'open') {
       this.rawSend(this.socket, message);
       return;
     }
@@ -333,6 +477,29 @@ export class WsTransport implements Transport {
     return () => {
       this.relays.delete(handler);
     };
+  }
+  onControl(handler: (control: RelayControl) => void): () => void {
+    this.controls.add(handler);
+    return () => {
+      this.controls.delete(handler);
+    };
+  }
+  /** RP-04B/05 호스트 수락·거절 흐름에서 사용한다. 인증된 호스트 소켓에만 전송한다. */
+  sendControl(
+    control:
+      | { readonly t: 'relay-accept'; readonly requestId: string; readonly token: string }
+      | { readonly t: 'relay-deny'; readonly requestId: string },
+  ): boolean {
+    if (this.role !== 'host' || this.stateValue !== 'open' || this.socket?.readyState !== 1)
+      return false;
+    if (!/^[A-Za-z0-9_-]{22}$/.test(control.requestId)) return false;
+    if (control.t === 'relay-accept' && !/^[A-Za-z0-9_-]{43}$/.test(control.token)) return false;
+    try {
+      this.socket.send(JSON.stringify(control));
+      return true;
+    } catch {
+      return false;
+    }
   }
   onConnection(handler: (event: ConnectionEvent) => void): () => void {
     this.connections.add(handler);
@@ -364,6 +531,7 @@ export class WsTransport implements Transport {
     this.messages.clear();
     this.closes.clear();
     this.relays.clear();
+    this.controls.clear();
     this.connections.clear();
     this.pending.length = 0;
   }
