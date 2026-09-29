@@ -4,6 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
+import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import { WebSocket } from 'ws';
 import { checkPublicHealth, createPublicJoinChannel, createPublicTransport } from './index.ts';
 import type { ConnectionEvent, RelayControl } from './ws-transport.ts';
@@ -73,9 +74,23 @@ function next<T>(subscribe: (done: (value: T) => void) => () => void): Promise<T
 
 it('RELAY_PUBLIC=1에서 health, 코드 수락, 첫 인증, 게임 프레임, 4001을 연동한다', async () => {
   const base = await startPublicRelay();
+  const health = await fetch(`${base}/health`, { headers: { Origin: origin } });
+  expect(health.status).toBe(200);
+  expect(health.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+  expect(health.headers.get('Vary')).toBe('Origin');
+  expect(await health.json()).toEqual({
+    relay: 'p2p-gostop',
+    ready: true,
+    controlVersion: 1,
+    wireVersion: PROTOCOL_VERSION,
+  });
   const fetcher: typeof fetch = async (input, init) => {
     const url = new URL(input.toString());
-    const response = await fetch(`${base}${url.pathname}`, init);
+    const response = await fetch(`${base}${url.pathname}`, {
+      ...init,
+      headers: { Origin: origin },
+    });
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
     return new Response(await response.text(), { status: response.status });
   };
   await expect(
@@ -84,11 +99,32 @@ it('RELAY_PUBLIC=1에서 health, 코드 수락, 첫 인증, 게임 프레임, 40
     relay: 'p2p-gostop',
     ready: true,
   });
+  const preflight = await fetch(`${base}/api/rooms`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: origin,
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type',
+    },
+  });
+  expect(preflight.status).toBe(204);
+  expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+  expect(preflight.headers.get('Vary')).toBe('Origin');
+  expect(preflight.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+  expect(preflight.headers.get('Access-Control-Allow-Headers')).toContain('Authorization');
+  expect(preflight.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type');
+  expect(preflight.headers.get('Access-Control-Max-Age')).toBe('600');
   const response = await fetch(`${base}/api/rooms`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${creationSecret}` },
+    headers: {
+      Origin: origin,
+      Authorization: `Bearer ${creationSecret}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
   });
   expect(response.status).toBe(201);
+  expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
   const created = (await response.json()) as {
     roomId: string;
     hostToken: string;
