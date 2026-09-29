@@ -5,7 +5,7 @@
 2026-09-29, PR #97에 main `1f26469`를 병합한 뒤 기존 reconnect 테스트에 임시 계측만 추가했다. 게스트 `setInterval(1000)` 콜백 직전, `WebSocket.send()`의 action/hello, Node의 route 수신에서 `Date.now()`와 `performance.now()`를 함께 기록했다. 페이로드·토큰은 아래 기록에서 제외했다. 순차 실행이며 Playwright 재시도는 0이다.
 
 ```sh
-docker compose run --rm dev npm run e2e -w packages/web -- e2e/reconnect.spec.ts --project=timing-chromium --no-deps --repeat-each=10 --workers=1 --retries=0
+npm run e2e -w packages/web -- e2e/reconnect.spec.ts --project=timing-chromium --no-deps --repeat-each=10 --workers=1 --retries=0
 ```
 
 10회 중 2회 실패(감지 8,198ms / 7,212ms), 8회 성공. 첫 실패의 시각은 다음과 같다. 서로 다른 프로세스의 `performance.now()` 원점은 비교하지 않고 각 프로세스 안에서 차이를 계산한다.

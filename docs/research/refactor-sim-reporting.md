@@ -26,9 +26,9 @@ report는 Summary·Distribution·StopRate를 **타입으로만** 읽는다. 실�
 재현 명령(저장소 루트):
 
 ```sh
-docker compose run --rm dev npm test -- tools/sim/test/report.test.ts
+npm test -- tools/sim/test/report.test.ts
 # 의도적인 출력 계약 변경 때만 --update 사용. 기존 formatter 기준 생성은 24bf1e0에서 수행.
-git ls-files -co --exclude-standard tools/sim/src | docker compose run --rm -T dev node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)"
+git ls-files -co --exclude-standard tools/sim/src | node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)"
 wc -l tools/sim/src/{stats,report,cli,index}.ts
 ```
 

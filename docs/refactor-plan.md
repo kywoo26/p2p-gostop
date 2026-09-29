@@ -11,19 +11,19 @@
 ### 1.1 명령과 분모
 
 ```sh
-docker compose run --rm dev npm ci
+npm ci
 # 호스트 git은 추적 파일 목록만 제공. 계측은 Docker의 기존 TypeScript 6 AST로 실행.
-git ls-files packages tools android | docker compose run --rm -T dev node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)" > /tmp/codebase-audit.json
-docker compose run --rm dev npm exec -- knip
-docker compose run --rm dev npm run lint
-docker compose run --rm dev npm run check
-docker compose run --rm dev npm test
-docker compose run --rm dev npm run test:net -w packages/web
-docker compose run --rm dev npm run test:browser
-docker compose run --rm dev npm run build -w packages/web
-docker compose run --rm dev npm run e2e -w packages/web
-docker compose run --rm dev android/gradlew -p android assembleDebug
-docker compose run --rm dev android/gradlew -p android testDebugUnitTest
+git ls-files packages tools android | node --input-type=module --eval "$(cat docs/research/codebase-audit.mjs.txt)" > /tmp/codebase-audit.json
+npm exec -- knip
+npm run lint
+npm run check
+npm test
+npm run test:net -w packages/web
+npm run test:browser
+npm run build -w packages/web
+npm run e2e -w packages/web
+android/gradlew -p android assembleDebug
+android/gradlew -p android testDebugUnitTest
 # 수동 교차 확인
 wc -l packages/web/src/ui/Board.svelte packages/web/src/game/session.ts android/app/src/main/kotlin/com/kywoo26/p2pgostop/HotspotService.kt
 rg -n 'export (type|interface)|ERROR_CODES|errorCode|rules: z.record' packages/protocol/src/{view-types,messages,schema}.ts
@@ -120,7 +120,7 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 | RF-06 | `web/ui/settle-labels.ts` + game/records·p2p/host 소비 | 정산 라벨은 이미 한 곳. engine/protocol로 한국어 UI 라벨을 옮기지 않음 |
 | RF-07 | SeatView·RoundRecord·SettlementInput 동명 선언 | engine 공개 관찰/표시용 뷰, 시뮬레이션/저장 기록 등 의미가 다름. 이름 일치만으로 합치지 않음. UiEvent는 deprecated 픽스처 호환 계약 |
 | RF-08 | `host.ts` 1,009줄·session 테스트 1,171줄 | 인증·수열·원장·복원 책임 결합. 복원 직렬화 → 순번/전송 → 판 수명 순으로 하루 단위 분리 |
-| RF-09 | `knip.json`·기준선 `docker compose run --rm dev npm run check` | 기준 코드의 knip 미사용 항목 **0**, exit 0. entry/export와 `ignoreExportsUsedInFile` 범위 내 결과이며 죽은 코드 부재 증명 아님. 신규 감사 `.mjs`가 unused file 1로 검출되어 문서 `.txt` 부록으로 변경; 제품 예외 추가 없음 |
+| RF-09 | `knip.json`·기준선 `npm run check` | 기준 코드의 knip 미사용 항목 **0**, exit 0. entry/export와 `ignoreExportsUsedInFile` 범위 내 결과이며 죽은 코드 부재 증명 아님. 신규 감사 `.mjs`가 unused file 1로 검출되어 문서 `.txt` 부록으로 변경; 제품 예외 추가 없음 |
 | RF-10 | `protocol/test/m4.test.ts`, engine `e1-api.test.ts`, 나머지 기능명 테스트 | 마일스톤명과 기능명이 혼재. engine/ai/protocol은 `test/`, web은 src 동거+e2e, Android는 src/test. 위치는 유지하고 소유 기능 수정 시 명칭/지도 개선 |
 | RF-11 | plan §1.6 FLIP “수십 줄”, §2 gradle-cache/pw-browsers | 실제 flip.ts와 관련 모듈, compose는 node_modules/android-home. 계획/현황 혼동. #38·#73 인계 후 원문 담당이 정정 |
 | RF-12 | docs/protocol §1 Kotlin 벡터 후속, `RelayScenarioTest.kt:33`; §10 wire 벡터 수 | 공유 relay-scenarios.json을 이미 읽음. wire.json도 문서 36개와 달리 실제 41개. 원문 담당 인계 때 정정 |

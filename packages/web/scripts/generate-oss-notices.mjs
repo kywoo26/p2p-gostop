@@ -1,5 +1,5 @@
 // NF-07: 수동 oss:refresh 전용. 웹 build/check/test/lint에서는 실행하지 않는다.
-// 개발 이미지의 dev 사용자로 실행하고, 새 배포 의존성의 라이선스 누락은 수동 검토한다.
+// 호스트에서 실행하고, 새 배포 의존성의 라이선스 누락은 수동 검토한다.
 import { execFileSync } from 'node:child_process';
 import { readdir, readFile, writeFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';

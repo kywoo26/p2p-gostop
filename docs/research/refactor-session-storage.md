@@ -57,9 +57,9 @@ zod는 protocol이 이미 쓰는 4.6.5를 web의 직접 의존성으로 명시�
 현재 브랜치에서 재현:
 
 ```sh
-docker compose run --rm dev npm ci
-docker compose run --rm -T dev node --input-type=module < docs/research/session-storage-probes.mjs.txt
-docker compose run --rm dev npm run test:browser -w packages/web -- src/storage/session-save.test.ts
+npm ci
+node --input-type=module < docs/research/session-storage-probes.mjs.txt
+npm run test:browser -w packages/web -- src/storage/session-save.test.ts
 wc -l packages/web/src/game/session.ts packages/web/src/game/solo.svelte.ts packages/web/src/storage/{local,session-game-schema,session-schema,session-save,solo-save}.ts
 ```
 
