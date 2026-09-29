@@ -78,7 +78,7 @@ function autoStep(opts: StepOptions): string | false {
   }
   const board = document.querySelector('[data-testid="board"][data-awaiting="me"]');
   if (board === null || root.dataset['canAct'] !== 'true') return false;
-  const choices = [...board.querySelectorAll<HTMLButtonElement>('dialog [data-choice]')].filter(
+  const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]')].filter(
     (b) => !b.disabled,
   );
   if (choices.length > 0) {

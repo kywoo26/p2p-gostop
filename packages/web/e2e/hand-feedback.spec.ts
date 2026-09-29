@@ -50,6 +50,10 @@ for (const [width, height] of [
         });
         return {
           panelsInsideFrame,
+          myCountersClear: [...document.querySelectorAll('.captured-zone.mine .counter')].every(
+            (counter) =>
+              windows.every((window) => !overlap(counter.getBoundingClientRect(), window)),
+          ),
           cardSizes: [...document.querySelectorAll('.hand .card')].map((el) => {
             const r = el.getBoundingClientRect();
             return { width: r.width, height: r.height };
@@ -95,7 +99,6 @@ for (const [width, height] of [
               image: style.backgroundImage,
               width: w,
               height: h,
-              monthOverlap: overlap(icon, el.querySelector('.mark')!.getBoundingClientRect()),
               inside:
                 x >= rect.left && x + w <= rect.right && y >= rect.top && y + h <= rect.bottom,
               otherCardOverlap: windows.some(
@@ -154,6 +157,7 @@ for (const [width, height] of [
         expect(r.height).toBeCloseTo(report.cardSizes[0]!.height, 2);
       }
       expect(report.panelsInsideFrame).toBe(true);
+      expect(report.myCountersClear).toBe(true);
       expect(
         report.windows
           .slice(0, 5)
@@ -163,7 +167,7 @@ for (const [width, height] of [
         expect(report.windows[0]!.height).toBeCloseTo(report.windows[9]!.height, 1);
       expect(report.addOnNodes).toBe(0);
       expect(report.slotOverlap).toBe(false);
-      expect(report.monthMarks).toBe(10);
+      expect(report.monthMarks).toBe(0);
       expect(report.actionMarks).toBe(6);
       await expect(page.locator('.hand')).not.toContainText(/먹기|확정|폭탄|흔들/);
       expect(
@@ -183,7 +187,6 @@ for (const [width, height] of [
         );
         expect(icon.width).toBe(22);
         expect(icon.height).toBe(22);
-        expect(icon.monthOverlap).toBe(false);
         expect(icon.otherCardOverlap).toBe(false);
         expect(icon.inside).toBe(true);
       }
@@ -198,15 +201,20 @@ for (const [width, height] of [
       const actionArt = page.locator('.hand .slot[data-hand-action="bomb"] .art-window').first();
       const animation = () =>
         actionArt.evaluate((el) => getComputedStyle(el, '::after').animationName);
+      await page
+        .locator('.app-root')
+        .evaluate((el) => el.setAttribute('data-effect-intensity', 'subtle'));
       expect(await animation()).toBe('none');
       await page
-        .locator('html')
+        .locator('.app-root')
         .evaluate((el) => el.setAttribute('data-effect-intensity', 'strong'));
       expect(await animation()).toBe('skin-action-breath');
       await page.emulateMedia({ reducedMotion: 'reduce' });
       expect(await animation()).toBe('none');
       await page.emulateMedia({ reducedMotion: 'no-preference' });
-      await page.locator('html').evaluate((el) => el.setAttribute('data-effect-intensity', 'off'));
+      await page
+        .locator('.app-root')
+        .evaluate((el) => el.setAttribute('data-effect-intensity', 'off'));
       expect(await animation()).toBe('none');
       await expect(page.locator('.hand')).not.toContainText(/대기|폭3|흔3/);
       expect(report.inside).toBe(true);

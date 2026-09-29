@@ -147,9 +147,7 @@ async function stepMatch(page: Page): Promise<void> {
     if (root.dataset['canAct'] !== 'true') return;
     const board = root.querySelector<HTMLElement>('[data-testid="board"]');
     if (board === null) return;
-    const choices = [
-      ...board.querySelectorAll<HTMLButtonElement>('dialog [data-choice]:not([disabled])'),
-    ];
+    const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]:not([disabled])')];
     if (choices.length > 0) {
       (
         choices.find((el) =>

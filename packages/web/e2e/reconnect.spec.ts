@@ -32,7 +32,7 @@ async function step(page: Page): Promise<boolean> {
     if (root?.dataset['canAct'] !== 'true') return false;
     const board = root.querySelector<HTMLElement>('[data-testid="board"][data-awaiting="me"]');
     const button =
-      board?.querySelector<HTMLButtonElement>('dialog [data-choice]:not([disabled])') ??
+      board?.querySelector<HTMLButtonElement>('[data-choice]:not([disabled])') ??
       board?.querySelector<HTMLButtonElement>('[data-choice="flipOnly"]:not([disabled])') ??
       board?.querySelector<HTMLButtonElement>('[aria-label="내 손패"] button:not([disabled])');
     if (!button) return false;
