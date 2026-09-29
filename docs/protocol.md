@@ -284,3 +284,50 @@
 | 크기·정보 경계 | NP-07 16KB 유지. 최대 actions·타이머 이력/재접속 snapshot 바이트 검증 필수. 최종 reveal도 초과하면 제한을 올리지 말고 별도 분할 계약을 먼저 확정. 수신 스키마는 시각·ID 상한, 상태별 null 조건·설정 일치·중복 key를 검증; 모든 신규 메시지는 소켓 인증 규칙 적용 |
 
 C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으로 위장하지 않는다. 테스트 소유: 호스트 가짜 단조 시계·경합(`packages/protocol/test`), 실제 relay-dev 재연결(`packages/relay-dev/test/session-relay.test.ts`), Chromium/WebKit 두 클라이언트 E2E(`packages/web/e2e`). 구현 체크리스트 정본은 [#123](https://github.com/kywoo26/p2p-gostop/issues/123).
+
+## 12. 공개 중계 제어 채널 v1 (RP-02, NP-RP-01~08)
+
+이 절은 공개 중계의 **controlVersion 1** 계약이다. 첫 인증·초대 claim·코드 참여 제어 프레임은 중계가 소비하며 `packages/protocol`의 현재 게임 wire(`PROTOCOL_VERSION`) `decode`나 게임 상대에게 전달하지 않는다. 기본 LAN 중계의 루프백 host 제한과 게임 `hello`/`sessionToken` 계약은 그대로다. 공개 모드는 명시적으로 켜며, host 자격은 IP나 Origin 대신 방 역할 토큰으로 확인한다. PC 앞단에서 HTTPS/WSS를 종료한다.
+
+### 실행 설정
+
+| 변수·인자 | 의미 |
+|---|---|
+| `RELAY_PUBLIC=1` 또는 `--public` | 공개 모드 활성화. 기본은 LAN 모드 |
+| `RELAY_CREATION_SECRET` 또는 `RELAY_CREATION_SECRET_FILE` | 256비트 생성 자격 증명(base64url 43자). 파일 변수는 UTF-8 내용을 읽는다. 코드·웹·APK에 내장하지 않는다 |
+| `RELAY_ALLOWED_ORIGINS` | 쉼표로 구분한 허용 Origin. 비어 있으면 Galaxy WebView의 로컬 페이지 Origin `http://127.0.0.1:17777` 하나를 기본 허용한다(원격 HTTPS health/방 API를 읽고 Authorization preflight를 통과시키기 위함). Funnel 게스트의 HTTPS Origin은 RP-03 실행 설정에서 로컬 Origin과 함께 `http://127.0.0.1:17777,https://<funnel-host>` 형태로 명시한다(목록을 설정하면 기본값을 대체한다). HTTP CORS와 WS 업그레이드는 같은 목록을 검사한다. Origin은 인증 자격이 아니다 |
+| `RELAY_RELEASE`, `RELAY_DIST_DIR` | 현행 release ID(`vN.N.N`)와 해당 `packages/web/dist` artifact 디렉터리. 공개 CLI에서 release ID 필수, dist 기본 경로는 `packages/web/dist`. 빌드가 남긴 `version.json`의 wireVersion이 서버 wire와 같아야 시작한다 |
+| `RELAY_PREVIOUS_RELEASE`, `RELAY_PREVIOUS_DIST_DIR` | 직전 release ID와 별도 dist artifact. 이전 release를 지정하면 디렉터리도 필수. artifact의 wireVersion을 별도로 읽어 다른 wire면 `/version`에 비호환으로 표시하고 정적 경로를 차단한다 |
+| `PORT`, `HOST` 또는 `--port` | 내부 HTTP/WS 포트·바인드 주소. 외부 공개는 앞단 HTTPS/WSS 설정으로 수행 |
+
+### HTTP·정적 경로
+
+| 요청 | 자격·응답 |
+|---|---|
+| `GET /health` | `{relay:"p2p-gostop",ready:true,controlVersion:1,wireVersion:<PROTOCOL_VERSION>}`. 현재 게임 wire는 v3이다. 방·이름·토큰·PC 상세를 포함하지 않는다 |
+| `GET /version` | 현행 release/hash/path와 최대 2개 release의 wire·호환 표. 서로 다른 게임 wire는 플레이 호환으로 표시하지 않는다 |
+| `GET /` | 현행 `/r/<release>/<content-hash>/`로 302 |
+| `GET /r/<release>/<content-hash>/...` | 등록된 `web/dist`의 허용 파일만 제공. traversal·숨김 파일·설정 JSON·소스맵·심볼릭 링크는 제공하지 않는다 |
+| `POST /api/rooms` | `Authorization: Bearer <생성 자격>` → 201 `{roomId,hostToken,code,expiresAt}`. `roomId`는 128비트, host 토큰은 256비트. `code`는 60비트 Base32의 `XXXX-XXXX-XXXX` 표시 |
+| `POST /api/rooms/:id/credentials` | `Authorization: Bearer <hostToken>`, JSON `{token,permission,expiresAt}`. `permission`은 `invite` 또는 `resume`, 토큰은 호스트가 생성한 256비트 base64url. 성공 201 `{"ok":true}`. 중계는 해시·권한·만료만 보관 |
+| `DELETE /api/rooms/:id` | host Bearer로 방 즉시 폐기, 성공 204 |
+
+웹 빌드가 `dist/version.json`에 `{wireVersion,hash}`를 기록한다. `hash`는 제공 가능한 정적 파일의 경로·내용을 정렬해 계산한 SHA-256이다. 중계는 시작 시 **각 artifact의** 버전 메타데이터와 실제 파일 해시를 대조한다. 누락·불일치 또는 현행 artifact의 wire 불일치는 시작을 거절한다. `version.json` 자체는 정적 제공 대상이 아니다. 직전 artifact가 다른 wire이면 호환 표에 `compatible:false`로 남기되 해당 정적 경로는 404로 차단한다.
+
+공개 HTTP CORS는 `/health`, `/version`, `/api/rooms*`에 한정한다. 요청 `Origin`이 허용 목록과 정확히 일치할 때만 `Access-Control-Allow-Origin: <요청 Origin>`과 `Vary: Origin`을 보낸다. 와일드카드·쿠키용 `Access-Control-Allow-Credentials`는 쓰지 않으며 목록 밖 Origin에는 CORS 허용 헤더를 보내지 않는다. 허용 Origin의 `OPTIONS` preflight는 204와 `Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS`, `Access-Control-Allow-Headers: Authorization, Content-Type`, `Access-Control-Max-Age: 600`을 반환한다. 정적 자산에는 CORS를 열지 않는다. Bearer 토큰만 생성·방 관리 권한이며 Origin은 인증이 아니다.
+
+방 목록·코드 조회 API는 없다. 공개 HTTP API에 게임 내용·이름을 전송하지 않는다. 초대 링크를 만들 때 토큰은 URL **fragment**에만 넣고 로드 직후 메모리로 옮겨 주소에서 제거한다. 단순 링크 preview GET은 초대를 claim하지 않는다.
+
+### 역할 WS와 초대 claim
+
+1. `/ws?role=host|guest&room=<roomId>` 연결 뒤 **5초 안에 첫 텍스트 프레임** `{"t":"relay-auth","token":"<역할 토큰>"}`을 보낸다. 브라우저의 임의 인증 헤더는 요구하지 않는다. 인증 성공 확인용 `authOk` 프레임은 없다. 좌석이 확정되면 기존 relay `present`/`absent`가 첫 게임 중계 알림이다. 등록 이력이 없는·위조 토큰 등 인증 실패는 1008, 등록됐으나 만료된 게스트 초대/복귀 토큰은 4003(reason `expired`), 연결/속도 제한은 1013, 바이너리는 1003, 64KiB 초과는 1009다. 인증 전에는 게임 전달·relay 알림·기존 좌석 교체가 없다.
+2. `resume` 토큰은 인증 직후 해당 좌석을 얻는다. 유효한 같은 역할 복귀만 이전 소켓을 4001 `replaced`로 교체한다. `invite` 토큰은 곧바로 좌석을 얻지 않는다. 중계가 초대를 짧은 lease로 claim하고 게스트에 `{"t":"relay-claim-pending"}`, 연결된 호스트에 `{"t":"relay-claim","requestId":"..."}`를 보낸다.
+3. 호스트는 새 256비트 복귀 토큰을 발급해 `{"t":"relay-accept","requestId":"...","token":"<resumeToken>"}`을 보낸다. 중계는 복귀 토큰 해시를 등록하고 초대를 소모한 뒤 게스트에 `{"t":"relay-accepted","roomId":"...","token":"<resumeToken>"}`을 보내 좌석을 확정한다. 호스트가 `{"t":"relay-deny","requestId":"..."}`로 거절하면 중계는 pending과 초대 claim을 해제하고 게스트에 `{"t":"relay-claim-denied"}`를 보낸 뒤 1000으로 닫는다. 중단·만료 claim은 lease 뒤 해제하며 확정된 초대는 재사용할 수 없다.
+
+인증 뒤의 게임 프레임은 내용을 해석·저장·기록하지 않고 상대에게만 전달한다. 상대 부재 프레임 버림, 위조 relay 알림 차단, 옛 소켓 무시는 LAN과 같다. 방/역할 토큰은 게임의 `sessionToken`과 별개다.
+
+### 코드 참여 채널
+
+`WS /join?code=<12자리 코드>&name=<닉네임>`는 게임 WS와 별도다. `name`은 선택 사항이다. 중계는 URL 디코딩 뒤 제어문자·개행(U+2028·U+2029 포함)을 제거하고, 연속된 유니코드 공백을 한 칸으로 합친 뒤 양끝 공백을 제거한다. 화면에 표시되는 문자 20자를 넘으면 잘라내고 잘린 결과 끝의 공백도 제거한다. 정리한 결과가 1~20자일 때만 메모리의 pending 레코드에 보관하고, 로그에는 남기지 않는다. 유효/무효/점유 코드 모두 먼저 `{"t":"relay-join-pending"}`을 받는다. 유효하고 빈 방이면 호스트에 `{"t":"relay-join-request","requestId":"...","nickname":"<정리한 닉네임>"}`를 보낸다(방당 최대 2건). `name`이 없거나 정리한 결과가 비면 `nickname` 필드를 생략한다. 호스트의 `relay-accept` 후 코드 참여자는 `{"t":"relay-accepted","roomId":"...","token":"<resumeToken>"}`을 받아 `/ws?role=guest&room=<roomId>`에 **새로 연결해 첫 프레임으로 인증**한다. 호스트가 `{"t":"relay-deny","requestId":"..."}`로 거절하면 중계는 pending을 정리하고 코드 참여자에 `{"t":"relay-join-denied"}`를 보낸 뒤 1000으로 닫는다. 수락·거절이 없으면 최대 60초 뒤 기존 `{"t":"relay-join-unavailable"}`로 끝난다. 호스트 수락 전에는 토큰·게임 내용을 코드 참여자에게 보내지 않는다. 존재/부재/점유 실패의 초기 응답은 같다.
+
+초대와 미참여 코드는 15분, 방은 생성 후 절대 6시간, host 단절은 10분에 만료된다. 공개 WS는 25초 ping·60초 무응답 종료, 인증 전 전체 8개/방당 2개, 인증 뒤 host 1개·guest 1개다. 방은 중계 메모리에만 있고 재시작하면 모두 사라진다.

@@ -383,6 +383,30 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | NP-09 | 완료 | P/src/codec.ts·host.ts, W/src/game/diagnostics.ts, K/log/LogBuffer.kt·BridgeLogs.kt; KT/log/Utf8Test.kt·BridgeLogsTest.kt, P/test/m4.test.ts | — | M0 |
 | NP-10 | 완료 | P/src/host.ts·guest.ts·messages.ts·schema.ts의 단일 시계/결정 ID/확인/중단·복귀; P/test/timer.test.ts, relay-dev/test/session-relay.test.ts, W/e2e/p2p.spec.ts | 렌더러 재시작의 clockUnknown은 수동 대기·판 무효·종료, 실기기 #75 | — |
 
+### 원격 개정안 RP-02 서버 상태 (별도 분모, PR #161)
+
+이 표는 §13의 신규 RP 접미 ID를 기존 86개 집계와 분리한다. 서버 구현·자동 검증 상태이며 웹/Android 연결·Funnel 실측은 완료 판정에 포함하지 않는다.
+
+| ID | RP-02 서버 지원 상태 | 남은 연계 |
+|---|---|---|
+| FR-RP-01 | 부분: 생성 API·host 자격 확인 | RP-04A/05A 모드 선택·URL/운영자 자격 설정, RP-07 검증 |
+| FR-RP-02 | 부분: 코드·초대 claim·host 승인·방별 자격 | RP-05A/B 링크 fragment·QR·공유 시트·코드 입력 UI |
+| FR-RP-03 | 부분: 역할 좌석·방 삭제 | RP-05A/B 로비·닉네임·규칙/머니 표시와 초대 재발급 UX |
+| FR-RP-04 | 부분: 같은 방 역할 재인증·4001, 재시작 시 방 소실 | RP-04A/07 게임 hello·snapshot 복귀 및 중복 적용 검증 |
+| FR-RP-05 | 부분: host 단절 10분·방 절대 만료 | RP-05C/07 입력 잠금·오류 구별·세션 종료 안내 |
+| FR-RP-06 | 미구현: RP-02는 동일 웹 artifact 제공 경계만 지원 | RP-05B의 반응형 웹 UI·키보드·200% 확대 |
+| FR-RP-07 | 부분: 최소 `/health`·`/version` 응답 | RP-03 PC 스크립트·RP-04A health 검증·RP-05C 3단계 안내 |
+| FR-RP-08 | 미구현: RP-02 서버는 Android LOHS/LAN gate를 제어하지 않음 | RP-04B/05C/07 원격 진입·복귀 시 핫스팟 차단 검증 |
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목 |
+|---|---|---|---|
+| NP-RP-01/02 | 부분 | `packages/relay-dev/src/{auth,index}.ts`, `test/public-auth.test.ts`: 방 생성·역할 첫 프레임 인증·교체 전 검사 | RP-04A/B의 실제 WSS 호스트·게스트 연결 |
+| NP-RP-03/04 | 부분 | `src/{rooms,index}.ts`, `test/{rooms,public-net}.test.ts`: 초대 claim lease·원자성·코드 대기/수락·동일 초기 응답 | RP-05A/B 링크 fragment 처리·코드 입력 UX |
+| NP-RP-05/06 | 부분 | `src/{limits,rooms,index}.ts`, `test/public-limits.test.ts`: 좌석·미인증·속도·큐·TTL·ping 제한 | RP-07 장시간/단절 복구 통합 |
+| NP-RP-07 | 부분 | 메모리 방 상태·토큰 해시, 게임 프레임 무로그; `test/{public-net,public-process}.test.ts`의 재시작·오류 경계 | 운영 PC 재시작·로그 검증 RP-03A/07 |
+| NP-RP-08 | 부분 | `src/static.ts`, `test/{static,public-process}.test.ts`: 최소 health·artifact별 버전 판정 | RP-04A의 원격 화면 진입 시 제한 조회 |
+| NF-RP-01/02/03/06 | 부분 | Origin 검사·역할 분리·상한·버전 경로/호환 표, `test/{public-auth,public-net,public-limits,public-process,static}.test.ts` | 공개 TLS/Funnel·실기기·동일 artifact 배포·복귀 실측 |
+
 ### AI·머니 (AI/MN)
 
 | ID | 상태 | 코드·검증 근거 | 남은 항목·추적 | 실기기 |
