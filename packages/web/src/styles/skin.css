@@ -1,0 +1,335 @@
+/* PA-05 / UX-11/13 / NF-03: #104 구조 위의 재질만. 게임·입력·시간 토큰은 변경하지 않는다.
+   source/rights/grades: public/skin/manifest.json → assets-src/manifest.json, /pro/NOTICE.md. */
+:root {
+  --skin-felt: url('/skin/felt-1x.webp');
+  --skin-wood: url('/skin/wood-1x.webp');
+  --skin-gold: url('/skin/gold-1x.webp');
+  --skin-leather: url('/skin/leather-1x.webp');
+  --skin-key-art: url('/skin/key-art-1x.webp');
+  --skin-portrait-mine: url('/skin/avatar-01-1x.webp');
+  --skin-portrait-opponent: url('/skin/avatar-10-1x.webp');
+  --skin-ink: oklch(23% 0.025 160);
+  --skin-paper: oklch(92% 0.035 85);
+  --skin-brass: oklch(69% 0.07 85);
+  --skin-frame-shadow: inset 0 1px #f5e1b614, 0 3px 6px #0004;
+}
+
+/* 이번 PR의 두 화면에만 적용. Settings/Settlement 등은 후속 PR에서 같은 규칙으로 맞춘다. */
+:root .home,
+:root .board {
+  --color-border: var(--skin-brass);
+  --color-surface: var(--skin-ink);
+  --color-accent: var(--skin-paper);
+  --color-accent-pressed: oklch(85% 0.045 85);
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 30% 18%, #d7c49a16, #00110d99 95%),
+    var(--skin-felt) center / 380px repeat,
+    var(--color-felt);
+}
+
+/* 기존 12px 안쪽 여백에 배치. border/padding/grid 크기를 늘리지 않는다. */
+:root .board::before,
+:root .home::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border: 5px solid #39271e;
+  border-image: var(--skin-wood) 90 / 5px stretch;
+  box-shadow: inset 0 0 0 1px var(--skin-brass);
+}
+:root .board::after,
+:root .home::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid var(--skin-brass);
+  border-image: var(--skin-gold) 35 / 1px stretch;
+}
+
+:root .home.home {
+  position: relative;
+}
+:root .home .hero-art {
+  inset: 78px 0 0;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--skin-brass);
+  border-radius: 12px;
+  background:
+    var(--skin-key-art) 50% 48% / cover no-repeat,
+    var(--skin-ink);
+  box-shadow: var(--skin-frame-shadow);
+}
+:root .home .hero-art::before {
+  inset: 5px;
+  border-radius: 8px;
+  border-color: #f0d5a52b;
+}
+:root .home .hero-art img {
+  width: 56px;
+  left: 28px;
+  bottom: 18px;
+  box-shadow: 0 5px 7px #0008;
+}
+:root .home .hero-art img + img {
+  left: 69px;
+  bottom: 16px;
+}
+:root .home h1 {
+  color: var(--skin-paper);
+  text-shadow: 0 2px 4px #0006;
+}
+:root .home .menu-button {
+  border-radius: 10px;
+  box-shadow: var(--skin-frame-shadow);
+}
+:root .home .menu-button.primary:not(.versus) {
+  background: var(--skin-ink);
+}
+:root .home .menu-button.versus {
+  background: linear-gradient(#f4e8cc30, transparent), var(--skin-paper);
+}
+:root .home .menu-button.versus:active {
+  background: var(--color-accent-pressed);
+}
+
+:root .board .scoreboard {
+  box-shadow:
+    0 0 0 1px var(--skin-brass),
+    0 3px 6px #0005;
+}
+:root .board .seat-bar {
+  background:
+    linear-gradient(#0e1916e8, #0e1916e8),
+    var(--skin-leather) center / 160px;
+}
+:root .board .seat-bar.me {
+  background:
+    linear-gradient(#27382ced, #27382ced),
+    var(--skin-leather) center / 160px;
+}
+/* 초상은 장식. 좁은 열/이름이 있는 좌석은 생략해 기존 이름·숫자 열을 우선한다. */
+:root .board .identity {
+  container-type: inline-size;
+  container-name: seat-identity;
+}
+:root .board .who {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+@container seat-identity (min-width: 56px) {
+  :root .board .identity:not(:has(.name:not(:empty))) .who::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 50%;
+    background:
+      var(--skin-portrait-opponent) center / cover,
+      var(--skin-ink);
+    box-shadow: inset 0 0 0 1px var(--skin-brass);
+    pointer-events: none;
+  }
+  :root .board .me .identity:not(:has(.name:not(:empty))) .who::before {
+    background-image: var(--skin-portrait-mine);
+  }
+}
+:root .board .milestone,
+:root .board .captured-zone .name {
+  box-shadow: inset 0 1px #f5e1b610;
+}
+:root .board .decision-area.idle-slot {
+  border-color: #b39b674d;
+  background: #101c19b3;
+  box-shadow: inset 0 1px #f5e1b60a;
+}
+:root .board .info-button,
+:root .board .flip-only,
+:root .board .prompt {
+  box-shadow: var(--skin-frame-shadow);
+}
+:root .board .info-button,
+:root .board .flip-only {
+  border-radius: 10px;
+}
+:root .board .card img {
+  box-shadow: 0 3px 4px #0008;
+}
+
+/* PA-05 리뷰: 적은 바닥 패도 같은 내부 판에 놓여 보이게 한다. 좌표/높이는 유지. */
+:root .board .center {
+  isolation: isolate;
+}
+:root .board .center::before {
+  content: '';
+  position: absolute;
+  inset: 4px -4px;
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid #dbcba51c;
+  border-radius: 32px;
+  background: radial-gradient(ellipse at 30% 18%, #d7c49a16, #00110d30 95%);
+  box-shadow: inset 0 0 20px #00110d30;
+}
+:root .board .decision-area {
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+:root .board .info-button {
+  min-width: 64px;
+  white-space: nowrap;
+}
+/* 숫자 열은 max-content를 지킨다. 기명 좌석은 역할/이름을 두 줄로 읽는다. */
+:root .board .scoreboard.expanded,
+:root .board .scoreboard {
+  grid-template-columns: minmax(88px, 1fr) max-content max-content max-content max-content;
+}
+/* 역할과 이름을 같은 인라인 흐름으로 두어 이름 자체가 두 줄을 쓴다. */
+:root .board .scoreboard,
+:root .board .seat-bar {
+  column-gap: 6px;
+}
+:root .board .identity:has(.name:not(:empty)) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 14px;
+}
+:root .board .identity:has(.name:not(:empty)) .who,
+:root .board .identity:has(.name:not(:empty)) .name {
+  display: inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: inherit;
+  font-size: inherit;
+}
+:root .board .identity:has(.name:not(:empty)) .who {
+  margin-right: 4px;
+}
+:root .board .seat-bar:has(.timer) .identity:has(.name:not(:empty)) {
+  -webkit-line-clamp: 1;
+}
+/* 84px 확장 HUD도 이름 두 줄을 유지: 첫 행24px 안에12px 두 줄. */
+:root .board .seat-bar.expanded .identity:has(.name:not(:empty)) {
+  line-height: 14px;
+}
+
+/* 사용자 C: 상/하 진영 HUD. 로직/행동은 유지하고 높이 예산만 재배분한다. */
+:root .board {
+  --player-hud-height: 36px;
+  row-gap: 2px;
+  --hud-transfer: calc(48px + var(--player-hud-height) - var(--hud-height));
+  grid-template-rows:
+    48px var(--capture-height) minmax(208px, 1fr)
+    max(56px, calc(var(--decision-height) - var(--hud-transfer) - 4px))
+    var(--player-hud-height) var(--my-capture-height) var(--hand-height);
+}
+:root .board.two-hands {
+  --hand-height: 166px;
+  --my-capture-height: 44px;
+}
+:root .board.hud-expanded {
+  --player-hud-height: 46px;
+  --hud-transfer: 6px;
+  grid-template-rows:
+    48px var(--capture-height) minmax(208px, 1fr)
+    max(104px, calc(var(--decision-height) - var(--hud-extra-height) - 10px))
+    46px var(--my-capture-height) var(--hand-height);
+}
+:root .board.hud-expanded:not(.selecting) {
+  grid-template-rows:
+    48px var(--capture-height) minmax(208px, 1fr) 56px
+    46px var(--my-capture-height) var(--hand-height);
+}
+:root .board .scoreboard,
+:root .board .scoreboard.expanded {
+  height: 48px;
+  grid-template-rows: minmax(0, 1fr);
+}
+:root .board .mine-hud .scoreboard {
+  height: var(--player-hud-height);
+}
+:root .board .seat-bar .money {
+  grid-column: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+}
+:root .board .seat-bar .estimate {
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--color-hud-muted);
+  white-space: nowrap;
+}
+:root .board .seat-bar .balance {
+  line-height: 18px;
+}
+:root .board .seat-bar.expanded .money {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+:root .board .mine-hud {
+  min-width: 0;
+}
+:root .board .table-meta {
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--color-hud-muted);
+}
+:root .board.selecting .table-meta {
+  display: none;
+}
+:root .board .idle-slot .decision-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root .board .idle-slot .event-rail {
+  flex: 1;
+  min-width: 0;
+}
+:root .board.first-pick {
+  --decision-height: 256px;
+}
+@media (min-width: 410px) {
+  :root .board.two-hands {
+    --hand-height: 184px;
+    --my-capture-height: 52px;
+  }
+}
+@media (min-width: 410px) and (min-height: 900px) {
+  :root .board.two-hands {
+    --hand-height: 200px;
+    --my-capture-height: 110px;
+  }
+}
+
+:root .board.selecting:not(.hud-expanded) {
+  grid-template-rows:
+    48px var(--capture-height) minmax(208px, 1fr)
+    max(104px, calc(var(--decision-height) - var(--hud-transfer) - 4px))
+    var(--player-hud-height) var(--my-capture-height) var(--hand-height);
+}
+:root .board .seat-bar.expanded {
+  grid-template-rows: 28px 18px;
+}
+
+:root .board .table-meta {
+  display: none;
+}
+:root .board .idle-slot .table-meta {
+  display: inline;
+}
