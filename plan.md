@@ -103,7 +103,7 @@ p2p-gostop/
 ### 1.8 스택·의존성 도입 근거
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
-**시각 방향 조사 제안(2026-09-29, VD-01~05):** 앱 의존성은 추가하지 않는다. Tailwind·shadcn·Storybook·GSAP 금지는 유지하며 비교 근거는 `docs/research/visual-direction.md`, 채택 대기안은 `docs/design/visual-direction.md`에 둔다. 로컬 OFL 폰트 1종의 실제 문구 서브셋만 후속 구현 후보로 제안한다(자산 상한 160 KiB, 사용자 방향 선택 후 확정). 조사 재현에 한해 Docker `python:3.12-slim` 안의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)을 임시 설치해 WOFF2 용량·숫자 기능을 측정한다. 방향 미확정 상태의 공통 OFL 파이프라인(`docs/design/fonts/`)은 같은 조사 도구로 해시·글리프·tnum/가변 축·160 KiB gate와 고지 원문 보존을 검증한다. 앱 연결은 채택 후 별도 PR이다. 호스트 설치·앱 런타임·npm lock 변경은 없다. 목업 렌더는 단일 개발 이미지의 Playwright 1.63.0을 사용한다. 이 문단은 앱 스택 변경 승인이 아니다.
+**A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/visual-direction.md`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
 | 선택 | 이유·범위 |
 |---|---|
