@@ -22,7 +22,7 @@
 | Vitest / fast-check | 5.0.2 / 4.10.2 (vitest·@vitest/* 5.0.2는 2026-09-25 09:00Z 게시라 첫 lock 생성 때만 `--min-release-age-exclude`로 예외, 09-28 09:00Z 이후 정상 충족) |
 | @vitest/browser-playwright / vitest-browser-svelte | 5.0.2 / 3.1.0 |
 | @playwright/test · playwright / @axe-core/playwright | 1.63.0 (브라우저 빌드는 이 버전이 고정한다. 설치는 `npx playwright install --with-deps chromium webkit`, 호스트는 `tools/setup-host.sh`; `playwright`는 Vitest 브라우저 모드 provider용) / 4.13.0 |
-| ws / @types/ws / @types/node | 8.21.3 (relay-dev. 2026-09-28 선정 때 최신 8.22.0은 2026-09-26 게시라 `min-release-age=3` 미충족) / 8.18.1 / **24.19.0** (Node 24 라인, NF-09·plan §1.8). [npm 게시 메타데이터](https://registry.npmjs.org/@types%2Fnode): 2026-09-25 22:09:25.850 UTC 게시, 09-28 같은 시각부터 3일 충족; 09-29 검토로 보류 해제. 전이 타입 `undici-types` 7.24.6도 2026-03-25 게시. 배포 타입 차이와 검증은 [#95](https://github.com/kywoo26/p2p-gostop/pull/95) 참고. |
+| ws / @types/ws / @types/node | **8.22.0** (relay-dev, npm 게시 2026-09-26 15:00 UTC, 2026-09-29 19:15 UTC 확인; `min-release-age=3` 충족) / 8.18.1 / **24.19.0** (Node 24 라인, NF-09·plan §1.8). [npm 게시 메타데이터](https://registry.npmjs.org/@types%2Fnode): 2026-09-25 22:09:25.850 UTC 게시, 09-28 같은 시각부터 3일 충족; 09-29 검토로 보류 해제. 전이 타입 `undici-types` 7.24.6도 2026-03-25 게시. 배포 타입 차이와 검증은 [#95](https://github.com/kywoo26/p2p-gostop/pull/95) 참고. |
 | Svelte MCP (에이전트 도구, 로컬 stdio) | `@sveltejs/mcp` 0.1.26 (`npx -y @sveltejs/mcp@0.1.26`, 무료·오픈소스, 원격 엔드포인트 미사용) |
 | 순수 TS 린트·포맷 (Oxc) | oxlint 1.85.0 + oxlint-tsgolint 7.0.2003(type-aware, stable) / oxfmt 0.70.0 |
 | web 린트·포맷 | ESLint 10.11.0 / @eslint/js 10.0.1 / eslint-plugin-svelte 3.23.0 / typescript-eslint 8.70.1 / globals 17.12.0, Prettier 3.9.9 / prettier-plugin-svelte 4.1.1 |
