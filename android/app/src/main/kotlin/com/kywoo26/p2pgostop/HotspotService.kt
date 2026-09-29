@@ -67,9 +67,12 @@ class HotspotService : Service() {
         when (intent?.action) {
             ACTION_STOP -> {
                 stopAll("사용자 중지")
+                remoteMode = false
                 return START_NOT_STICKY
             }
             ACTION_ADDRESS_ONLY -> {
+                if (remoteMode) return START_NOT_STICKY
+                setRemoteMode(false)
                 goForeground()
                 // LOHS 요청·예약을 버린다. 늦게 오는 onStarted는 세대가 달라 곧바로 닫힌다.
                 session.cancel()
@@ -84,6 +87,8 @@ class HotspotService : Service() {
                 startIpWatch()
             }
             ACTION_SERVER_ONLY -> {
+                if (remoteMode) return START_NOT_STICKY
+                setRemoteMode(false)
                 goForeground()
                 session.cancel()
                 AppState.update {
@@ -93,13 +98,37 @@ class HotspotService : Service() {
                 serverSlot.ensure()
                 startIpWatch()
             }
-            else -> {
+            ACTION_REMOTE_SERVER_ONLY -> {
+                // FR-RP-08: 기존 LAN 세션에서 전환해도 예약·게이트를 먼저 닫는다.
+                session.cancel()
+                AppState.update {
+                    it.copy(status = HotspotStatus.STOPPED, ssid = null, password = null,
+                        securityType = null, lastError = null, apiVariant = null,
+                        ip = null, candidates = emptyList(), lanEnabled = false)
+                }
+                ipJob?.cancel()
+                ipJob = null
+                setRemoteMode(true)
                 goForeground()
                 serverSlot.ensure()
-                startHotspot()
             }
+            ACTION_START -> {
+                if (remoteMode) return START_NOT_STICKY
+                setRemoteMode(false)
+                goForeground()
+                serverSlot.ensure()
+                startHotspotForAction(intent.action, remoteMode, ::startHotspot)
+            }
+            else -> AppState.log("알 수 없는 서비스 명령 무시")
         }
         return START_NOT_STICKY
+    }
+
+    private fun setRemoteMode(remote: Boolean) {
+        if (remoteMode == remote) return
+        // ServerSlot 직렬 실행기로 이전 bind를 닫은 뒤 새 bind를 시작한다.
+        serverSlot.stop()
+        remoteMode = remote
     }
 
     override fun onDestroy() {
@@ -129,8 +158,9 @@ class HotspotService : Service() {
 
     private fun buildNotification(c: NotifContent): Notification {
         val open = PendingIntent.getActivity(
-            this, 0, Intent(this, GameActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-            PendingIntent.FLAG_IMMUTABLE,
+            this, 0, Intent(this, GameActivity::class.java).putExtra(GameActivity.EXTRA_REMOTE_MODE, remoteMode)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val stop = PendingIntent.getService(
             this, 1, Intent(this, HotspotService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE,
@@ -318,11 +348,14 @@ class HotspotService : Service() {
     }
 
     companion object {
+        @Volatile private var remoteMode = false
+        val remoteModeActive: Boolean get() = remoteMode
         // 프로세스 전체 서버가 서비스 인스턴스보다 오래 살 수 있어 자산 관리자만 보관한다.
         private lateinit var assetManager: AssetManager
         const val ACTION_START = "com.kywoo26.p2pgostop.START"
         const val ACTION_ADDRESS_ONLY = "com.kywoo26.p2pgostop.ADDRESS_ONLY"
         const val ACTION_SERVER_ONLY = "com.kywoo26.p2pgostop.SERVER_ONLY"
+        const val ACTION_REMOTE_SERVER_ONLY = "com.kywoo26.p2pgostop.REMOTE_SERVER_ONLY"
         const val ACTION_STOP = "com.kywoo26.p2pgostop.STOP"
         private const val CHANNEL_ID = "hotspot"
         private const val NOTIF_ID = 1
@@ -356,7 +389,7 @@ class HotspotService : Service() {
             )
             ServerSlot(
                 executor = Executors.newSingleThreadExecutor { r -> Thread(r, "ktor-server").apply { isDaemon = true } },
-                startServer = { startSmokeServer(env) },
+                startServer = { startSmokeServer(env, bindHost = bindHostForMode(remoteMode)) },
                 stopServer = { it.stop(500, 1500) },
                 onState = { running, error -> AppState.update { it.copy(serverRunning = running, serverError = error) } },
                 log = AppState::log,
@@ -392,3 +425,10 @@ class HotspotService : Service() {
         }
     }
 }
+
+/** 명시적 LAN 명령만 LOHS 호출에 도달한다. 원격 서비스 명령은 항상 0회다. */
+internal fun startHotspotForAction(action: String?, remoteMode: Boolean, start: () -> Unit) {
+    if (action == HotspotService.ACTION_START && !remoteMode) start()
+}
+
+internal fun bindHostForMode(remoteMode: Boolean): String = if (remoteMode) "127.0.0.1" else "0.0.0.0"

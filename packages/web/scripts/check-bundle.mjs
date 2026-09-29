@@ -1,6 +1,7 @@
 // 번들 예산·외부 URL 검사 (spec NF-01·NF-03, AC-07, plan.md 1.8 "위생"). 의존성 없음.
 // - NF-03: dist ≤1.5MiB. PRO_ASSET_REVIEW=1 평가 전용 빌드만 초과 허용.
-// - 외부 URL(http(s)://, localhost·127.0.0.1 제외) 0건
+// - 외부 URL(http(s)/ws(s), localhost·127.0.0.1 제외) 0건.
+//   NP-RP-01: 사용자 설정 origin은 런타임 값이므로 번들 리터럴 허용 목록에 넣지 않는다.
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,6 +42,9 @@ const IDENTIFIER_URLS = new Set([
  * - Svelte 5 프로덕션 런타임은 오류 코드를 `https://svelte.dev/e/<code>` 문구로 던진다.
  */
 const MESSAGE_LINK_PREFIXES = ['https://svelte.dev/e/'];
+// 기존 LAN transport의 `ws://${host}` 템플릿이 minify되면 이 조각으로 남는다.
+// 완성된 정적 origin은 아래 외부 URL 검사에서 계속 차단한다.
+const DYNAMIC_URL_FRAGMENTS = new Set(['ws://$']);
 /**
  * 라이선스 화면에 글자로만 보여 주는 주소 (CC BY-SA 4.0 표기 의무, spec NF-07). 링크를 걸지 않고 요청하지 않는다.
  * 정확히 같은 문자열만 허용한다(src/cards/attribution.ts).
@@ -50,7 +54,7 @@ const DISPLAYED_URLS = new Set([
   ...FONT_ATTRIBUTION_URLS,
   ...PRO_ATTRIBUTION_URLS,
 ]);
-const URL_PATTERN = /https?:\/\/[^\s"'`<>()\\{}|^]+/g;
+const URL_PATTERN = /(?:https?|wss?):\/\/[^\s"'`<>()\\{}|^]+/g;
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -65,7 +69,7 @@ const allowed = new Map();
 function isExternal(raw) {
   const url = raw.replace(/[.,;:]+$/, '');
   const known =
-    IDENTIFIER_URLS.has(url) || DISPLAYED_URLS.has(url)
+    IDENTIFIER_URLS.has(url) || DISPLAYED_URLS.has(url) || DYNAMIC_URL_FRAGMENTS.has(url)
       ? url
       : MESSAGE_LINK_PREFIXES.find((prefix) => url.startsWith(prefix));
   if (known) {
