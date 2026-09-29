@@ -397,20 +397,45 @@ test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53,
     await expect(guest.getByTestId('match')).toBeVisible();
     // 선 고르기는 월이 같으면 재추첨한다. 재추첨도 제한시간 밖이다.
     for (let pick = 0; pick < 8; pick++) {
-      if (await host.getByTestId('hud').getByText(/초/).isVisible()) break;
+      if (await host.getByTestId('decision-timer').isVisible()) break;
       const hostChoice = host.locator('[data-choice^="pick-"]:not([disabled])').first();
       if (await hostChoice.isVisible()) await hostChoice.click();
       const guestChoice = guest.locator('[data-choice^="pick-"]:not([disabled])').first();
       if (await guestChoice.isVisible()) await guestChoice.click();
       await host.waitForTimeout(100);
     }
-    await expect(host.getByTestId('hud')).toContainText(/초/);
     await expect(host.getByTestId('decision-timer')).toContainText(/[1-9]초/, { timeout: 5_000 });
+    const timerLayout = await host.getByTestId('decision-timer').evaluate((element) => {
+      const seat = element.closest('.seat-bar');
+      if (!seat) return null;
+      const timer = element.getBoundingClientRect();
+      const panel = seat.getBoundingClientRect();
+      const overlaps = [...seat.querySelectorAll('.identity,.score,.go,.multiplier,.money')]
+        .filter((other) => {
+          const box = other.getBoundingClientRect();
+          return (
+            timer.left < box.right &&
+            timer.right > box.left &&
+            timer.top < box.bottom &&
+            timer.bottom > box.top
+          );
+        })
+        .map((other) => other.className);
+      return {
+        inside:
+          timer.left >= panel.left &&
+          timer.right <= panel.right &&
+          timer.top >= panel.top &&
+          timer.bottom <= panel.bottom,
+        overlaps,
+      };
+    });
+    expect(timerLayout).toEqual({ inside: true, overlaps: [] });
     const before = (await attrs(host)).seq;
     const guestUrl = guest.url();
     await guest.close();
     await expect(host.getByTestId('game-notice')).toContainText('연결 끊김');
-    await expect(host.getByTestId('hud')).toContainText('남은');
+    await expect(host.getByTestId('decision-timer')).toContainText('남은');
     guest = await guestContext.newPage();
     guest.on('websocket', (socket) =>
       socket.on('framereceived', ({ payload }) => {
@@ -425,7 +450,7 @@ test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53,
     await guest.goto(guestUrl);
     await expect(guest.getByTestId('match')).toBeVisible({ timeout: 15_000 });
     await expect.poll(async () => (await attrs(guest)).seq).toBe(before);
-    await expect(host.getByTestId('hud')).toContainText(/초/);
+    await expect(host.getByTestId('decision-timer')).toContainText(/초/);
     // 렌더러의 2초 이상 공백은 마지막 정상 검사 시각에서 멈추고 새 offer로 재개한다.
     await host.evaluate(() => {
       const until = performance.now() + 2_200;
@@ -434,7 +459,7 @@ test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53,
       }
     });
     expect((await attrs(host)).seq).toBe(before);
-    await expect(host.getByTestId('hud')).toContainText(/초/);
+    await expect(host.getByTestId('decision-timer')).toContainText(/초/);
     await expect.poll(() => timeoutFrames, { timeout: 20_000 }).toBeGreaterThan(0);
     await expect.poll(async () => (await attrs(host)).seq).toBeGreaterThan(before);
     await expect.poll(async () => (await attrs(guest)).seq).toBe((await attrs(host)).seq);

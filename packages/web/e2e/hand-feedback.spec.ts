@@ -107,6 +107,9 @@ for (const [width, height] of [
             const members = [
               ...document.querySelectorAll(`.hand .slot[data-hand-action="${action}"]`),
             ];
+            const cards = members.map((member) =>
+              member.querySelector('.card')!.getBoundingClientRect(),
+            );
             const first = members[0]!;
             const plate = getComputedStyle(first, '::before');
             const left = first.getBoundingClientRect().left + parseFloat(plate.left);
@@ -116,6 +119,15 @@ for (const [width, height] of [
             return {
               action,
               count: members.length,
+              aligned: cards.every((card) => Math.abs(card.top - cards[0]!.top) < 0.02),
+              sameSize: cards.every(
+                (card) =>
+                  Math.abs(card.width - cards[0]!.width) < 0.02 &&
+                  Math.abs(card.height - cards[0]!.height) < 0.02,
+              ),
+              evenGap: cards
+                .slice(1)
+                .every((card, index) => Math.abs(card.left - cards[index]!.right - 8) < 0.02),
               border: parseFloat(plate.borderTopWidth),
               color: plate.borderTopColor,
               background: plate.backgroundColor,
@@ -177,6 +189,7 @@ for (const [width, height] of [
       }
       expect(report.groupFrames).toHaveLength(2);
       expect(report.groupFrames.every((f) => f.count === 3 && f.border === 2)).toBe(true);
+      expect(report.groupFrames.every((f) => f.aligned && f.sameSize && f.evenGap)).toBe(true);
       expect(report.groupFrames.every((f) => f.content !== 'none' && f.joined && f.separate)).toBe(
         true,
       );
