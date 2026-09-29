@@ -1,0 +1,95 @@
+- region "게임판":
+  - heading "컴퓨터 · 상용급" [level=2]
+  - term: 점수
+  - definition: "0"
+  - term: 손패
+  - definition: "5"
+  - term: 잔액
+  - definition: 48,800냥
+  - list "상대 족보 진행도":
+    - listitem: 광 1/3
+    - listitem: 고도리 0/3
+    - listitem: 단 1/3
+    - listitem: 피 5/10
+    - listitem: 뻑 1
+    - listitem: 흔들 0
+  - list "상대 획득패":
+    - listitem "광 1":
+      - img "3월 광"
+    - listitem "열끗 2":
+      - img "7월 열끗"
+      - img "12월 열끗"
+    - listitem "띠 2":
+      - img "4월 초단"
+      - img "6월 청단"
+    - listitem "피 5 (4장)":
+      - img "3월 피"
+      - img "4월 피"
+      - img "7월 피"
+      - img "11월 쌍피"
+  - img "더미 13장":
+    - img "카드 뒷면"
+  - list "바닥":
+    - listitem "9월 1장":
+      - img "9월 청단"
+    - listitem "5월 3장 뻑":
+      - img "5월 열끗"
+      - img "5월 초단"
+      - img "5월 피"
+    - listitem "10월 1장":
+      - img "10월 피"
+    - listitem "12월 1장":
+      - img "12월 비광"
+  - list "내 획득패":
+    - listitem "광 1":
+      - img "1월 광"
+    - listitem "열끗 5":
+      - img "2월 고도리"
+      - img "4월 고도리"
+      - img "8월 고도리"
+      - img "9월 국진"
+      - img "6월 열끗"
+    - listitem "띠 3":
+      - img "1월 홍단"
+      - img "2월 홍단"
+      - img "3월 홍단"
+    - listitem "피 6 (5장)":
+      - img "1월 피"
+      - img "2월 피"
+      - img "보너스 2피"
+      - img "9월 피"
+      - img "6월 피"
+  - heading "나" [level=2]
+  - term: 점수
+  - definition: "9"
+  - term: 고
+  - definition: "1"
+  - term: 배수
+  - definition: ×2
+  - term: 잔액
+  - definition: 51,200냥
+  - list "내 족보 진행도":
+    - listitem: 광 1/3
+    - listitem: 고도리 3/3
+    - listitem: 단 3/3
+    - listitem: 피 6/10
+    - listitem: 뻑 0
+    - listitem: 흔들 1
+  - group "내 손패":
+    - button "8월 피 내기" [disabled]:
+      - img "8월 피"
+    - button "10월 열끗 내기" [disabled]:
+      - img "10월 열끗"
+    - button "11월 피 내기" [disabled]:
+      - img "11월 피"
+    - button "12월 쌍피 내기" [disabled]:
+      - img "12월 쌍피"
+  - dialog "고? 스톱?":
+    - heading "고? 스톱?" [level=2]
+    - paragraph:
+      - strong: 9점
+      - text: · 1고 중
+    - paragraph: 지금 스톱하면 2,000냥
+    - paragraph: "컴퓨터 · 상용급: 0점 · 피 5"
+    - button "2고"
+    - button "스톱"

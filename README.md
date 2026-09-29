@@ -9,7 +9,7 @@
 
 ```
 packages/
-  engine/     규칙 엔진 (순수 TS, 카드 카탈로그·시드 PRNG·규칙 옵션. reduce 등은 M1)
+  engine/     규칙 엔진 (순수 TS, 카드 카탈로그·시드 PRNG·규칙 옵션·reduce·정산)
   ai/         CPU 상대 (engine에만 의존)
   protocol/   호스트↔게스트 메시지 타입·버전 (spec 5장)
   relay-dev/  개발·E2E용 Node WebSocket 중계 서버 (Android 중계와 같은 규칙)
@@ -17,7 +17,7 @@ packages/
 tools/
   sim/        셀프플레이 시뮬레이션 CLI
 android/      Android 셸 (Kotlin + WebView + Ktor)
-docker/       개발 컨테이너 정의 (compose.yml)
+docker/       개발 이미지 정의 (Dockerfile; compose.yaml은 저장소 루트, .devcontainer/는 VS Code용)
 docs/         조사 문서, 실기기 테스트 절차·기록
 ```
 
@@ -25,28 +25,33 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 
 ## 개발 환경
 
-호스트(WSL)에는 **git, gh, docker CLI만** 있으면 된다. Node·Playwright·Android SDK는 모두 Docker 컨테이너 안에서 돈다. 진입점은 `./dev.sh`다.
+호스트(WSL)에는 **git, gh, docker CLI만** 있으면 된다. Node·Playwright 브라우저·JDK·Android SDK는 모두 개발 이미지 하나(`docker/Dockerfile`) 안에 있고, 저장소 루트의 `compose.yaml`이 그 이미지를 `dev` 서비스로 띄운다. 별도 래퍼 스크립트는 없다. 표준 `docker compose` 명령을 그대로 쓴다.
 
 ```sh
-./dev.sh pull          # 이미지 받기 (node, playwright, android)
-./dev.sh install       # npm ci (node_modules는 Docker 볼륨)
-./dev.sh lint          # oxlint + oxfmt(순수 TS) / ESLint + Prettier(web)
-./dev.sh check         # tsc 7(순수 TS) / svelte-check + tsc 6(web) / knip
-./dev.sh test          # 단위·속성·계약 테스트 (Vitest, Node)
-./dev.sh test:browser  # 웹 컴포넌트 테스트 (Vitest 브라우저 모드, Chromium + WebKit)
-./dev.sh build:web     # 웹 빌드 + 번들 예산(≤1.5MB)·외부 URL 0건 검사
-./dev.sh e2e           # Playwright E2E (Chromium + WebKit)
-./dev.sh dev:web       # Vite 개발 서버 http://localhost:5173 (#/dev/gallery 는 개발 갤러리)
-./dev.sh relay         # 개발 중계 서버 ws://localhost:17777/ws?role=host|guest
-./dev.sh sim -- 42     # 시드 42로 분배 미리보기 (M2에서 셀프플레이로 확장)
-./dev.sh npm <args>    # 컨테이너 안에서 npm (의존성 추가 등)
-./dev.sh apk:debug     # Android 디버그 APK
-./dev.sh               # 전체 작업 목록
+docker compose run --rm dev npm ci                  # 처음 한 번(이미지가 없으면 자동 빌드), lock이 바뀐 뒤
+docker compose run --rm dev npm run lint            # oxlint + oxfmt(순수 TS) / ESLint + Prettier(web)
+docker compose run --rm dev npm run check           # tsc 7(순수 TS) / svelte-check + tsc 6(web) / knip
+docker compose run --rm dev npm test                # 단위·속성·계약 테스트 (Vitest, Node)
+docker compose run --rm dev npm run test:browser    # 웹 컴포넌트 테스트 (Vitest 브라우저 모드, Chromium + WebKit)
+docker compose run --rm dev npm run build -w packages/web   # 웹 빌드 + 번들 예산(≤1.5MB)·외부 URL 0건 검사
+docker compose run --rm dev npm run e2e -w packages/web     # Playwright E2E (Chromium + WebKit)
+docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint   # APK·단위 테스트·Lint
+docker compose run --rm -p 5173:5173 dev npm run dev -w packages/web          # Vite http://localhost:5173 (#/dev/gallery)
+docker compose run --rm -p 17777:17777 dev npm run start -w packages/relay-dev  # 중계 ws://localhost:17777/ws?role=host|guest
+docker compose run --rm dev npm run sim -- 42       # 셀프플레이 시뮬레이션 CLI
+docker compose run --rm dev bash                    # 컨테이너 셸
 ```
 
-- Docker Desktop이 꺼져 있으면 `dev.sh`가 안내하고 끝난다.
-- 컨테이너는 uid 1000으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 명명된 볼륨이라 처음엔 root 소유인데, `./dev.sh install`이 매번 소유자를 맞춘다.
+- **Dev Container**: VS Code "Reopen in Container"(또는 Codespaces, devcontainer CLI)는 `.devcontainer/devcontainer.json`으로 같은 `dev` 서비스에 붙는다. Claude Code 공식 feature를 설치하고 컨테이너별 `/home/dev/.claude` 볼륨에 설정을 보존한다. 그 안에서는 앞의 `docker compose run --rm dev` 없이 `npm test`, `android/gradlew -p android assembleDebug`처럼 그대로 실행한다.
+- 이전 이미지에서 이미 생성된 Claude 설정 볼륨은 root 소유일 수 있다. Dev Container를 닫고 `docker volume ls --format '{{.Name}}'`에서 `p2p-gostop-claude-`로 시작하는 해당 컨테이너의 볼륨명을 확인한 뒤 `docker compose run --rm --user root -v <볼륨명>:/home/dev/.claude dev chown -R 1000:1000 /home/dev/.claude`로 복구하고 다시 연다. 새 이미지에서 처음 만든 볼륨은 dev 소유로 초기화된다.
+- 컨테이너는 uid 1000(`dev`)으로 돌아 소스 트리의 파일 소유자가 바뀌지 않는다. `node_modules`는 소스와 함께 바인드 마운트되어 체크아웃(워크트리)마다 따로 있다. Gradle·npm 캐시와 디버그 서명 키(`~/.android`)는 이름이 고정된 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)이라 모든 체크아웃이 공유한다.
+- 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 망은 기본 `bridge`를 써서 워크트리가 늘어도 Docker 망이 쌓이지 않는다.
+- `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image: p2p-gostop-dev:<n>` 태그를 올린다. 없는 태그면 다음 `run`이 자동으로 빌드한다(오프라인에서도 기존 이미지로 계속 작업할 수 있게 매번 빌드하지 않는다).
+- CI(`ci.yml`)는 같은 이미지를 러너에서 빌드해 위와 같은 명령을 돌린다.
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
+- 루트의 옛 셸 래퍼는 폐기되었다(새 명령을 안내하고 실패한다, M6에서 삭제).
+- **기존 체크아웃 전환**: 옛 개발 컨테이너를 내린 뒤 확인한다. 옛 명명 볼륨이 붙었던 자리의 `node_modules` 디렉터리가 호스트에 root 소유로 남을 수 있다. 먼저 `ls -ld node_modules`로 확인한다. 비어 있으면 `rmdir node_modules`(비어 있지 않으면 실패하므로 내용을 지우지 않음) 후 `docker compose run --rm dev npm ci`를 실행한다. 내용이 있으면 `docker compose run --rm --user root dev chown -R 1000:1000 /work/node_modules`로 해당 디렉터리의 소유권만 복구한 뒤 `npm ci`를 다시 실행한다. 새 이미지의 진입점은 쓰기 불가 디렉터리를 감지해 이 절차를 안내한다.
+- 옛 Compose 볼륨(`*_node_modules`, `*_android-home`)은 위 호스트 디렉터리와 별개다. 필요 없으면 옛 컨테이너를 내리고 `docker volume ls --format '{{.Name}}'`로 이름을 확인한 뒤 `docker volume rm <확인한_옛_볼륨_이름>`으로 개별 삭제한다. 새 공용 볼륨(`p2p-gostop-gradle`, `p2p-gostop-npm`, `p2p-gostop-android`)은 이 정리 대상이 아니다.
 
 ## 툴체인 (plan.md 1.8)
 
@@ -60,10 +65,10 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 
 ## 테스트
 
-- **엔진**: 카드 카탈로그 불변식, xoshiro128** PRNG 결정성, fast-check 속성 테스트(셔플은 순열). M1부터 JSON 규칙 벡터(`packages/engine/test/vectors/`)가 더해진다.
-- **웹 컴포넌트**: Vitest 브라우저 모드 + `vitest-browser-svelte`. Playwright 이미지 안에서 Chromium·WebKit으로 돈다.
+- **엔진**: 카드 카탈로그 불변식, xoshiro128** PRNG 결정성, fast-check 속성 테스트(셔플은 순열). JSON 규칙 벡터(`packages/engine/test/vectors/`)로 사건·정산을 검증한다.
+- **웹 컴포넌트**: Vitest 브라우저 모드 + `vitest-browser-svelte`. 개발 이미지 안에서 Chromium·WebKit으로 돈다.
 - **E2E**: `vite preview`로 빌드 산출물을 띄우고 Playwright로 확인한다. 외부 네트워크 요청이 하나라도 나가면 실패한다.
-- CI(`.github/workflows/ci.yml`): push·PR마다 lint·check·test·build. E2E는 PR과 수동 실행에서만(분량 절약). Android 잡은 `android/settings.gradle.kts`가 있을 때만 빌드한다.
+- CI(`.github/workflows/ci.yml`): 개발 이미지 하나로 push·PR마다 lint·check·test·build·Android. 컴포넌트 테스트·E2E는 PR과 수동 실행에서만(분량 절약).
 
 ## 에이전트 도구
 
@@ -72,4 +77,25 @@ docs/         조사 문서, 실기기 테스트 절차·기록
 
 ## 라이선스
 
-코드는 MIT. 카드 이미지는 Wikimedia Commons 화투 SVG(CC BY-SA 4.0, 저작자 Spenĉjo, Marcus Richert, Louie Mantia Jr.)를 쓸 예정이며 앱의 설정 > 라이선스에 표기한다.
+코드는 MIT. 카드 이미지는 Wikimedia Commons 화투 SVG(CC BY-SA 4.0, 저작자 Spenĉjo, Marcus Richert, Louie Mantia Jr.)를 번들하며 앱의 설정 > 라이선스에 표기한다. 배포 의존성 고지 완성은 #74에서 추적한다.
+
+## 문서 지도
+
+- [의도](intend.md) → [명세](spec.md) → [구현 계획](plan.md): 목표·요구사항·현재 마일스톤과 결정.
+- [작업 규범](AGENTS.md): 작업 제약과 버전 표의 정본.
+- [Galaxy·솔로 계획](https://github.com/kywoo26/p2p-gostop/pull/76): 현재 증분·PR 소유권·완료 조건(미병합 PR #76의 docs/plan-galaxy-solo.md).
+- [UI 규범·구현 지도](docs/design/ui-spec.md): UX-01~25, 화면·상태·이벤트·현재 격차; 구 docs/ui.md를 대체.
+- [프로토콜](docs/protocol.md): 메시지·전송·세션 계약.
+- [규칙 벡터](docs/rules-vectors.md): 규칙 ID와 테스트의 대응.
+- [AI 튜닝](docs/ai-tuning.md): 강도·응답 벤치마크와 미달 근거.
+- [머니 모델](docs/money-model.md): 표준 3,000판 산정·프리셋 미완 상태.
+- [실기기 절차](docs/device-test/procedure.md) / [결과 로그](docs/device-test/results.md): M0·MVP·M4·U1·UI 절차 통합, 사용자 결과 원문 보존.
+- [상용 규칙 조사](docs/research/rules-commercial.md): §12가 게임 규칙의 유일한 규범.
+- [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.
+- [플랫폼 조사](docs/research/tech-stack.md) / [도구 비교](docs/research/agent-era-stack.md): 제약·호환성·선택 근거, 설치 버전은 AGENTS.md.
+- [M0 리뷰](docs/reviews/M0-review.md): 초기 Android·배포·스모크 검토 이력.
+- [M1 리뷰](docs/reviews/M1-review.md): 엔진 규칙·보안·벡터 검토 이력.
+- [M3 리뷰](docs/reviews/M3-review.md): 솔로 표시·프롬프트·UX 사후 검토 이력.
+- [M4 프로토콜 리뷰](docs/reviews/M4-protocol-review.md): 공정성·재접속·전송·복원 검토 이력.
+- [하네스 감사](docs/reviews/harness-audit.md): 에이전트 설정·훅·권한 정리 이력.
+- [MVP 감사](docs/reviews/mvp-rush-audit.md): 알파 출시 당시 생략·결함 기록. 리뷰의 구경로·행 번호는 당시 커밋을 가리킨다.

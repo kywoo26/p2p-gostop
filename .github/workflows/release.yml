@@ -41,8 +41,9 @@ jobs:
       APK_NAME: p2p-gostop-${{ github.ref_name }}.apk
       # 릴리스 키 인증서 지문(공개 정보, APK에서 누구나 읽을 수 있다). 키를 바꾸면 이 값도 바꾼다.
       EXPECTED_CERT_SHA256: c83292d046a6419f76666f102cbc573dab822a78897b4c2d37a66d96fdef5944
-      # AGENTS.md 버전 표의 Node 24.21.0. 웹 빌드 컨테이너 이미지.
-      WEB_BUILD_IMAGE: node:24.21.0-bookworm-slim
+      # 웹 빌드 컨테이너 이미지 = 개발 이미지(docker/Dockerfile)의 베이스. CI가 검사한 것과 같은 Node(24.20.0)·npm으로 빌드한다.
+      # 개발 이미지 전체(JDK·SDK)는 웹 빌드에 필요 없어 러너에서 다시 빌드하지 않고 베이스만 받는다.
+      WEB_BUILD_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble
     steps:
       - uses: actions/checkout@v7
         with:
@@ -183,6 +184,6 @@ jobs:
             3. 같은 서명 키로 만든 APK라 이전 버전 위에 덮어쓰기 설치됩니다.
 
             ## 실기기 테스트 절차
-            - MVP 실기기 테스트: [docs/device-test/MVP.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/docs/device-test/MVP.md)
+            - 통합 실기기 테스트: [docs/device-test/procedure.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/docs/device-test/procedure.md)
 
             빌드 커밋: `${{ github.sha }}` · 서명 인증서 SHA-256: `${{ env.EXPECTED_CERT_SHA256 }}` · 체크섬: `${{ env.APK_NAME }}.sha256`

@@ -349,9 +349,9 @@ export class GuestSession {
     if (nowMs < this.now) return;
     this.now = nowMs;
     if (this.helloRetryAt !== null && nowMs >= this.helloRetryAt) {
-      this.join();
       this.helloRetryDelay = Math.min(this.helloRetryDelay * 2, HELLO_RETRY_MAX_MS);
       this.helloRetryAt = nowMs + this.helloRetryDelay;
+      this.join();
     }
     const stale = [...this.inflight.values()].filter((f) => nowMs - f.since >= this.ackTimeout);
     if (stale.length === 0) return;
@@ -359,9 +359,9 @@ export class GuestSession {
     for (const { message } of this.inflight.values()) this.outbox.set(message.t, message);
     this.inflight.clear();
     this.linked = false;
-    this.join();
     this.helloRetryDelay = this.ackTimeout;
     this.helloRetryAt = nowMs + this.helloRetryDelay;
+    this.join();
     this.changed();
   }
   sendLogs(entries: readonly string[]): void {

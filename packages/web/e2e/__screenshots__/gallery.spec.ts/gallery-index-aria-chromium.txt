@@ -1,0 +1,148 @@
+- main:
+  - heading "개발 갤러리" [level=1]
+  - paragraph:
+    - link "홈으로":
+      - /url: "#/"
+    - text: ·
+    - link "목차":
+      - /url: "#/dev/gallery"
+  - navigation "페이지":
+    - heading "페이지" [level=2]
+    - list:
+      - listitem:
+        - link "카드 앞면·뒷면 (세 크기)":
+          - /url: "#/dev/gallery/cards"
+      - listitem:
+        - link "카드 크기·표식 배치":
+          - /url: "#/dev/gallery/card-sizes"
+      - listitem:
+        - 'link "게임판: 카드 내기"':
+          - /url: "#/dev/gallery/board"
+      - listitem:
+        - 'link "게임판: 대상 고르기 모달"':
+          - /url: "#/dev/gallery/board-target"
+      - listitem:
+        - 'link "게임판: 고/스톱 모달"':
+          - /url: "#/dev/gallery/board-gostop"
+      - listitem:
+        - link "이벤트 배너":
+          - /url: "#/dev/gallery/banners"
+      - listitem:
+        - link "정산":
+          - /url: "#/dev/gallery/settlement"
+      - listitem:
+        - link "홈":
+          - /url: "#/dev/gallery/home"
+      - listitem:
+        - link "방 열기(호스트)":
+          - /url: "#/dev/gallery/host"
+      - listitem:
+        - link "접속(게스트)":
+          - /url: "#/dev/gallery/guest"
+      - listitem:
+        - 'link "접속(게스트): 대기실"':
+          - /url: "#/dev/gallery/guest-lobby"
+      - listitem:
+        - link "기록":
+          - /url: "#/dev/gallery/records"
+      - listitem:
+        - link "설정":
+          - /url: "#/dev/gallery/settings"
+      - listitem:
+        - link "진단·로그":
+          - /url: "#/dev/gallery/diagnostics"
+      - listitem:
+        - link "라이선스":
+          - /url: "#/license"
+  - region "색상 토큰 (OKLCH)":
+    - heading "색상 토큰 (OKLCH)" [level=2]
+    - list:
+      - listitem:
+        - code: "--color-bg"
+      - listitem:
+        - code: "--color-surface"
+      - listitem:
+        - code: "--color-surface-raised"
+      - listitem:
+        - code: "--color-border"
+      - listitem:
+        - code: "--color-text"
+      - listitem:
+        - code: "--color-text-muted"
+      - listitem:
+        - code: "--color-accent"
+      - listitem:
+        - code: "--color-felt"
+      - listitem:
+        - code: "--color-event-ppeok"
+      - listitem:
+        - code: "--color-event-jjok"
+      - listitem:
+        - code: "--color-event-ttadak"
+      - listitem:
+        - code: "--color-event-sseul"
+      - listitem:
+        - code: "--color-event-shake"
+      - listitem:
+        - code: "--color-event-go"
+      - listitem:
+        - code: "--color-event-stop"
+  - region "애니메이션 시간 (--dur-*, ×--dur-scale)":
+    - heading "애니메이션 시간 (--dur-*, ×--dur-scale)" [level=2]
+    - table:
+      - rowgroup:
+        - row "토큰 구간 빠름":
+          - columnheader "토큰"
+          - columnheader "구간"
+          - columnheader "빠름"
+      - rowgroup:
+        - row "--dur-hand-to-floor 손패 → 바닥 120ms":
+          - cell "--dur-hand-to-floor":
+            - code: "--dur-hand-to-floor"
+          - cell "손패 → 바닥"
+          - cell "120ms"
+        - row "--dur-match-highlight 매칭 강조 80ms":
+          - cell "--dur-match-highlight":
+            - code: "--dur-match-highlight"
+          - cell "매칭 강조"
+          - cell "80ms"
+        - row "--dur-flip 더미 뒤집기 140ms":
+          - cell "--dur-flip":
+            - code: "--dur-flip"
+          - cell "더미 뒤집기"
+          - cell "140ms"
+        - row "--dur-capture 획득 이동 160ms":
+          - cell "--dur-capture":
+            - code: "--dur-capture"
+          - cell "획득 이동"
+          - cell "160ms"
+        - row "--dur-capture-stagger 획득 스태거 30ms":
+          - cell "--dur-capture-stagger":
+            - code: "--dur-capture-stagger"
+          - cell "획득 스태거"
+          - cell "30ms"
+        - row "--dur-steal 피 뺏기 200ms":
+          - cell "--dur-steal":
+            - code: "--dur-steal"
+          - cell "피 뺏기"
+          - cell "200ms"
+        - row "--dur-banner 이벤트 배너 350ms":
+          - cell "--dur-banner":
+            - code: "--dur-banner"
+          - cell "이벤트 배너"
+          - cell "350ms"
+        - row "--dur-modal 고/스톱 모달 150ms":
+          - cell "--dur-modal":
+            - code: "--dur-modal"
+          - cell "고/스톱 모달"
+          - cell "150ms"
+        - row "--dur-deal-total 분배 총합 1200ms":
+          - cell "--dur-deal-total":
+            - code: "--dur-deal-total"
+          - cell "분배 총합"
+          - cell "1200ms"
+        - row "--dur-turn-budget 턴 총합 상한 700ms":
+          - cell "--dur-turn-budget":
+            - code: "--dur-turn-budget"
+          - cell "턴 총합 상한"
+          - cell "700ms"

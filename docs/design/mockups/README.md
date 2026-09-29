@@ -5,11 +5,11 @@
 ## 이미지 재생성
 
 ```sh
-./dev.sh install
-./dev.sh e2e --config e2e/design/visual-direction.config.ts
+docker compose run --rm dev npm ci
+docker compose run --rm dev npm run e2e -w packages/web -- --config e2e/design/visual-direction.config.ts
 ```
 
-기존 Playwright `mcr.microsoft.com/playwright:v1.63.0-noble` 컨테이너에서 실행한다. `prototype.html?theme=ink|club|pop&scene=home|game|gostop|ppeok|jjok|settlement`를 file URL로 열며 외부 HTTP 요청은 없어야 한다. 테마별 로컬 폰트와 기존 카드 SVG를 로드한다.
+단일 개발 이미지(`compose.yaml`의 `dev`, Playwright 1.63.0)에서 실행한다. `prototype.html?theme=ink|club|pop&scene=home|game|gostop|ppeok|jjok|settlement`를 file URL로 열며 외부 HTTP 요청은 없어야 한다. 테마별 로컬 폰트와 기존 카드 SVG를 로드한다. PR #38 이후 `./dev.sh`는 사용할 수 없다. 아래 옛 명령은 당시 실행 이력이다.
 
 - CSS viewport 412×915, deviceScaleFactor 3.5. PNG 저장은 `scale: 'css'` → 412×915.
 - Chromium 18개 파일을 저장하며 WebKit 18개 상태는 같은 DOM·폰트·입력 범위 검증만 수행한다.
@@ -93,3 +93,23 @@ docker run --rm -v "$PWD:/work" -v /tmp/visual-research:/inputs \
 | 새 폰트 코퍼스/크기 | 앱 소스 포함703문자, 실제 표시117문자. Pretendard140.3 / SUIT145.2 / Wanted106.0 / Noto116.7 KiB |
 
 OFL 파일은 이전 측정의 공백 정규화를 없애고 원본 byte 그대로 동봉한다. 고지 파일만 `.gitattributes`에서 원본의 행 끝 공백을 허용하며 `sources.json` 해시와 동일함을 파이프라인이 검사한다. 제품 접근성/최소4화면 계약의 구현 전후 평가는 [제안 §10](../visual-direction.md#10-유지해야-할-기능-목록--매-구현-pr-대조표)에 분리했다. 인계 브랜치 f566f46의 검사 수치는 [인계 검토](../foundations/hud-handoff.md)의 원 담당 보고이며 위 현재 브랜치 재검증과 섞지 않는다.
+
+## main 통합 후 새 진입점 재검증 (2026-09-29)
+
+사용자 지시로 main `c6a637e`를 병합했다(#38 `f5df64f`, #89 포함). 충돌은 `knip.json`의 카드/문서 렌더 entry를 합치고, `plan.md`의 최신 §1.8 구조에 시각 조사·OFL 근거를 보존해 해소했다. 빈 root 소유 `node_modules`는 README 전환 절차의 `rmdir` 후 새 `npm ci`로 복구했다. 방향 선택은 여전히 대기 중이다.
+
+아래 모든 명령의 접두는 저장소 루트 **`docker compose run --rm dev`**다.
+
+| 명령 | 결과 |
+|---|---|
+| `npm ci` | 성공 |
+| `npm run lint:fix`, `npm run lint` | 성공 |
+| `npm run check` | 성공, svelte-check 오류/경고0, knip 통과 |
+| `npm test` | 487통과 |
+| `npm run test:browser` | 38파일 / 252통과 |
+| `npm run build -w packages/web` | 1,034.0 KiB / 1,536 KiB, 외부 URL0 |
+| `npm run e2e -w packages/web` | 기존 갤러리 픽셀·axe·카드·메뉴/재접속 포함82통과 / 기존 조건부4 skipped. 빠름 p50 Chromium527ms / WebKit553ms |
+| `android/gradlew -p android assembleDebug testDebugUnitTest lint` | BUILD SUCCESSFUL |
+| `npm run e2e -w packages/web -- --config e2e/design/visual-direction.config.ts` | 36통과, PNG18장 재렌더. #89의 새 카드 뒷면 반영 |
+
+main의 앱 코드·카드 자산·기존 회귀 기준 이미지는 추가 수정 없이 유지했다. 폰트 측정703문자는 원 조사 코퍼스이며 main의 새 문구를 재측정한 결과가 아니다. 제품 적용 시 현재 전체 UI 문구로 다시 subset/gate한다. 이전 검증 표는 각 당시 기준의 이력으로 남긴다.

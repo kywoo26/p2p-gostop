@@ -38,9 +38,13 @@
   </section>
 
   <section aria-labelledby="lic-original">
-    <h2 id="lic-original">보너스 카드·카드 뒷면</h2>
+    <h2 id="lic-original">보너스 카드(48~50번)·카드 뒷면</h2>
     <p>{ORIGINAL_ART_LICENSE.scope}</p>
-    <p>{ORIGINAL_ART_LICENSE.title}<br /><code>{ORIGINAL_ART_LICENSE.url}</code></p>
+    <p>
+      {ORIGINAL_ART_LICENSE.title} ({ORIGINAL_ART_LICENSE.name})<br /><code
+        >{ORIGINAL_ART_LICENSE.url}</code
+      >
+    </p>
   </section>
 
   <section aria-labelledby="lic-code">

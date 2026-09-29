@@ -11,6 +11,11 @@ test('라이선스 화면: 저작자 3명, CC BY-SA 4.0, 원본·CC0 주소를 �
   }
   const text = document.body.textContent ?? '';
   expect(text).toContain('CC BY-SA 4.0');
+  // 보너스 3장·뒷면은 자체 제작 CC0 (plan.md D1)
+  await expect
+    .element(screen.getByRole('heading', { name: '보너스 카드(48~50번)·카드 뒷면' }))
+    .toBeVisible();
+  expect(text).toContain('CC0 1.0');
   for (const url of ATTRIBUTION_URLS) expect(text).toContain(url);
   // 외부 주소에는 링크를 걸지 않는다 (오프라인, spec NF-01)
   for (const a of document.querySelectorAll('a[href]')) {
