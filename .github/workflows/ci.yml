@@ -31,6 +31,8 @@ jobs:
       - uses: ./.github/actions/dev-image
       - name: Dockerfile 변경 시 이미지 태그 갱신 확인
         run: docker compose run --rm --user root dev bash docker/check-dev-image-tag.sh
+      - name: RP-03 Docker 컨텍스트 canary 검사
+        run: bash docker/relay/check-context.sh
       - name: lint (oxlint + oxfmt / ESLint + Prettier)
         run: docker compose run --rm --user root dev npm run lint
       - name: check (tsc 7 / svelte-check + tsc 6 / knip)

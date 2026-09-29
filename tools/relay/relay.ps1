@@ -46,6 +46,21 @@ function FunnelStatus {
   if ($LASTEXITCODE -ne 0) { Fail "Tailscale Funnel status failed. Start/sign in to the Windows Tailscale app. $output" }
   return ($output | Out-String)
 }
+function OwnedFunnelProcessIds {
+  # A missing marker can follow a failed marker write. Match this exact target.
+  try {
+    @(Get-CimInstance Win32_Process -Filter "Name = 'tailscale.exe'" -ErrorAction Stop |
+      Where-Object { $_.ExecutablePath -eq $Tailscale -and $_.CommandLine -match 'funnel\s+--https=443\s+' -and $_.CommandLine.Contains($Target) } |
+      ForEach-Object { $_.ProcessId })
+  } catch {
+    [Console]::Error.WriteLine("Could not inspect Tailscale process arguments: $_")
+    @()
+  }
+}
+function FunnelOff {
+  $output = & $Tailscale funnel --https=443 $Target off 2>&1
+  if ($LASTEXITCODE -ne 0) { Fail "Tailscale rejected Funnel off: $output" }
+}
 function DnsName {
   $raw = & $Tailscale status --json 2>&1
   if ($LASTEXITCODE -ne 0) { Fail 'Windows Tailscale is stopped or not signed in. Start the app and connect.' }
@@ -80,28 +95,39 @@ try {
 
 if ($Action -eq 'stop') {
   $failed = $false
-  if (Test-Path $Marker) {
-    try {
+  try {
+    $hasMarker = Test-Path $Marker
+    $ownedProcesses = @(OwnedFunnelProcessIds)
+    $status = ''
+    $dns = ''
+    try { $status = FunnelStatus; $dns = DnsName }
+    catch {
+      if ($ownedProcesses.Count -eq 0) { throw }
+      [Console]::Error.WriteLine("Funnel status is unavailable; stopping this script's relay process: $_")
+    }
+    if ($hasMarker) {
       $ownerDns = (Get-Content $Marker -Raw).Trim()
-      if ((DnsName) -ne $ownerDns) { Fail 'The active Tailscale node differs from the node saved by start. Inspect the Funnel status before stopping it.' }
-      if ((FunnelStatus).Contains($Target)) {
-        $null = & $Tailscale funnel --https=443 $Target off 2>&1
-        if ($LASTEXITCODE -ne 0) { Fail 'Tailscale rejected Funnel off.' }
-      }
-      Remove-Item $Marker -Force
-      Write-Host 'Owned Funnel endpoint disabled.'
-    } catch { [Console]::Error.WriteLine("Funnel may still be public: $_. Run tailscale funnel --https=443 $Target off manually."); $failed = $true }
-  } else {
-    try {
-      if ((FunnelStatus).Contains($Target)) { Fail 'This target is active without an ownership marker; inspect it and turn it off manually.' }
-      Write-Host 'No owned Funnel endpoint is active.'
-    } catch { [Console]::Error.WriteLine("Funnel status is unconfirmed: $_"); $failed = $true }
-  }
+      if ($dns -and $dns -ne $ownerDns) { Fail 'The active Tailscale node differs from the node saved by start. Inspect the Funnel status before stopping it.' }
+    }
+    $targetOnThisNode = $dns -and $status.Contains($Target) -and $status.ToLowerInvariant().Contains($dns)
+    if ($targetOnThisNode -or $ownedProcesses.Count -gt 0) {
+      try { FunnelOff }
+      finally { foreach ($id in $ownedProcesses) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue } }
+      Write-Host 'Relay Funnel endpoint disabled.'
+    } elseif ($status.Contains($Target)) {
+      Fail 'The relay target appears on a different Tailscale node; inspect funnel status before stopping it.'
+    } else { Write-Host 'No relay Funnel endpoint is active.' }
+    if ($hasMarker) { Remove-Item $Marker -Force }
+  } catch { [Console]::Error.WriteLine("Funnel may still be public: $_. Run tailscale funnel --https=443 $Target off manually."); $failed = $true }
   try { $null = Compose 'down'; Write-Host 'Relay container stopped.' }
   catch { [Console]::Error.WriteLine("Relay container may still be running: $_"); $failed = $true }
   if ($failed) { exit 3 } else { exit 0 }
 }
 
+$startedFunnelThisRun = $false
+$startedProcess = $null
+$ownedBeforeStart = $false
+$startSucceeded = $false
 try {
   try { $null = Wsl 'test -d packages/web/dist' }
   catch { Fail 'Web dist is missing. Build the same release as the Galaxy APK in the dev image.' }
@@ -121,6 +147,7 @@ try {
     Fail 'Funnel target is active on a different hostname. Inspect tailscale status --json and tailscale funnel status; no relay was started.'
   }
   if ($ours -and -not (Test-Path $Marker)) { Fail 'Port 443 already points to this target but this script does not own it. Inspect tailscale funnel status before changing it.' }
+  $ownedBeforeStart = $ours
   if (-not $ours -and $before -match 'https://') { Fail 'Another HTTPS Serve/Funnel endpoint is active. Inspect tailscale funnel status; this script will not replace it.' }
   $null = Compose 'up -d --no-build'
   $null = LocalHealth
@@ -130,9 +157,10 @@ try {
   }
   if (-not $ours) {
     # No --bg: Tailscale documents that --bg resumes sharing after reboot.
-    $process = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru
+    $startedProcess = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru
+    $startedFunnelThisRun = $true
     Start-Sleep -Seconds 2
-    if ($process.HasExited) { Fail 'Funnel did not stay running. Check node approval in the Tailscale admin console and tailscale funnel status.' }
+    if ($startedProcess.HasExited) { Fail 'Funnel did not stay running. Check node approval in the Tailscale admin console and tailscale funnel status.' }
     $after = FunnelStatus
     if (-not $after.Contains($Target) -or -not $after.ToLowerInvariant().Contains($dns)) {
       Fail 'Funnel target or hostname does not match this Tailscale node. Check node approval and tailscale funnel status.'
@@ -150,18 +178,34 @@ try {
   Write-Host "Web: $url$($version.current.path)"
   Write-Host "QR file in WSL: $Repo/tools/relay/relay-url.svg"
   Write-Host 'Health confirms the relay response only; host/guest game connection is a separate check.'
-  exit 0
+  $startSucceeded = $true
 } catch {
   $reason = "$_"
   if ($reason -match 'port is already allocated|address already in use|bind:') {
     $reason = 'Port 17777 is occupied. Inspect docker compose -f compose.relay.yaml ps and ss -ltn; stop the conflicting service manually.'
   }
   [Console]::Error.WriteLine("Start failed: $reason")
-  if (Test-Path $Marker) {
-    $null = & $Tailscale funnel --https=443 $Target off 2>&1
-    if ($LASTEXITCODE -eq 0) { Remove-Item $Marker -Force }
-    else { [Console]::Error.WriteLine("Funnel may still be public. Run tailscale funnel --https=443 $Target off manually.") }
+} finally {
+  if (-not $startSucceeded) {
+    # Cleanup is based on this invocation, even if status/marker writing failed.
+    if ($startedFunnelThisRun -or $ownedBeforeStart) {
+      $offSucceeded = $false
+      try {
+        FunnelOff
+        $offSucceeded = $true
+        if (Test-Path $Marker) { Remove-Item $Marker -Force }
+      } catch { [Console]::Error.WriteLine("Funnel may still be public: $_") }
+    }
+    if ($null -ne $startedProcess) {
+      try { Stop-Process -Id $startedProcess.Id -Force -ErrorAction Stop }
+      catch { if (-not $startedProcess.HasExited) { [Console]::Error.WriteLine("Funnel process may still be running: $_") } }
+    }
+    if (($startedFunnelThisRun -or $ownedBeforeStart) -and -not $offSucceeded) {
+      try { FunnelOff; if (Test-Path $Marker) { Remove-Item $Marker -Force } }
+      catch { [Console]::Error.WriteLine("Funnel may still be public after retry: $_") }
+    }
+    try { $null = Compose 'down' } catch { [Console]::Error.WriteLine("Relay may still be running: $_") }
   }
-  try { $null = Compose 'down' } catch { [Console]::Error.WriteLine("Relay may still be running: $_") }
-  exit 4
 }
+if ($startSucceeded) { exit 0 }
+exit 4
