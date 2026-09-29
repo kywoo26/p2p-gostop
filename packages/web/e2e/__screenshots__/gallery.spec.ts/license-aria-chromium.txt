@@ -45,6 +45,13 @@
   - region "앱 코드":
     - heading "앱 코드" [level=2]
     - paragraph: 앱 코드(엔진·UI)는 MIT 라이선스다. 카드 그림의 동일조건(ShareAlike)은 그림과 그 변경본에만 적용됩니다.
+  - region "배포 의존성":
+    - heading "배포 의존성" [level=2]
+    - paragraph: 웹과 Android 앱에 포함되는 공개 소스 의존성입니다. 목록과 라이선스 원문은 앱에 함께 들어 있습니다.
+    - link "전체 공개 소스 고지 읽기":
+      - /url: ./oss/NOTICE.txt
+    - group: 웹 의존성 (3)
+    - group: Android 의존성 (71)
   - region "게임 자산":
     - heading "게임 자산" [level=2]
     - paragraph: para · CC0-1.0

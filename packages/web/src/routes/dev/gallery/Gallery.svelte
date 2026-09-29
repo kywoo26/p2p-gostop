@@ -170,6 +170,7 @@
     guest={fixtures.hostRoom.guest}
     rules={{
       preset: 'standard',
+      custom: false,
       perPoint: fixtures.hostRoom.rules.pointValue,
       startBalance: 150_000,
       hostName: '호스트',

@@ -193,6 +193,7 @@
       host?.stage === 'lobby' &&
       host.resumable === null &&
       ('preset' in patch ||
+        'customRules' in patch ||
         'gukjinAsk' in patch ||
         'perPoint' in patch ||
         'startBalance' in patch ||

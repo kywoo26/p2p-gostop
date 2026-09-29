@@ -7,12 +7,14 @@ import {
   suggestedStartBalance,
   type Difficulty,
 } from '@p2p-gostop/ai';
-import type { PresetId } from '@p2p-gostop/engine';
+import { PRESETS, type PresetId, type RuleOptions } from '@p2p-gostop/engine';
 import type { MoneyUnit, SpeedSetting } from '../lib/view-types.ts';
 import { readJson, STORAGE_KEYS, writeJson } from '../storage/local.ts';
+import { normalizeRules } from './rule-options.ts';
 
 export interface AppSettings {
   readonly preset: PresetId;
+  readonly customRules: RuleOptions | null;
   /** 국진 '매번 묻기' (FR-15). 끄면 자동 최적 */
   readonly gukjinAsk: boolean;
   readonly perPoint: number;
@@ -20,8 +22,16 @@ export interface AppSettings {
   readonly startBalance: number | null;
   readonly unit: MoneyUnit;
   readonly speed: SpeedSetting;
+  readonly effectIntensity: 'off' | 'subtle' | 'strong';
   readonly sound: boolean;
-  readonly vibration: boolean;
+  /** Android 브리지 진동. 기존 vibration 저장값을 이 이름으로 이행한다. */
+  readonly vibrate: boolean;
+  /** FR-46: 기기별 보조 수준 */
+  readonly hintLevel: 'off' | 'basic' | 'detail';
+  /** FR-17: 120ms 취소 지연 opt-in. 입력 동작은 #111에서 연결한다. */
+  readonly confirmDelay: boolean;
+  /** 자동치기는 계약만 정함. 실행 엔진 연결 전에는 항상 끔 */
+  readonly autoPlay: false;
   /** 마지막으로 고른 CPU 난이도 */
   readonly difficulty: Difficulty;
   /** 상용급 CPU 생각 시간 상한 ms (AI-05: Android ≤ 1.0초) */
@@ -41,13 +51,18 @@ const AI_TIME_OPTIONS: readonly number[] = [500, 1000, 1500];
 
 const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   preset: 'standard',
+  customRules: null,
   gukjinAsk: false,
   perPoint: DEFAULT_PER_POINT,
   startBalance: null,
   unit: '냥',
   speed: 'normal',
+  effectIntensity: 'strong',
   sound: true,
-  vibration: true,
+  vibrate: true,
+  hintLevel: 'basic',
+  confirmDelay: false,
+  autoPlay: false,
   difficulty: 'commercial',
   aiTimeMs: 1000,
   playerName: '호스트',
@@ -70,6 +85,7 @@ export function normalizeSettings(raw: unknown): AppSettings {
   const start = o['startBalance'];
   return {
     preset: pick(o['preset'], PRESET_IDS, d.preset),
+    customRules: normalizeRules(o['customRules'], pick(o['preset'], PRESET_IDS, d.preset)),
     gukjinAsk: typeof o['gukjinAsk'] === 'boolean' ? o['gukjinAsk'] : d.gukjinAsk,
     perPoint: pick<number>(o['perPoint'], PER_POINT_OPTIONS, d.perPoint),
     startBalance:
@@ -78,12 +94,31 @@ export function normalizeSettings(raw: unknown): AppSettings {
         : null,
     unit: pick(o['unit'], UNITS, d.unit),
     speed: pick(o['speed'], SPEEDS, d.speed),
+    effectIntensity: pick(
+      o['effectIntensity'],
+      ['off', 'subtle', 'strong'] as const,
+      d.effectIntensity,
+    ),
     sound: typeof o['sound'] === 'boolean' ? o['sound'] : d.sound,
-    vibration: typeof o['vibration'] === 'boolean' ? o['vibration'] : d.vibration,
+    vibrate:
+      typeof o['vibrate'] === 'boolean'
+        ? o['vibrate']
+        : typeof o['vibration'] === 'boolean'
+          ? o['vibration']
+          : d.vibrate,
+    hintLevel: pick(o['hintLevel'], ['off', 'basic', 'detail'] as const, d.hintLevel),
+    confirmDelay: typeof o['confirmDelay'] === 'boolean' ? o['confirmDelay'] : d.confirmDelay,
+    autoPlay: false,
     difficulty: pick(o['difficulty'], DIFFICULTY_IDS, d.difficulty),
     aiTimeMs: pick(o['aiTimeMs'], AI_TIME_OPTIONS, d.aiTimeMs),
     playerName: cleanName(o['playerName'], d.playerName),
   };
+}
+
+/** 진행 중인 판에는 쓰지 않고 새 세션 설정에만 적용한다. */
+export function effectiveRules(s: AppSettings): RuleOptions {
+  const base = s.customRules ?? PRESETS[s.preset];
+  return { ...base, gukjin: s.gukjinAsk ? 'ask' : 'auto' };
 }
 
 /** 실제로 쓸 시작 잔액 */
