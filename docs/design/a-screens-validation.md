@@ -91,3 +91,6 @@ UX-24 제목 초점 때문에 target/gostop 제목에 기존 focus-visible 링�
 Context7 도구가 노출되지 않아 [Svelte effect/lifecycle](https://svelte.dev/docs/svelte/$effect), [MDN dialog](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role), [WAI-ARIA modal pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) 공식 문서를 직접 확인했다. 인라인 dialog의 배치를 유지하려고 초점 순환과 inert를 명시적으로 구현했다.
 
 메뉴 진입점의 접근성 소유 관계는 [MDN aria-owns](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-owns), 상위 네이티브 메뉴 감지는 [MDN :modal](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:modal)을 따른다. 실제 VoiceOver/TalkBack 읽기 순서는 사람 확인 대기다.
+
+
+최종 재검증(main24bf1e0 병합 + 리뷰 수정): Docker :4에서 npm ci/lint/check 통과(오류·경고0), Node519/27파일·브라우저404/60파일, 기본 build **1,278.4/1,536KiB**·외부URL0·폰트140.8KiB/703문자 누락0. 전체 E2E **256통과/18제외(기존6+평가 전용12)/실패·재시도0**, 기준샷 갱신 없이 3.3분. 빠름 p50 Chromium381ms/WebKit382ms, 보통 매칭+획득 p50 1,754/1,748ms. Android assembleDebug/testDebugUnitTest/lint BUILD SUCCESSFUL. Settlement script/onclick은 origin/main과 동일하며 game/p2p/anim/solo timing/카드 원본 diff0이다. 실제 스크린리더·기기 검증은 수행하지 않았다.
