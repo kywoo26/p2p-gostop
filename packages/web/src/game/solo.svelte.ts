@@ -16,7 +16,7 @@ import {
 import type { BoardView } from '@p2p-gostop/protocol';
 import { scaledMs } from '../anim/durations.ts';
 import { settings } from '../settings/settings.svelte.ts';
-import { readJson, removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
+import { removeKey, STORAGE_KEYS, writeJson } from '../storage/local.ts';
 import { toBoardView } from './adapter.ts';
 import type { AiClient } from './ai-client.ts';
 import type { GameController, GameStats } from './controller.ts';
@@ -77,7 +77,7 @@ export class SoloSession implements GameController {
   thinking = $state(false);
   readonly playback: Playback;
   readonly difficulty: Difficulty;
-  readonly notice = null;
+  notice = $state<string | null>(null);
   private readonly timeBudgetMs: number;
   private readonly ai: AiClient;
   private readonly persist: boolean;
@@ -111,17 +111,33 @@ export class SoloSession implements GameController {
   }
 
   /** 저장된 세션 읽기 (MN-05). 끝난 세션도 기록 화면을 위해 돌려준다 */
-  static load(): SoloSave | null {
-    const raw = readJson(STORAGE_KEYS.soloSession);
-    if (typeof raw !== 'object' || raw === null) return null;
+  static loadResult(): { save: SoloSave | null; error: string | null } {
+    let raw: unknown;
+    try {
+      const stored = globalThis.localStorage.getItem(STORAGE_KEYS.soloSession);
+      if (stored === null) return { save: null, error: null };
+      raw = JSON.parse(stored) as unknown;
+    } catch {
+      return {
+        save: null,
+        error: '저장된 세션을 읽을 수 없습니다. 저장소 접근 또는 데이터 형식을 확인해 주세요.',
+      };
+    }
+    if (typeof raw !== 'object' || raw === null)
+      return { save: null, error: '저장된 세션 데이터가 손상되었습니다.' };
     const o = raw as Partial<SoloSave>;
     const session = parseSession(o.session);
-    if (o.version !== 1 || session === null) return null;
+    if ((o.version !== 1 && o.version !== 0) || session === null)
+      return { save: null, error: '저장된 세션 데이터가 손상되었거나 지원하지 않는 형식입니다.' };
     const difficulty = o.difficulty;
     if (difficulty !== 'easy' && difficulty !== 'normal' && difficulty !== 'commercial') {
-      return null;
+      return { save: null, error: '저장된 난이도 정보가 손상되었습니다.' };
     }
-    return { version: 1, difficulty, session };
+    return { save: { version: 1, difficulty, session }, error: null };
+  }
+
+  static load(): SoloSave | null {
+    return SoloSession.loadResult().save;
   }
 
   static clearSaved(): void {
@@ -248,8 +264,13 @@ export class SoloSession implements GameController {
   private save(): void {
     if (!this.persist) return;
     const save: SoloSave = { version: 1, difficulty: this.difficulty, session: this.state };
-    if (!writeJson(STORAGE_KEYS.soloSession, save))
+    if (!writeJson(STORAGE_KEYS.soloSession, save)) {
+      this.notice =
+        '세션 저장에 실패했습니다. 앱을 닫으면 판·잔액·기록을 복원하지 못할 수 있습니다.';
       log.warn('세션 저장 실패 (저장소 없음 또는 용량 초과)');
+    } else if (this.notice !== null) {
+      this.notice = null;
+    }
   }
 
   private enqueue(events: readonly EngineEvent[], action: Action | null, tapAt: number | null) {

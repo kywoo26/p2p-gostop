@@ -7,6 +7,7 @@ ktor = "3.6.0"
 coroutines = "1.11.0"
 zxing = "3.5.4"
 webkit = "1.17.1"
+activity = "1.13.0"
 junit = "4.13.2"
 json = "20260719"
 
@@ -21,6 +22,7 @@ ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
+androidx-activity = { module = "androidx.activity:activity", version.ref = "activity" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
 json = { module = "org.json:json", version.ref = "json" }
