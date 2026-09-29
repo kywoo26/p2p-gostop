@@ -33,6 +33,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: RP-03 Docker 컨텍스트 canary 검사
+        run: bash docker/relay/check-context.sh
       - name: lint (oxlint + oxfmt / ESLint + Prettier)
         run: npm run lint
       - name: check (tsc 7 / svelte-check + tsc 6 / knip)

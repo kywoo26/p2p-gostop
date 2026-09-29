@@ -11,7 +11,7 @@
 
 | 순서 | 사람이 할 일 | 합격 기준 |
 |---|---|---|
-| 1 공개 경로 | `tailscale funnel --bg --https=443 <target>`로 전용 중계를 공개하고 status 확인. 같은 PC의 정적 HTTPS 링크 열기 | 인증서 경고 0, 앱/계정/VPN 설치 요구 0, 관리/진단/파일 목록 공개 0 |
+| 1 공개 경로 | [PC 운영 절차](../../tools/relay/README.md)에 따라 `start.cmd`로 전용 중계/Funnel을 수동 시작하고 status 확인. 같은 PC의 정적 HTTPS 링크 열기 | 인증서 경고 0, 앱/계정/VPN 설치 요구 0, 관리/진단/파일 목록 공개 0. 종료·재부팅 뒤 자동 공개 0 |
 | 2 **Funnel WS gate** | Galaxy host·Safari guest로 `/ws?role=...&room=...` 접속. 비밀 없는 서버 측 role/방 일치 판정만 확인 | 양쪽 WS upgrade·query 보존·첫 프레임 인증·relay 알림·hello/snapshot 성공. 실패면 Funnel 지원 미검증/불가, Cloudflare 대안 검토 |
 | 3 참여 UX | 링크/QR/코드 각각 새 방에 참여, 로비 이름·설정 확인 | 링크→이름→로비, 코드는 host 수락 후 연결. 이름이 신원 인증이라고 표시되지 않음 |
 | 4 공격 경계 | 만료/틀린 토큰·재사용 초대·타 방/역할 토큰·세 번째 탭 시도 | 기존 참가자가 쫓겨나지 않음. 같은 유효 복귀 토큰으로만 4001 교체, 이전 탭 자동 재접속 없음 |
@@ -33,6 +33,20 @@
 | 확정 초대 계약 | 12자리 4-4-4·초대15분·방6시간·host 단절10분 설정 확인(검증에서는 단축 가능). 비밀 링크는 별도 host 승인 없이 로비, 코드만 승인. 닉네임+메신저 확인·관전자 거부·저장 ts.net과 방별 QR 확인 |
 | 버전·세션 연속성 | Galaxy 호환 웹 경로 제공, wire 불일치 시작 차단·업데이트 안내. 같은 방 복귀는 원장 유지, 방 종료 후 새 세션. 세션 중 모드 전환 금지 |
 | 단절 복구 | 0.5→30초 자동 백오프·수동 재시도/종료·host 부재와 중계 불통 안내 구분. 유효한 같은 방 복귀에서 중복 수/정산0 |
+
+### RP-03A/B PC 운영 검증 기록 칸 (사람 실행)
+
+Windows 11 + Docker Desktop WSL2 통합 + Windows Tailscale 앱에서 실제 실행한다. 공개 자격 증명 값·방 토큰·QR 비밀은 기록하지 않는다. 이전 2026-09-29 기본 WS 시험은 아래 새 이미지/스크립트 검증으로 대체되지 않는다.
+
+| 날짜·검증자 / release·이미지 ID | 단계 | 관찰(상태·오류 코드·소요) | 판정 |
+|---|---|---|---|
+| 미실시 | 설치: 동일 APK/웹 SHA, 저장소 밖 0600·base64url 43자 생성 키, 이미지 build, `127.0.0.1:17777`만 publish |  | 대기 |
+| 미실시 | start 1회·반복: Docker 실행→로컬 `/health`·`/version`→Funnel→공개 `/health`, 로컬·Funnel HTTPS Origin 허용과 게스트 CORS preflight/WS, URL·호환 웹 경로·기본 주소 QR 출력 |  | 대기 |
+| 미실시 | stop 1회·반복: 소유 Funnel 443 off→전용 Compose down, 다른 Funnel/컨테이너 보존 |  | 대기 |
+| 미실시 | Funnel 시작 뒤 status/호스트/marker/공개 health 단계 실패와 marker 삭제 후 stop: 17777 공개 설정·시작한 프로세스 종료, 다른 Funnel 보존 |  | 대기 |
+| 미실시 | Docker 종료·17777 점유·Tailscale 종료·Funnel 미승인·공개 DNS/TLS 실패 각각 유발 |  | 대기 |
+| 미실시 | Windows 재부팅/로그인·Docker 재시작: 자동 공개/중계 기동 0, 수동 시작 뒤 WSL localhost 전달 |  | 대기 |
+| 미실시 | 이미지 롤백: 이전 호환 release 경로/해시·wire 거절/업데이트 안내, 방 재생성 |  | 대기 |
 
 ## 선택적 RP-A 검증 절차 — 미실시·우선 구현 안 함
 
