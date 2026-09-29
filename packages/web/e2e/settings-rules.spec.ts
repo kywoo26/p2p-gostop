@@ -90,7 +90,7 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   await expect(hint).toHaveValue('off');
 });
 
-test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 초기화한다 (FR-21, FR-24)', async ({
+test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 초기화한다 (FR-21, FR-24) @guest', async ({
   page,
   browser,
   baseURL,
@@ -146,7 +146,7 @@ test('설정→P2P 로비: 사용자 지정 규칙이 방 설정으로 전달되
   await expect(page.getByLabel('2장 폭탄')).toHaveValue('"off"');
 });
 
-test('설정→P2P welcome: 사용자 지정 규칙이 게스트 대기실에 전파된다', async ({
+test('설정→P2P welcome: 사용자 지정 규칙이 게스트 대기실에 전파된다 @guest', async ({
   page,
   browser,
   baseURL,

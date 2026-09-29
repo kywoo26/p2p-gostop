@@ -43,7 +43,7 @@ test('51장 ID·엔진 메타데이터·파일·독립 SVG 일치, 자체 제작
 for (const dpr of [2, 3, 3.5]) {
   test.describe(`카드 DPR ${dpr}`, () => {
     test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: dpr });
-    test('크기·색인·대비·로컬 요청, PNG는 실행 산출물에만 저장', async ({ page }, info) => {
+    test('크기·색인·대비·로컬 요청, PNG는 실행 산출물에만 저장 @layout', async ({ page }, info) => {
       const external: string[] = [];
       page.on('request', (request) => {
         if (new URL(request.url()).hostname !== '127.0.0.1') external.push(request.url());
@@ -140,7 +140,7 @@ for (const dpr of [2, 3, 3.5]) {
 
 test.describe('S25 Ultra 게임판 배지', () => {
   test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5 });
-  test('뻑·더미 수와 실제 카드 교차 0, 손패 월 색인이 다른 카드에 가리지 않는다', async ({
+  test('뻑·더미 수와 실제 카드 교차 0, 손패 월 색인이 다른 카드에 가리지 않는다 @layout', async ({
     page,
   }, info) => {
     await page.goto('./#/dev/gallery/board');

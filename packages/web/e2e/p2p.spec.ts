@@ -160,7 +160,7 @@ async function axe(page: Page): Promise<string[]> {
     .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
 }
 
-test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀 (AC-04)', async ({
+test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀 (AC-04) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   // 두 브라우저를 직접 띄우는 테스트라 프로젝트마다 반복하지 않는다
@@ -340,7 +340,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
   }
 });
 
-test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 보인다 (spec 2.4)', async ({
+test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 보인다 (spec 2.4) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', '한 번만 실행');
@@ -370,7 +370,7 @@ test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 �
   }
 });
 
-test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53, NP-10)', async ({
+test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53, NP-10) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', '한 번만 실행 (Chromium 호스트 + WebKit 게스트)');

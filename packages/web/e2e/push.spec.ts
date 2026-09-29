@@ -255,7 +255,9 @@ async function move(page: Page): Promise<void> {
   });
 }
 
-test('호스트·게스트 승자: 실제 중계에서 밀기와 다음 판 배수 동기화', async ({ baseURL }, info) => {
+test('호스트·게스트 승자: 실제 중계에서 밀기와 다음 판 배수 동기화 @guest @paired', async ({
+  baseURL,
+}, info) => {
   test.skip(info.project.name !== 'chromium', 'Chromium 호스트·WebKit 게스트 한 번 실행');
   test.setTimeout(120_000);
   const relay = await relayPort();
@@ -303,7 +305,7 @@ test('호스트·게스트 승자: 실제 중계에서 밀기와 다음 판 배�
   }
 });
 
-test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 전 정산하지 않는다', async ({
+test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 전 정산하지 않는다 @guest @paired', async ({
   baseURL,
 }, info) => {
   test.skip(info.project.name !== 'chromium', 'Chromium 호스트·WebKit 게스트 한 번 실행');

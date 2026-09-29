@@ -9,7 +9,7 @@ for (const [width, height] of [
   [430, 822],
   [412, 915],
 ] as const) {
-  test(`정산 ${width}x${height}: 밀기·받기·민 판·대기·장문`, async ({ page }, info) => {
+  test(`정산 ${width}x${height}: 밀기·받기·민 판·대기·장문 @layout`, async ({ page }, info) => {
     await page.setViewportSize({ width, height });
     for (const state of [
       'decision',
