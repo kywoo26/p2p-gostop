@@ -59,21 +59,22 @@ class GameActivity : ComponentActivity() {
     private var pendingHotspotId: Any? = null
     private var awaitingHotspotSettings = false
     private var fallingBack = false
-    private val backCallback = object : OnBackPressedCallback(true) {
-        override fun handleOnBackPressed() {
-            if (shouldSendWebBack(pageLoaded, replyProxy != null, gameActive)) {
-                send(JSONObject().put("type", "back"))
-            } else {
-                AlertDialog.Builder(this@GameActivity).setMessage(R.string.exit_game_confirm)
-                    .setPositiveButton(R.string.exit_game) { _, _ -> finish() }
-                    .setNegativeButton(R.string.stay_game, null).show()
-            }
-        }
-    }
+    private lateinit var backCallback: OnBackPressedCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        onBackPressedDispatcher.addCallback(this, backCallback)
+        backCallback = registerGameBack(
+            onBackPressedDispatcher,
+            pageLoaded = { pageLoaded },
+            bridgeReady = { replyProxy != null },
+            gameActive = { gameActive },
+            sendWeb = { send(it) },
+            confirmNativeExit = {
+                AlertDialog.Builder(this).setMessage(R.string.exit_game_confirm)
+                    .setPositiveButton(R.string.exit_game) { _, _ -> finish() }
+                    .setNegativeButton(R.string.stay_game, null).show()
+            },
+        )
         // 웹 브리지가 준비되기 전에도 호스트 화면이 잠기지 않게 한다(I-7).
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
@@ -402,6 +403,7 @@ class GameActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (::backCallback.isInitialized) backCallback.remove()
         scope.cancel()
         if (::web.isInitialized) {
             destroyWebView(web)

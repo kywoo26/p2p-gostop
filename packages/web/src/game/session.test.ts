@@ -36,3 +36,27 @@ test('손상된 게임판·원장·미지원 옛 형식은 복원하지 않는�
   ).toBeNull();
   expect(parseSession({ ...original, version: 99 })).toBeNull();
 });
+
+test('구문이 정상이어도 필수 중첩 필드가 없으면 복원하지 않는다 (MN-05, NF-05)', () => {
+  const { firstPick: _firstPick, ...gameWithoutPick } = original.game;
+  expect(parseSession({ ...original, game: gameWithoutPick })).toBeNull();
+  expect(parseSession({ ...original, game: { ...original.game, firstPick: null } })).toBeNull();
+  expect(
+    parseSession({ ...original, game: { ...original.game, firstPick: { pool: [] } } }),
+  ).toBeNull();
+  expect(
+    parseSession({ ...original, game: { ...original.game, pending: { kind: 'pickFirst' } } }),
+  ).toBeNull();
+  expect(
+    parseSession({
+      ...original,
+      game: {
+        ...original.game,
+        seats: [{ ...original.game.seats[0], score: null }, original.game.seats[1]],
+      },
+    }),
+  ).toBeNull();
+  expect(parseSession({ ...original, game: { ...original.game, ctx: { seat: 0 } } })).toBeNull();
+  expect(parseSession({ ...original, ledger: { ...original.ledger, entries: [{}] } })).toBeNull();
+  expect(parseSession({ ...original, records: [{ round: 1 }] })).toBeNull();
+});

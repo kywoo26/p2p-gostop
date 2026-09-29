@@ -1,4 +1,57 @@
+import { type ChildProcess, spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { expect, type Page, test } from '@playwright/test';
+
+const RELAY_CLI = fileURLToPath(new URL('../../relay-dev/src/cli.ts', import.meta.url));
+
+async function startRelay(): Promise<{ port: number; proc: ChildProcess }> {
+  const proc = spawn(process.execPath, [RELAY_CLI, '--port', '0'], {
+    env: { ...process.env, HOST: '127.0.0.1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const port = await new Promise<number>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('중계 시작 시간 초과')), 15_000);
+    proc.stdout?.setEncoding('utf8');
+    proc.stdout?.on('data', (chunk: string) => {
+      const match = chunk.match(/listening on ws:\/\/[^:]+:(\d+)/);
+      if (match?.[1] !== undefined) {
+        clearTimeout(timer);
+        resolve(Number(match[1]));
+      }
+    });
+    proc.on('exit', (code) => reject(new Error(`중계 종료 ${code}`)));
+  });
+  return { port, proc };
+}
+
+async function mockAndroidBack(page: Page) {
+  await page.addInitScript(() => {
+    const host = {
+      onmessage: null as ((event: { data: string }) => void) | null,
+      postMessage(data: string) {
+        const request = JSON.parse(data) as { type: string; id?: string; bool?: boolean };
+        const reply =
+          request.type === 'getHotspot'
+            ? { type: 'hotspot', id: request.id, state: 'off' }
+            : { type: request.type, id: request.id, active: request.bool };
+        queueMicrotask(() => host.onmessage?.({ data: JSON.stringify(reply) }));
+        if (request.type === 'gameActive') {
+          (window as unknown as { __gameActive?: boolean }).__gameActive = request.bool === true;
+        }
+      },
+    };
+    const w = window as unknown as { HostBridge: typeof host; __back: () => void };
+    w.HostBridge = host;
+    w.__back = () => host.onmessage?.({ data: JSON.stringify({ type: 'back' }) });
+  });
+}
+
+async function sendBack(page: Page) {
+  await page.waitForFunction(
+    () => (window as unknown as { __gameActive?: boolean }).__gameActive === true,
+  );
+  await page.evaluate(() => (window as unknown as { __back: () => void }).__back());
+}
 
 async function playOneRound(page: Page) {
   for (let i = 0; i < 300; i++) {
@@ -100,41 +153,73 @@ test('메뉴→설정→복귀, 홈→이어하기, 새 게임 취소, 종료→
 test('Android Back은 결정 프롬프트를 유지한 채 메뉴를 열고 닫으며 초점을 돌린다 (#10)', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    const host = {
-      onmessage: null as ((event: { data: string }) => void) | null,
-      postMessage(data: string) {
-        const request = JSON.parse(data) as { type: string; id?: string; bool?: boolean };
-        const reply =
-          request.type === 'getHotspot'
-            ? { type: 'hotspot', id: request.id, state: 'off' }
-            : { type: request.type, id: request.id, active: request.bool };
-        queueMicrotask(() => host.onmessage?.({ data: JSON.stringify(reply) }));
-        if (request.type === 'gameActive') {
-          (window as unknown as { __gameActive?: boolean }).__gameActive = request.bool === true;
-        }
-      },
-    };
-    const w = window as unknown as { HostBridge: typeof host; __back: () => void };
-    w.HostBridge = host;
-    w.__back = () => host.onmessage?.({ data: JSON.stringify({ type: 'back' }) });
-  });
+  await mockAndroidBack(page);
   await page.goto('./?speed=instant#/solo');
   await page.getByRole('button', { name: '시작', exact: true }).click();
   const prompt = page.getByRole('dialog', { name: '선 고르기' });
   await expect(prompt).toBeVisible();
   const original = prompt.getByRole('button').first();
   await original.focus();
-  await page.waitForFunction(
-    () => (window as unknown as { __gameActive?: boolean }).__gameActive === true,
-  );
-  await page.evaluate(() => (window as unknown as { __back: () => void }).__back());
+  await sendBack(page);
   await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
   await expect(page.locator('.board-wrap')).toHaveAttribute('inert', '');
   await page.evaluate(() => (window as unknown as { __back: () => void }).__back());
   await expect(page.getByRole('dialog', { name: '메뉴' })).not.toBeVisible();
   await expect(prompt).toBeVisible();
   await expect(original).toBeFocused();
+});
+
+test('솔로 Back → 메뉴 → 설정 → 뒤로에서 과거 Back을 재생하지 않는다 (#10)', async ({ page }) => {
+  await mockAndroidBack(page);
+  await page.goto('./?speed=instant#/solo');
+  await page.getByRole('button', { name: '시작', exact: true }).click();
+  await expect(page.getByTestId('solo')).toBeVisible();
+  await sendBack(page);
+  await page.locator('[data-menu="settings"]').click();
+  await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+  await page.getByRole('link', { name: '뒤로' }).click();
+  await expect(page.getByTestId('solo')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: '메뉴' })).not.toBeVisible();
+  await expect(page.locator('.board-wrap')).not.toHaveAttribute('inert', '');
+  await sendBack(page);
+  await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+});
+
+test('P2P 호스트 Back → 메뉴 → 설정 → 뒤로에서 과거 Back을 재생하지 않는다 (#10)', async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(60_000);
+  const relay = await startRelay();
+  const guestContext = await browser.newContext();
+  try {
+    await mockAndroidBack(page);
+    const base = baseURL ?? 'http://127.0.0.1:4173';
+    const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
+    await page.goto(`${base}/${query}&role=host#/`);
+    await page.getByRole('button', { name: '친구와 대전' }).click();
+    await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
+    const guest = await guestContext.newPage();
+    await guest.goto(`${base}/${query}&role=guest`);
+    await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
+    await guest.getByRole('button', { name: '입장' }).click();
+    await expect(page.getByTestId('guest-status')).toContainText('민지 · 연결됨');
+    await page.getByTestId('host-start').click();
+    await expect(page.getByTestId('match')).toBeVisible();
+    await sendBack(page);
+    await page.locator('[data-menu="settings"]').click();
+    await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+    await page.getByRole('link', { name: '뒤로' }).click();
+    await expect(page.getByTestId('match')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '메뉴' })).not.toBeVisible();
+    await expect(page.locator('.board-wrap')).not.toHaveAttribute('inert', '');
+    await sendBack(page);
+    await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+  } finally {
+    await guestContext.close();
+    relay.proc.kill();
+  }
 });
 
 test('손상 저장은 안내하고 새 게임 취소 뒤 원본을 유지한다 (#64, NF-05)', async ({ page }) => {
@@ -145,6 +230,31 @@ test('손상 저장은 안내하고 새 게임 취소 뒤 원본을 유지한다
   await page.getByRole('button', { name: '시작', exact: true }).click();
   await page.locator('[data-choice="cancel-new"]').click();
   expect(await page.evaluate(() => localStorage.getItem('gostop.solo.v1'))).toBe('{broken');
+});
+
+test('구문은 정상이나 구조가 손상된 저장은 이어하기를 막고 원본을 유지한다 (#64, NF-05)', async ({
+  page,
+}) => {
+  await page.goto('./?speed=instant#/solo');
+  await page.getByRole('button', { name: '시작', exact: true }).click();
+  await page.getByTestId('game-menu').click();
+  await page.locator('[data-menu="home"]').click();
+  const damaged = await page.evaluate(() => {
+    const save = JSON.parse(localStorage.getItem('gostop.solo.v1') ?? 'null');
+    delete save.session.game.firstPick;
+    const text = JSON.stringify(save);
+    localStorage.setItem('gostop.solo.v1', text);
+    return text;
+  });
+  await page.reload();
+  await expect(page.getByRole('alert')).toContainText('저장된 세션 데이터가 손상');
+  await expect(page.getByRole('button', { name: /이어하기/ })).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('gostop.solo.v1'))).toBe(damaged);
+  await page.goto('./#/game');
+  await expect(
+    page.getByText('저장된 세션 데이터가 손상되었거나 지원하지 않는 형식입니다.'),
+  ).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('gostop.solo.v1'))).toBe(damaged);
 });
 
 test('저장 실패는 게임 화면에서 즉시 알린다 (#64, MN-05)', async ({ page }) => {

@@ -87,6 +87,8 @@
   let confirming = $state<MenuItem | null>(null);
   let menuOpen = $state(false);
   let previousFocus: HTMLElement | null = null;
+  // 새 Game 인스턴스는 이미 전달된 Back을 소비한 상태에서 시작한다.
+  let handledBackToken = untrack(() => backToken);
 
   function openMenu() {
     if (menuDialog?.open) return;
@@ -108,7 +110,8 @@
   }
 
   $effect(() => {
-    if (backToken === 0) return;
+    if (backToken === handledBackToken) return;
+    handledBackToken = backToken;
     if (menuDialog?.open) closeMenu();
     else openMenu();
   });
