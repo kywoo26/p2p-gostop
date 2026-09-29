@@ -41,7 +41,7 @@ async function step(page: Page): Promise<boolean> {
   });
 }
 
-test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복구된다 (#60·#78) @timing', async ({
+test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복구된다 (#60·#78) @timing @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(
@@ -184,7 +184,7 @@ test('응답 유실은 자동 hello로 감지하고 snapshot 뒤 입력이 복�
   }
 });
 
-test('4001 교체 뒤 자동 재접속 없이 메뉴에서 나가고 호스트는 홈으로 간다 (NF-06)', async ({
+test('4001 교체 뒤 자동 재접속 없이 메뉴에서 나가고 호스트는 홈으로 간다 (NF-06) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', 'Chromium 호스트 + WebKit 게스트 한 번 실행');

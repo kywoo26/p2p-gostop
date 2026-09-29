@@ -178,7 +178,7 @@ async function stepMatch(page: Page): Promise<void> {
   });
 }
 
-test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 수동 선택은 계속 가능', async ({
+test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 수동 선택은 계속 가능 @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', '호스트 Chromium + 게스트 WebKit 한 조만 실행');

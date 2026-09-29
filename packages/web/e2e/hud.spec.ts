@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1 });
 
 for (const state of ['board', 'board-target', 'board-gostop']) {
-  test(`HUD ${state}: 메뉴 예약·무가림·대비`, async ({ page }, info) => {
+  test(`HUD ${state}: 메뉴 예약·무가림·대비 @layout`, async ({ page }, info) => {
     await page.goto(`./#/dev/gallery/${state}`);
     await expect(page.getByTestId('my-score')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
