@@ -16,6 +16,5 @@
         "e2e/design/wireframe.render.ts"
       ]
     }
-  },
-  "ignoreBinaries": ["uv"]
+  }
 }
