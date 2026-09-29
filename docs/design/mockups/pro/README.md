@@ -2,6 +2,8 @@
 
 **예산 개정 승인 전 / 평가용.** `design/pro-assets`, production-mode evaluation build (`PRO_ASSET_REVIEW=1`), Chromium, 412×915 CSS px / DPR1. Actual Home, Board and Settlement components; Commons card SVGs unchanged. PNGs are palette-optimized at original dimensions, each≤300KB; full-color originals remain in `packages/web/test-results/pro-assets/`.
 
+**이 캡처는 재질·색·그림의 기준이며 레이아웃 기준이 아니다.** 중앙 바닥과 위아래 빈 공간을 본선에 복제하지 않는다. 실제 `design/pro-skin`은 #104 병합 후 그 6행·예약 행·문턱 칩·손패2줄 구조에 적용한다. [준비 계획](../../pro-skin-plan.md) 참고. `pro-go.png`는 사건 배너이며 고/스톱 선택 패널 캡처가 아니다.
+
 | 화면 | PNG |
 |---|---|
 | 홈 | [home](home.png) |
