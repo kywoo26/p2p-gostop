@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import AxeBuilder from '@axe-core/playwright';
+import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import { expect, test, type WebSocketRoute } from '@playwright/test';
 
 const origin = 'https://relay.example.test';
@@ -31,8 +32,11 @@ test('설정에서 중계 등록 후 방 생성과 코드 참여 승인을 한�
         ? {
             relay: 'p2p-gostop',
             controlVersion: 1,
-            wireVersion: 2,
-            current: { path: `/r/v1/${'a'.repeat(64)}/`, wireVersion: 2 },
+            wireVersion: PROTOCOL_VERSION,
+            current: {
+              path: `/r/v1/${'a'.repeat(64)}/`,
+              wireVersion: PROTOCOL_VERSION,
+            },
           }
         : path === '/api/rooms'
           ? {
