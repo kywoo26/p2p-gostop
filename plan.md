@@ -236,7 +236,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 | RP-05B · guest 코드/만료/복귀 UI, 4~6h           | UI 담당: `web/src/routes/{GuestJoin,GuestApp}.svelte`, 필요 `App.svelte` 라우팅·전용 테스트                                                                                                                      | 05A + §3 App 라우팅/UX 담당 병합·인계 → 코드 승인/토큰 탭 저장·만료/부재·다른 창 상태 검증. p2p 수정 필요 시 04B 담당 후속 PR로 먼저 인계                                                                                          |
 | RP-05C · PC→health→초대 3단계 안내, 4~6h         | UI 담당: `web/src/routes/{Versus,HostRoom}.svelte`·전용 browser/E2E, 필요 신규 원격 안내 컴포넌트                                                                                                                | 05B·03B·04A + UX/디자인 인계 → 녹색/빨강+텍스트·PC/Docker/Funnel 조치·원인 미확인·host 부재 구분. 원격 진입에서 핫스팟 시작0, health 취소/중복 억제·시작 버튼 상태 검사(FR-RP-07/08)                                               |
 | RP-06 · Mac 가로·접근성, 6~8h                    | 디자인 인계받은 UI 담당: `web/src/ui/{Board,Screen}.svelte`, `styles/tokens.css`, Mac 전용 browser/E2E·기준샷                                                                                                    | 05C + **#104→스킨 병합** + 디자인의 Board/토큰 인계 → 단일 반응형 앱의 BoardView/액션과 배치 영역/폭 계약 분리(향후 넓은 화면 확장), 키보드/200%·모바일4화면 회귀, `--dur-*`/anim·p2p 변경 없음. 공용 기준샷 담당과 변경 목록 합의 |
-| RP-07 · 통합 자동 검증, 6~8h                     | 통합 담당: 신규 `web/e2e/remote-play.spec.ts`, `docs/device-test/remote-play.md`                                                                                                                                 | 자동 E2E 완료: AC-RP-01~04/06 브라우저 통합. 스킨 PR #171 통합 뒤 remote-play 8 통과(8 의도적 skip), smoke 315 통과. 병합 전 full 316 통과(28 의도적 skip); 병합 뒤 full은 미실행. AC-RP-05 사람 절차만 작성. Funnel 2시간·PC 복구·실기기 결과 전 수용 완료 판정 금지 |
+| RP-07 · 통합 자동 검증, 6~8h                     | 통합 담당: 신규 `web/e2e/remote-play.spec.ts`, `docs/device-test/remote-play.md`                                                                                                                                 | AC-RP-01~04/06 브라우저 통합 E2E; 스킨 #171 뒤 remote-play 8 통과(8 skip), smoke 315 통과. requestId 경합 중 수/정산 중복·앱 background·진행 중 TTL/quota 결과·LAN 첫 실행/기내 동일 APK와 Funnel 2시간·PC 복구·실기기는 미검증. AC-RP-05 사람 절차만 작성; 수용 완료 판정 금지 |
 
 선택적 RP-A도 아래 범위를 별도 승인한 경우에만 직렬 실행한다. 사람의 direct/DERP·VPN 해제 시험 시간은 별도다.
 
@@ -419,9 +419,9 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | NP-RP-08 | 자동 검증 완료·실기기 미검증 | 공개 health/정적 release·원격 밖 요청 경계, AC-RP-01/04 E2E와 `static.test.ts`; Funnel health는 사람 절차 |
 | NF-RP-01~06 | 자동 검증 범위 완료·실기기 미검증 | 인증·상한·무로그·오프라인 웹·hello 버전은 기존 서버/웹 테스트와 AC-RP-01~04/06 E2E. 비용·지연·동일 APK artifact·실기기 품질은 사람 절차 |
 | AC-RP-01 | 자동 검증 완료·실기기 미검증 | 호스트/게스트 두 브라우저 한 판·정산·다음 판, 링크·정적 경로와 resume. 별도 망/Funnel/2시간은 사람 절차 |
-| AC-RP-02 | 자동 검증 완료·실기기 미검증 | 승인/거절·위조/만료/재사용·4001·폭주와 좌석 보존, E2E 및 relay 단위 테스트 |
-| AC-RP-03 | 자동 검증 범위 완료·실기기 미검증 | 호스트 부재·중계 재시작과 새 방, E2E. PC 종료·무료 quota·실기기 복귀는 사람 절차 |
-| AC-RP-04 | 자동 검증 범위 완료·실기기 미검증 | 원격 종료 후 차단된 외부 경로에서 솔로 첫 판, E2E. Galaxy 기내 LAN/LOHS는 사람 절차 |
+| AC-RP-02 | 부분 자동 검증·실기기 미검증 | 승인/거절·위조/만료/재사용·4001·폭주와 좌석 보존 E2E/relay 단위 검사. requestId 경합 중 수·정산 중복 미검증 |
+| AC-RP-03 | 부분 자동 검증·실기기 미검증 | 진행 중 호스트 부재 시 입력·원장 보존과 복귀, 중계 재시작·새 방 E2E. 앱 background·진행 중 방/host TTL 만료·quota 실패의 게임 결과 및 PC/실기기 복귀 미검증 |
+| AC-RP-04 | 부분 자동 검증·실기기 미검증 | 같은 문서에서 종료 후 외부 HTTP·WS 재시도 0, 솔로 첫 판 E2E. LAN 첫 실행·Galaxy 기내 동일 APK/LOHS 미검증 |
 | AC-RP-05 | 사람 절차 작성·실기기 미검증 | `docs/device-test/remote-play.md` 결과 칸 공란. 자동 테스트로 대체 불가 |
 | AC-RP-06 | 자동 검증 범위 완료·실기기 미검증 | health→방 안내·wire 불일치 hello 차단, E2E와 기존 UI/Android 테스트. start/stop 반복·PC 불통·Mac 조작은 사람 절차 |
 

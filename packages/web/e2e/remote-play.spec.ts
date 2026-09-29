@@ -91,6 +91,7 @@ async function tlsProxy(directory: string): Promise<{
   origin: string;
   sockets: Set<Duplex>;
   target: { port: number };
+  setHostUnavailable(value: boolean): void;
 }> {
   const key = join(directory, 'relay.key');
   const cert = join(directory, 'relay.crt');
@@ -118,6 +119,8 @@ async function tlsProxy(directory: string): Promise<{
   const target = { port: 0 };
   const server = createHttpsServer({ key: await readFile(key), cert: await readFile(cert) });
   const sockets = new Set<Duplex>();
+  const hostSockets = new Set<Duplex>();
+  let hostUnavailable = false;
   server.on('request', (request, response) => {
     const upstream = httpRequest(
       {
@@ -139,8 +142,18 @@ async function tlsProxy(directory: string): Promise<{
     request.pipe(upstream);
   });
   server.on('upgrade', (request, socket, head) => {
+    const host =
+      new URL(request.url ?? '/', 'https://127.0.0.1').searchParams.get('role') === 'host';
+    if (hostUnavailable && host) {
+      socket.destroy();
+      return;
+    }
     sockets.add(socket);
     socket.once('close', () => sockets.delete(socket));
+    if (host) {
+      hostSockets.add(socket);
+      socket.once('close', () => hostSockets.delete(socket));
+    }
     const upstream = netConnect(target.port, '127.0.0.1', () => {
       const lines = [`${request.method} ${request.url} HTTP/1.1`];
       for (let index = 0; index < request.rawHeaders.length; index += 2)
@@ -151,11 +164,21 @@ async function tlsProxy(directory: string): Promise<{
     });
     upstream.on('error', () => socket.destroy());
     socket.on('error', () => upstream.destroy());
+    socket.on('close', () => upstream.destroy());
   });
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('TLS proxy port unavailable');
-  return { server, origin: `https://127.0.0.1:${address.port}`, sockets, target };
+  return {
+    server,
+    origin: `https://127.0.0.1:${address.port}`,
+    sockets,
+    target,
+    setHostUnavailable(value) {
+      hostUnavailable = value;
+      if (value) for (const socket of hostSockets) socket.destroy();
+    },
+  };
 }
 
 interface Pair {
@@ -166,6 +189,7 @@ interface Pair {
   secret: string;
   relay: RelayProcess;
   path: string;
+  setHostUnavailable(value: boolean): void;
   stop(): Promise<void>;
   restart(): Promise<void>;
 }
@@ -196,6 +220,7 @@ async function pair(browser: Browser, guestBrowser = browser): Promise<Pair> {
       secret,
       relay,
       path,
+      setHostUnavailable: proxy.setHostUnavailable,
       async stop() {
         for (const context of contexts) await context.close();
         for (const socket of proxy.sockets) socket.destroy();
@@ -414,20 +439,50 @@ test('AC-RP-01/02 @full @paired 진행 중 게스트 reload·resume 뒤 snapshot
   }
 });
 
-test('AC-RP-03 @full @paired 호스트 부재 안내와 relay 재시작 뒤 새 방', async ({
+test('AC-RP-03 @full @paired 진행 중 호스트 부재는 판을 멈추고 복귀 뒤 같은 원장에서 재개', async ({
   browser,
 }, info) => {
   test.skip(info.project.name !== 'chromium');
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
   const run = await pair(browser);
   try {
     const { invite } = await openHost(run);
     await joinLink(run.guest, invite);
     await expect(run.guest.getByTestId('lobby')).toBeVisible();
-    await run.host.close();
+    await run.host.getByTestId('host-start').click();
+    await expect(run.guest.getByTestId('match')).toBeVisible();
+    await expect
+      .poll(
+        async () => {
+          await run.host.evaluate(playStep);
+          await run.guest.evaluate(playStep);
+          return (await gameState(run.host)).seq;
+        },
+        { timeout: 20_000 },
+      )
+      .toBeGreaterThan(2);
+    const before = await gameState(run.host);
+    await expect.poll(async () => (await gameState(run.guest)).seq).toBe(before.seq);
+    run.setHostUnavailable(true);
     await expect(
-      run.guest.getByRole('status').filter({ hasText: '호스트 응답 대기' }),
+      run.guest.getByRole('alert').filter({ hasText: '방장이 연결되지 않음' }),
     ).toBeVisible();
+    await expect
+      .poll(() =>
+        run.guest.getByTestId('match').evaluate((element) => !!element.closest('[inert]')),
+      )
+      .toBe(true);
+    await run.guest.waitForTimeout(1_200);
+    expect(await gameState(run.guest)).toEqual(before);
+    await expect(run.guest.getByRole('heading', { name: '정산', exact: true })).toHaveCount(0);
+    run.setHostUnavailable(false);
+    await expect
+      .poll(() =>
+        run.guest.getByTestId('match').evaluate((element) => !!element.closest('[inert]')),
+      )
+      .toBe(false);
+    await expect.poll(async () => (await gameState(run.guest)).seq).toBe(before.seq);
+    expect((await gameState(run.guest)).balances).toEqual(before.balances);
     await run.restart();
     await run.guest.reload();
     await expect(run.guest.getByRole('heading', { name: '방으로 돌아가기' })).toBeVisible();
@@ -559,33 +614,56 @@ test('AC-RP-06 @full @paired 호환되지 않는 게임 hello는 welcome 없이 
   }
 });
 
-test('AC-RP-04 @full @paired 원격 종료 후 차단된 인터넷에서도 솔로 첫 판을 연다', async ({
+test('AC-RP-04 @full @paired 같은 문서에서 원격 종료 후 재접속 0회·솔로 첫 판', async ({
   browser,
 }, info) => {
   test.skip(info.project.name !== 'chromium');
   test.setTimeout(90_000);
   const run = await pair(browser);
   try {
+    const outside: string[] = [];
+    let ended = false;
+    let hostWsAttempts = 0;
+    await run.host.route('**/*', (route) => {
+      if (!ended || route.request().url().startsWith(appOrigin)) return route.continue();
+      outside.push('HTTP');
+      return route.abort();
+    });
+    await run.host.context().routeWebSocket('**/*', (socket) => {
+      if (!ended && new URL(socket.url()).searchParams.get('role') === 'host') hostWsAttempts++;
+      if (ended) {
+        outside.push('WS');
+        socket.close();
+      } else socket.connectToServer();
+    });
     const { invite } = await openHost(run);
     await joinLink(run.guest, invite);
     await expect(run.guest.getByTestId('lobby')).toBeVisible();
     await run.host.getByTestId('host-start').click();
     await expect(run.guest.getByTestId('match')).toBeVisible();
+    await run.host.evaluate(() => {
+      (window as Window & { rp07Document?: object }).rp07Document = {};
+    });
+    const connectedWsAttempts = hostWsAttempts;
+    run.setHostUnavailable(true);
+    await expect.poll(() => hostWsAttempts).toBeGreaterThan(connectedWsAttempts);
     await run.host.getByTestId('game-menu').click();
     const menu = run.host.getByRole('dialog', { name: '메뉴' });
     await menu.getByRole('button', { name: '대전 끝내기' }).click();
     await menu.getByRole('button', { name: '대전 끝내기 (한 번 더 누르기)' }).click();
-    await expect(run.guest.getByRole('button', { name: '새로 참가' })).toBeVisible();
-    const outside: string[] = [];
-    await run.host.route('**/*', (route) => {
-      if (route.request().url().startsWith(appOrigin)) return route.continue();
-      outside.push(route.request().url());
-      return route.abort();
+    await expect(run.host.getByRole('button', { name: '혼자 연습' })).toBeVisible();
+    ended = true;
+    run.setHostUnavailable(false);
+    await run.host.evaluate(() => {
+      location.hash = '#/solo';
     });
-    await run.host.goto(`${appOrigin}/?speed=instant#/solo`);
     await expect(run.host.getByRole('heading', { name: '혼자 연습' })).toBeVisible();
     await run.host.getByRole('button', { name: /시작/ }).first().click();
     await expect(run.host.getByTestId('solo')).toBeVisible();
+    expect(
+      await run.host.evaluate(() => !!(window as Window & { rp07Document?: object }).rp07Document),
+    ).toBe(true);
+    await run.host.waitForTimeout(31_000);
     expect(outside).toEqual([]);
   } finally {
     await run.stop();
