@@ -17,7 +17,7 @@
     "@p2p-gostop/engine": "0.0.0"
   },
   "devDependencies": {
-    "@types/node": "24.13.6",
+    "@types/node": "24.19.0",
     "vitest": "5.0.2"
   }
 }

@@ -120,7 +120,7 @@ p2p-gostop/
 | Kotlin + WebView + Ktor | 네이티브 셸 유지; Capacitor·Tauri·RN·Flutter·Compose 도입 안 함 |
 | Context7·로컬 Svelte MCP·저장소 .claude 설정 | 공식 문서·구문 검증; 편집 훅 없음, 포맷은 lint:fix·CI lint(하네스 감사 참조) |
 | Android 테스트 의존성: `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
-| Android 중계 벡터 JSON: `org.json:json` 20260719(테스트 전용) | Android JVM 단위 테스트의 `android.jar` JSON 스텁은 메서드를 실행하지 않으므로, 저장소 공유 시나리오 파일을 실행 시 읽는 데 실제 구현이 필요하다 (#36). APK 런타임에는 포함하지 않는다 |
+| Android 중계 벡터 JSON: `org.json:json` 20260814(테스트 전용) | Android JVM 단위 테스트의 `android.jar` JSON 스텁은 메서드를 실행하지 않으므로, 저장소 공유 시나리오 파일을 실행 시 읽는 데 실제 구현이 필요하다 (#36). APK 런타임에는 포함하지 않는다. #94 검토: 2026-08-14 게시·3일 경과, XML 공백 처리 수정이며 검증 근거는 AGENTS §2 |
 | Android 런타임 의존성: `kotlinx-coroutines-android`(Ktor 요구 버전으로 명시) | 전이 의존에 기대지 않는다 (M0 리뷰) |
 
 ### 1.7 Android 앱 설계

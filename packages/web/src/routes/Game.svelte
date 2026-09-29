@@ -13,7 +13,7 @@
   // 오른쪽 위 메뉴(이슈 #10)에서 계속·설정·홈·세션 종료(확인). Android Back은 메뉴를 연다/닫는다.
   // data-* 속성은 E2E 자동 플레이·원장 검사·턴 시간 계측(spec AC-04·AC-06)이 읽는다.
   import { tick, untrack } from 'svelte';
-  import type { GameController } from '../game/controller.ts';
+  import { automaticAction, type GameController } from '../game/controller.ts';
   import { formatMoney } from '../lib/format.ts';
   import { settings } from '../settings/settings.svelte.ts';
   import Board from '../ui/Board.svelte';
@@ -55,6 +55,7 @@
   }: Props = $props();
 
   const pb = $derived(controller.playback);
+  const autoCandidate = $derived(automaticAction(pb.board));
   let root = $state<HTMLElement | null>(null);
 
   $effect(() => {
@@ -93,9 +94,36 @@
   let menuDialog = $state<HTMLDialogElement | null>(null);
   let confirming = $state<MenuItem | null>(null);
   let menuOpen = $state(false);
+  let boardInfoOpen = $state(false);
+  let visible = $state(document.visibilityState === 'visible');
+  const autoHeld = $derived(
+    !visible ||
+      menuOpen ||
+      boardInfoOpen ||
+      waiting ||
+      ended ||
+      !pb.idle ||
+      !controller.canAct ||
+      controller.pushDecision !== null,
+  );
   let previousFocus: HTMLElement | null = null;
   // 새 Game 인스턴스는 이미 전달된 Back을 소비한 상태에서 시작한다.
   let handledBackToken = untrack(() => backToken);
+
+  $effect(() => {
+    const onVisibility = () => (visible = document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  });
+
+  $effect(() => {
+    const c = controller;
+    // 재생 큐·연결·응답 대기·메뉴·판 정보 열람이 끝난 뒤 최신 뷰에서 다시 판정한다.
+    void pb.board;
+    const held = autoHeld;
+    untrack(() => c.autoAdvance(held));
+    return () => untrack(() => c.autoAdvance(true));
+  });
 
   function openMenu() {
     if (menuDialog?.open) return;
@@ -186,6 +214,7 @@
   data-start-balance={stats.startBalance}
   data-seq={stats.seq ?? ''}
   data-can-act={controller.canAct}
+  data-auto-held={autoHeld}
   data-play-timings={playTimings}
   data-play-plans={playPlans}
 >
@@ -204,6 +233,7 @@
       turnMs={pb.lastTiming?.ms ?? null}
       onaction={(action, at) => controller.submit(action, at)}
       onskip={() => controller.skipAnimations()}
+      oninfochange={(open) => (boardInfoOpen = open)}
       onnotice={(text) => pb.showToast(text)}
       bind:root
     />
@@ -278,6 +308,9 @@
     }}
   >
     <h2 id="game-menu-title">메뉴</h2>
+    {#if autoCandidate !== null && controller.canAct}
+      <p role="status">자동 진행 보류 · 메뉴를 닫으면 최신 판에서 다시 확인합니다</p>
+    {/if}
     {#if confirming}
       <p class="confirm" role="alert">{endConfirm(confirming)}</p>
     {/if}

@@ -63,6 +63,26 @@
   </fieldset>
 
   <fieldset>
+    <legend>국진 처리</legend>
+    <label class="switch">
+      <span>매번 묻기</span>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={settings.gukjinAsk}
+        disabled={sessionActive}
+        onchange={(e) => onchange?.({ gukjinAsk: e.currentTarget.checked })}
+      />
+    </label>
+    <p class="help">
+      {settings.gukjinAsk
+        ? '국진을 먹을 때마다 열끗 또는 쌍피를 직접 고릅니다.'
+        : '자동 최적: 정산 점수가 큰 쪽으로 계산하고, 점수가 같으면 피박을 피하는 쪽을 택합니다.'}
+    </p>
+    {#if sessionActive}<p class="help">진행 중인 세션에서는 변경할 수 없습니다.</p>{/if}
+  </fieldset>
+
+  <fieldset>
     <legend>금액</legend>
     <label class="row">
       <span>점당</span>

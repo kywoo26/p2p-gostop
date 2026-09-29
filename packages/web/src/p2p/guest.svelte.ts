@@ -23,7 +23,12 @@ import {
   type SessionStage,
   type Transport,
 } from '@p2p-gostop/protocol';
-import type { GameController, GameStats, PushDecision } from '../game/controller.ts';
+import {
+  AutoChoice,
+  type GameController,
+  type GameStats,
+  type PushDecision,
+} from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
@@ -108,6 +113,14 @@ export class GuestGame implements GameController {
   private pushPending = $state(false);
   private roundInstant: EngineEvent[] = [];
   private disposed = false;
+  private autoHeld = true;
+  private readonly autoChoice = new AutoChoice(
+    () => ({ view: this.view, ready: !this.autoHeld && this.canAct && this.hostPresent !== false }),
+    (action) => this.submit(action),
+    (action) => {
+      if (action.type !== 'chooseTarget') this.playback.showToast('유일한 수 자동 진행');
+    },
+  );
 
   constructor(options: GuestOptions) {
     this.name = options.name;
@@ -438,6 +451,11 @@ export class GuestGame implements GameController {
     this.playback.attach(root);
   }
 
+  autoAdvance(held: boolean): void {
+    this.autoHeld = held;
+    this.autoChoice.advance(held);
+  }
+
   /** 정산 화면 → 다음 판 요청 (시작은 호스트, #26) */
   nextRound(): void {
     if (this.stage === 'bankrupt' || this.pushDecision !== null) return;
@@ -496,6 +514,7 @@ export class GuestGame implements GameController {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.autoChoice.dispose();
     if (this.clock !== null) clearInterval(this.clock);
     document.removeEventListener('visibilitychange', this.onVisible);
     this.ws?.dispose();

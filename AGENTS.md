@@ -21,7 +21,7 @@
 | Vitest / fast-check | 5.0.2 / 4.10.2 (vitest·@vitest/* 5.0.2는 2026-09-25 09:00Z 게시라 첫 lock 생성 때만 `--min-release-age-exclude`로 예외, 09-28 09:00Z 이후 정상 충족) |
 | @vitest/browser-playwright / vitest-browser-svelte | 5.0.2 / 3.1.0 |
 | @playwright/test · playwright / @axe-core/playwright | 1.63.0 (Docker 이미지 `mcr.microsoft.com/playwright:v1.63.0-noble`, `playwright`는 Vitest 브라우저 모드 provider용) / 4.13.0 |
-| ws / @types/ws / @types/node | 8.21.3 (relay-dev. 최신 8.22.0은 2026-09-26 게시라 `min-release-age=3` 미충족) / 8.18.1 / 24.13.6 (Node 24 라인, 24.19.0은 3일 미경과) |
+| ws / @types/ws / @types/node | 8.21.3 (relay-dev. 2026-09-28 선정 때 최신 8.22.0은 2026-09-26 게시라 `min-release-age=3` 미충족) / 8.18.1 / **24.19.0** (Node 24 라인, NF-09·plan §1.8). [npm 게시 메타데이터](https://registry.npmjs.org/@types%2Fnode): 2026-09-25 22:09:25.850 UTC 게시, 09-28 같은 시각부터 3일 충족; 09-29 검토로 보류 해제. 전이 타입 `undici-types` 7.24.6도 2026-03-25 게시. 배포 타입 차이와 검증은 [#95](https://github.com/kywoo26/p2p-gostop/pull/95) 참고. |
 | Svelte MCP (에이전트 도구, 로컬 stdio) | `@sveltejs/mcp` 0.1.26 (`npx -y @sveltejs/mcp@0.1.26`, 무료·오픈소스, 원격 엔드포인트 미사용) |
 | 순수 TS 린트·포맷 (Oxc) | oxlint 1.85.0 + oxlint-tsgolint 7.0.2003(type-aware, stable) / oxfmt 0.70.0 |
 | web 린트·포맷 | ESLint 10.11.0 / @eslint/js 10.0.1 / eslint-plugin-svelte 3.23.0 / typescript-eslint 8.70.1 / globals 17.12.0, Prettier 3.9.9 / prettier-plugin-svelte 4.1.1 |
@@ -31,6 +31,7 @@
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
 | androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
+| Android JVM 테스트 JSON | `org.json:json` **20260814** (2026-09-29 검토, NP-02·NF-09·plan §1.8). [Maven Central 게시](https://repo.maven.apache.org/maven2/org/json/json/20260814/) 2026-08-14 16:19 UTC로 3일 경과. [릴리스](https://github.com/stleary/JSON-java/releases/tag/20260814)는 XML 공백 문자 처리 수정이며 테스트 전용 의존성이다. `.npmrc`의 자동 제한은 npm에만 적용되고 Maven은 게시일을 직접 확인한다. |
 | 자산 변환(dev 전용, PA-03) | Ubuntu python3-pil 10.2.0-1ubuntu1.3 / ffmpeg 7:6.1.1-3ubuntu5 / libavif-bin 1.0.4-1ubuntu3. 앱 런타임 의존성 없음 |
 | Docker 이미지 | 단일 개발 이미지 `p2p-gostop-dev`(`docker/Dockerfile`, 태그는 `compose.yaml`): 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble` + JDK `eclipse-temurin:21.0.12.1_1-jdk-noble` + Android cmdline-tools 23.0(16111833, SHA-256 고정)로 설치한 `platforms;android-36`·`build-tools;36.0.0`·`platform-tools` |
 | GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, upload-artifact@v7, cache@v6(npm), gradle/actions/setup-gradle@v6, docker/setup-docker-action@v5, docker/setup-buildx-action@v4, docker/build-push-action@v7, softprops/action-gh-release@v3. 빌드·테스트는 개발 이미지 안에서 실행 |
