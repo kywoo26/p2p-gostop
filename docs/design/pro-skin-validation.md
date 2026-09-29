@@ -117,3 +117,26 @@ main `76ba6ae`(#166 제한시간)를 통합했다. 상대 시계는 상단 상�
 ### Node 빌드 gate 정정
 
 CI의 uv 미설치는 정규 build에서 자산 재생성을 호출한 것이 원인이었다. 사용자 지시에 따라 build를 `node scripts/check-skin.mjs`로 정정했다. manifest를 제외한 이미지19개·NOTICE의 SHA-256/크기, 디렉터리 전체 추가·누락0, manifest를 포함한128KiB 상한을 검증한다. 자체 manifest는 파일 목록과 총 용량에 포함한다. 변경·추가·누락·경계 용량 회귀4건도 Node로 실행한다. uv/Pillow는 수동 개발 재생성에만 사용한다. CI·release 워크플로 변경0. NOTICE 해시를 manifest에 추가해 스킨 총량은 **126,192B**가 됐다.
+
+## 2026-09-30 최종 main 통합 검증
+
+main **b9bd84b**(원격 대전·#181 CI 분할 포함)를 **26b97c6**으로 통합했다. CI/release 워크플로는 main 변경만 수용하며 스킨 PR 고유 변경은 없다.
+
+| 범위 | 호스트 결과 |
+|---|---|
+| npm ci · lint · check | 통과, svelte-check 오류/경고0 |
+| Node 단위/속성 | 563/563 |
+| 브라우저 컴포넌트 | 632/632, 76파일, Chromium/WebKit |
+| 공개 중계/세션 네트워크 | 35/35 |
+| 전체 E2E 실행 및 실패 정정 | 전체340통과 + 옛 DOM/위치 기대값 수정5/5 + 직렬계측5/5, 총350통과·기존20skip. 한 번의 모두 녹색 실행으로 표기하지 않음 |
+| 최신 main 영향 E2E | P2P·HUD·자동 선택20/20, 기존4skip; 양 엔진 연결20판 포함 |
+| Android | 최신 main에서 assembleDebug·testDebugUnitTest·lint 성공, max-workers4 |
+| web build | Node 전용 gate 통과, dist **1,511.3/1,536KiB**, 외부 요청0 |
+| 스킨 수동 재생성 | `uv run packages/web/scripts/build-skin-assets.py` 후 `git diff --exit-code -- packages/web/public/skin` 성공, 이미지 변경0 |
+| 최종 시각 감사 | 5크기 × 2엔진 × 13상태 = **130화면, 위반0** |
+
+빠름 대표 먹기 p50 Chromium551ms/WebKit583ms, 보통 대표 먹기1776ms/1818ms로 기준을 통과했다. CI 결과와 공유 호스트 계측은 구분한다.
+
+최종 캡처/JSON: `packages/web/test-results/pro-skin/`. `README.md`에412×915·360×780의 대기/내 차례/선택/고스톱/정산 직전5상태×2엔진 경로를 모았다. 파일은 `{chromium,webkit}-fan-{waiting,play,target,gostop,pre-settlement}-{412x915,360x780}.png`. 추가390×734·430×822·실제 WebView 크기 대역412×840(DPR3.5), 빈 바닥·15장 과밀 예외·Home/Settlement/Settings/License/guest/menu도 포함한다. 검사 범위는 이 뷰포트/fixture이며 실기기·200% 확대·더 짧은 viewport의 모든 실전 조합을 통과했다고 확장하지 않는다.
+
+허용 겹침은 획득 요약 스택·바닥15장 이상 예외·더미 뒷면 장수·중앙 필수 선택 패널이다. 손패·일반 바닥 앞면·현황판 내부와 구역 간 예기치 않은 교차는0. 최종 상대/내 HUD의 동일 배경·여백, 차례 황동선, 역할별 카드 크기, 획득-HUD 간격과 획득-손패 구분 여백을 검사한다. PA-06 사건/고 콜아웃·박 스탬프는 후속 범위다.
