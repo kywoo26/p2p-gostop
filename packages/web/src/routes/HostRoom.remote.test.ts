@@ -45,6 +45,29 @@ test('원격 방의 코드·링크·QR과 만료 시간을 표시한다 (FR-RP-0
   await expect.element(screen.getByTestId('room-countdown')).toBeVisible();
 });
 
+test.each(['false', 'exception'] as const)(
+  '초대 링크 복사가 %s이면 전체 선택을 복구한다 (FR-RP-02)',
+  async (failure) => {
+    const remote = new FakeRemoteHost();
+    const screen = await render(HostRoom, { hotspot, guest: null, rules, remote });
+    await screen.getByRole('button', { name: '방 만들기' }).click();
+    const link = screen.getByRole('textbox', { name: '초대 링크' }).element() as HTMLInputElement;
+    const copy = vi.spyOn(document, 'execCommand').mockImplementation(() => {
+      link.setSelectionRange(3, 3);
+      if (failure === 'exception') throw new Error('copy unavailable');
+      return false;
+    });
+    await screen.getByRole('button', { name: '초대 링크 복사' }).click();
+    expect(document.activeElement).toBe(link);
+    expect(link.selectionStart).toBe(0);
+    expect(link.selectionEnd).toBe(link.value.length);
+    await expect
+      .element(screen.getByText('복사에 실패했습니다. 선택된 링크를 직접 복사하세요.'))
+      .toBeVisible();
+    copy.mockRestore();
+  },
+);
+
 test('코드 참여는 요청을 수락해야 연결 상태가 된다 (FR-RP-02/03)', async () => {
   const remote = new FakeRemoteHost();
   const screen = await render(HostRoom, {

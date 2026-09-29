@@ -130,15 +130,22 @@
 
   function copyInvite() {
     if (!inviteInput) return;
-    inviteInput.focus();
-    inviteInput.select();
+    const input = inviteInput;
+    input.focus();
+    input.select();
+    let copied = false;
     try {
-      copyStatus = document.execCommand('copy')
-        ? '초대 링크를 복사했습니다.'
-        : '복사에 실패했습니다. 선택된 링크를 직접 복사하세요.';
+      copied = document.execCommand('copy');
     } catch {
-      copyStatus = '복사에 실패했습니다. 선택된 링크를 직접 복사하세요.';
+      // 복사가 허용되지 않아도 링크를 선택해 사용자가 직접 복사할 수 있게 한다.
     }
+    if (!copied) {
+      input.focus();
+      input.select();
+      copyStatus = '복사에 실패했습니다. 선택된 링크를 직접 복사하세요.';
+      return;
+    }
+    copyStatus = '초대 링크를 복사했습니다.';
   }
 
   const STATE_LABEL: Record<HotspotInfo['state'], string> = {
