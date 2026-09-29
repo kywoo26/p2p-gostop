@@ -23,7 +23,8 @@
   "dependencies": {
     "@p2p-gostop/ai": "0.0.0",
     "@p2p-gostop/engine": "0.0.0",
-    "@p2p-gostop/protocol": "0.0.0"
+    "@p2p-gostop/protocol": "0.0.0",
+    "uqr": "0.1.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "NP-02-view-pushes-guest",
+    "description": "게스트 뷰는 연속 밀기 두 번과 양 좌석 공개 필드를 보존하고 숨은 손패는 가린다",
+    "seed": 7,
+    "viewer": 1,
+    "pushes": 2,
+    "multiplier": 4
+  },
+  {
+    "id": "NP-02-view-pushes-host",
+    "description": "호스트 뷰도 같은 연속 밀기 배수와 가림을 쓴다",
+    "seed": 11,
+    "viewer": 0,
+    "pushes": 1,
+    "multiplier": 2
+  }
+]

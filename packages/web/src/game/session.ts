@@ -109,7 +109,8 @@ export function createSession(config: SessionConfig): {
 
 /** 판이 끝났으면 정산을 원장에 기록하고 기록을 남긴다 */
 function closeRound(session: SessionState, events: readonly EngineEvent[]): SessionState {
-  const settled = events.find((e) => e.type === 'Settled');
+  // 밀기(push)로 이어진 판은 Settled를 두 번 낸다: 마지막 정산이 그 판의 결과다
+  const settled = events.findLast((e) => e.type === 'Settled');
   if (session.game.phase !== 'end' || settled?.type !== 'Settled') return session;
   const settlement = settled.settlement;
   const before = session.ledger;

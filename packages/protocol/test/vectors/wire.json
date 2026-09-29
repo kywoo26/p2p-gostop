@@ -4,21 +4,36 @@
     "description": "게스트 첫 접속",
     "from": "guest",
     "valid": true,
-    "value": { "t": "hello", "v": 1, "name": "민지", "lastSeq": 0 }
+    "value": {
+      "t": "hello",
+      "v": 2,
+      "name": "민지",
+      "lastSeq": 0
+    }
   },
   {
     "id": "NP-02-action",
     "description": "게스트 합법 형식 액션",
     "from": "guest",
     "valid": true,
-    "value": { "t": "action", "seq": 2, "payload": { "type": "play", "seat": 1, "card": 17 } }
+    "value": {
+      "t": "action",
+      "seq": 2,
+      "payload": {
+        "type": "play",
+        "seat": 1,
+        "card": 17
+      }
+    }
   },
   {
     "id": "NP-02-ping",
     "description": "게스트 하트비트",
     "from": "guest",
     "valid": true,
-    "value": { "t": "ping" }
+    "value": {
+      "t": "ping"
+    }
   },
   {
     "id": "NP-06-commit",
@@ -36,15 +51,22 @@
     "description": "진단 로그",
     "from": "guest",
     "valid": true,
-    "value": { "t": "log", "entries": ["연결 성공"] }
+    "value": {
+      "t": "log",
+      "entries": ["연결 성공"]
+    }
   },
   {
     "id": "NP-04-version",
-    "description": "버전 불일치",
+    "description": "버전 불일치 (v1 옛 클라이언트)",
     "from": "guest",
     "valid": false,
     "reason": "VERSION_MISMATCH",
-    "value": { "t": "hello", "v": 2, "name": "민지" }
+    "value": {
+      "t": "hello",
+      "v": 1,
+      "name": "민지"
+    }
   },
   {
     "id": "NP-02-bad-action",
@@ -52,7 +74,15 @@
     "from": "guest",
     "valid": false,
     "reason": "MALFORMED",
-    "value": { "t": "action", "seq": 0, "payload": { "type": "play", "seat": 1, "card": "17" } }
+    "value": {
+      "t": "action",
+      "seq": 0,
+      "payload": {
+        "type": "play",
+        "seat": 1,
+        "card": "17"
+      }
+    }
   },
   {
     "id": "NP-02-bad-seat",
@@ -60,7 +90,14 @@
     "from": "guest",
     "valid": false,
     "reason": "MALFORMED",
-    "value": { "t": "action", "seq": 0, "payload": { "type": "go", "seat": 2 } }
+    "value": {
+      "t": "action",
+      "seq": 0,
+      "payload": {
+        "type": "go",
+        "seat": 2
+      }
+    }
   },
   {
     "id": "NP-06-bad-hash",
@@ -68,21 +105,32 @@
     "from": "guest",
     "valid": false,
     "reason": "MALFORMED",
-    "value": { "t": "commitGuest", "round": 1, "hash": "abc" }
+    "value": {
+      "t": "commitGuest",
+      "round": 1,
+      "hash": "abc"
+    }
   },
   {
     "id": "NP-02-pong",
     "description": "호스트 응답",
     "from": "host",
     "valid": true,
-    "value": { "t": "pong" }
+    "value": {
+      "t": "pong"
+    }
   },
   {
     "id": "NP-02-reject",
     "description": "호스트 거부",
     "from": "host",
     "valid": true,
-    "value": { "t": "reject", "seq": 0, "reason": "ILLEGAL_ACTION", "message": "illegal" }
+    "value": {
+      "t": "reject",
+      "seq": 0,
+      "reason": "ILLEGAL_ACTION",
+      "message": "illegal"
+    }
   },
   {
     "id": "NP-06-host-commit",
@@ -118,7 +166,474 @@
         "round": 1,
         "eventSeq": 2
       },
-      "ledger": { "perPoint": 100, "startBalance": 100, "balances": [100, 100], "entries": [] }
+      "ledger": {
+        "perPoint": 100,
+        "startBalance": 100,
+        "balances": [100, 100],
+        "entries": []
+      }
+    }
+  },
+  {
+    "id": "NP-04-old-shape",
+    "description": "스키마가 다른 옛 hello도 버전부터 판정 (L-6)",
+    "from": "guest",
+    "valid": false,
+    "reason": "VERSION_MISMATCH",
+    "value": {
+      "t": "hello",
+      "v": 1
+    }
+  },
+  {
+    "id": "NP-02-hello-extra",
+    "description": "hello의 모르는 필드는 지운다 (#23)",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "hello",
+      "v": 2,
+      "name": "민지",
+      "lastSeq": 3,
+      "pad": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "parsed": {
+      "t": "hello",
+      "v": 2,
+      "name": "민지",
+      "lastSeq": 3
+    }
+  },
+  {
+    "id": "NP-02-action-extra",
+    "description": "액션 페이로드의 여분 필드는 호스트 상태에 들어가지 않는다 (#23, R9)",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "action",
+      "seq": 5,
+      "payload": {
+        "type": "play",
+        "seat": 1,
+        "card": 17,
+        "pad": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+      },
+      "extra": 1
+    },
+    "parsed": {
+      "t": "action",
+      "seq": 5,
+      "payload": {
+        "type": "play",
+        "seat": 1,
+        "card": 17
+      }
+    }
+  },
+  {
+    "id": "NP-02-hello-control",
+    "description": "이름의 제어 문자 거부 (L-3)",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "hello",
+      "v": 2,
+      "name": "민\u0007지"
+    }
+  },
+  {
+    "id": "NP-06-reveal-guest",
+    "description": "게스트 원문 공개",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "revealGuest",
+      "round": 2,
+      "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "id": "MN-ready",
+    "description": "정산 뒤 다음 판 요청 (#26)",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "ready",
+      "round": 1
+    }
+  },
+  {
+    "id": "MN-02-bankruptcy",
+    "description": "파산 선택",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "bankruptcy",
+      "choice": "recharge"
+    }
+  },
+  {
+    "id": "MN-02-bankruptcy-bad",
+    "description": "파산 선택값 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "bankruptcy",
+      "choice": "steal"
+    }
+  },
+  {
+    "id": "MN-01-ledger-get",
+    "description": "원장 이력 요청 (ledger.get, #23)",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "ledgerGet",
+      "from": 0
+    }
+  },
+  {
+    "id": "MN-01-ledger-get-bad",
+    "description": "음수 색인 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "ledgerGet",
+      "from": -1
+    }
+  },
+  {
+    "id": "NP-09-log-line",
+    "description": "로그 줄 2KB 초과",
+    "from": "guest",
+    "valid": false,
+    "reason": "TOO_LARGE",
+    "value": {
+      "t": "log",
+      "entries": [
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ]
+    }
+  },
+  {
+    "id": "NP-01-relay-guest",
+    "description": "중계 알림 모양은 프로토콜 메시지가 아니다(위조 방지)",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "relay",
+      "peer": "left"
+    }
+  },
+  {
+    "id": "NP-01-relay-host",
+    "description": "중계 알림은 전송 계층이 따로 처리한다",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "relay",
+      "peer": "joined"
+    }
+  },
+  {
+    "id": "NP-01-relay-legacy",
+    "description": "옛 중계 알림 형식({type:relay})도 메시지가 아니다",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "type": "relay",
+      "peer": "present"
+    }
+  },
+  {
+    "id": "NP-02-reject-reason",
+    "description": "거부 사유는 정해진 코드만 (L-3)",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "reject",
+      "seq": 0,
+      "reason": "WHATEVER",
+      "message": "x"
+    }
+  },
+  {
+    "id": "NP-02-welcome",
+    "description": "호스트 환영: 원장 요약·세대·순번·단계",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "welcome",
+      "v": 2,
+      "seat": 1,
+      "sessionToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "rules": {
+        "preset": "standard"
+      },
+      "ledger": {
+        "perPoint": 100,
+        "startBalance": 1000,
+        "balances": [1300, 700],
+        "recent": [
+          {
+            "kind": "round",
+            "label": "stop",
+            "from": 1,
+            "to": 0,
+            "points": 3,
+            "requested": 300,
+            "amount": 300,
+            "capped": false
+          }
+        ],
+        "entryCount": 1,
+        "recharged": [0, 0]
+      },
+      "names": ["호스트", "게스트"],
+      "epoch": "0123456789abcdef",
+      "seq": 7,
+      "status": {
+        "rev": 3,
+        "stage": "settled",
+        "round": 1,
+        "ready": [false, true],
+        "bankrupt": [],
+        "endReason": null
+      }
+    }
+  },
+  {
+    "id": "NP-02-welcome-full-ledger",
+    "description": "원장 전체 이력(entries)을 싣는 옛 모양 거부 (#23)",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "welcome",
+      "v": 2,
+      "seat": 1,
+      "sessionToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "rules": {},
+      "ledger": {
+        "perPoint": 100,
+        "startBalance": 100,
+        "balances": [100, 100],
+        "entries": []
+      },
+      "names": ["a", "b"],
+      "epoch": "e",
+      "seq": 0,
+      "status": {
+        "rev": 3,
+        "stage": "settled",
+        "round": 1,
+        "ready": [false, true],
+        "bankrupt": [],
+        "endReason": null
+      }
+    }
+  },
+  {
+    "id": "MN-status",
+    "description": "단계만 바뀜 (#26)",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "status",
+      "seq": 9,
+      "status": {
+        "rev": 3,
+        "stage": "settled",
+        "round": 1,
+        "ready": [false, true],
+        "bankrupt": [],
+        "endReason": null
+      }
+    }
+  },
+  {
+    "id": "NP-06-reveal-host",
+    "description": "호스트 원문·재현 입력. 덱 고정(deck) 옵션은 지운다",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "revealHost",
+      "round": 1,
+      "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "guestSecret": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "seed": [1, 2, 3, 4],
+      "actions": [
+        {
+          "type": "pickFirst",
+          "seat": 1,
+          "index": 0
+        }
+      ],
+      "hostHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "guestHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "options": {
+        "roundNumber": 1,
+        "carry": 1,
+        "deck": [1, 2, 3]
+      },
+      "firstSeq": 1
+    },
+    "parsed": {
+      "t": "revealHost",
+      "round": 1,
+      "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "guestSecret": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "seed": [1, 2, 3, 4],
+      "actions": [
+        {
+          "type": "pickFirst",
+          "seat": 1,
+          "index": 0
+        }
+      ],
+      "hostHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "guestHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "options": {
+        "roundNumber": 1,
+        "carry": 1
+      },
+      "firstSeq": 1
+    }
+  },
+  {
+    "id": "MN-02-prompt",
+    "description": "파산 프롬프트: 선택할 좌석",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "bankruptcyPrompt",
+      "balances": [2000, 0],
+      "round": 3,
+      "seats": [1]
+    }
+  },
+  {
+    "id": "MN-02-prompt-empty",
+    "description": "선택 좌석 없는 파산 프롬프트 거부",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "bankruptcyPrompt",
+      "balances": [2000, 0],
+      "round": 3,
+      "seats": []
+    }
+  },
+  {
+    "id": "MN-02-end",
+    "description": "세션 종료 알림",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "sessionEnd",
+      "reason": "bankruptcy",
+      "seat": 1
+    }
+  },
+  {
+    "id": "MN-01-ledger-page",
+    "description": "원장 이력 쪽 (재충전 항목 포함)",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "ledgerPage",
+      "from": 0,
+      "total": 2,
+      "entries": [
+        {
+          "kind": "round",
+          "label": "stop",
+          "from": 1,
+          "to": 0,
+          "points": 3,
+          "requested": 300,
+          "amount": 300,
+          "capped": false
+        },
+        {
+          "kind": "recharge",
+          "label": "recharge",
+          "seat": 1,
+          "amount": 1000,
+          "before": 0,
+          "after": 1000
+        }
+      ]
+    }
+  },
+  {
+    "id": "NP-02-push-action",
+    "description": "밀기 액션 형식",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "action",
+      "seq": 7,
+      "payload": {
+        "type": "push",
+        "seat": 1
+      }
+    }
+  },
+  {
+    "id": "NP-02-push-message",
+    "description": "게스트 밀기 전용 메시지",
+    "from": "guest",
+    "valid": true,
+    "value": {
+      "t": "push",
+      "seq": 7
+    }
+  },
+  {
+    "id": "NP-02-push-bad-seat",
+    "description": "상대 좌석 밀기 형식 거부",
+    "from": "guest",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "action",
+      "seq": 7,
+      "payload": {
+        "type": "push",
+        "seat": 2
+      }
+    }
+  },
+  {
+    "id": "NP-02-round-aborted",
+    "description": "호스트 판 무효 알림",
+    "from": "host",
+    "valid": true,
+    "value": {
+      "t": "roundAborted",
+      "round": 3,
+      "reason": "게스트 부재 시간 초과"
+    }
+  },
+  {
+    "id": "NP-02-round-aborted-bad-reason",
+    "description": "빈 무효 사유 거부",
+    "from": "host",
+    "valid": false,
+    "reason": "MALFORMED",
+    "value": {
+      "t": "roundAborted",
+      "round": 3,
+      "reason": ""
     }
   }
 ]

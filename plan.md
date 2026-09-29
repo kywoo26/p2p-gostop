@@ -30,7 +30,7 @@
 │   ├ Ktor 서버 (0.0.0.0:17777)                              │   │    ├ 뷰 렌더링          │
 │   │   ├ GET /            → assets/web (정적 파일)            │◄──┤    ├ 액션 요청 전송     │
 │   │   └ WS  /ws?role=    → 호스트↔게스트 메시지 중계          │   │    └ 이벤트 재생·애니   │
-│   └ WebView (http://127.0.0.1:17777/?role=host)            │   └──────────────────────┘
+│   └ WebView (http://127.0.0.1:17777/, 루프백 = 호스트 앱)  │   └──────────────────────┘
 │        웹 앱 (호스트 모드)                                   │
 │         ├ 권위 엔진(reduce) + AI(Worker) + 원장              │
 │         ├ 게스트 뷰(playerView) 생성·전송                     │
@@ -39,7 +39,7 @@
 ```
 - **왜**: 규칙·AI·정산을 Kotlin으로 다시 쓰지 않는다. Android 앱은 약 수백 줄의 껍데기로 유지되고, 엔진 테스트는 Node에서 한 번만 한다. 호스트 WebView origin은 `127.0.0.1:17777`로 고정되어 localStorage가 세션 간 유지된다(원장 저장, MN-05).
 - **대가**: 호스트 앱이 포그라운드를 벗어나면 게임이 멈춘다. 대면 게임이므로 허용. 포그라운드 서비스와 `FLAG_KEEP_SCREEN_ON`으로 완화.
-- **중계 규칙**: 서버는 `role=host` 소켓 1개, `role=guest` 소켓 1개만 받는다. 호스트 소켓의 메시지는 게스트로, 게스트의 메시지는 호스트로 그대로 전달한다. 서버는 메시지 내용을 해석하지 않는다(단, 크기 상한 64KB와 역할 중복 거절만).
+- **중계 규칙**: 서버는 역할(`role=host`·`role=guest`)마다 소켓 1개를 둔다. 같은 역할이 다시 붙으면 **최신 연결 우선**으로 이전 소켓을 4001(`replaced`)로 닫고, 교체된 소켓의 늦은 프레임은 버린다. 호스트 소켓의 메시지는 게스트로, 게스트의 메시지는 호스트로 그대로 전달하고 내용은 해석하지 않는다. 예외: 중계 알림 `{"t":"relay","peer":"present|absent|joined|left"}`을 보내고, 클라이언트가 보낸 relay 모양 프레임은 전달하지 않으며(위조 방지), 텍스트만(바이너리 1003)·64KB 초과 1009·호스트 역할은 루프백만(1008). 누가 게스트 좌석인지는 세션 토큰으로 판단한다. 4001을 받은 클라이언트는 자동 재접속하지 않는다. Android `SmokeServer`와 `packages/relay-dev`가 같은 규칙이고 시나리오 표는 `packages/relay-dev/test/relay-scenarios.json`(docs/protocol.md 1장).
 - **BLE 전환 대비**: 웹 앱의 `Transport` 인터페이스(`send`, `onMessage`, `onClose`, `reconnect`)만 갈아끼우면 된다.
 
 ### 1.2 패키지 구조 (npm workspaces 모노레포)
@@ -120,6 +120,7 @@ p2p-gostop/
 | 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, 프로젝트 `.claude/`(서브에이전트 3종·스킬 3종·권한 규칙, 편집 훅 없음: 포맷은 `lint:fix`·CI `lint`로 강제, 근거 `docs/reviews/harness-audit.md`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
 | Android 테스트 의존성 | `ktor-server-test-host` 3.6.0, `kotlin-test-junit` 2.4.20, `junit` 4.13.2 (테스트 전용) | Ktor `testApplication`과 JVM 단위 테스트에 필요. M0에서 추가 |
+| Android 중계 벡터 JSON | `org.json:json` 20260719 (테스트 전용) | Android JVM 단위 테스트의 `android.jar` JSON 스텁은 메서드를 실행하지 않으므로, 저장소 공유 시나리오 파일을 실행 시 읽는 데 실제 구현이 필요하다 (#36). APK 런타임에는 포함하지 않는다 |
 | Android 런타임 의존성 | `kotlinx-coroutines-android` (Ktor 3.6.0이 요구하는 코루틴 버전과 일치하도록 명시 선언) | 전이 의존에 기대지 않는다 (M0 리뷰) |
 
 ### 1.7 Android 앱 설계
@@ -217,7 +218,7 @@ p2p-gostop/
 | Sol이 막히는 어려운 문제 | Codex GPT-6 Astra(max) 예비 | 비용·한도 큼 |
 | 저위험 잡무(문서 동기화, 정리) | Codex GPT-6 Luna | 저렴 |
 
-규칙: 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
+규칙(2026-09-29 갱신): 위임은 기본적으로 **Codex(Paseo) 에이전트**로 한다 — Astra(high) 판단·설계·리뷰, Sol(high) 구현·계약형, Luna 잡무. Claude 서브에이전트는 사용자가 명시할 때만 쓴다(Claude 세션 한도 관리). 각 작업은 `feat/*` 브랜치 워크트리에서 진행하고 PR로 제출한다(에이전트는 병합하지 않음). `dev.sh`가 체크아웃별 compose 프로젝트명을 부여해 `node_modules` 볼륨이 분리된다. PR은 CI(lint/check/test/e2e/android) + Claude 리뷰어 검토 후 오케스트레이터가 병합한다. 미커밋 의존 패키지가 필요하면 `wip/*-snapshot` 브랜치를 플럼빙으로 찍어 겹쳐 쓰되 커밋에서 제외한다(예: `wip/m2-ai-snapshot`).
 
 2026-09-28 결과: PR #1(Android 셸)·#2(M3 솔로)·#3(프로토콜) 모두 main 병합. MVP 릴리스 `v0.1.0-alpha`→`v0.1.2-alpha`(P2P 최소 페이지 `tools/p2p-mini` + 솔로 모드 + Android 수정). 남은 통합(M4 마무리): 게스트/호스트 화면을 `tools/p2p-mini` 대신 정식 UI(M3 Board + protocol HostSession/GuestSession + `src/net` WsTransport + `bridge.ts`↔HostBridge)로 교체, 로비 화면, 2브라우저 E2E, 호스트 원장 저장·복원, 60초 연결 상태 시계. 그 뒤 M5 실기기 회차·M6.
 
@@ -236,11 +237,16 @@ p2p-gostop/
 | H1 | 릴리스 게이트(#22 CI 성공 조건·prerelease), MVP.md 정정(#21), spec 부분 충족 표시 | hygiene(Sonnet, low) | PR |
 | A2 | #17 앱 실행 시 LAN 서버 자동 기동(NF-06) 재설계, PR #14 리뷰 반영 | Codex Sol (high) | PR #14 후속 |
 | M5 | `v0.2.0` 실기기 회차(호스트/게스트 정식 UI) | 사용자 | 로그 → 이슈 |
-| D1 | 카드 이미지: 시안 A/B(모던 리디자인)는 **기각**(2026-09-29 사용자: "우리가 알던 카드를 이상하게 보이게 하지 않는다"). 방향 = **정석 화투 도안을 충실히 유지한 고해상도 리마스터**(자체 벡터, CC0), 보너스·뺏기패와 뒷면만 구별되게. 1단계 샘플 8~10장 → 확인 → 2단계 52장 | implementer(Opus, high) | PR #37 갱신 → PR |
+| D1 | 카드 이미지 **결정(2026-09-29)**: 시안 A/B·클래식 리마스터 샘플 모두 기각. **현재 Commons 정석 세트 유지**(CC BY-SA 표기 유지) + 앱 렌더링 개선(표식이 光·글씨를 가리지 않게 축소·재배치, 테두리·대비 조정, 2x/3x 선명도) + **보너스 3장·뒷면만 Commons 화풍에 맞춰 새로 디자인**. PR #37은 기록용으로 닫음 | implementer(Opus, high) | PR → 리뷰 → 병합 |
 | D2 | **UI/UX 설계 명세** `docs/design/ui-spec.md`(UX-xx ID): 기기별 뷰포트·안전 영역, 게임 화면 존 그리드와 극단 상태, z-order·겹침 규칙(프롬프트·토스트·배너 vs 손패·버튼), 테이블 배경·토큰 의미·타이포, 모션·이펙트 명세, 상태 설계(대기·재접속·교체·파산), 컴포넌트 상태 표, 접근성, 현재 UI 격차 분석 + 이슈 | implementer(Opus, high) | PR → spec §6 개정 → 구현 이슈 |
 | M6 | 토글 UI, 기록, 리플레이 내보내기, 효과음, 접근성, 아케이드, 머니 모델 재산정, AI 강도 재도전, 밀기 후속(#29~#32), Dev Container 도입 검토(`dev.sh`는 런처, 정본은 package.json·Gradle·ci.yml; `./dev.sh ci`로 드리프트 방지) | 분할 배분 | `v1.0.0` |
 
 규칙: 모든 PR은 CI 녹색 + reviewer 검토(판정 '병합 가능')를 받은 뒤 병합한다. 리뷰 결함은 GitHub 이슈로 등록해 트랙 U1이 소화한다.
+
+## 3-3. 우선순위 변경 (2026-09-29)
+- iPhone 실기기 사용 불가 → M5의 Safari 실기기 회차 보류. Safari 호환은 Playwright WebKit(E2E·브라우저 모드)로만 검증하고, iPhone 확보 시 재개.
+- 우선순위: **Galaxy 호스트 + 혼자 연습(AI) 완성도**(UX-spec 격차 #46~#53, #44, 밀기 UI #30/#31, 토글 UI FR-21, 기록·효과음·진동·접근성, 카드 렌더링 개선) → `v0.2.x`로 자주 릴리스.
+- **빌드·릴리스 성능**(B1): Astra가 현재 CI/릴리스 소요를 계측하고 정석·모던 수단만으로 단축안을 조사·도입(Gradle 빌드 캐시·구성 캐시, Docker 레이어 캐시, Playwright 샤딩, 릴리스 잡 구조, 자체 러너 검토). 우회·억지 방법 금지.
 
 ## 4. 테스트 전략
 
@@ -331,6 +337,7 @@ p2p-gostop/
 ---
 
 ## 10. 변경 이력
+- v0.7 (2026-09-29): 1.1 중계 규칙을 최신 연결 우선(4001)·알림·위조 차단·1003/1009/1008로 확정(M4 프로토콜 리뷰 #15·#24).
 - v0.6 (2026-09-28): 3-2 재개 계획(사후 리뷰·통합·후속 트랙, 리뷰 필수 규칙).
 - v0.5 (2026-09-28): 3-1 병렬 라이프사이클(모델 배분 원칙, 워크트리·PR 격리) 추가.
 - v0.4 (2026-09-28): M0 리뷰 반영 — 코루틴 명시 의존, Dependabot 쿨다운, 버전 규칙, release.yml 분리 원칙. M0 조건부 완료(docs/reviews/M0-review.md).
