@@ -15,4 +15,5 @@ export {
   type RoundRecord,
 } from './runner.ts';
 export { runAll } from './pool.ts';
-export { bankruptcy, distribution, niceCeil, percentile, summarize, toMarkdown } from './stats.ts';
+export { bankruptcy, distribution, niceCeil, percentile, summarize } from './stats.ts';
+export { toMarkdown } from './report.ts';
