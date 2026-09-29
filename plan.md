@@ -164,22 +164,35 @@ p2p-gostop/
 
 ### 현재 트랙
 
-<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 `plan.md#현재-트랙#releases`·`#ownership`·`#verification`·`#gaps` 링크는 이 절로 이동한다.
+<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 Galaxy 계획의 경로·절 앵커는 [이관표](docs/plan-galaxy-solo.md)에서 이 절과 해당 정본으로 연결한다.
 
 Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone 확보 후 #75에서 재개한다. 아래는 완료 항목을 제외한 v0.2.2/v0.2.3 PR 단위와 파일 소유권이다. 각 선행 작업의 병합본을 인계받아 충돌 파일을 직렬로 수정한다.
 
 | 트랙·PR 단위 | 남은 범위 / 이슈 | 파일 소유권·인계 |
 |---|---|---|
 | v0.2.2 .2-A | 솔로·호스트·게스트 밀기/받기·배수·AI 연결 #30 | Sol: `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `p2p/{host,guest}.svelte.ts`, `Settlement.svelte`, AI worker, `e2e/push.spec.ts`; 메뉴/guest 계약 인계 뒤 |
-| v0.2.2 .2-B | FR-21 설정 24항목·규칙/금액 UI #62 | Sol: `settings/**`, `Settings.svelte`, `RuleSettings.svelte`, `current.svelte.ts`, `HostRoom.svelte`; .2-A 뒤 |
-| v0.2.2 .2-C | 원장 기록·재충전·실지급·판 무효 #44/#63 | Sol: `records.ts`, `Records.svelte`, 기록 타입·E2E; .2-A의 session/solo/host와 Settlement 소유권 인계 |
+| v0.2.2 .2-B | FR-21 설정 24항목·규칙/금액 UI #62 | Sol: `settings/**`, `Settings.svelte`, `RuleSettings.svelte`, `current.svelte.ts`, `p2p/common.ts` preset 판별, `HostRoom.svelte`; .2-A 뒤 |
+| v0.2.2 .2-C | 원장 기록·재충전·실지급·판 무효 #44/#63 | Sol: `records.ts`, `Records.svelte`, 기록 타입·E2E; .2-A의 session/solo/host/Settlement와 `App.svelte`·`routes/Game.svelte` 라우팅 소유권 인계 |
 | v0.2.2 .2-D | 정산·은닉·설정·P2P 시간 통합 E2E #58 | Sol: `e2e/p2p.spec.ts`, `solo.spec.ts`, `settings.spec.ts`; .2-A~C 뒤 |
-| v0.2.3 .3-A | 효과음·진동·효과 강도·중복 억제 #117/#128 | Sol: `sound.ts`, `playback.svelte.ts`, `banner.ts`, 피드백 설정/테스트; anim 계약 인계 |
+| v0.2.3 .3-A | 효과음·진동·효과 강도·중복 억제 #117/#128 | Sol: `sound.ts`, `playback.svelte.ts`, `banner.ts`, `p2p/common.ts` 진동, 피드백 설정/테스트; anim 계약 인계 |
 | v0.2.3 .3-B | AI 기본값·생각 시간·오류 대체 UX #65/#66 | Sol: `ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, worker, SoloSetup/E2E; .2-A/C 뒤 |
 | v0.2.3 .3-C | Galaxy 안내·화면 유지·저장 실패·복구 #64/#68/#69 | Sol: Android Activity/Service/Diagnostics와 웹 session/solo/current/local/Diagnostics; .2-B·.3-B 저장 소유권 인계 |
 | v0.2.3 .3-D | 카드·Galaxy 예산·강도 보고 #66/#70 | Sol 통합: 갤러리/E2E 기준샷, device-test 절차, `ai-tuning.md`; 카드·AI 담당 산출물 인계 |
 
 `settings/**`는 .2-B→.3-A→.3-B, `solo.svelte.ts`는 .2-A→.2-C→.3-B→.3-C, `session.ts`는 .2-A→.2-C→.3-C 순으로 소유한다. 공용 갤러리 기준샷은 각 기능 병합 뒤 .3-D가 갱신한다. 규칙 항목의 정본은 [rules-commercial §12.7](docs/research/rules-commercial.md#127-사용자-설정으로-노출할-토글)과 [spec FR-21](spec.md)이다.
+
+#### 공유 파일 인계
+
+| 공유 경계 | 남은 소유권·순서 |
+|---|---|
+| `p2p/common.ts` | .2-B가 preset 판별을 완료해 .3-A 진동 담당에게 인계한다. #44 로비 준비는 별도 protocol 계약 뒤 반영한다. |
+| `App.svelte`·`routes/Game.svelte`·`SoloSetup.svelte` | 메뉴/Back 작업→.2-A Game 밀기→.2-C App/Game 라우팅→.3-B SoloSetup AI UX. 같은 파일을 동시에 수정하지 않는다. |
+| `bridge/bridge.ts`·Android Back/셸 | 메뉴/Back 계약을 .3-C가 이어받아 저장 오류·복귀를 처리한다. 릴레이 서버/벡터는 별도 #61 담당 이력에 따른다. |
+| `styles/tokens.css`·`anim/*`·카드 | HUD 층위 토큰과 anim `--dur-*` 예약을 .1-A가 소비한 뒤 .3-D가 의미 색을 맡는다. 카드 토큰·비율/props는 카드 담당 산출물과 먼저 맞추고 전체 파일 포맷을 겹치지 않는다. |
+| `p2p/{guest,link}`·`GuestApp`·`protocol/src/guest.ts` | 재접속/시계 계약 뒤 .2-A guest 밀기→.2-C 정산. #44 ready는 별도 protocol 계약을 선행한다. |
+| `settings/**`·`Settings.svelte`·저장소 | anim 속도 기본값→.2-B 규칙→.3-A 피드백→.3-B AI 기본값. `current.svelte.ts`는 .2-B→.3-C, `storage/local.ts`는 .3-C 전용이다. |
+| `packages/ai/**`·`tools/sim/**`·관련 문서 | 확정된 #56 기준→#66 강도→#67 머니. `ai-tuning.md`·`money-model.md`와 결과 표를 함께 인계하고 공개 API만 사용한다. |
+| 공용 E2E·갤러리 | 기능 담당이 전용 테스트를 소유하고 .2-D/.3-D가 선행 병합 뒤 공용 기준샷·통합 검증을 맡는다. |
 - 진행 중: AI #56, 병합된 응답 유실 복구 #59의 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. 새 진입점은 체크아웃별 Compose 프로젝트로 컨테이너를 분리한다.
 - 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 끝난 리뷰·통합·수정 트랙은 위 상태 표와 리뷰 이력으로 대체한다.
 - 작업은 워크트리·브랜치·PR로 격리한다. 위임 시 Codex(Paseo)를 기본으로 판단·리뷰는 Astra, 구현은 Sol, 저위험 정리는 Luna를 배분하며 Claude 서브에이전트는 사용자 명시 때만 쓴다. 병합은 CI 녹색 + reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터만 수행한다.
