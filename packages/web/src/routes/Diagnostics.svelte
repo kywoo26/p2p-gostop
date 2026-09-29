@@ -1,20 +1,43 @@
 <script lang="ts">
   // 진단·로그 (spec 6.2, FR-30~32). 비보안 컨텍스트라 Clipboard·Web Share를 쓰지 않고(NF-02),
-  // 전체 선택 가능한 텍스트 영역으로 내보낸다. Android 공유 시트 연동(bridge share)은 M4.
+  // 전체 선택 가능한 텍스트 영역으로 내보낸다. 호스트(Android 앱)는 게스트가 올린 로그까지 합쳐 공유 시트로 보내고
+  // (bridge share), 게스트는 로그를 WebSocket으로 호스트에 올린다(NP-09).
   import type { DiagnosticsView } from '../lib/view-types.ts';
   import Screen from '../ui/Screen.svelte';
 
   interface Props {
     view: DiagnosticsView;
+    /** 호스트가 받은 게스트 로그 (NP-09) */
+    guestLog?: readonly string[];
+    /** 뒤로 가기 해시 (게스트 화면은 null: 닫기 버튼을 쓴다) */
+    back?: string | null;
+    /** Android 공유 시트 (호스트 앱에서만) */
+    onshare?: ((text: string) => void) | undefined;
+    /** 게스트: 로그를 호스트로 보내기 */
+    onupload?: (() => void) | undefined;
+    onclose?: (() => void) | undefined;
+    ondevice?: (() => void) | undefined;
+    /** 공유·업로드 결과 안내 */
+    status?: string | null;
   }
 
-  let { view }: Props = $props();
+  let {
+    view,
+    guestLog = [],
+    back = '#/',
+    onshare,
+    onupload,
+    onclose,
+    ondevice,
+    status = null,
+  }: Props = $props();
   let textarea = $state<HTMLTextAreaElement | null>(null);
 
   const logText = $derived(
     [
       `build ${view.buildId} · ${view.device} · ${view.mode}`,
       ...view.log.map((line) => `${line.t} ${line.level.toUpperCase()} ${line.msg}`),
+      ...(guestLog.length > 0 ? ['---- 게스트 로그 (업로드) ----', ...guestLog] : []),
     ].join('\n'),
   );
 
@@ -31,7 +54,7 @@
   const STATUS_LABEL = { ok: '정상', warn: '주의', fail: '실패' } as const;
 </script>
 
-<Screen title="진단">
+<Screen title="진단" {back}>
   <section aria-labelledby="diag-env">
     <h2 id="diag-env">환경</h2>
     <dl class="pairs">
@@ -70,8 +93,27 @@
     </label>
   </section>
 
+  {#if status}
+    <p class="status" role="status">{status}</p>
+  {/if}
+
   {#snippet actions()}
-    <button type="button" class="button primary" onclick={selectAll}>로그 전체 선택</button>
+    {#if onshare}
+      <button type="button" class="button primary" onclick={() => onshare(logText)}
+        >로그 공유</button
+      >
+    {:else if onupload}
+      <button type="button" class="button primary" onclick={() => onupload()}
+        >호스트로 로그 보내기</button
+      >
+    {/if}
+    <button type="button" class="button" onclick={selectAll}>전체 선택</button>
+    {#if ondevice}
+      <button type="button" class="button" onclick={() => ondevice()}>기기 진단</button>
+    {/if}
+    {#if onclose}
+      <button type="button" class="button" onclick={() => onclose()}>닫기</button>
+    {/if}
   {/snippet}
 </Screen>
 
@@ -159,6 +201,12 @@
     color: var(--color-text);
     font-family: ui-monospace, monospace;
     font-size: 0.75rem;
+  }
+
+  .status {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
   }
 
   .log time {

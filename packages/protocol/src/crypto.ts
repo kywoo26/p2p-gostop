@@ -1,12 +1,4 @@
 // NP-06: 비보안 컨텍스트에서도 실행되는 순수 JS SHA-256. 난수는 호출자가 제공한다.
-import {
-  replay,
-  type Action,
-  type RoundOptions,
-  type RuleOptions,
-  type Seed,
-} from '@p2p-gostop/engine';
-
 const K = new Uint32Array([
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
   0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -97,37 +89,21 @@ export function combineSeed(
     ((hash[i]! << 24) | (hash[i + 1]! << 16) | (hash[i + 2]! << 8) | hash[i + 3]!) >>> 0;
   return [word(0), word(4), word(8), word(12)];
 }
-export interface Commitments {
-  readonly host: string;
-  readonly guest: string;
-}
-export interface Reveals {
-  readonly host: string;
-  readonly guest: string;
-}
-export function verifyRound(
-  commitments: Commitments,
-  reveals: Reveals,
-  seed: Seed,
-  actions: readonly Action[],
-  rules: RuleOptions,
-  options: RoundOptions = {},
-): boolean {
-  const host = fromHex(reveals.host);
-  const guest = fromHex(reveals.guest);
-  if (
-    host?.length !== 32 ||
-    guest?.length !== 32 ||
-    commit(host) !== commitments.host ||
-    commit(guest) !== commitments.guest
-  )
-    return false;
-  const computed = combineSeed(host, guest);
-  if (JSON.stringify(computed) !== JSON.stringify(seed)) return false;
-  try {
-    const result = replay(rules, seed, actions, options);
-    return result.ok && result.state.phase === 'end';
-  } catch {
-    return false;
+/** 문자열의 UTF-8 바이트 (TextEncoder 없이, Node·브라우저 공통) */
+export function utf8(text: string): Uint8Array {
+  const out: number[] = [];
+  for (const ch of text) {
+    const cp = ch.codePointAt(0) ?? 0;
+    if (cp < 0x80) out.push(cp);
+    else if (cp < 0x800) out.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));
+    else if (cp < 0x10000) out.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+    else
+      out.push(
+        0xf0 | (cp >> 18),
+        0x80 | ((cp >> 12) & 63),
+        0x80 | ((cp >> 6) & 63),
+        0x80 | (cp & 63),
+      );
   }
+  return Uint8Array.from(out);
 }
