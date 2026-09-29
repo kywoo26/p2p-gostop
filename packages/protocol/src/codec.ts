@@ -1,10 +1,18 @@
 // NP-01~NP-09: 직렬화·UTF-8 상한·신뢰할 수 없는 입력의 런타임 검증.
-import type { HostMessage, GuestMessage, Message, Role, ErrorCode } from './messages.ts';
+import type {
+  HostMessage,
+  GuestMessage,
+  Message,
+  Role,
+  ErrorCode,
+  DecisionClock,
+  TimeoutResult,
+} from './messages.ts';
 import { isRelayFrame } from './relay.ts';
 import { guestSchema, headSchema, hostSchema } from './schema.ts';
 
-/** v2: BoardView 상세 필드, 원장 요약, 판 사이 대기(status), revealHost.firstSeq (#12·#23·#26) */
-export const PROTOCOL_VERSION = 2;
+/** v3: 결정 시계·확인·초과 표식을 필수 계약으로 추가한다 (NP-10). */
+export const PROTOCOL_VERSION = 3;
 /** NP-07: 개별 뷰(스냅샷)와 엔진 한 수 이벤트의 상한. */
 export const MAX_MESSAGE_BYTES = 16 * 1024;
 /** NP-09와 중계의 최종 UTF-8 프레임 상한. log·ledgerPage만 이 한도까지 쓴다. */
@@ -13,6 +21,32 @@ export const MAX_LOG_LINE_BYTES = 2 * 1024;
 export const GUEST_LOG_BUFFER_BYTES = 256 * 1024;
 export const RELAY_PORT = 17777;
 export const RELAY_PATH = '/ws';
+
+function validClock(clock: DecisionClock): boolean {
+  if (
+    clock.key.decisionId < 1 ||
+    clock.attempt < 1 ||
+    clock.timerRev < 1 ||
+    clock.remainingMs > 60_000 ||
+    clock.recoveryGrantMs > 2_999 ||
+    (!clock.resumeFloorUsed && clock.recoveryGrantMs !== 0)
+  )
+    return false;
+  if (clock.state === 'running') return clock.deadlineMs !== null && clock.confirmByMs === null;
+  if (clock.state === 'preparing' || clock.state === 'checking')
+    return clock.deadlineMs === null && clock.confirmByMs !== null;
+  return clock.deadlineMs === null && clock.confirmByMs === null && clock.pauseReason !== null;
+}
+
+function validTimeout(result: TimeoutResult): boolean {
+  return (
+    result.key.baseSeq === result.baseSeq &&
+    result.toSeq >= result.baseSeq &&
+    result.confirmedAtMs >= result.deadlineMs &&
+    result.action.seat === result.seat &&
+    result.actionIndex < 400
+  );
+}
 
 export function byteLength(value: string): number {
   let bytes = 0;
@@ -82,6 +116,31 @@ export function decode(raw: unknown, from: Role): ParseResult<Message> {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const message = parsed.data as Message;
     if (bytes > messageLimit(message.t)) return { ok: false, reason: 'TOO_LARGE' };
+    if (
+      message.t === 'action' &&
+      ((message.decisionKey === undefined) !== (message.decisionAttempt === undefined) ||
+        (message.decisionKey !== undefined && message.requestId === undefined))
+    )
+      return { ok: false, reason: 'MALFORMED' };
+    if (
+      (message.t === 'snapshot' || message.t === 'events') &&
+      ((message.decision !== null &&
+        (!validClock(message.decision) ||
+          message.decision.key.baseSeq > (message.t === 'snapshot' ? message.seq : message.to))) ||
+        (message.timeoutResult !== undefined &&
+          (!validTimeout(message.timeoutResult) ||
+            message.timeoutResult.toSeq !== (message.t === 'snapshot' ? message.seq : message.to))))
+    )
+      return { ok: false, reason: 'MALFORMED' };
+    if (message.t === 'decisionDeadline' && !validClock(message.clock))
+      return { ok: false, reason: 'MALFORMED' };
+    if (
+      message.t === 'timeoutPage' &&
+      (message.total > 400 ||
+        message.entries.some((entry) => !validTimeout(entry)) ||
+        byteLength(JSON.stringify(message.entries)) > 8 * 1024)
+    )
+      return { ok: false, reason: 'MALFORMED' };
     if (
       message.t === 'log' &&
       message.entries.some((line) => byteLength(line) > MAX_LOG_LINE_BYTES)
