@@ -16,7 +16,10 @@ export default defineConfig({
   retries: process.env['CI'] ? 1 : 0,
   // 공유 머신 부하 규칙(AGENTS.md §5): 로컬은 4 workers. CI는 --workers=2를 준다.
   ...(process.env['CI'] ? {} : { workers: 4 }),
-  reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // 첫 리포터가 RP-07 비밀을 오류 첨부·메시지에서 가린 뒤 나머지가 결과를 읽는다.
+  reporter: process.env['CI']
+    ? [['./e2e/redact-remote-artifacts.ts'], ['list'], ['html', { open: 'never' }]]
+    : [['./e2e/redact-remote-artifacts.ts'], ['list']],
   use: {
     baseURL,
     trace: 'retain-on-failure',
