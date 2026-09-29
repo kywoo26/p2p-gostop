@@ -178,9 +178,9 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 
 ## 5. 에이전트용 변경 위치 지도와 소유권
 
-2026-09-29 사용자 인계: v0.2.2-A `feat/push-settle`이 `web/src/game/{session.ts,solo.svelte.ts,controller.ts,adapter.ts,ai-core.ts}`, `p2p/{host,guest}.svelte.ts`, `routes/Settlement.svelte`, `ui/settle-labels.ts`, `workers/ai.worker.ts`를 소유한다. 해당 PR 병합 전에는 **web/src/game·web/src/p2p 리팩토링을 보류**한다. 예외는 #96의 `p2p/wiring.test.ts` 결정적 대기 수정(PR #97)이다.
+2026-09-29 최신 사용자 인계(#148·#150 병합 뒤): **#151 상호작용**이 `web/src/game/{controller.ts,solo.svelte.ts}`·`p2p/*`·`routes/Game.svelte`를, **#104 디자인**이 `ui/*`·`routes/{Home,Settings,Settlement}.svelte`·`tokens.css`를 소유한다. 이 영역은 수정하지 않는다. 현재 자유 영역은 engine/protocol/ai/relay-dev/sim, `web/src/{net,lib,cards,storage}`, android다. 아래 표의 과거 선행 조건보다 이 사용자 인계가 우선한다.
 
-현재 자유 영역은 engine/protocol/ai/sim/relay-dev와 `web/src/{net,lib,cards,storage}`다. #91·#93 병합 완료(main `ae1df57` 기준); 아래 표의 과거 선행 조건보다 이 인계가 우선한다. 진행한 후속 작업은 R2(PR #98)와 R3a(PR #99)이며 새 소유 영역과 겹치지 않는다.
+R1 #93, R2 #98, R3a #99, R4 웹 호스트 #148, R5 솔로 저장 #150이 병합됐다. R4의 protocol HostSession 추가 분해는 별도 후속이며 완료로 간주하지 않는다. 다음은 R6 sim 계산/표시 분리([검증·변경 위치](research/refactor-sim-reporting.md)); #56은 병합, #66·#67은 열린 후속 이슈이나 현재 sim 수정 PR은 없음을 착수 시 확인했다. AI 정책·가중치·머니 기본값을 변경하지 않는다. R6 검증 도중 #151이 main `dd4e9e1`에 병합되어 반영했지만, 이번 PR에서는 위 소유 경계를 그대로 유지했다.
 
 | 바꾸려는 것 | 읽을 정본 → 구현 → 검사 | 착수 조건 |
 |---|---|---|
