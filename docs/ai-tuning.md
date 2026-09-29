@@ -1,6 +1,6 @@
 # AI 조정 기록 (spec AI-02·AI-03·AI-04·AI-05·AI-07·AI-08, plan.md M2·M6)
 
-작성: 2026-09-28 · M6 후속: 2026-09-29 · 대상: `packages/ai` · 도구: `tools/sim` (`./dev.sh sim -- …`)
+작성: 2026-09-28 · M6 후속: 2026-09-29 · 대상: `packages/ai` · 도구: `tools/sim` (`docker compose run --rm dev npm run sim -- -- …`)
 
 1~7절은 M2 강도 조정 당시의 측정과 과제 기록이다. M6 후속(적용 경로·밀기)은 8절에 기록한다. 이번 후속에서 가중치와 AC-03 강도 조정은 변경하지 않았다.
 
@@ -187,11 +187,11 @@ UCT는 반복마다 다른 결정화에서 한 후보만 평가하므로, 후보
 
 ```sh
 # 강도 벤치마크 (AC-03)
-./dev.sh sim --a commercial --b normal --rounds 2000 --preset standard --seed 1
-./dev.sh sim --a commercial --b easy   --rounds 2000 --preset standard --seed 1
-./dev.sh sim --a commercial --b heuristic --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b easy   --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b heuristic --rounds 2000 --preset standard --seed 1
 # 결정 시간 (단독 워커, 기본 예산 1000ms)
-./dev.sh sim --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
+docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
 # 실험 옵션: --a-iterations N, --a-search uct|halving, --a-gostop ev|rule|search, --a-weights 파일.json
 ```
 
@@ -201,7 +201,7 @@ UCT는 반복마다 다른 결정화에서 한 후보만 평가하므로, 후보
 
 `rollout`, 그리디 확장, ISMCTS 확장·고/스톱 EV, `playRound`는 `legalActions` 또는 `playerView.legal`에서 얻은 수를 엔진 `applyUnchecked`로 적용한다. 비교용 `debugReduce` 옵션을 켜면 같은 위치에서 `reduce`를 사용한다. 시드를 고정한 fast-check 롤아웃 속성 테스트(72판), 판 전체 액션·이벤트 비교(16판), 그리디·ISMCTS 선택 비교가 두 경로의 동등성을 확인한다.
 
-Docker Node 컨테이너에서 `./dev.sh npm run bench -w packages/ai -- 2000`을 실행했다. 두 경로를 예열하고 같은 시드·가중치로 세 번씩 교대 측정한 중앙값이다. 한 반복은 한 판의 휴리스틱 롤아웃, 탐색 반복은 상용급 순차 반감의 후보 평가 한 번이다.
+Docker Node 컨테이너에서 `docker compose run --rm dev npm run bench -w packages/ai -- 2000`을 실행했다. 두 경로를 예열하고 같은 시드·가중치로 세 번씩 교대 측정한 중앙값이다. 한 반복은 한 판의 휴리스틱 롤아웃, 탐색 반복은 상용급 순차 반감의 후보 평가 한 번이다.
 
 | 측정 | `reduce` 반복/초 | `applyUnchecked` 반복/초 | 속도비 |
 |---|---:|---:|---:|

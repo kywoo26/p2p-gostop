@@ -20,7 +20,7 @@
 | 카드 작업 | 로컬 `design/cards-polish` 브랜치 존재(조회한 커밋 `02ac933`), 원격 동명 ref는 없음. 진행 중 작업으로 취급하며 다른 워크트리의 미커밋 파일을 가져오지 않는다. 준비된 PR·리뷰 후 통합한다. |
 | AI | [PR #56](https://github.com/kywoo26/p2p-gostop/pull/56) 열림: unchecked rollout, AI 밀기, 정통/아케이드 머니 산정. **AC-03 재도전 없음**, 각 프리셋 3,000판이므로 MN-03 미완. |
 | 연결 | [PR #59](https://github.com/kywoo26/p2p-gostop/pull/59)는 `9651364`로 병합됨. `fix/guest-clock`(.1-C)이 #60 시계 연결과 #78을 진행 중이다. |
-| 개발 환경 | [PR #38](https://github.com/kywoo26/p2p-gostop/pull/38) 열림. 현재 명령은 `./dev.sh`; 병합 뒤 해당 PR의 명령·AGENTS·허용 규칙으로 함께 갱신한다. B1은 조사 중 [PR #73](https://github.com/kywoo26/p2p-gostop/pull/73)으로 제출됨. #33과 CI 파일 소유권을 조율한다. |
+| 개발 환경 | [PR #38](https://github.com/kywoo26/p2p-gostop/pull/38) 열림. 현재 개발 명령은 `docker compose run --rm dev <명령>`이다. 병합 뒤 AGENTS·허용 규칙도 같은 진입점을 따른다. B1은 조사 중 [PR #73](https://github.com/kywoo26/p2p-gostop/pull/73)으로 제출됨. #33과 CI 파일 소유권을 조율한다. |
 
 읽은 근거: spec 전체, intend 전체, plan 지정 절, [M0](reviews/M0-review.md)·[M1](reviews/M1-review.md)·[M3](reviews/M3-review.md)·[M4 protocol](reviews/M4-protocol-review.md) 리뷰, [MVP 감사](reviews/mvp-rush-audit.md), [harness 감사](reviews/harness-audit.md), [UI 구조](design/ui-spec.md), [M4 실기기 절차](device-test/procedure.md), [AI 조정](ai-tuning.md), `packages/web/src/{routes,ui,game,p2p,settings,bridge,storage}`, `android/app`, `packages/ai`, 기존 브라우저/E2E 테스트. GitHub open issue 목록은 `gh issue list --state open --limit 100`으로 조회했다. 최초 조사 상태에 PR #76 리뷰의 진행 중 작업을 반영했다.
 
@@ -206,10 +206,10 @@ MVP 감사 A-1/A-6~12는 통합 후 G27로 재검증; A-2/3/5/13→G21/22, A-4�
 
 ```sh
 # Docker. 기존 공식 기준 재현; 후보는 같은 설정에서 별도 결과 파일에 기록
-./dev.sh sim --a commercial --b normal --rounds 2000 --preset standard --seed 1
-./dev.sh sim --a commercial --b easy --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 2000 --preset standard --seed 1
+docker compose run --rm dev npm run sim -- --a commercial --b easy --rounds 2000 --preset standard --seed 1
 # 기기 예산과 구분하는 Node 단독 시간 기준
-./dev.sh sim --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
+docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
 ```
 
 각 상대 ≥2,000판 좌석 교대(같은 셔플 쌍), 승/패/나가리·승률(나가리 제외)·95% 구간·판당 순액·p50/p95/max·시드·SHA·반복/시간 제한을 표에 적는다. 튜닝에 사용한 시드의 좋은 결과만 최종으로 선택하지 않는다. spec AI-04의 점추정치 **65%/80% 모두** 충족해야 AC-03 통과; 신뢰구간이 목표를 포함한다는 이유로 통과시키지 않는다. 신뢰구간 하한은 추가 판단 자료이며 임의로 새 합격 기준을 만들지 않는다.
@@ -244,7 +244,7 @@ MVP 감사 A-1/A-6~12는 통합 후 G27로 재검증; A-2/3/5/13→G21/22, A-4�
 
 표에 `(신규)`로 적은 테스트는 **계획**이지 현재 통과한 테스트가 아니다. 기존 기반은 `ui/Board.test.ts`, `Board.prompts.test.ts`, `Board.property.test.ts`, `Card.test.ts`, `anim/{choreo,flip}.test.ts`, `bridge/bridge.test.ts`, `p2p/{p2p,wiring}.test.ts`, `e2e/{gallery,solo,p2p,p2p-screens,smoke}.spec.ts`다. 규칙 변경 없이도 모든 모드가 공용 컴포넌트를 쓰므로 전체 회귀가 필요하다.
 
-새 워크트리는 `./dev.sh install` 1회. 구현 PR/릴리스 후보는 `lint`, `check`, `test`, `test:browser`, `build:web`, `e2e`, `apk:debug`, `android:test`를 Docker에서 수행한다. 현재 `ci`는 `test:browser`가 빠져 있어 별도로 실행한다. 네트워크만 변경한 PR은 `./dev.sh npm run test:net -w packages/web`도 확인한다. 포맷은 커밋 전 해당 툴체인의 `lint:fix`, 편집마다 Docker 포맷 훅은 금지한다.
+새 워크트리는 `docker compose run --rm dev npm ci`를 먼저 실행한다. 구현 PR/릴리스 후보는 AGENTS.md §5의 `lint`, `check`, `test`, `test:browser`, 웹 빌드, `e2e`, Android 빌드·단위 테스트·Lint를 개발 이미지에서 수행한다. CI에서 생략하는 browser/E2E는 별도로 실행한다. 네트워크만 변경한 PR은 `docker compose run --rm dev npm run test:net -w packages/web`도 확인한다. 포맷은 커밋 전 해당 툴체인의 `lint:fix`, 편집마다 Docker 포맷 훅은 금지한다.
 
 필수: Astra “병합 가능” + CI 녹색 → 사람/지시받은 오케스트레이터 병합 → **배포할 커밋의** CI와 browser/E2E 증거 확인 → 태그/서명/체크섬/웹 포함 APK/설치 절차. push CI에서 E2E가 skipped인 것을 E2E 성공으로 세지 않는다. #22의 릴리스 게이트를 유지하고, 이전 APK 위 덮어쓰기·저장 형식 유지·versionCode 증가를 점검한다. 본 문서 PR은 배포나 태그를 수행하지 않는다.
 
@@ -295,12 +295,12 @@ AC-04(Chromium 호스트+WebKit 게스트 20판)와 AC-05 자동 UI 회귀는 �
 
 | Docker 태스크 | 결과 |
 |---|---|
-| `./dev.sh lint` / `check` | 통과, 타입·Svelte·knip 오류 없음 |
-| `./dev.sh test` | 23파일·462개 통과 |
-| `./dev.sh test:browser` | Chromium+WebKit 32파일·224개 통과 |
-| `./dev.sh build:web` | 1007.1 KiB / 1536 KiB, 외부 URL 0건 |
-| `./dev.sh e2e` | 54개 통과·기존 2개 skipped |
-| `./dev.sh apk:debug` / `android:test` | 웹 dist 포함 빌드·JVM 테스트·Lint 통과. 기존 Gradle 10 deprecation 경고는 남음 |
+| `docker compose run --rm dev npm run lint` / `check` | 통과, 타입·Svelte·knip 오류 없음 |
+| `docker compose run --rm dev npm test` | 23파일·462개 통과 |
+| `docker compose run --rm dev npm run test:browser` | Chromium+WebKit 32파일·224개 통과 |
+| `docker compose run --rm dev npm run build -w packages/web` | 1007.1 KiB / 1536 KiB, 외부 URL 0건 |
+| `docker compose run --rm dev npm run e2e -w packages/web` | 54개 통과·기존 2개 skipped |
+| `docker compose run --rm dev android/gradlew -p android assembleDebug testDebugUnitTest lint` | 웹 dist 포함 빌드·JVM 테스트·Lint 통과. 기존 Gradle 10 deprecation 경고는 남음 |
 | 문서 정합 | 최초 로컬 링크 13개·G01~G35·설정 1~24 검사와 `git diff --check` 통과. 리뷰 반영 재검증은 아래 참조. |
 
-리뷰 반영: main `9651364` merge 후 Docker 링크·앵커/표 검사와 `./dev.sh lint`, `git diff --check` 재실행 통과. Galaxy/iPhone 실기기 결과는 만들지 않았다. 새 수용 테스트·새 device-test 절차의 작성은 각 구현 PR 범위다. 이 문서는 formatter 제외 대상(`.oxfmtrc.json`의 `docs/**`, `**/*.md`)이며 코드 포맷 변경은 없다.
+리뷰 반영: main `9651364` merge 후 Docker 링크·앵커/표 검사와 `docker compose run --rm dev npm run lint`, `git diff --check` 재실행 통과. Galaxy/iPhone 실기기 결과는 만들지 않았다. 새 수용 테스트·새 device-test 절차의 작성은 각 구현 PR 범위다. 이 문서는 formatter 제외 대상(`.oxfmtrc.json`의 `docs/**`, `**/*.md`)이며 코드 포맷 변경은 없다.

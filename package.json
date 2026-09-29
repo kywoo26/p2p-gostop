@@ -12,6 +12,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:browser": "npm run test:browser -w packages/web",
     "lint": "npm run lint:oxc && npm run lint -w packages/web",
     "lint:oxc": "oxlint --type-aware --deny-warnings && oxfmt --check",
     "lint:fix": "oxlint --type-aware --fix && oxfmt && npm run lint:fix -w packages/web",
