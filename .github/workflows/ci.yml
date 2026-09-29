@@ -18,7 +18,8 @@ env:
   CI: true
 
 jobs:
-  ci:
+  # 기존 main의 Android 잡 ID를 유지해 setup-gradle 캐시의 연속성을 보존한다.
+  android:
     name: lint · check · test · build · android
     runs-on: ubuntu-24.04
     timeout-minutes: 30

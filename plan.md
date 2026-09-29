@@ -117,7 +117,7 @@ p2p-gostop/
 | QR | `uqr` 0.1.3 | |
 | 위생 | **knip 6.38.0**, 번들 ≤1.5MB·외부 URL 0건 검사 스크립트(의존성 0) | CI 게이트 |
 | 의존성 갱신 | Dependabot(npm·gradle·github-actions, devDeps 그룹, 기본 쿨다운) | |
-| 개발 환경 (2026-09-29, B1) | 단일 개발 이미지 + Compose + Dev Container(2장). `docker/setup-buildx-action@v4`·`docker/build-push-action@v7`로 GHA 레이어 캐시, `actions/cache@v6`로 npm 다운로드 캐시 | Docker 공식 액션 도입 근거: SDK 설치 레이어 재사용. 런타임 의존성 추가 없음 |
+| 개발 환경 (2026-09-29, B1) | 단일 개발 이미지 + Compose + Dev Container(2장). `docker/setup-docker-action@v5`(containerd 저장소)·`docker/setup-buildx-action@v4`(docker driver)·`docker/build-push-action@v7`로 GHA 레이어 캐시, `actions/cache@v6`로 npm 다운로드 캐시 | Docker 공식 액션 도입 근거: SDK 설치 레이어 재사용, 별도 BuildKit 컨테이너에서 이미지 tar를 다시 load하는 비용 제거. 런타임 의존성 추가 없음 |
 | Gradle CI 캐시 (B1) | `gradle/actions/setup-gradle@v6`, build/configuration cache, `GRADLE_ENCRYPTION_KEY` Secret | Gradle 홈·작업 공간·임시 디렉터리를 같은 절대 경로로 컨테이너에 마운트. main만 쓰기, PR·태그 읽기 전용. 공식 기본 enhanced provider 사용(비공개 저장소 preview 조건은 build-performance.md 참조) |
 | 에이전트 도구(로컬) | `AGENTS.md` + `CLAUDE.md`(`@AGENTS.md`), Context7, **Svelte 공식 MCP(`@sveltejs/mcp`, 프로젝트 `.mcp.json`에 로컬 stdio로 등록, 무료·오픈소스, 원격 엔드포인트 미사용)**, 프로젝트 `.claude/`(서브에이전트 3종·스킬 3종·권한 규칙, 편집 훅 없음: 포맷은 `lint:fix`·CI `lint`로 강제, 근거 `docs/reviews/harness-audit.md`). `chrome-devtools-mcp`·`@playwright/mcp`는 필요 시 | 저장소 범위 설정만. 사용자 전역 설정은 건드리지 않음 |
 | Android 셸 | 직접 작성 Kotlin + WebView + Ktor (변경 없음). `bridge.ts`는 Capacitor 플러그인 모양 | Capacitor 8은 iOS 단계에서 재평가. Tauri·RN·Flutter·CMP 도입 안 함 |
@@ -276,10 +276,10 @@ p2p-gostop/
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
 
-- `ci.yml` (push/PR): 개발 이미지(`docker/Dockerfile`)를 러너에서 빌드해 한 잡에서 로컬과 같은 `docker compose run --rm dev …` 명령으로 → `npm ci` → lint + svelte-check + knip → 단위·속성·계약 테스트 → 웹 빌드 + 번들 예산·외부 URL 검사 → 컴포넌트 테스트·Playwright(E2E, 갤러리 스냅샷, axe; PR·수동만) → 웹 번들을 `assets/web`에 복사(#33) → `assembleDebug` + Android 테스트·Lint(번들 포함 상태) → APK 아티팩트. 잡을 하나로 묶어 이미지 빌드를 한 번만 치른다(분 예산 우선, 벽시계 시간은 늘어남).
+- `ci.yml` (B1): 같은 개발 이미지·Compose 명령으로 두 잡을 병렬 실행한다. ① npm ci → lint/check/단위 테스트 → 웹 빌드·예산·외부 URL 검사 → 웹 번들 포함 `assembleDebug testDebugUnitTest lint` 한 호출, ② 컴포넌트 테스트 → 전체 Playwright(기존 PR·수동 범위, timing 프로젝트 직렬 의존성 유지). BuildKit GHA 레이어 캐시·npm 다운로드 캐시를 쓰며 Gradle 캐시는 setup-gradle로 main만 갱신한다. 잡 분리의 분 예산 증가와 벽시계 이득은 `docs/research/build-performance.md`에서 비교한다.
 - `dependabot.yml`: npm(devDeps 그룹), gradle, github-actions. 쿨다운 3일을 명시 설정.
 - 버전 규칙: `versionName`은 태그(`v0.M.n`), `versionCode`는 커밋 수(단조 증가). 태그 없이 배포하지 않는다.
-- `release.yml`: 웹 빌드는 서명 잡 안에서 키스토어 복원 **전에**, 읽기 전용 마운트 + 비밀 없는 `docker run` 컨테이너(개발 이미지의 베이스 `playwright:v1.63.0-noble`, CI와 같은 Node)에서 `npm ci --ignore-scripts`로 수행한다(계정 아티팩트 용량 초과로 잡 분리 대신 컨테이너 격리 채택). 빌드 후 추적 파일 변경이 있으면 실패. 서명 잡은 `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, 태그 커밋이 main에 있어야 함(M0 리뷰 R-1/R-4~R-7).
+- `release.yml` (B1): 정확한 SHA의 성공한 main push CI 웹 번들을 재사용한다. 없거나 만료·용량 초과이면 키스토어 복원 **전에** 읽기 전용 마운트 + 비밀 없는 개발 이미지 컨테이너에서 `npm ci --ignore-scripts`로 빌드한다. Gradle·서명 검증도 개발 이미지에서 실행하고 Gradle 캐시는 읽기 전용이다. 빌드 후 추적 파일 변경이 있으면 실패. `persist-credentials: false`, 서명자 인증서 지문 고정, alias는 Variables, main 이력·CI 성공 게이트를 유지한다(M0 리뷰 R-1/R-4~R-7).
 - `release.yml` (태그 `v*`): 웹 빌드 → `assets/web` 복사 → 키스토어 복원 → `assembleRelease` → `softprops/action-gh-release@v3`로 APK와 체크섬 첨부, 릴리스 노트에 설치·테스트 절차 링크.
 - 비공개 저장소 월 2,000분 예산: E2E는 PR에서만, 전체 10,000판 속성 테스트는 태그에서만 실행해 분량을 아낀다.
 - 사용자 설치 경로: 폰 브라우저에서 GitHub 로그인 → Releases → APK 다운로드 → 설치(출처 불명 앱 허용). 같은 서명 키로 덮어쓰기 업데이트.

@@ -35,8 +35,14 @@ startedAt/completedAt 차이. 잡 시간에는 준비·후처리를 포함하고
 | 구성 캐시 첫 실행 | 30.74초 | 18 executed / 34 up-to-date, entry stored |
 | 구성 캐시 재사용 | 6.66초 | 1 executed / 51 up-to-date, entry reused |
 
-위 최초·재사용 차이는 task up-to-date 효과도 포함한다. 구성 캐시만으로 84% 개선됐다고
-해석하지 않는다. CI 전후 측정은 PR 실행이 완료된 뒤 별도로 기록한다.
+위 최초·재사용 차이는 task up-to-date 효과도 포함한다. 기본 워크트리 마운트는 공용 Git
+디렉터리를 포함하지 않아 Android 빌드 시각이 현재 시각으로 fallback하는 기존 제약도 있다.
+구성 캐시만으로 84% 개선됐다고 해석하지 않는다.
+
+공용 Git 디렉터리를 같은 경로에 읽기 전용 추가 마운트한 통제 비교(같은 커밋·웹 번들,
+`--max-workers=2`, 각 경로 준비 실행 뒤 반복): **구성 캐시 없음 6.79초 → 재사용 4.84초**.
+둘 다 `1 executed, 51 up-to-date`. 구성 캐시 첫 저장은 10.63초였다. 따라서 이 단일 모듈의
+반복 구성 이득은 약 2초이며 최초 저장 비용을 별도로 보아야 한다.
 
 ## 2. 수단 비교와 우선순위
 
@@ -107,5 +113,6 @@ CI debug APK를 그대로 재서명하는 것은 release variant와 같지 않�
 - [Gradle build cache](https://docs.gradle.org/current/userguide/build_cache.html), [configuration cache](https://docs.gradle.org/current/userguide/configuration_cache.html), [활성화·암호화](https://docs.gradle.org/current/userguide/configuration_cache_enabling.html), [daemon](https://docs.gradle.org/current/userguide/gradle_daemon.html)
 - [Android 빌드 최적화](https://developer.android.com/build/optimize-your-build), [Kotlin incremental/cache](https://kotlinlang.org/docs/gradle-compilation-and-caches.html)
 - [Docker Actions 캐시](https://docs.docker.com/build/ci/github-actions/cache/), [GHA backend·scope](https://docs.docker.com/build/cache/backends/gha/), [build-push-action](https://github.com/docker/build-push-action)
+- [docker driver의 containerd 캐시 지원](https://docs.docker.com/build/cache/backends/), [공식 setup-docker 설정](https://docs.docker.com/build/ci/github-actions/multi-platform/)
 - [npm ci](https://docs.npmjs.com/cli/v11/commands/npm-ci/), [Playwright CI](https://playwright.dev/docs/ci), [sharding](https://playwright.dev/docs/test-sharding)
 - [아티팩트 다운로드](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts), [자체 러너](https://docs.github.com/en/actions/concepts/runners/self-hosted-runners), [러너 보안](https://docs.github.com/en/actions/reference/security/secure-use)
