@@ -1,0 +1,77 @@
+[
+  {
+    "id": "felt",
+    "file": "felt-1x.webp",
+    "bytes": 14090,
+    "width": 512,
+    "height": 512,
+    "sha256": "4172ca10166ea0ad4531dfa4ce728046335e93bccc11e1d3561bd80c13021ad6",
+    "source": "https://ambientcg.com/view?id=Fabric037",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "wood",
+    "file": "wood-1x.webp",
+    "bytes": 11032,
+    "width": 512,
+    "height": 512,
+    "sha256": "b6eaeed4686f050d91829a490a30590010e499e3c0e8b286da755afaaf38a5bb",
+    "source": "https://ambientcg.com/view?id=Wood050",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "gold",
+    "file": "gold-1x.webp",
+    "bytes": 874,
+    "width": 512,
+    "height": 512,
+    "sha256": "fc66c625d4df76bcd3bf45ce5e4ac3c921dc7600826957ee8643678095f28325",
+    "source": "https://ambientcg.com/view?id=Metal034",
+    "license": "CC0-1.0",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "key-art",
+    "file": "key-art-1x.webp",
+    "bytes": 54482,
+    "width": 512,
+    "height": 400,
+    "sha256": "a817e45696ece4b1a891f4de5ee9b2a1371e683570471f80c699ac54be111d29",
+    "source": "https://www.metmuseum.org/art/collection/search/37107",
+    "license": "CC0-1.0",
+    "changes": "Public domain woodblock print; cropped, ink/paper duotone, resized and encoded."
+  },
+  {
+    "id": "bomb-illustrated",
+    "file": "bomb-illustrated.webp",
+    "bytes": 1568,
+    "width": 96,
+    "height": 96,
+    "sha256": "b4b008afbede951fbaa6554858df0123606e723c57a63945c8d33acb293d2fe4",
+    "source": "User-provided visual reference, 2026-09-30",
+    "license": "User-provided reference; rights to be confirmed by product owner",
+    "changes": "AI-assisted harmonization; transparent 96px WebP palette and size normalization."
+  },
+  {
+    "id": "bell-illustrated",
+    "file": "bell-illustrated.webp",
+    "bytes": 2758,
+    "width": 96,
+    "height": 96,
+    "sha256": "d9c3c580d7df3b156f2c04f17cafd7c1d2f3e4c9b12760342e15e34b5236d51f",
+    "source": "User-provided visual reference, 2026-09-30",
+    "license": "User-provided reference; rights to be confirmed by product owner",
+    "changes": "AI-assisted harmonization; transparent 96px WebP palette and size normalization."
+  },
+  {
+    "id": "skin-notice",
+    "file": "NOTICE.md",
+    "bytes": 349,
+    "sha256": "a7847079bd8776d6f698d2242d57a1a0e2cf459abb2b95afd9cc3768de20195f",
+    "source": "Project asset provenance",
+    "license": "See NOTICE.md",
+    "changes": "Reference rights notice."
+  }
+]

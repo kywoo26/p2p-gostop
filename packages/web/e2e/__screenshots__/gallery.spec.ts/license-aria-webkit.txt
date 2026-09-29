@@ -5,17 +5,17 @@
   - heading "라이선스" [level=1]
   - region "화투 그림 (0~47번 카드)":
     - heading "화투 그림 (0~47번 카드)" [level=2]
-    - paragraph: Hwatu card art by Spenĉjo and Marcus Richert, based on Hanafuda graphics by Louie Mantia, Jr. — Wikimedia Commons, CC BY-SA 4.0
+    - paragraph: Hwatu card art by Spenĉjo and Marcus Richert, based on Hanafuda graphics by Louie Mantia, Jr. · Wikimedia Commons, CC BY-SA 4.0
     - list:
       - listitem:
         - strong: Spenĉjo
-        - text: — 카드별 SVG 추출·최적화 (2024-12)
+        - text: · 카드별 SVG 추출·최적화 (2024-12)
       - listitem:
         - strong: Marcus Richert
-        - text: — 원본 화투 도안 Hwatu overview.svg (2021-02)
+        - text: · 원본 화투 도안 Hwatu overview.svg (2021-02)
       - listitem:
         - strong: Louie Mantia, Jr.
-        - text: — 바탕이 된 Hanafuda 그래픽
+        - text: · 바탕이 된 Hanafuda 그래픽
     - term: 라이선스
     - definition:
       - text: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)

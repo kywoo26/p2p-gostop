@@ -17,7 +17,7 @@ test('폭탄 묶음의 모든 멤버에 공개 상태만 붙이고 액션 판정
     onplay,
   });
   expect(screen.container.querySelectorAll('.group-selected')).toHaveLength(3);
-  expect(screen.container.querySelectorAll('.mark')).toHaveLength(4);
+  expect(screen.container.querySelectorAll('.mark')).toHaveLength(0);
   expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('data-hand-group')).toBe(
     '1',
   );

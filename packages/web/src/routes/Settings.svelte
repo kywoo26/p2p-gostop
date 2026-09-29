@@ -465,6 +465,11 @@
     font-size: var(--font-size-s);
   }
 
+  button,
+  input[type='number'] {
+    min-height: var(--touch-min);
+  }
+
   select {
     min-height: var(--touch-min);
     padding: 0 var(--space-3);

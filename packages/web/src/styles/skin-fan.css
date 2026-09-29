@@ -1,0 +1,644 @@
+/* UX-06·UX-11: 한 카드 스케일, 네 글자 단계, 중앙 더미. 2026-09-30 사용자 결정. */
+:root .board.board {
+  --table-card: 56px;
+  --table-card-height: calc(var(--table-card) / 0.614);
+  --capture-card: 32px;
+  --capture-card-height: calc(var(--capture-card) / 0.614);
+  --table-gap: calc(var(--table-card) / 4);
+  --table-muted: #c3b9a8;
+  --table-border: #b9a98455;
+  --table-radius: 4px;
+  --fan-top: 48px;
+  --fan-capture: calc(var(--capture-card-height) + 18px);
+  --fan-seat: 52px;
+  --fan-hand: max(104px, calc(var(--table-card-height) + 13px));
+  --fan-gap: 8px;
+  --color-hud-muted: var(--table-muted);
+  --color-hud-mine: #9bcebb;
+  --color-event-ppeok-text: #e99d95;
+  row-gap: var(--fan-gap);
+  grid-template-rows:
+    var(--fan-top) var(--fan-capture) var(--fan-seat) minmax(0, 1fr) var(--fan-seat)
+    var(--fan-capture) var(--fan-hand);
+  background: #172723;
+  color: var(--skin-paper);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+:root .board.board::before,
+:root .board.board::after {
+  display: none;
+}
+:root .board :is(h1, h2, h3, p, button, span, strong, b) {
+  letter-spacing: 0;
+  text-shadow: none;
+}
+:root .board :is(strong, b, button) {
+  font-weight: 600;
+}
+:root .board .hud {
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 4px;
+  align-items: center;
+}
+:root .board .table-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 14px;
+}
+:root .board .table-heading span {
+  flex: none;
+  color: var(--table-muted);
+}
+:root .board .table-heading strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:root .game .menu-button {
+  top: max(8px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--skin-paper);
+  font-size: 14px;
+  font-weight: 400;
+}
+:root .board .menu-reserved {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--skin-paper);
+  font-size: 14px;
+}
+:root .game .menu-reserved {
+  visibility: hidden;
+}
+:root .board .captured-zone {
+  position: relative;
+  display: block;
+  min-width: 0;
+  --card-w-s: var(--capture-card);
+  --card-h-s: var(--capture-card-height);
+}
+:root .board .captured-zone > .captured {
+  position: static;
+  inset: auto;
+  visibility: visible;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--table-gap);
+  min-height: 0;
+  height: 100%;
+}
+:root .board .captured-zone .group {
+  display: grid;
+  grid-template-rows: 16px 1fr;
+  gap: 2px;
+  min-width: 0;
+}
+:root .board .captured-zone .name {
+  display: block;
+  min-height: 0;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--table-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+:root .board .captured-zone .name :is(b, small) {
+  display: none;
+}
+:root .board .captured-zone .stack {
+  position: relative;
+  display: flex;
+  width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 6px);
+  min-height: var(--capture-card-height);
+  height: var(--capture-card-height);
+}
+:root .board .captured-zone .stack > .card + .card {
+  margin-left: calc(6px - var(--capture-card));
+}
+:root .board .captured-zone .stack[data-count]:not([data-count='0'])::after {
+  content: attr(data-count);
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  border: 1px solid var(--table-border);
+  border-radius: var(--table-radius);
+  background: #172723;
+  color: var(--skin-paper);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+}
+:root .board :is(.opponent-hud, .mine-hud) {
+  min-width: 0;
+  padding: 2px 6px;
+  background: #eed5a108;
+  border-left: 2px solid transparent;
+  border-radius: var(--table-radius);
+}
+:root .board :is(.scoreboard, .scoreboard.expanded) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+:root .board :is(.seat-bar, .seat-bar.me) {
+  background: transparent;
+  box-shadow: none;
+}
+:root .board .seat-bar .identity {
+  display: flex;
+  -webkit-line-clamp: unset;
+  overflow: hidden;
+}
+:root .board .seat-bar .identity :is(.who, .name) {
+  display: block;
+  white-space: nowrap;
+}
+:root .board .seat-bar .amounts {
+  grid-column: auto;
+}
+:root .board .seat-bar .score {
+  border: 1px solid var(--table-border);
+  border-radius: var(--table-radius);
+  background: #101d19;
+}
+:root .board .center {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+:root .board .center::before {
+  display: none;
+}
+:root .board .table.compact {
+  --card-w-m: var(--table-card);
+  --card-h-m: var(--table-card-height);
+  position: relative;
+  display: block;
+  width: calc(5 * var(--table-card) + 4 * var(--table-gap));
+  min-height: 0;
+}
+:root .board .table.compact .floor {
+  display: grid;
+  grid-template-columns: repeat(5, var(--table-card));
+  grid-template-rows: repeat(3, var(--table-card-height));
+  gap: var(--table-gap);
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+}
+:root .board .table.compact .floor .group {
+  min-width: 0;
+  width: 100%;
+}
+/* 중앙 좌우, 상하, 대각, 바깥 열. 같은 월은 이 칸에서만 5px씩 겹친다. */
+:root .board .table.compact .floor .group:nth-child(1) {
+  grid-area: 2 / 2;
+}
+:root .board .table.compact .floor .group:nth-child(2) {
+  grid-area: 2 / 4;
+}
+:root .board .table.compact .floor .group:nth-child(3) {
+  grid-area: 1 / 3;
+}
+:root .board .table.compact .floor .group:nth-child(4) {
+  grid-area: 3 / 3;
+}
+:root .board .table.compact .floor .group:nth-child(5) {
+  grid-area: 1 / 2;
+}
+:root .board .table.compact .floor .group:nth-child(6) {
+  grid-area: 1 / 4;
+}
+:root .board .table.compact .floor .group:nth-child(7) {
+  grid-area: 3 / 2;
+}
+:root .board .table.compact .floor .group:nth-child(8) {
+  grid-area: 3 / 4;
+}
+:root .board .table.compact .floor .group:nth-child(9) {
+  grid-area: 2 / 1;
+}
+:root .board .table.compact .floor .group:nth-child(10) {
+  grid-area: 2 / 5;
+}
+:root .board .table.compact .floor .group:nth-child(11) {
+  grid-area: 1 / 1;
+}
+:root .board .table.compact .floor .group:nth-child(12) {
+  grid-area: 1 / 5;
+}
+:root .board .table.compact .floor .group:nth-child(13) {
+  grid-area: 3 / 1;
+}
+:root .board .table.compact .floor .group:nth-child(14) {
+  grid-area: 3 / 5;
+}
+:root .board .table.compact .floor .group > .card + .card {
+  margin-left: calc(5px - var(--table-card));
+}
+:root .board .table.compact .deck-area {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+}
+:root .board .table.compact .deck {
+  gap: 0;
+}
+:root .board .table.compact .deck-stack {
+  width: var(--table-card);
+  height: var(--table-card-height);
+  line-height: 0;
+}
+:root .board .table.compact .deck-count {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  border-radius: var(--table-radius);
+  border-color: var(--table-border);
+  background: #172723;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+:root .board .table.compact :is(.compact-ppeok, .ppeok-tag) {
+  display: none;
+}
+:root .board .table.compact :is(.kind-ppeok, .kind-natural) {
+  outline: none;
+}
+:root .board :is(.hand-zone, .two-hands .hand-zone) {
+  min-height: 0;
+  padding-top: 0;
+}
+:root .board.two-hands .hand-zone {
+  padding-top: 0;
+}
+:root .board .hand.compact {
+  --card-w-l: var(--table-card);
+  --card-h-l: var(--table-card-height);
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: block;
+  touch-action: none;
+}
+:root .board .hand.compact .row {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  container-type: inline-size;
+}
+:root .board .hand.compact .slot {
+  position: absolute;
+  left: calc((100% - var(--table-card)) * var(--fan-progress));
+  top: 13px;
+  z-index: var(--fan-index);
+  width: var(--table-card);
+  height: var(--table-card-height);
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  rotate: none;
+}
+:root .board .hand.compact .slot .art-window {
+  rotate: none;
+}
+:root .board .hand.compact .slot.selected {
+  z-index: 30;
+}
+:root .board .hand.compact .slot.selected .art-window {
+  transform: translateY(-12px);
+  outline: 1px solid var(--skin-paper);
+}
+:root .board .hand.compact .slot.selected::after {
+  content: '▼';
+  position: absolute;
+  top: -24px;
+  left: calc(50% - 7px);
+  color: var(--skin-paper);
+  font-size: 14px;
+  pointer-events: none;
+}
+:root .board .hand.compact .slot:focus-visible {
+  z-index: 31;
+  outline: 1px solid var(--skin-paper);
+  outline-offset: 2px;
+}
+:root .board .hand.compact .slot:focus-visible .art-window {
+  transform: translateY(-12px);
+}
+:root
+  .board
+  .hand.compact
+  .slot:is([data-hand-action='bomb'], [data-hand-action='shake'])
+  .art-window::after {
+  left: 2px;
+  right: auto;
+  width: 20px;
+  height: 20px;
+}
+:root .board .decision-area {
+  position: absolute;
+  top: auto;
+  bottom: max(8px, var(--board-safe-bottom, env(safe-area-inset-bottom)));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: var(--z-prompt);
+  display: block;
+  width: auto;
+  height: auto;
+  max-height: var(--fan-hand);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+:root .board .decision-area.idle-slot {
+  position: absolute;
+  top: auto;
+  bottom: calc(var(--fan-hand) + var(--fan-capture) + var(--fan-seat) + 24px);
+  pointer-events: none;
+  background: transparent;
+}
+:root .board :is(.decision-content, .idle-slot .decision-content) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  height: auto;
+  min-height: 0;
+}
+:root .board .decision-area .prompt {
+  height: auto;
+  max-height: var(--fan-hand);
+  border: 1px solid var(--table-border);
+  border-radius: var(--table-radius);
+  box-shadow: none;
+  background: #172723;
+}
+:root .board .decision-area :is(h2, .risk, button, button strong) {
+  font-size: 14px;
+  line-height: 20px;
+}
+:root .board .decision-area button {
+  border-radius: var(--table-radius);
+  box-shadow: none;
+}
+:root .board .decision-area .prompt-actions {
+  flex: none;
+}
+:root .board .timer-prompt {
+  display: none;
+}
+:root .board.first-pick .decision-area,
+:root .board.first-pick .decision-area .prompt {
+  max-height: 60dvh;
+}
+:root .board[data-awaiting='me'] .mine-hud,
+:root .board[data-awaiting='other'] .opponent-hud {
+  border-left-color: var(--skin-brass);
+}
+/* 세로 예산 부족 시 손패·바닥·획득패를 함께 한 단계 줄인다. */
+@media (max-width: 411px), (max-height: 880px) {
+  :root .board.board {
+    --table-card: 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .board .hand .art-window {
+    transition: none;
+    animation: none;
+  }
+}
+:root .board .table.compact .floor .group {
+  justify-content: center;
+}
+
+/* 실제 카드 식별 우선: 손패와 바닥은 그림을 서로 가리지 않는다. */
+:root .board.board {
+  --table-card: 48px;
+  --fan-hand: 102px;
+  --fan-seat: 52px;
+  --fan-gap: 8px;
+}
+:root .board.two-hands {
+  --fan-hand: 180px;
+}
+:root .board .table.compact .floor {
+  row-gap: 6px;
+}
+:root .board .hand.compact {
+  display: grid;
+  grid-template-rows: repeat(2, var(--table-card-height));
+  gap: 6px;
+  padding-top: 16px;
+}
+:root .board .hand.compact .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  height: var(--table-card-height);
+}
+:root .board .hand.compact .row + .row {
+  margin-top: 0;
+}
+:root .board .hand.compact .slot {
+  position: relative;
+  left: auto;
+  top: auto;
+  flex: none;
+}
+:root .board .hand.compact .slot.selected .art-window {
+  transform: translateY(-4px);
+}
+:root .board .hand.compact .slot:focus-visible .art-window {
+  transform: translateY(-4px);
+}
+:root .board .seat-bar .score {
+  align-items: center;
+}
+:root .board .seat-bar .score span {
+  line-height: 28px;
+}
+:root .board .decision-area :is(h2, .risk-kind) {
+  font-weight: 600;
+}
+:root .board .hand.compact {
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+}
+:root .board .hand.compact .slot {
+  grid-template-rows: 1fr;
+  background: transparent;
+}
+:root .board .hand.compact .row .art-window {
+  height: var(--table-card-height);
+}
+@media (max-height: 760px) {
+  :root .board.board {
+    --fan-capture: calc(var(--capture-card-height) + 18px);
+    --fan-seat: 40px;
+    --fan-gap: 6px;
+  }
+  :root .board.two-hands {
+    --fan-hand: calc(2 * var(--table-card-height) + 16px);
+  }
+  :root .board .captured-zone .group {
+    grid-template-rows: 12px 1fr;
+  }
+  :root .board .captured-zone .name {
+    height: 12px;
+    line-height: 12px;
+  }
+  :root .board :is(.opponent-hud, .mine-hud) {
+    padding-block: 0;
+  }
+  :root .board .seat-bar .identity {
+    height: 14px;
+    line-height: 14px;
+  }
+  :root .board .seat-bar .balance {
+    line-height: 26px;
+  }
+  :root .board .seat-bar .score {
+    height: 26px;
+  }
+  :root .board .seat-bar .score :is(b, span) {
+    line-height: 24px;
+  }
+  :root .board .seat-bar .score-meta {
+    line-height: 12px;
+  }
+  :root .board .hand.compact {
+    gap: 4px;
+    padding-top: 12px;
+  }
+  :root .board .hand.compact .slot.selected .art-window {
+    transform: none;
+  }
+  :root .board .hand.compact .slot.selected::after {
+    display: none;
+  }
+  :root .board .table.compact .floor {
+    row-gap: 5px;
+  }
+}
+
+/* 5×3 격자 좌표·셀 내부 흩뿌림은 floor-layout.ts가 계산한다. */
+:root .board .center {
+  align-items: stretch;
+  justify-items: stretch;
+}
+:root .board .table.compact {
+  width: 100%;
+  height: 100%;
+}
+:root .board .table.compact .floor {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+:root .board .table.compact .floor .group {
+  position: absolute;
+  width: max-content;
+  height: var(--table-card-height);
+}
+:root .board .center {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+:root .board.go-stop .decision-area {
+  top: calc((100% + var(--fan-top) - var(--fan-hand)) / 2);
+  bottom: auto;
+  transform: translateY(-50%);
+  max-height: 240px;
+  left: 24px;
+  right: 24px;
+}
+:root .board.go-stop .decision-area .prompt {
+  max-height: 240px;
+  padding: 12px;
+  gap: 8px;
+}
+:root .board.go-stop .decision-area h2 {
+  font-size: 24px;
+  line-height: 30px;
+  text-align: center;
+}
+:root .board.go-stop .decision-area .estimate {
+  text-align: center;
+}
+:root .board.go-stop .decision-area button {
+  min-height: 48px;
+  font-size: 16px;
+}
+:root .board.go-stop .decision-area .stop {
+  background: #843d38;
+  color: var(--skin-paper);
+  border: 1px solid var(--table-border);
+}
+:root .board.go-stop .decision-area .go {
+  background: #285c4c;
+  color: var(--skin-paper);
+  border: 1px solid var(--table-border);
+}
+
+:root .board .decision-area .flip-only {
+  pointer-events: auto;
+}
+
+/* 획득 요약과 낼 손패는 크기·경계로 구분한다. 선택 가능한 카드 면은 그대로 둔다. */
+:root .board .captured-zone.mine::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  border-top: 1px solid var(--table-border);
+  pointer-events: none;
+}
+
+@media (max-height: 760px) {
+  :root .board .captured-zone.mine::after {
+    bottom: -9px;
+  }
+}

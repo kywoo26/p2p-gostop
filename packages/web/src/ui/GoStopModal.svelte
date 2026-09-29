@@ -1,7 +1,7 @@
 <script lang="ts">
   // 고/스톱 선택 (spec 6.2 오버레이, 6.4 등장 150ms, 6.5 고 금색·스톱 흰색)
   // FR-14: 현재 점수, 배수, 스톱 시 획득액, 상대 현재 점수·피 수. 스톱 미리보기 분해(steps)가 있으면 체인으로 보인다.
-  import { formatMoney } from '../lib/format.ts';
+  import { formatMoney, formatCompactMoney } from '../lib/format.ts';
   import type { MoneyUnit, SettleStepView } from '../lib/view-types.ts';
   import PromptPanel from './PromptPanel.svelte';
 
@@ -40,32 +40,42 @@
   ]);
 </script>
 
-<PromptPanel title={`고? 스톱?${detail?.capped ? ' · 상한 적용' : ''}`}>
+<PromptPanel title="고 하시겠습니까?">
+  <p class="estimate">스톱 시 <strong>{formatCompactMoney(stopAmount, unit)}</strong> 획득</p>
   {#snippet actions()}
     <p class="risk">
-      <strong>{score}점</strong>{#if opponent}<span>상대 {opponent.score}점 · 피 {opponent.pi}</span
-        >{/if}{#if risks.length}<span class="risk-kind" aria-label={`${risks.join('·')} 위험`}
-          >{risks.join('·')}{risks.length === 1 ? ' 위험' : ''}</span
-        >{/if}
+      <span
+        >{score}점{#if detail?.capped}
+          · 상한 적용{/if}</span
+      >{#if risks.length}<span class="risk-kind" aria-label={`${risks.join('·')} 위험`}
+          >{risks.join('·')}</span
+        >{/if}{#if opponent}<span>상대 {opponent.score}점 · 피 {opponent.pi}</span>{/if}
     </p>
     <div class="actions">
-      <button type="button" class="go" data-choice="go" onclick={() => ongo?.()}
-        >{goCount + 1}고</button
-      >
       <button
         type="button"
         class="stop"
-        class:large-amount={formatMoney(stopAmount, unit).length > 8}
         data-choice="stop"
         aria-label={`스톱 · ${formatMoney(stopAmount, unit)}`}
-        onclick={() => onstop?.()}
-        ><span>스톱</span><strong>{formatMoney(stopAmount, unit)}</strong></button
+        onclick={() => onstop?.()}>스톱</button
+      >
+      <button type="button" class="go" data-choice="go" onclick={() => ongo?.()}
+        >{goCount + 1}고</button
       >
     </div>
   {/snippet}
 </PromptPanel>
 
 <style>
+  .estimate {
+    margin: 4px 0;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .estimate strong {
+    color: var(--skin-brass);
+    font-weight: 600;
+  }
   .risk {
     display: flex;
     justify-content: space-between;
@@ -105,13 +115,13 @@
     align-content: center;
     background: var(--color-accent);
   }
-  .stop strong {
+  :global(.stop strong) {
     font-size: 22px;
     line-height: 24px;
     overflow-wrap: anywhere;
     font-variant-numeric: tabular-nums;
   }
-  .stop.large-amount strong {
+  :global(.stop.large-amount strong) {
     font-size: 14px;
     line-height: 20px;
   }

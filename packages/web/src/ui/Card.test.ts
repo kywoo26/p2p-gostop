@@ -51,7 +51,7 @@ interface Refs {
 
 /** 같은 크기의 앞면(뒷면 <img> 없음)·뒷면 기준 픽셀 */
 async function references(id: number, size: 'm' | 'l'): Promise<Refs> {
-  const face = await render(Card, { id, size });
+  const face = await render(Card, { id, size, marks: false });
   const back = await render(Card, { id: null, size });
   const refs = {
     face: await pixelsOf(find(face.container, '.card')),
@@ -73,7 +73,7 @@ function expectFace(shot: Uint8ClampedArray, refs: Refs) {
 
 test('뒤집기 가능한 카드 한 장: 앞면이 보인다', async () => {
   const refs = await references(22, 'm');
-  const screen = await render(Card, { id: 22, size: 'm', flippable: true });
+  const screen = await render(Card, { id: 22, size: 'm', flippable: true, marks: false });
   expectFace(await pixelsOf(find(screen.container, '.card')), refs);
 });
 

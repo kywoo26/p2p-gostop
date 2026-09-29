@@ -314,6 +314,8 @@
       soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
       {extras}
       unit={settings.value.unit}
+      perPoint={controller.perPoint ?? settings.value.perPoint}
+      roundChanges={controller.balanceChanges ?? [0, 0]}
       confirmDelay={'confirmDelay' in settings.value && settings.value.confirmDelay === true}
       banner={pb.banner}
       toast={pb.toast}
@@ -340,7 +342,7 @@
     data-testid="game-menu"
     onclick={openMenu}
   >
-    <span aria-hidden="true">☰</span>
+    <span aria-hidden="true">메뉴</span>
   </button>
 
   {#if controller.notice}
@@ -417,6 +419,17 @@
     <div class="items">
       <button type="button" class="item primary" data-menu="resume" onclick={closeMenu}
         >계속하기</button
+      >
+      <button
+        type="button"
+        class="item"
+        data-menu="board-info"
+        onclick={() => {
+          closeMenu();
+          void tick().then(() =>
+            root?.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')?.showModal(),
+          );
+        }}>판 정보 · 족보 진행</button
       >
       {#each menu as item (item.id)}
         <button

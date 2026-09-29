@@ -5,7 +5,7 @@ import Card from './Card.svelte';
 import { cardIndex, cardLabel, cardSrc, markSide, sortHand } from './cards.ts';
 import EventBanner from './EventBanner.svelte';
 
-test('카드 이름·표식 (NF-08: 월 숫자·종류 병기)', () => {
+test('카드 이름·바닥 표식 (NF-08: 손패는 별도 표식 없이 aria-label)', () => {
   expect([0, 4, 32, 43, 44, 46, 21, 13, 48, 50].map(cardLabel)).toEqual([
     '1월 광',
     '2월 고도리',

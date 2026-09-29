@@ -1,11 +1,16 @@
 <script lang="ts">
-  // 바닥: 월별 무더기 격자 + 더미 + 뒤집기 자리 (spec 6.2 게임판 중앙)
+  // 바닥: 같은 월 인접 묶음 + 중앙 더미 + 뒤집기 자리 (spec 6.2 게임판 중앙)
   // data-anchor: 애니메이션 기준점(더미 = 뒤집기·분배의 출발점, src/anim/choreo.ts)
   import type { CardId, FloorGroupView } from '../lib/view-types.ts';
   import Card from './Card.svelte';
+  import { cardLabel } from './cards.ts';
+  import { promptFocus } from './prompt-focus.ts';
+  import { floorLayout } from './floor-layout.ts';
 
   interface Props {
     compact?: boolean;
+    options?: readonly CardId[];
+    onchoose?: (id: CardId) => void;
     groups: readonly FloorGroupView[];
     deckCount: number;
     /** 강조할 바닥 카드 (대상 선택, 먹게 될 카드 미리보기, 매칭 강조) */
@@ -18,15 +23,57 @@
 
   let {
     compact = false,
+    options = [],
+    onchoose,
     groups,
     deckCount,
     highlight = [],
     staging = [],
     handLinks = {},
   }: Props = $props();
+  let table: HTMLElement;
+  let bounds = $state({ width: 0, height: 0, cardWidth: 48 });
+  $effect(() => {
+    const update = () => {
+      const rect = table.getBoundingClientRect();
+      bounds = {
+        width: rect.width,
+        height: rect.height,
+        cardWidth: parseFloat(getComputedStyle(table).getPropertyValue('--card-w-m')) || 48,
+      };
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(table);
+    update();
+    return () => observer.disconnect();
+  });
+  $effect(() => {
+    if (!options.length || !table) return;
+    const focus = promptFocus(table);
+    return () => focus.destroy();
+  });
+  const layout = $derived(
+    floorLayout(groups, options, bounds.width, bounds.height, bounds.cardWidth),
+  );
+  const cells = $derived(
+    compact
+      ? layout.cells
+      : groups.map((group) => ({ ...group, slot: undefined, x: 0, y: 0, angle: 0, dx: 0, dy: 0 })),
+  );
 </script>
 
-<div class="table" class:compact>
+<div
+  role={options.length ? 'dialog' : 'group'}
+  aria-modal={options.length ? true : undefined}
+  aria-label={options.length ? '먹을 바닥패 선택' : undefined}
+  tabindex="-1"
+  class="table"
+  bind:this={table}
+  data-floor-folded={layout.folded}
+  data-floor-fits={layout.fits}
+  class:compact
+  class:choosing={options.length > 0}
+>
   <div class="deck-area">
     <div class="deck" role="img" aria-label={`더미 ${deckCount}장`}>
       <span class="deck-stack" data-anchor="deck">
@@ -41,19 +88,44 @@
     {/if}
     <div class="staging">
       {#each staging as id (id)}
-        <Card {id} size="m" flippable />
+        <Card {id} size="m" flippable marks={false} />
       {/each}
     </div>
   </div>
   <ul class="floor" aria-label="바닥">
-    {#each groups as group (group.month)}
+    {#each cells as group (group.cards[0])}
       <li
         class={['group', `kind-${group.kind}`]}
+        style:left={`${group.x}px`}
+        style:top={`${group.y}px`}
+        style:rotate={`${group.angle ?? 0}deg`}
+        style:translate={`${group.dx ?? 0}px ${group.dy ?? 0}px`}
+        data-floor-slot={group.slot}
+        data-month={group.month}
         data-hand-link={handLinks[group.month]}
         aria-label={`${group.month}월 ${group.cards.length}장${group.kind === 'loose' ? '' : ' 뻑'}${handLinks[group.month] === 'bomb' ? ', 손패 폭탄 후보의 짝' : handLinks[group.month] === 'chongtong' ? ', 손패 총통 후보의 짝' : ''}`}
       >
         {#each group.cards as id (id)}
-          <Card {id} size="m" flippable highlight={highlight.includes(id)} />
+          {#if options.includes(id)}
+            <button
+              type="button"
+              class="floor-choice"
+              data-choice={`target-${id}`}
+              aria-label={cardLabel(id)}
+              onclick={() => onchoose?.(id)}
+            >
+              <Card {id} size="m" flippable highlight marks={false} />
+            </button>
+          {:else}
+            <Card
+              {id}
+              size="m"
+              flippable
+              highlight={highlight.includes(id)}
+              dimmed={options.length > 0}
+              marks={false}
+            />
+          {/if}
         {/each}
         {#if group.kind !== 'loose'}
           <span class="ppeok-tag" aria-hidden="true">뻑</span>
@@ -64,6 +136,18 @@
 </div>
 
 <style>
+  .floor-choice {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    min-width: 48px;
+    min-height: 48px;
+    position: relative;
+    z-index: 4;
+  }
+  .floor-choice + .floor-choice {
+    margin-left: 4px;
+  }
   .table {
     display: grid;
     grid-template-columns: auto 1fr;

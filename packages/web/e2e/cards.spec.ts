@@ -138,46 +138,42 @@ for (const dpr of [2, 3, 3.5]) {
   });
 }
 
-test.describe('S25 Ultra 게임판 배지', () => {
+test.describe('S25 Ultra 게임판 표식', () => {
   test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5 });
-  test('뻑·더미 수와 실제 카드 교차 0, 손패 월 색인이 다른 카드에 가리지 않는다 @layout', async ({
-    page,
-  }, info) => {
+  test('더미 수는 뒷면 안에, 바닥·손패 앞면 가림과 별도 배지 0 @layout', async ({ page }, info) => {
     await page.goto('./#/dev/gallery/board');
     await page.waitForFunction(() =>
       [...document.images].every((img) => img.complete && img.naturalWidth > 0),
     );
     const metrics = await page.evaluate(() => {
-      const tag = document.querySelector('.ppeok-tag')!.getBoundingClientRect();
       const count = document.querySelector('.deck-count')!.getBoundingClientRect();
       const deck = document.querySelector('.deck .card')!.getBoundingClientRect();
       return {
-        ppeokClear: [...document.querySelectorAll('.floor .card')].every((card) => {
+        floorClear: [...document.querySelectorAll('.floor .card')].every((card) => {
           const rect = card.getBoundingClientRect();
           return (
-            rect.top >= tag.bottom ||
-            rect.bottom <= tag.top ||
-            rect.left >= tag.right ||
-            rect.right <= tag.left
+            rect.top >= count.bottom ||
+            rect.bottom <= count.top ||
+            rect.left >= count.right ||
+            rect.right <= count.left
           );
         }),
-        deckClear: count.top > deck.bottom,
-        visibleMarks: [...document.querySelectorAll('.hand .mark')].every((mark) => {
-          const rect = mark.getBoundingClientRect();
-          return (
-            document
-              .elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
-              ?.closest('.card') === mark.closest('.card')
-          );
-        }),
+        deckInside:
+          count.top >= deck.top &&
+          count.bottom <= deck.bottom &&
+          count.left >= deck.left &&
+          count.right <= deck.right,
+        handMarks: document.querySelectorAll('.hand .mark').length,
+        floorMarks: document.querySelectorAll('.floor .mark').length,
         scrollX: document.documentElement.scrollWidth - innerWidth,
         scrollY: document.documentElement.scrollHeight - innerHeight,
       };
     });
     expect(metrics).toEqual({
-      ppeokClear: true,
-      deckClear: true,
-      visibleMarks: true,
+      floorClear: true,
+      deckInside: true,
+      handMarks: 0,
+      floorMarks: 0,
       scrollX: 0,
       scrollY: 0,
     });

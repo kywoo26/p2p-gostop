@@ -233,9 +233,9 @@ async function move(page: Page): Promise<void> {
     const root = document.querySelector<HTMLElement>('[data-testid="match"], [data-testid="solo"]');
     if (root?.dataset['canAct'] !== 'true') return;
     const board = root.querySelector<HTMLElement>('[data-testid="board"]');
-    const options = [
-      ...(board?.querySelectorAll<HTMLButtonElement>('dialog [data-choice]') ?? []),
-    ].filter((button) => !button.disabled);
+    const options = [...(board?.querySelectorAll<HTMLButtonElement>('[data-choice]') ?? [])].filter(
+      (button) => !button.disabled,
+    );
     const selected =
       options.find((button) => button.dataset['choice'] === 'stop') ??
       options.find((button) => button.dataset['choice'] === 'continue') ??

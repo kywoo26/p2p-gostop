@@ -34,7 +34,9 @@
         text={[banner.text, toast?.text].filter(Boolean).join(' · ')}
         {actor}
       />
-    {:else}<p role="status">{toast?.text ?? (deferred ? `${idle} · ${deferred}` : idle)}</p>{/if}
+    {:else}<p role="status" class:quiet={!toast && !deferred}>
+        {toast?.text ?? (deferred ? `${idle} · ${deferred}` : idle)}
+      </p>{/if}
   </div>
 {/if}
 
@@ -44,6 +46,13 @@
     max-height: 100%;
     overflow: hidden;
     pointer-events: none;
+  }
+  .quiet {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
   p {
     margin: 0;

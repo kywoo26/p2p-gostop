@@ -63,9 +63,9 @@ async function playOneRound(page: Page) {
           '[data-testid="board"][data-awaiting="me"]',
         );
         if (board === null) return false;
-        const choices = [
-          ...board.querySelectorAll<HTMLButtonElement>('dialog [data-choice]'),
-        ].filter((button) => !button.disabled);
+        const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]')].filter(
+          (button) => !button.disabled,
+        );
         const desired = ['stop', 'continue', 'noShake', 'single', 'pi'];
         const choice =
           desired

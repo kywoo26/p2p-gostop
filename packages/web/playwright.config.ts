@@ -1,9 +1,10 @@
 // E2E: Playwright Chromium(Android WebView 대역) + WebKit(iPhone Safari 대역). 호스트·CI 모두 네이티브 실행(AGENTS.md §5).
 import { defineConfig, devices } from '@playwright/test';
 
-// PR은 기능 전체(C) + 게스트/레이아웃/폰트(W), main·수동은 기존 전체 행렬이다.
+// PR은 기능 전체(C) + 게스트/레이아웃/폰트(W), main은 전체 행렬이다.
 const smoke = process.env['E2E_SUITE'] === 'smoke';
-const PORT = 4173;
+// 동시 워크트리 검증에서 다른 브랜치 미리보기를 재사용하지 않도록 포트를 지정할 수 있다.
+const PORT = Number(process.env['PLAYWRIGHT_PORT'] ?? 4173);
 const baseURL = `http://127.0.0.1:${PORT}`;
 // 스크린샷의 시스템 글꼴 집합을 install-deps 글꼴로 고정한다(e2e/fonts.conf). 브라우저는 이 환경 변수를 물려받는다.
 process.env['FONTCONFIG_FILE'] = new URL('./e2e/fonts.conf', import.meta.url).pathname;
@@ -70,7 +71,7 @@ export default defineConfig({
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort --host 127.0.0.1`,
     url: baseURL,
-    reuseExistingServer: !process.env['CI'],
+    reuseExistingServer: !process.env['CI'] && !process.env['PLAYWRIGHT_PORT'],
     timeout: 180_000,
   },
 });
