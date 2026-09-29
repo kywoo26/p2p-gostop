@@ -149,3 +149,11 @@ main **b9bd84b**(원격 대전·#181 CI 분할 포함)를 **26b97c6**으로 통�
 - 수정본(최신 main 재병합 전): lint/check 통과, Node563/563, 브라우저638/638(78파일), 입력·layout·settlement-layout E2E192/192. 5뷰포트×2엔진×13상태 **130화면 재감사 위반0**. `audit-overlap.mjs`가 PNG·JSON과 README 링크 인덱스를 모두 재생성한다. 이전130화면 기록은 aria-hidden 누락이 있었으므로 이번 결과로 대체한다.
 - 리뷰의 현 HUD 대비 실측: 잔액11.36:1, 고/카운터7.44:1, 음수6.69:1, 양수8.21:1. 과거7.60:1/5.42:1은 옛 재질 배치 값이며 현재 화면의 측정으로 인용하지 않는다.
 - 다음 main 통합 때 #182의 PR smoke와 main/release full을 각각 실행·기록한다. 위192건은 전체 smoke/full 수치가 아니다.
+
+## 2026-09-30 최신 main e33f044 통합 결과 (#171 리뷰 재검토용)
+
+- #175/#180/#182를 포함한 main cd862da를 8331589로, #176 게스트 참가를 포함한 main e33f044를 61c3724로 병합했다. #182의 PR smoke와 릴리스 전 full을 다른 명령·결과로 기록한다. 공개 중계 E2E는 공유 머신 전용 포트의 Origin을 그대로 허용하도록 테스트 aab7ff8에서 보완했다. 기본 포트와 전용 포트 모두 같은 테스트 계약이다.
+- 호스트 `npm run lint`, `npm run check` 통과(svelte-check 오류/경고0), `npm test` 563/563(36파일), `npm run test:browser` 688/688(84파일), `npm run build -w packages/web` 통과. Android `assembleDebug testDebugUnitTest lint --max-workers=4` 통과. web 배포 크기 **1,522.4/1,536KiB**, 스킨 **87,893B**(실사용 이미지6개+NOTICE+manifest), 외부 런타임 요청0. 2026-09-30 `uv run packages/web/scripts/build-skin-assets.py --check` 통과; 일반 build는 Node 해시 gate만 사용한다. 미사용 가죽·초상12개는 배포에서 제외하고 원본·평가 팩에 보존했다.
+- `PLAYWRIGHT_PORT=4193 npm run e2e:smoke -w packages/web -- --workers=4`: **312/312 통과**(Chromium 기능 전체+WebKit guest/layout/fonts, Chromium 직렬 계측). 같은 포트의 `npm run e2e -w packages/web -- --workers=4`: **380통과·기존20skip**(양 엔진 full 및 직렬 계측). Chromium 빠름 p50 381ms·보통 매칭1740ms, WebKit 빠름381ms·보통 매칭1745ms이며 각 테스트의 선언 범위 안이다. 이 두 실행은 별도 게이트이며 수치를 합산하지 않는다.
+- #171 P2 재발 방지: 손패 저장 fixture의 주/보조 버튼·같은 카드/영역 밖 놓기·pointercancel·키보드, aria-hidden 카운터 fixed 교차·display:none 반례, 5×3 기본 격자·월 인접·회전 경계 셀 포함을 Chromium/WebKit 게이트에서 확인했다. 최신 앱의5크기×2엔진×13상태 130화면 재감사 위반0. PNG·JSON·README 링크 인덱스는 `packages/web/test-results/pro-skin/`; E2E가 이 디렉터리를 청소하므로 full 종료 뒤 재생성해 최종 산출물로 둔다. 실기기 결과로 확장하지 않는다.
+- CI는 최종 SHA 기준의 녹색 결과를 별도 확인하고, 그 SHA로 리뷰어의 P2 3건만 좁게 재검토한다. 현재 문서 수치는 로컬 호스트 검증이다.
