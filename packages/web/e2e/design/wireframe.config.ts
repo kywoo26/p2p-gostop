@@ -4,6 +4,10 @@ export default defineConfig({
   testDir: '.',
   testMatch: 'wireframe.render.ts',
   reporter: 'list',
-  use: { browserName: 'chromium', deviceScaleFactor: 1 },
+  use: { deviceScaleFactor: 1 },
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    { name: 'webkit', use: { browserName: 'webkit' } },
+  ],
   workers: 1,
 });
