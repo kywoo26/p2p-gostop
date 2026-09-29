@@ -88,7 +88,6 @@ function autoStep(opts: StepOptions): string | false {
     if (has('go') && has('stop')) want = (auto.taken['go'] ?? 0) < 3 ? 'go' : 'stop';
     else if (has('continue')) want = 'continue';
     else if (has('noShake')) want = note(auto.offered, 'shake') % 2 === 1 ? 'noShake' : 'shake';
-    else if (has('bomb')) want = note(auto.offered, 'bomb') % 2 === 1 ? 'bomb' : 'single';
     else if (has('pi') && has('yeol'))
       want = note(auto.offered, 'gukjin') % 2 === 1 ? 'pi' : 'yeol';
     else want = ids[rand(ids.length)] ?? '';
@@ -98,7 +97,18 @@ function autoStep(opts: StepOptions): string | false {
   const flipOnly = board.querySelector('[data-choice="flipOnly"]');
   if (flipOnly !== null) return click(flipOnly, 'flipOnly');
   const hand = [...board.querySelectorAll('[aria-label="내 손패"] button:not([disabled])')];
-  return click(hand[rand(hand.length)], 'play');
+  const card = hand[rand(hand.length)];
+  if (card?.getAttribute('aria-keyshortcuts') === 'Shift+Enter') {
+    if (note(auto.offered, 'bomb') % 2 === 0) {
+      card.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', shiftKey: true }),
+      );
+      note(auto.taken, 'single');
+      return 'single';
+    }
+    return click(card, 'bomb');
+  }
+  return click(card, 'play');
 }
 
 async function attrs(page: Page) {
@@ -203,6 +213,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
     await hostPage.screenshot({ path: testInfo.outputPath('host-board.png') });
 
     let dropped = false;
+    let hostPaused = false;
     let hostDone = false;
     let hostRounds = 0;
     const counts = new Map<string, number>();
@@ -216,6 +227,10 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
     // 호스트: 버튼 판단은 브라우저 안에서 폴링한다(왕복을 줄인다). 20판 정산을 보면 끝
     const hostLoop = async () => {
       while (!hostDone && Date.now() < deadline) {
+        if (hostPaused) {
+          await hostPage.waitForTimeout(20);
+          continue;
+        }
         let r: string;
         try {
           const handle = await hostPage.waitForFunction(
@@ -242,6 +257,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
       while (Date.now() < deadline) {
         if (!dropped && hostRounds >= DROP_AT) {
           dropped = true;
+          hostPaused = true;
           const url = guestPage.url();
           expect(url).toMatch(/#g=[0-9a-f]{32}/);
           await guestPage.close();
@@ -252,14 +268,16 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
           await guestPage.goto(url);
           await expect(guestPage.getByTestId('match')).toBeVisible();
           // 재동기화: 새 페이지가 호스트와 같은 순번·잔액을 5초 안에 맞춘다
+          const hostSnapshot = await attrs(hostPage);
           await expect
             .poll(async () => (await attrs(guestPage)).seq, { timeout: 5_000 })
-            .toBe((await attrs(hostPage)).seq);
+            .toBe(hostSnapshot.seq);
           testInfo.annotations.push({
             type: 'resync-ms',
             description: String(Date.now() - returned),
           });
-          expect((await attrs(guestPage)).balances).toEqual((await attrs(hostPage)).balances);
+          expect((await attrs(guestPage)).balances).toEqual(hostSnapshot.balances);
+          hostPaused = false;
           lastSeq = 0;
         }
         let r: string;

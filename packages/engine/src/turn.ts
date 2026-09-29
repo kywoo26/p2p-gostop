@@ -13,16 +13,9 @@ import {
   removeLooseCard,
 } from './floor.ts';
 import { BASE_POINTS, INSTANT_UNIT_POINTS, WINNING_SCORE } from './rules.ts';
-import { seatScore } from './score.ts';
+import { endRound, recomputeScores } from './round-end.ts';
 import { settle } from './settle.ts';
-import type {
-  EndReason,
-  InstantPayout,
-  InstantPayoutKind,
-  ScoreBreakdown,
-  Seat,
-  StealReason,
-} from './state.ts';
+import type { InstantPayout, InstantPayoutKind, Seat, StealReason } from './state.ts';
 
 /** 3뻑(통산) 즉시 승리 (E5) */
 const THREE_PPEOK = 3;
@@ -30,57 +23,6 @@ const THREE_PPEOK = 3;
 const HUDANG_TURNS = 5;
 
 const isBonus = (id: CardId): boolean => getCard(id).kind === 'bonus';
-
-/**
- * 점수 분해가 같은지 (필드별 비교). 예전의 JSON.stringify 비교와 결과가 같고(두 값 모두 scoreCaptured가 같은 키로 만든다)
- * 롤아웃에서 reduce 비용의 큰 몫이던 직렬화를 없앤다(ai-tuning.md §6-6).
- */
-function sameScore(a: ScoreBreakdown, b: ScoreBreakdown): boolean {
-  return (
-    a.total === b.total &&
-    a.gwang === b.gwang &&
-    a.yeol === b.yeol &&
-    a.godori === b.godori &&
-    a.tti === b.tti &&
-    a.hongdan === b.hongdan &&
-    a.cheongdan === b.cheongdan &&
-    a.chodan === b.chodan &&
-    a.pi === b.pi &&
-    a.gwangCount === b.gwangCount &&
-    a.yeolCount === b.yeolCount &&
-    a.ttiCount === b.ttiCount &&
-    a.piCount === b.piCount &&
-    a.gukjinAsPi === b.gukjinAsPi
-  );
-}
-
-/** SCORE: 두 좌석 점수를 다시 계산하고 바뀐 좌석마다 ScoreChanged를 낸다(차례인 좌석 먼저: 좌석 대칭). */
-export function recomputeScores(tx: Tx): void {
-  const first = tx.s.ctx?.seat ?? tx.s.turn;
-  for (const seat of [first, other(first)]) {
-    const state = tx.s.seats[seat];
-    const next = seatScore(state.captured, state.gukjinAsPi, tx.s.rules);
-    if (!sameScore(state.score, next)) {
-      state.score = next;
-      emit(tx, { type: 'ScoreChanged', seat, cards: [], breakdown: next });
-    }
-  }
-}
-
-export function endRound(tx: Tx, reason: EndReason, winner: Seat | null): void {
-  recomputeScores(tx);
-  const s = tx.s;
-  s.phase = 'end';
-  s.pending = null;
-  s.ctx = null;
-  s.result = { reason, winner };
-  emit(tx, { type: 'RoundEnded', seat: winner, cards: [], reason, winner });
-  const settlement = settle(s);
-  emit(tx, { type: 'Settled', seat: winner, cards: [], settlement });
-  if (winner === null) {
-    emit(tx, { type: 'Nagari', seat: null, cards: [], multiplier: settlement.nextCarry });
-  }
-}
 
 export function promptPlay(tx: Tx, seat: Seat): void {
   tx.s.turn = seat;

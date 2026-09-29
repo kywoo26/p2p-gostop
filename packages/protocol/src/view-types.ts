@@ -41,6 +41,8 @@ export interface SeatView {
   readonly goCount: number;
   readonly shakes: number;
   readonly bombs?: number | null;
+  /** 남은 폭탄패 뒤집기 횟수. 이전 저장 뷰에는 없을 수 있다. */
+  readonly bombTokens?: number;
   readonly gukjinAsPi?: boolean;
   /** 규칙상 이미 공개되어 상대도 아는 손패 */
   readonly revealed?: readonly CardId[];
