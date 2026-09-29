@@ -19,14 +19,14 @@
 ## 2. 측정 방법
 
 - 프리셋마다 상용급 AI끼리 30판 × 100세션 = 3,000판. 표준은 M2 측정값(2026-09-28)을 유지했고, 정통·아케이드는 M6에서 다시 실행했다. 기본 가중치 v2(`docs/ai-tuning.md`), 순차 반감 탐색 상한 2,000회, 결정 시간 제한 없음, 시드 11, `worker_threads` 20개. **이 산정은 session 모드**로 실행해 세션 안에서 선·나가리 배수·밀기 배수·판 번호를 이어 간다. 밀기를 하면 **마지막** `Settled`의 정산액 0과 `nextPushes`를 사용하며, 이미 발생한 즉시 정산은 유지한다. 독립 match 모드는 후속 판이 없는 승률 평가이므로 밀기 대신 정산을 받으며, 아케이드 잔액 산정의 표본으로 쓰지 않는다.
-- 정통·아케이드는 아래 명령으로 재현한다(표준도 `--preset standard`로 같은 방식). 아케이드는 먼저 기존 기본값 150,000냥에서 3,000판을 측정해 후보 200,000냥을 구했다. 잔액에 따라 밀기 결정이 달라지므로 **최종 표는 200,000냥을 실제 시작 잔액으로 지정한 두 번째 3,000판**을 사용한다.
+- 정통·아케이드는 아래 명령으로 재현한다(표준도 `--preset standard`로 같은 방식). 측정은 20워커였으나 워커 수는 결과에 영향이 없어 재현은 공유 머신 상한 4(AGENTS §5)로 한다. 아케이드는 먼저 기존 기본값 150,000냥에서 3,000판을 측정해 후보 200,000냥을 구했다. 잔액에 따라 밀기 결정이 달라지므로 **최종 표는 200,000냥을 실제 시작 잔액으로 지정한 두 번째 3,000판**을 사용한다.
 
 ```sh
-docker compose run --rm dev npm run sim -- --mode session --a commercial --b commercial --rounds 3000 \
-  --session-length 30 --per-point 100 --preset traditional --seed 11 --workers 20 --mc 200000
-docker compose run --rm dev npm run sim -- --mode session --a commercial --b commercial --rounds 3000 \
+npm run sim -- --mode session --a commercial --b commercial --rounds 3000 \
+  --session-length 30 --per-point 100 --preset traditional --seed 11 --workers 4 --mc 200000
+npm run sim -- --mode session --a commercial --b commercial --rounds 3000 \
   --session-length 30 --per-point 100 --start-balance 200000 \
-  --preset arcade --seed 11 --workers 20 --mc 200000
+  --preset arcade --seed 11 --workers 4 --mc 200000
 ```
 
 - 한 좌석 관점의 판별 순액 = 정산 ±`finalPoints` + 즉시 정산 순액. 지급 능력 상한을 적용하기 전의 점수 분포로 잔액을 산정한다. 정산액 0인 나가리·무이동 밀기 판은 아래 정산 크기 분포에서 제외한다. 밀기 판에서 즉시 정산이 있으면 그 이동액은 포함한다.

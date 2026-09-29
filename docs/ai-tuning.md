@@ -1,6 +1,6 @@
 # AI 조정 기록 (spec AI-02·AI-03·AI-04·AI-05·AI-06·AI-07·AI-08, plan.md M2·M6)
 
-작성: 2026-09-28 · M6 후속: 2026-09-29 · AC-03 재도전: 2026-09-30 · 대상: `packages/ai` · 도구: `tools/sim` (`docker compose run --rm dev npm run sim -- -- …`)
+작성: 2026-09-28 · M6 후속: 2026-09-29 · AC-03 재도전: 2026-09-30 · 대상: `packages/ai` · 도구: `tools/sim` (`npm run sim -- -- …`)
 
 1~7절은 M2 강도 조정 당시의 측정과 과제 기록이다. M6 후속(적용 경로·밀기)은 8절, **고/스톱 과감성 조정·현재 가중치의 전후 수치·솔로 기본 상용급 변경은 9절**, #66의 AC-03 재도전은 10절에 기록한다.
 
@@ -187,11 +187,11 @@ UCT는 반복마다 다른 결정화에서 한 후보만 평가하므로, 후보
 
 ```sh
 # 강도 벤치마크 (AC-03)
-docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 2000 --preset standard --seed 1
-docker compose run --rm dev npm run sim -- --a commercial --b easy   --rounds 2000 --preset standard --seed 1
-docker compose run --rm dev npm run sim -- --a commercial --b heuristic --rounds 2000 --preset standard --seed 1
+npm run sim -- --a commercial --b normal --rounds 2000 --preset standard --seed 1
+npm run sim -- --a commercial --b easy   --rounds 2000 --preset standard --seed 1
+npm run sim -- --a commercial --b heuristic --rounds 2000 --preset standard --seed 1
 # 결정 시간 (단독 워커, 기본 예산 1000ms)
-docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
+npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000
 # 실험 옵션: --a-iterations N, --a-search uct|halving, --a-gostop ev|rule|search, --a-weights 파일.json
 ```
 
@@ -291,17 +291,17 @@ Node에서 반복 확대 없이 1초 예산 안에 여유가 있음을 확인했
 
 ```sh
 # 신규 체크아웃에서 한 번
-docker compose run --rm dev npm ci
+npm ci
 # 과거 보통과 두 후보 비교 (각 --b easy --rounds 2000 --seed 1)
-docker compose run --rm dev npm run sim -- --a normal --a-weights tools/sim/fixtures/gostop-before.json --b easy --rounds 2000 --seed 1 --workers 2 --mc 2000
-docker compose run --rm dev npm run sim -- --a normal --a-weights tools/sim/fixtures/gostop-two-turns.json --b easy --rounds 2000 --seed 1 --workers 2 --mc 2000
-docker compose run --rm dev npm run sim -- --a normal --b easy --rounds 2000 --seed 1 --workers 2 --mc 2000
-# AC-03: 새 상용급 vs 새 보통 / 쉬움. --out은 JSON·Markdown 접두사.
-docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 2000 --seed 1 --workers 10 --mc 2000 --out tools/sim/results/gostop/after-normal
-docker compose run --rm dev npm run sim -- --a commercial --b easy --rounds 2000 --seed 1 --workers 10 --mc 2000 --out tools/sim/results/gostop/after-easy
+npm run sim -- --a normal --a-weights tools/sim/fixtures/gostop-before.json --b easy --rounds 2000 --seed 1 --workers 2 --mc 2000
+npm run sim -- --a normal --a-weights tools/sim/fixtures/gostop-two-turns.json --b easy --rounds 2000 --seed 1 --workers 2 --mc 2000
+npm run sim -- --a normal --b easy --rounds 2000 --seed 1 --workers 2 --mc 2000
+# AC-03: 새 상용급 vs 새 보통 / 쉬움. --out은 JSON·Markdown 접두사. 워커 수는 결과에 영향이 없다(tools/sim/src/pool.ts); 공유 머신 상한 4(AGENTS §5).
+npm run sim -- --a commercial --b normal --rounds 2000 --seed 1 --workers 4 --mc 2000 --out tools/sim/results/gostop/after-normal
+npm run sim -- --a commercial --b easy --rounds 2000 --seed 1 --workers 4 --mc 2000 --out tools/sim/results/gostop/after-easy
 # 보통 별도 시드 검증: 위 보통 전/후 명령의 --seed 1을 --seed 17로 바꾼다.
 # AI-05: 다른 대량 작업 없이 단독 실행. 기한 모드는 선택이 기기 속도에 따라 달라질 수 있다.
-docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000 --mc 2000 --out tools/sim/results/gostop/timing-after
+npm run sim -- --a commercial --b normal --rounds 60 --seed 7 --workers 1 --time-ms 1000 --mc 2000 --out tools/sim/results/gostop/timing-after
 ```
 
 상용급 **기존 소스 그대로**의 전 값을 다시 측정하려면 `ca66ce9`의 별도 체크아웃에 이 PR의 `tools/sim/src` 변경만 적용하고 첫 두 상용급 명령을 실행한다. 현재 소스에 이전 가중치만 적용하는 실험에는 나가리 즉시 정산 EV 수정도 포함되므로 엄밀한 기존 소스 재현과 구분한다. 가중치 파일 형식에는 `goStop.bold`와 `goStop.selfNoise`가 추가되었으며, 기존 형식은 두 값을 명시해 갱신해야 한다. 표본 수·시간 제한 외의 탐색 옵션은 기본값이다. `--mc 2000`은 부수적인 파산 추정 표만 줄이고 승률·순액·선택에는 영향이 없다. 파산/시작 잔액 기본값을 재산정한 PR은 아니다.
@@ -350,7 +350,7 @@ docker compose run --rm dev npm run sim -- --a commercial --b normal --rounds 60
 
 공개 흔들기 정보는 현행 `knowledge.ts`가 `revealed` 카드를 상대 손패에 고정하고 그 수만큼 미지 손패 표본 수를 줄이는 방식으로 이미 반영한다. 이번에는 그 축을 재구현하지 않고 반복 예산 증가가 현재 정책의 격차를 메우는지 확인한다. 반복 상한은 카드 선택의 순차 반감 예산과 고/스톱 EV 표본 수에 함께 적용된다. 따라서 이 비교는 카드 선택만의 효과를 분리하지 않으며, 고/스톱의 EV 문턱·과감성 가중치는 그대로다.
 
-재현 진입점은 저장소 루트의 `/home/k/.local/bin/docker compose run --rm dev bash tools/sim/ac03-retry.sh <단계>`이며 단계는 `baseline`, `training`, `validation`, `timing`이다. 공유 머신 부하 지시에 따라 강도 워커는 최대 8로 고정하고 단계별로 하나씩 실행한다. 시간 측정은 항상 1이다. 원자료는 `tools/sim/results/ac03-retry/`에 저장한다. 지시 전 완료된 보통 기준선(16워커)·2,000회 훈련(4워커)은 보존했다. 당시 진행 중이던 쉬움 기준선과 4,000회 훈련은 중단하고 8워커로 처음부터 재측정했다(미완성 표본을 합산하지 않음). 워커 수는 결과에 영향을 주지 않으며, 다른 작업과 경합한 대량 실행의 결정 시간은 AI-05 판정에 사용하지 않는다.
+재현 진입점은 저장소 루트의 `bash tools/sim/ac03-retry.sh <단계>`이며 단계는 `baseline`, `training`, `validation`, `timing`이다. 당시에는 공유 머신 부하 지시에 따라 강도 워커를 최대 8로 고정하고 단계별로 하나씩 실행했다. 지금 스크립트는 AGENTS §5 상한 4를 쓴다(워커 수는 결과에 영향이 없다). 시간 측정은 항상 1이다. 원자료는 `tools/sim/results/ac03-retry/`에 저장한다. 지시 전 완료된 보통 기준선(16워커)·2,000회 훈련(4워커)은 보존했다. 당시 진행 중이던 쉬움 기준선과 4,000회 훈련은 중단하고 8워커로 처음부터 재측정했다(미완성 표본을 합산하지 않음). 워커 수는 결과에 영향을 주지 않으며, 다른 작업과 경합한 대량 실행의 결정 시간은 AI-05 판정에 사용하지 않는다.
 
 환경: `p2p-gostop-dev:4`, Node 24.20.0 / npm 11.19.0, Docker 29.7.2, WSL2 Intel Core i7-14700K. 런타임 라이브러리 API·의존성·규칙 변경 없이 기존 CLI로 측정한다.
 

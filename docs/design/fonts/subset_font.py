@@ -1,4 +1,8 @@
-"""OFL 로컬 입력 → 검증된 WOFF2/CSS/고지. Docker 전용, 네트워크 접근 없음."""
+# /// script
+# requires-python = ">=3.14"  # 사용자 지시: 3.14 이상(성능)
+# dependencies = ["fonttools==4.61.1", "brotli==1.2.0"]
+# ///
+"""OFL 로컬 입력 → 검증된 WOFF2/CSS/고지. `uv run`(PEP 723 고정 의존성), 네트워크 접근 없음."""
 import argparse
 from hashlib import sha256
 from io import BytesIO

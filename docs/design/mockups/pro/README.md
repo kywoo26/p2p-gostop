@@ -22,7 +22,7 @@
 After the two review measurement scripts, publish review copies with:
 
 ```sh
-docker compose run --rm dev python3 packages/web/scripts/publish-pro-captures.py
+uv run packages/web/scripts/publish-pro-captures.py
 ```
 
 [월별 초상 12종](avatars.png)은 출력 자산을 합성한 별도 contact sheet이며 실제 앱 화면 8장과 구분한다. 숫자는 월이다. 학/사슴은 현재 Board 좌석에 적용했다.
