@@ -76,8 +76,6 @@ function autoStep(target: number): string | false {
       want = 'continue';
     } else if (has('noShake')) {
       want = note(auto.offered, 'shake') % 2 === 1 ? 'noShake' : 'shake';
-    } else if (has('bomb')) {
-      want = note(auto.offered, 'bomb') % 2 === 1 ? 'bomb' : 'single';
     } else if (has('pi') && has('yeol')) {
       want = note(auto.offered, 'gukjin') % 2 === 1 ? 'pi' : 'yeol';
     } else {
@@ -86,12 +84,26 @@ function autoStep(target: number): string | false {
     const pick = choices.find((b) => b.dataset['choice'] === want) ?? choices[0];
     const name = pick?.dataset['choice'] ?? 'choice';
     note(auto.taken, name);
-    return name === 'bomb' || name === 'single' ? played(pick, name) : click(pick, name);
+    return click(pick, name);
   }
   const flipOnly = board.querySelector('[data-choice="flipOnly"]');
   if (flipOnly !== null) return played(flipOnly, 'flipOnly');
   const hand = [...board.querySelectorAll('[aria-label="내 손패"] button:not([disabled])')];
-  return played(hand[rand(hand.length)], 'play');
+  const card = hand[rand(hand.length)];
+  if (card?.getAttribute('aria-keyshortcuts') === 'Shift+Enter') {
+    const single = note(auto.offered, 'bomb') % 2 === 0;
+    if (single) {
+      card.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', shiftKey: true }),
+      );
+      note(auto.taken, 'single');
+      auto.lastPlay = recorded;
+      return 'single';
+    }
+    note(auto.taken, 'bomb');
+    return played(card, 'bomb');
+  }
+  return played(card, 'play');
 }
 
 async function playRounds(page: Page, target: number) {

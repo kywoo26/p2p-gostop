@@ -3,6 +3,7 @@
 // 그 요소들을 누르면 나오는 액션이 정확히 엔진 legalActions 전부다(빠진 것도, 규칙 밖의 것도 없다).
 import {
   deckCardIds,
+  getCard,
   legalActions,
   newRound,
   PRESETS,
@@ -17,6 +18,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { actingSeats } from '../game/session.ts';
 import Board from './Board.svelte';
+import { automaticAction } from '../game/controller.ts';
 import { boardProps, playRandom, VIEWER } from './random-play.test-helper.ts';
 
 beforeEach(() => {
@@ -74,6 +76,8 @@ async function actionsFrom(game: GameState): Promise<{ actions: Action[]; contro
   let screen = await fresh();
   const count = screen.container.querySelectorAll(CONTROLS).length;
   await screen.unmount();
+  const automatic = automaticAction(view);
+  if (automatic?.type === 'flipOnly') actions.push(automatic);
   for (let k = 0; k < count; k++) {
     screen = await fresh();
     const before = new Set(screen.container.querySelectorAll(CONTROLS));
@@ -81,6 +85,17 @@ async function actionsFrom(game: GameState): Promise<{ actions: Action[]; contro
     const produced = actions.length;
     control?.click();
     flushSync();
+    if (control?.dataset['slot'] !== undefined) {
+      const card = Number(control.dataset['slot']);
+      if (
+        legalActions(game, VIEWER).some((a) => a.type === 'bomb' && a.month === getCard(card).month)
+      ) {
+        control.dispatchEvent(
+          new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', shiftKey: true }),
+        );
+        flushSync();
+      }
+    }
     if (actions.length === produced) {
       // 확인 창을 거치는 조작(폭탄 월 카드 → 폭탄/한 장만/취소): 새로 뜬 선택지를 하나씩 누른다
       const follow = [
@@ -113,7 +128,10 @@ describe('막힘 방지: 활성 조작 요소 = legalActions (M3 리뷰 I-6)', (
     for (const { name, game } of cases) {
       const legal = legalActions(game, VIEWER);
       const { actions, controls } = await actionsFrom(game);
-      expect(controls, name).toBeGreaterThan(0);
+      expect(
+        controls + (automaticAction(boardProps(game).view)?.type === 'flipOnly' ? 1 : 0),
+        name,
+      ).toBeGreaterThan(0);
       for (const action of actions) {
         expect(
           legal.some((a) => sameAction(a, action)),
