@@ -5,7 +5,13 @@
     "type": true
   },
   "workspaces": {
-    ".": {},
+    ".": {
+      "entry": [
+        "tools/relay/check-static.ts",
+        "tools/relay/create-credentials.ts",
+        "tools/relay/write-qr.ts"
+      ]
+    },
     "packages/*": {},
     "tools/*": {},
     "packages/web": {

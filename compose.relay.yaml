@@ -1,0 +1,28 @@
+# RP-03A/B: Windows 수동 스크립트가 관리하는 공개 중계 하나만 포함한다.
+name: p2p-gostop-relay
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: docker/relay/Dockerfile
+    image: p2p-gostop-relay:${RELAY_IMAGE_TAG:-local}
+    restart: 'no'
+    init: true
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 1.0
+    ports:
+      - '127.0.0.1:17777:17777'
+    environment:
+      RELAY_PUBLIC: '1'
+      RELAY_CREDENTIALS_FILE: /run/secrets/relay-credentials
+      PORT: '17777'
+      HOST: 0.0.0.0
+    volumes:
+      - type: bind
+        source: ./secrets/relay-credentials
+        target: /run/secrets/relay-credentials
+        read_only: true

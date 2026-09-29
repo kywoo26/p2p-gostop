@@ -309,6 +309,15 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 3-2. 진행 매트릭스 (2026-09-29, main `daa5e7d` 코드 대조)
 
+### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
+
+| ID | 상태 | 코드·검증 근거 | 남은 항목 |
+|---|---|---|---|
+| RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. 이미지 build·비root/읽기 전용/루프백 기동 확인 | RP-02C `/healthz`·정적 release 경로가 아직 main에 없어 health/호환 경로 실측 대기. Galaxy APK 동시 release·사람 PC 검증 대기 |
+| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검 | RP-02C health 응답 계약 인계 후 로컬/공개 health 검사, Windows 수동 시작·종료·재부팅 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
+
+위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
+
 후속 main `8d2911b`(#152 문서/계획 이관, #154 sim 통계/보고 분리)을 병합했다. 아래 코드 대조·실행 수치는 `daa5e7d` 기준으로 보존하고, 삭제 문서 링크와 계획 소유권은 #152 정본으로 연결한다. 이번 병합에서는 링크 검사·lint를 수행하며 요구사항 완료율은 바꾸지 않는다.
 
 **집계 단위:** spec의 FR/NF/NP/AI/MN/AC 표는 93행이지만 고유 ID는 **86개**다. FR-16·NP-02·NP-03·NP-05·NF-05·FR-46(49·50 병기)의 개정안 재등장 6행과 NP-10 경계 표제 1행은 중복이다. 타이머 신규 ID FR-51~53·NP-10을 포함한 86개를 아래에서 빠짐없이 평가하고, 중복 7행은 뒤의 개정안 대응표로 추적한다. 보조 분모는 타이머 신규 ID를 제외한 기존 82개다. FR-51의 기본10초·호스트 끄기/조정·솔로 제외는 이미 사용자 확정이며, 이를 미확정으로 분류하는 뜻이 아니다. RL/UX의 별도 하위 규칙은 이번 ID 집계 밖이며 FR-10·NF-08 등에서 검증 근거로 연결한다.

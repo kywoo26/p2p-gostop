@@ -1,0 +1,30 @@
+// RP-03B: Windows 실행 전 배포 경계와 수동 시작 계약을 정적으로 확인한다.
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const [dockerfile, compose, start, stop, helper] = await Promise.all(
+  [
+    'docker/relay/Dockerfile',
+    'compose.relay.yaml',
+    'tools/relay/start.cmd',
+    'tools/relay/stop.cmd',
+    'tools/relay/relay.ps1',
+  ].map((path) => readFile(path, 'utf8')),
+);
+
+assert.match(dockerfile, /COPY .*packages\/web\/dist/);
+assert.match(dockerfile, /^USER node$/m);
+assert.match(compose, /127\.0\.0\.1:17777:17777/);
+assert.match(compose, /restart: 'no'/);
+assert.match(compose, /read_only: true/);
+assert.match(compose, /RELAY_PUBLIC: '1'/);
+assert.match(compose, /RELAY_CREDENTIALS_FILE: \/run\/secrets\/relay-credentials/);
+assert.match(start, /relay\.ps1" start/i);
+assert.match(stop, /relay\.ps1" stop/i);
+assert.match(helper, /funnel --https=443 \$Target off/);
+assert.match(helper, /Compose 'down'/);
+assert.match(helper, /healthz/);
+assert.doesNotMatch(helper, /^\s*[^#\r\n]*funnel\s+--bg\b/im);
+assert.doesNotMatch(helper, /funnel reset|tailscale down/i);
+
+console.log('RP-03A/B 정적 배포 경계 확인 완료');
