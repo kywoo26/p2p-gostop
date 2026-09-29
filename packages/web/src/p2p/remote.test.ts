@@ -85,6 +85,25 @@ describe('RP-04B 초대와 참여 경계', () => {
     expect(guest.snapshot.error).toBe('invalid');
   });
 
+  it('NP-RP-04: 코드 참여 닉네임을 /join의 name query에 인코딩한다', async () => {
+    let joinUrl = '';
+    const guest = createRemoteGuest({
+      allowedOrigin: 'https://relay.example.test',
+      storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+      socketFactory: (url) => {
+        joinUrl = url;
+        return new FakeSocket() as unknown as WebSocket;
+      },
+      onTransport: () => {},
+    });
+    const joining = guest.joinByCode('https://relay.example.test', 'ABCD-EFGH-JKLM', ' 친구 이름 ');
+    expect(new URL(joinUrl).pathname).toBe('/join');
+    expect(new URL(joinUrl).searchParams.get('code')).toBe('ABCDEFGHJKLM');
+    expect(new URL(joinUrl).searchParams.get('name')).toBe('친구 이름');
+    guest.leave();
+    expect(await joining).toEqual({ ok: false, code: 'denied' });
+  });
+
   it('NP-RP-06: 만료된 방별 복귀 토큰은 삭제하고 인증 소켓을 열지 않는다', async () => {
     const values = new Map<string, string>([
       ['p2p-gostop.remote-guest-active.v1', JSON.stringify(room)],
@@ -284,6 +303,68 @@ describe('RP-04B 초대와 참여 경계', () => {
       guest.retry();
       expect(guest.snapshot).toMatchObject({ state: 'error', error: 'invalid' });
       expect(sockets).toHaveLength(1);
+    } finally {
+      guest.leave();
+    }
+  });
+
+  it('NP-RP-05: 초대 claim 거절을 받으면 참여를 denied로 끝낸다', async () => {
+    const sockets: FakeSocket[] = [];
+    const guest = createRemoteGuest({
+      allowedOrigin: 'https://relay.example.test',
+      storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+      socketFactory: () => {
+        const socket = new FakeSocket();
+        sockets.push(socket);
+        return socket as unknown as WebSocket;
+      },
+      onTransport: () => {
+        throw new Error('unexpected transport');
+      },
+    });
+    const link = `https://relay.example.test/r/v1/${'a'.repeat(64)}/#/join?room=${room}&t=${token}`;
+    try {
+      const joining = guest.joinByLink(link, '친구');
+      sockets[0]!.open();
+      sockets[0]!.receive('{"t":"relay-claim-pending"}');
+      sockets[0]!.receive('{"t":"relay-claim-denied"}');
+      expect(await joining).toEqual({ ok: false, code: 'denied' });
+      expect(guest.snapshot).toMatchObject({ state: 'ended', error: 'denied' });
+      guest.retry();
+      expect(guest.snapshot).toMatchObject({ state: 'ended', error: 'denied' });
+    } finally {
+      guest.leave();
+    }
+  });
+
+  it('NP-RP-03: 만료 초대 4003은 expired이고 정책 거절 1008은 invalid이다', async () => {
+    const sockets: FakeSocket[] = [];
+    const guest = createRemoteGuest({
+      allowedOrigin: 'https://relay.example.test',
+      storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+      socketFactory: () => {
+        const socket = new FakeSocket();
+        sockets.push(socket);
+        return socket as unknown as WebSocket;
+      },
+      onTransport: () => {
+        throw new Error('unexpected transport');
+      },
+    });
+    const link = `https://relay.example.test/r/v1/${'a'.repeat(64)}/#/join?room=${room}&t=${token}`;
+    try {
+      const expired = guest.joinByLink(link, '친구');
+      sockets[0]!.open();
+      sockets[0]!.close(4003);
+      expect(await expired).toEqual({ ok: false, code: 'expired' });
+      expect(guest.snapshot).toMatchObject({ state: 'ended', error: 'expired' });
+      guest.retry();
+      expect(guest.snapshot).toMatchObject({ state: 'ended', error: 'expired' });
+      const invalid = guest.joinByLink(link, '친구');
+      sockets[1]!.open();
+      sockets[1]!.close(1008);
+      expect(await invalid).toEqual({ ok: false, code: 'invalid' });
+      expect(guest.snapshot).toMatchObject({ state: 'error', error: 'invalid' });
     } finally {
       guest.leave();
     }

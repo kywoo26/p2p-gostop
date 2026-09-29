@@ -136,6 +136,7 @@ export class PublicJoinChannel {
       }
       if (
         control.value.t !== 'relay-join-pending' &&
+        control.value.t !== 'relay-join-denied' &&
         control.value.t !== 'relay-join-unavailable' &&
         control.value.t !== 'relay-accepted'
       ) {

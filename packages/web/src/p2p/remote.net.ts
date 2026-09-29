@@ -145,6 +145,7 @@ async function untilMessage(messages: string[], fragment: string): Promise<void>
 }
 
 async function pair(): Promise<{
+  base: string;
   host: RemoteHostController;
   guest: RemoteGuestController;
   storage: SettingsStore;
@@ -187,6 +188,7 @@ async function pair(): Promise<{
   cleanup.push(() => guest.leave());
   expect(room.inviteLink).toContain('#/join?room=');
   return {
+    base,
     host,
     guest,
     storage,
@@ -218,6 +220,7 @@ it('NP-RP-04/05: 코드 참여는 승인 전 좌석 없이 대기하고 승인 �
   const joining = guest.joinByCode(origin, room.code, '코드친구');
   const request = (await until(host, (snapshot) => snapshot.requests.length === 1)).requests[0]!;
   expect(request.kind).toBe('code');
+  expect(request.nickname).toBe('코드친구');
   expect(host.snapshot.peerPresent).toBe(false);
   await host.accept(request.id);
   expect(await joining).toEqual({ ok: true });
@@ -233,8 +236,34 @@ it('NP-RP-05: 거절된 코드 요청은 승인 자격이나 게임 프레임을
   expect(host.snapshot.requests).toHaveLength(0);
   expect(host.snapshot.peerPresent).toBe(false);
   expect(hostMessages).toHaveLength(0);
-  guest.leave();
   expect(await joining).toEqual({ ok: false, code: 'denied' });
+  expect(guest.snapshot).toMatchObject({ state: 'ended', error: 'denied' });
+}, 15_000);
+
+it('NP-RP-03: 실제 중계의 만료 초대 4003은 expired 참여 결과로 끝난다', async () => {
+  const { base, host, guest, storage } = await pair();
+  const room = host.snapshot.room!;
+  const record = JSON.parse(storage.getItem('p2p-gostop.remote-room.v1')!) as {
+    hostToken: string;
+  };
+  const invite = randomBytes(32).toString('base64url');
+  const expiresAt = Date.now() + 500;
+  const registered = await adapt(base).fetcher(`${origin}/api/rooms/${room.roomId}/credentials`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${record.hostToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ token: invite, permission: 'invite', expiresAt }),
+  });
+  expect(registered.status).toBe(201);
+  await new Promise((done) => setTimeout(done, Math.max(0, expiresAt - Date.now() + 100)));
+  const link = new URL(room.inviteLink);
+  const query = new URLSearchParams(link.hash.slice('#/join?'.length));
+  query.set('t', invite);
+  link.hash = `/join?${query}`;
+  expect(await guest.joinByLink(link.href, '친구')).toEqual({ ok: false, code: 'expired' });
+  expect(guest.snapshot).toMatchObject({ state: 'ended', error: 'expired' });
 }, 15_000);
 
 it('FR-RP-04: 같은 방 복귀는 기존 역할 소켓을 4001로 교체하고 방 종료 때 자격을 제거한다', async () => {
