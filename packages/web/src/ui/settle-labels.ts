@@ -26,7 +26,8 @@ const STEP_LABEL: Readonly<Record<SettleStepKind, string>> = {
   jackpot: '대박판',
 };
 
-export function stepLabel(kind: SettleStepKind): string {
+export function stepLabel(kind: SettleStepKind, origin?: 'push'): string {
+  if (origin === 'push') return '밀기';
   return STEP_LABEL[kind];
 }
 

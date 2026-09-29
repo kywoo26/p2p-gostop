@@ -51,8 +51,16 @@
           {#each view.rows as row (row.round)}
             <tr>
               <td>{row.round}</td>
-              <td>{row.winner === null ? '나가리' : view.names[row.winner]}</td>
-              <td class="num">{row.points}</td>
+              <td
+                >{row.winner === null
+                  ? '나가리'
+                  : row.points === 0
+                    ? `${view.names[row.winner]} · 밀기`
+                    : view.names[row.winner]}</td
+              >
+              <td class="num"
+                >{row.points === 0 && row.winner !== null ? '0 (포기)' : row.points}</td
+              >
               <td class={['num', row.amount >= 0 ? 'gain' : 'loss']}>
                 {formatSignedMoney(row.amount, view.unit)}
               </td>

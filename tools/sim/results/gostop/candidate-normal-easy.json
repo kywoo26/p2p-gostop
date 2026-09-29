@@ -1,0 +1,390 @@
+{
+  "label": "normal vs easy (standard)",
+  "config": {
+    "mode": "match",
+    "preset": "standard",
+    "rounds": 2000,
+    "sessionLength": 30,
+    "perPoint": 100,
+    "startBalance": null,
+    "bankruptcyTarget": 0.05,
+    "seed": 1,
+    "workers": 2,
+    "timeMs": null,
+    "mcSessions": 2000,
+    "out": "tools/sim/results/gostop/candidate-normal-easy",
+    "label": null,
+    "a": {
+      "policy": "normal"
+    },
+    "b": {
+      "policy": "easy"
+    }
+  },
+  "rounds": 2000,
+  "wins": {
+    "a": 1313,
+    "b": 681,
+    "nagari": 6
+  },
+  "winRateA": 0.6584754262788365,
+  "winRateA95": [0.6376605296038008, 0.6792903229538721],
+  "nagariRate": 0.003,
+  "meanNetA": 19.8705,
+  "meanNetMoneyA": 1987.05,
+  "boldness": {
+    "a": {
+      "roundGoCounts": {
+        "0": 1025,
+        "1": 268,
+        "2": 484,
+        "3+": 223
+      },
+      "choices": {
+        "go": 1905,
+        "stop": 1208
+      },
+      "firstSevenStop": {
+        "stops": 134,
+        "opportunities": 467,
+        "rate": 0.28693790149892934
+      },
+      "firstThreeStop": {
+        "stops": 0,
+        "opportunities": 0,
+        "rate": null
+      },
+      "afterOneGoStop": {
+        "stops": 216,
+        "opportunities": 923,
+        "rate": 0.23401950162513543
+      },
+      "lowRiskStop": {
+        "stops": 283,
+        "opportunities": 2038,
+        "rate": 0.13886162904808635
+      },
+      "stopScores": {
+        "7": 134,
+        "8": 90,
+        "9": 115,
+        "10": 85,
+        "11": 100,
+        "12": 101,
+        "13": 93,
+        "14": 96,
+        "15": 78,
+        "16": 86,
+        "17": 48,
+        "18": 36,
+        "19": 47,
+        "20": 18,
+        "21": 16,
+        "22": 13,
+        "23": 11,
+        "24": 11,
+        "25": 7,
+        "26": 7,
+        "27": 1,
+        "28": 1,
+        "29": 5,
+        "31": 2,
+        "33": 2,
+        "34": 3,
+        "36": 1,
+        "37": 1
+      },
+      "stopOpponentScores": {
+        "0": 297,
+        "1": 118,
+        "2": 98,
+        "3": 143,
+        "4": 113,
+        "5": 176,
+        "6": 118,
+        "7": 35,
+        "8": 35,
+        "9": 27,
+        "10": 18,
+        "11": 13,
+        "12": 8,
+        "13": 3,
+        "14": 1,
+        "15": 1,
+        "16": 2,
+        "17": 1,
+        "20": 1
+      },
+      "stopOpponentPotential": {
+        "n": 1208,
+        "mean": 7.353112582781455,
+        "std": 4.689906823752863,
+        "p50": 6.86,
+        "p90": 13.312000000000001,
+        "p95": 16.024,
+        "p99": 20.300000000000004,
+        "max": 32.288
+      },
+      "stopOpponentPi": {
+        "n": 1208,
+        "mean": 10.126655629139073,
+        "std": 4.061623667637842,
+        "p50": 11,
+        "p90": 15,
+        "p95": 16,
+        "p99": 18,
+        "max": 26
+      },
+      "stopTurnsLeft": {
+        "n": 1208,
+        "mean": 1.7392384105960266,
+        "std": 0.9115207116332188,
+        "p50": 1,
+        "p90": 3,
+        "p95": 4,
+        "p99": 4,
+        "max": 5
+      },
+      "stopWithBakChance": 467
+    },
+    "b": {
+      "roundGoCounts": {
+        "0": 1553,
+        "1": 312,
+        "2": 135
+      },
+      "choices": {
+        "go": 582,
+        "stop": 615
+      },
+      "firstSevenStop": {
+        "stops": 146,
+        "opportunities": 315,
+        "rate": 0.4634920634920635
+      },
+      "firstThreeStop": {
+        "stops": 0,
+        "opportunities": 0,
+        "rate": null
+      },
+      "afterOneGoStop": {
+        "stops": 119,
+        "opportunities": 254,
+        "rate": 0.468503937007874
+      },
+      "lowRiskStop": {
+        "stops": 262,
+        "opportunities": 485,
+        "rate": 0.5402061855670103
+      },
+      "stopScores": {
+        "7": 146,
+        "8": 126,
+        "9": 92,
+        "10": 64,
+        "11": 54,
+        "12": 34,
+        "13": 30,
+        "14": 20,
+        "15": 19,
+        "16": 7,
+        "17": 8,
+        "18": 7,
+        "19": 2,
+        "20": 4,
+        "27": 1,
+        "32": 1
+      },
+      "stopOpponentScores": {
+        "0": 185,
+        "1": 51,
+        "2": 74,
+        "3": 62,
+        "4": 73,
+        "5": 72,
+        "6": 40,
+        "7": 12,
+        "8": 7,
+        "9": 13,
+        "10": 8,
+        "11": 5,
+        "12": 6,
+        "13": 3,
+        "14": 1,
+        "15": 1,
+        "21": 1,
+        "22": 1
+      },
+      "stopOpponentPotential": {
+        "n": 615,
+        "mean": 7.333866666666663,
+        "std": 4.793274313732562,
+        "p50": 6.688000000000001,
+        "p90": 12.728000000000002,
+        "p95": 16.6,
+        "p99": 22.612000000000002,
+        "max": 36.6
+      },
+      "stopOpponentPi": {
+        "n": 615,
+        "mean": 8.357723577235772,
+        "std": 4.165802457979221,
+        "p50": 8,
+        "p90": 14,
+        "p95": 15,
+        "p99": 18,
+        "max": 20
+      },
+      "stopTurnsLeft": {
+        "n": 615,
+        "mean": 2.4715447154471546,
+        "std": 1.2355035849155973,
+        "p50": 2,
+        "p90": 4,
+        "p95": 5,
+        "p99": 6,
+        "max": 7
+      },
+      "stopWithBakChance": 286
+    }
+  },
+  "payoutPoints": {
+    "n": 1991,
+    "mean": 32.58714213962833,
+    "std": 43.001125559878986,
+    "p50": 18,
+    "p90": 68,
+    "p95": 112,
+    "p99": 216,
+    "max": 640
+  },
+  "payoutMoney": {
+    "n": 1991,
+    "mean": 3258.7142139628327,
+    "std": 4300.112555987872,
+    "p50": 1800,
+    "p90": 6800,
+    "p95": 11200,
+    "p99": 21600,
+    "max": 64000
+  },
+  "multipliers": {
+    "1": 767,
+    "2": 850,
+    "4": 280,
+    "8": 85,
+    "16": 12
+  },
+  "multiplierKinds": {
+    "bomb": 118,
+    "goBak": 301,
+    "goMultiplier": 214,
+    "gwangBak": 208,
+    "meongtta": 48,
+    "piBak": 516,
+    "shake": 296
+  },
+  "reasons": {
+    "autoStop": 143,
+    "chongtong": 21,
+    "floorChongtong": 6,
+    "stop": 1823,
+    "threePpeok": 7
+  },
+  "goCounts": {
+    "0": 875,
+    "1": 374,
+    "2": 531,
+    "3": 214
+  },
+  "frequencies": {
+    "threePpeok": 0.0035,
+    "chongtong": 0.0105,
+    "nagari": 0.003,
+    "instantPayoutRounds": 0.064,
+    "ppeokPerRound": 0.52,
+    "pushedRounds": 0
+  },
+  "timing": {
+    "a": {
+      "decisions": 21754,
+      "mean": 0.5913114391836019,
+      "p50": 0.49713900000006106,
+      "p95": 1.2707519999999022,
+      "p99": 2.4895879999999124,
+      "max": 19.098251000000005
+    },
+    "b": {
+      "decisions": 19078,
+      "mean": 0.005189111489674115,
+      "p50": 0.003552000000127009,
+      "p95": 0.009043999999448715,
+      "p99": 0.018875999999977466,
+      "max": 4.836720000000014
+    }
+  },
+  "bankruptcy": {
+    "a": {
+      "sessions": 2000,
+      "sessionLength": 30,
+      "maxLoss": {
+        "n": 2000,
+        "mean": 16.9815,
+        "std": 27.395152946323826,
+        "p50": 2,
+        "p90": 50,
+        "p95": 70,
+        "p99": 118,
+        "max": 289
+      },
+      "minBalancePoints": 71,
+      "minBalance": 7100,
+      "niceBalance": 8000,
+      "niceBalanceRisk": 0.038,
+      "givenBalance": null,
+      "givenBalanceRisk": null
+    },
+    "b": {
+      "sessions": 2000,
+      "sessionLength": 30,
+      "maxLoss": {
+        "n": 2000,
+        "mean": 618.7815,
+        "std": 264.2565505716178,
+        "p50": 589,
+        "p90": 966,
+        "p95": 1088,
+        "p99": 1368,
+        "max": 1771
+      },
+      "minBalancePoints": 1089,
+      "minBalance": 108900,
+      "niceBalance": 150000,
+      "niceBalanceRisk": 0.005,
+      "givenBalance": null,
+      "givenBalanceRisk": null
+    },
+    "pooled": {
+      "sessions": 2000,
+      "sessionLength": 30,
+      "maxLoss": {
+        "n": 2000,
+        "mean": 189.297,
+        "std": 175.36248399072048,
+        "p50": 149,
+        "p90": 429,
+        "p95": 534,
+        "p99": 741,
+        "max": 1042
+      },
+      "minBalancePoints": 535,
+      "minBalance": 53500,
+      "niceBalance": 60000,
+      "niceBalanceRisk": 0.0315,
+      "givenBalance": null,
+      "givenBalanceRisk": null
+    }
+  },
+  "playedSessions": null,
+  "elapsedSec": 7.318956211
+}

@@ -33,8 +33,8 @@ import {
   type Transport,
 } from '@p2p-gostop/protocol';
 import { getBridge } from '../bridge/bridge.ts';
-import { gukjinPlacements, toRecordRow, withSeatExtras } from '../game/adapter.ts';
-import type { GameController, GameStats } from '../game/controller.ts';
+import { gukjinPlacements, pushOffer, toRecordRow, withSeatExtras } from '../game/adapter.ts';
+import type { GameController, GameStats, PushDecision } from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import type { MoneyUnit, RecordRow } from '../lib/view-types.ts';
@@ -264,6 +264,20 @@ export class HostGame implements GameController {
     return this.bankruptSeats.includes(ME);
   }
 
+  get pushDecision(): PushDecision | null {
+    const state = this.state;
+    if (this.stage !== 'settled' || state?.phase !== 'end' || this.session?.settlement !== null)
+      return null;
+    const offer = pushOffer(state, this.session.ledger);
+    return {
+      winner: state.result?.winner === ME,
+      canPush: legalActions(state, ME).some((action) => action.type === 'push'),
+      nextMultiplier: 2 ** (state.round.pushes + 1),
+      acceptAmount: offer.amount,
+      forfeitedPoints: offer.points,
+    };
+  }
+
   get canAct(): boolean {
     const state = this.state;
     return (
@@ -414,8 +428,7 @@ export class HostGame implements GameController {
         log: (line) => log.info(`세션 ${line}`),
       });
       this.guestName = saved.state.guestName;
-      this.settledRound =
-        session.stage === 'settled' || session.stage === 'bankrupt' ? session.roundNumber : 0;
+      this.settledRound = session.settlement !== null ? session.roundNumber : 0;
       this.attachSession(session);
       const board = this.board();
       if (board !== null) this.playback.reset(board, this.settlementSummary());
@@ -588,7 +601,8 @@ export class HostGame implements GameController {
       if (stage === 'bankrupt' || stage === 'settled' || stage === 'ended')
         this.balances = session.ledger.balances;
       if (
-        (stage === 'settled' || stage === 'bankrupt') &&
+        (stage === 'settled' || stage === 'bankrupt' || stage === 'ended') &&
+        session.settlement !== null &&
         this.settledRound !== session.roundNumber
       )
         this.onSettled();
@@ -648,10 +662,25 @@ export class HostGame implements GameController {
 
   /** 정산 화면 → 다음 판 (호스트가 시작한다, #26) */
   nextRound(): void {
-    if (this.stage !== 'settled') return;
+    if (this.stage !== 'settled' || this.session?.settlement === null) return;
     this.playback.release();
     this.session?.nextRound();
     this.afterChange();
+  }
+
+  choosePush(push: boolean): void {
+    if (!this.pushDecision?.winner) return;
+    if (push) this.session?.push();
+    else this.session?.acceptRound();
+    this.afterChange();
+  }
+
+  acceptAbsentWinner(): void {
+    if (!this.waitPrompt || this.pushDecision?.winner !== false) return;
+    if (this.session?.acceptRound({ forSeat: 1, reason: 'absent' })) {
+      this.waitPrompt = false;
+      this.afterChange();
+    }
   }
 
   /** MN-02 재충전 (호스트 좌석이 파산했을 때) */
@@ -672,6 +701,7 @@ export class HostGame implements GameController {
     if (this.stage === 'ended') return;
     if (this.bankrupt) this.session?.chooseBankruptcy('end');
     else this.session?.end();
+    this.afterChange();
     this.stage = 'ended';
     this.waitPrompt = false;
     this.save();

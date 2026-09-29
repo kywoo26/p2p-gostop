@@ -48,7 +48,7 @@ const DEFAULT_SETTINGS: AppSettings = Object.freeze({
   speed: 'normal',
   sound: true,
   vibration: true,
-  difficulty: 'normal',
+  difficulty: 'commercial',
   aiTimeMs: 1000,
   playerName: '호스트',
 });

@@ -23,7 +23,7 @@ import {
   type SessionStage,
   type Transport,
 } from '@p2p-gostop/protocol';
-import type { GameController, GameStats } from '../game/controller.ts';
+import type { GameController, GameStats, PushDecision } from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
@@ -105,6 +105,7 @@ export class GuestGame implements GameController {
   private clock: ReturnType<typeof setInterval> | null = null;
   private prevSeq = 0;
   private settledRound = 0;
+  private pushPending = $state(false);
   private roundInstant: EngineEvent[] = [];
   private disposed = false;
 
@@ -192,6 +193,25 @@ export class GuestGame implements GameController {
     return this.bankruptSeats.includes(ME);
   }
 
+  get pushDecision(): PushDecision | null {
+    const view = this.view;
+    if (
+      this.stage !== 'settled' ||
+      this.session.settlement !== null ||
+      this.playback.settlement !== null ||
+      view?.phase !== 'end'
+    )
+      return null;
+    const canPush = view.legal.some((action) => action.type === 'push' && action.seat === ME);
+    return {
+      winner: canPush,
+      canPush,
+      nextMultiplier: 2 ** ((view.pushes ?? 0) + 1),
+      acceptAmount: null,
+      forfeitedPoints: null,
+    };
+  }
+
   get canAct(): boolean {
     const view = this.view;
     return (
@@ -227,6 +247,7 @@ export class GuestGame implements GameController {
     if (this.stage === 'handshake' && this.playback.idle) return '판을 나누는 중…';
     if (this.stage === 'settled' && this.ready && this.playback.idle)
       return '호스트가 다음 판을 시작하기를 기다리는 중';
+    if (this.pushPending) return '밀기 요청을 보내는 중…';
     if (this.awaiting !== null && this.playback.idle) return '보내는 중…';
     return null;
   }
@@ -288,6 +309,7 @@ export class GuestGame implements GameController {
     if (s.names !== null && s.rules !== null && s.ledger !== null)
       this.lobby = { names: s.names, rules: s.rules, ledger: s.ledger };
     if (this.stage !== 'settled') this.ready = false;
+    if (s.settlement !== null || this.stage !== 'settled') this.pushPending = false;
     if (this.persist) saveGuestState(this.name, s.toJSON());
     this.seq = s.seq;
   }
@@ -321,6 +343,7 @@ export class GuestGame implements GameController {
         break;
       case 'reject':
         this.awaiting = null;
+        this.pushPending = false;
         log.warn(`호스트 거절: ${m.reason}`);
         if (m.reason === 'TOKEN_INVALID') {
           this.error = '이미 다른 사람이 참가 중이거나 호스트가 새 방을 열었습니다';
@@ -417,10 +440,22 @@ export class GuestGame implements GameController {
 
   /** 정산 화면 → 다음 판 요청 (시작은 호스트, #26) */
   nextRound(): void {
-    if (this.stage === 'bankrupt') return;
+    if (this.stage === 'bankrupt' || this.pushDecision !== null) return;
     this.playback.release();
     this.ready = true;
     this.session.requestNextRound();
+  }
+
+  choosePush(push: boolean): void {
+    if (!this.pushDecision?.winner || this.pushPending || this.ready || this.link !== 'open')
+      return;
+    if (push) {
+      this.pushPending = true;
+      this.session.push();
+    } else {
+      this.ready = true;
+      this.session.requestNextRound();
+    }
   }
 
   refill(): void {

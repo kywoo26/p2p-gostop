@@ -4,8 +4,12 @@
 //   게스트는 protocol SeatView에 이 필드가 생기면 받는다(그 전에는 없는 값으로 그린다).
 // - 정산에 쓴 국진 위치(SettlementDisplay.gukjin): 판을 다 본 솔로·호스트만 안다.
 import {
+  applySettlement,
   GUKJIN_ID,
+  settle,
   type CapturedPile,
+  type GameState,
+  type Ledger,
   type PlayerView,
   type Seat,
   type Settlement,
@@ -81,5 +85,19 @@ export function toSettlementView(input: SettlementInput): SettlementDisplay {
   return {
     ...protocolSettlementView(input),
     gukjin: gukjinPlacements(input.settlement, input.captured),
+  };
+}
+
+/** 선택 대기 중 받기를 고르면 옮길 실제 금액(올인 상한 포함). 원장은 바꾸지 않는다. */
+export function pushOffer(
+  game: GameState,
+  ledger: Pick<Ledger, 'perPoint' | 'startBalance' | 'balances'>,
+): { readonly points: number; readonly amount: number } {
+  const settlement = settle(game);
+  const winner = settlement.winner;
+  const next = applySettlement({ ...ledger, entries: [] }, settlement, game.rules);
+  return {
+    points: settlement.finalPoints,
+    amount: winner === null ? 0 : next.balances[winner] - ledger.balances[winner],
   };
 }

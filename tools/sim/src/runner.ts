@@ -17,6 +17,7 @@ import {
   type SettleStepKind,
 } from '@p2p-gostop/engine';
 import { rulesOf, type PolicySpec, type SideConfig, type SimConfig } from './config.ts';
+import { observeGoStop, type GoStopRecord } from './gostop.ts';
 
 export interface RoundRecord {
   readonly index: number;
@@ -40,6 +41,11 @@ export interface RoundRecord {
   /** A 관점 이 판 순액(점) = ±finalPoints + instantA */
   readonly netA: number;
   readonly winnerGo: number;
+  /** 승패·나가리와 무관한 각 정책의 최종 고 횟수 */
+  readonly goA: number;
+  readonly goB: number;
+  readonly goStopA: readonly GoStopRecord[];
+  readonly goStopB: readonly GoStopRecord[];
   readonly chongtong: boolean;
   readonly ppeoks: number;
   /** 결정 시간(ms): A, B (합법 수 2개 이상인 결정만) */
@@ -91,9 +97,26 @@ interface RoundInput {
   readonly allowPush?: boolean;
 }
 
+function observe(policy: Policy, records: GoStopRecord[]): Policy {
+  return {
+    name: policy.name,
+    decide: (view, legal, ctx) => {
+      const action = policy.decide(view, legal, ctx);
+      if (action.type === 'go' || action.type === 'stop') {
+        records.push(observeGoStop(view, action.type));
+      }
+      return action;
+    },
+    decidePush: (view, ctx) => policy.decidePush?.(view, ctx) ?? false,
+  };
+}
+
 function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
-  const seats: [Policy, Policy] =
-    input.aSeat === 0 ? [policies.a, policies.b] : [policies.b, policies.a];
+  const goStopA: GoStopRecord[] = [];
+  const goStopB: GoStopRecord[] = [];
+  const a = observe(policies.a, goStopA);
+  const b = observe(policies.b, goStopB);
+  const seats: [Policy, Policy] = input.aSeat === 0 ? [a, b] : [b, a];
   const played = playRound(seats, {
     rules: rulesOf(config.preset),
     seed: input.dealSeed,
@@ -142,6 +165,10 @@ function playOne(config: SimConfig, policies: Policies, input: RoundInput) {
     instantA,
     netA: roundA + instantA,
     winnerGo: s.winner === null ? 0 : state.seats[s.winner].goCount,
+    goA: state.seats[aSeat].goCount,
+    goB: state.seats[aSeat === 0 ? 1 : 0].goCount,
+    goStopA,
+    goStopB,
     chongtong: played.events.some((e) => e.type === 'Chongtong'),
     ppeoks: played.events.filter((e) => e.type === 'Ppeok').length,
     msA: played.decisions.filter((d) => d.seat === aSeat).map((d) => d.ms),
