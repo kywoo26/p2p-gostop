@@ -56,10 +56,12 @@ export interface WsTransportOptions {
 export type StopReason = 'replaced' | 'policy';
 export type RelayControl =
   | { readonly t: 'relay-claim-pending' }
+  | { readonly t: 'relay-claim-denied' }
   | { readonly t: 'relay-claim'; readonly requestId: string }
-  | { readonly t: 'relay-join-request'; readonly requestId: string }
+  | { readonly t: 'relay-join-request'; readonly requestId: string; readonly nickname?: string }
   | { readonly t: 'relay-accepted'; readonly token: string; readonly roomId?: string }
   | { readonly t: 'relay-join-pending' }
+  | { readonly t: 'relay-join-denied' }
   | { readonly t: 'relay-join-unavailable' };
 
 export function parseRelayControl(raw: string): {
@@ -75,14 +77,41 @@ export function parseRelayControl(raw: string): {
       return { isControl: false, value: null };
     if (raw.length > 512) return { isControl: true, value: null };
     const t = control.t;
-    if (t === 'relay-claim-pending' || t === 'relay-join-pending' || t === 'relay-join-unavailable')
+    if (
+      t === 'relay-claim-pending' ||
+      t === 'relay-claim-denied' ||
+      t === 'relay-join-pending' ||
+      t === 'relay-join-denied' ||
+      t === 'relay-join-unavailable'
+    )
       return { isControl: true, value: { t } };
     if (
-      (t === 'relay-claim' || t === 'relay-join-request') &&
+      t === 'relay-claim' &&
       typeof control.requestId === 'string' &&
       /^[A-Za-z0-9_-]{22}$/.test(control.requestId)
     )
       return { isControl: true, value: { t, requestId: control.requestId } };
+    if (
+      t === 'relay-join-request' &&
+      typeof control.requestId === 'string' &&
+      /^[A-Za-z0-9_-]{22}$/.test(control.requestId)
+    ) {
+      const nickname = control.nickname;
+      if (nickname === undefined)
+        return { isControl: true, value: { t, requestId: control.requestId } };
+      const characters = typeof nickname === 'string' ? Array.from(nickname) : [];
+      if (
+        typeof nickname !== 'string' ||
+        characters.length < 1 ||
+        characters.length > 20 ||
+        characters.some((character) => {
+          const code = character.codePointAt(0)!;
+          return code < 32 || (code >= 127 && code <= 159) || code === 8232 || code === 8233;
+        })
+      )
+        return { isControl: true, value: null };
+      return { isControl: true, value: { t, requestId: control.requestId, nickname } };
+    }
     if (
       t === 'relay-accepted' &&
       typeof control.token === 'string' &&
@@ -265,7 +294,10 @@ export class WsTransport implements Transport {
           return;
         }
         const control = parseRelayControl(raw);
-        if (control.value?.t === 'relay-claim-pending') {
+        if (
+          control.value?.t === 'relay-claim-pending' ||
+          control.value?.t === 'relay-claim-denied'
+        ) {
           if (this.authTimer !== null) this.scheduler.clearTimeout(this.authTimer);
           this.authTimer = null;
           this.emitControl(control.value);
@@ -452,19 +484,16 @@ export class WsTransport implements Transport {
       this.controls.delete(handler);
     };
   }
-  /** RP-04B/05 호스트 수락 흐름에서 사용한다. 인증된 호스트 소켓에만 전송한다. */
-  sendControl(control: {
-    readonly t: 'relay-accept';
-    readonly requestId: string;
-    readonly token: string;
-  }): boolean {
+  /** RP-04B/05 호스트 수락·거절 흐름에서 사용한다. 인증된 호스트 소켓에만 전송한다. */
+  sendControl(
+    control:
+      | { readonly t: 'relay-accept'; readonly requestId: string; readonly token: string }
+      | { readonly t: 'relay-deny'; readonly requestId: string },
+  ): boolean {
     if (this.role !== 'host' || this.stateValue !== 'open' || this.socket?.readyState !== 1)
       return false;
-    if (
-      !/^[A-Za-z0-9_-]{22}$/.test(control.requestId) ||
-      !/^[A-Za-z0-9_-]{43}$/.test(control.token)
-    )
-      return false;
+    if (!/^[A-Za-z0-9_-]{22}$/.test(control.requestId)) return false;
+    if (control.t === 'relay-accept' && !/^[A-Za-z0-9_-]{43}$/.test(control.token)) return false;
     try {
       this.socket.send(JSON.stringify(control));
       return true;
