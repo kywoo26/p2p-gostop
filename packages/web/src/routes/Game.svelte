@@ -311,6 +311,7 @@
   >
     <Board
       view={pb.board}
+      soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
       {extras}
       unit={settings.value.unit}
       confirmDelay={'confirmDelay' in settings.value && settings.value.confirmDelay === true}
@@ -326,6 +327,7 @@
       onskip={() => controller.skipAnimations()}
       oninfochange={(open) => (boardInfoOpen = open)}
       onnotice={(text) => pb.showToast(text)}
+      onhintdisplayed={(level) => controller.recordHintUsage?.(level)}
       bind:root
     />
   </div>

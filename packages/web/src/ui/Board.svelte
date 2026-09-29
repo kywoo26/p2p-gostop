@@ -11,12 +11,16 @@
     type CardId,
     type Month,
     type Seat,
+    type PlayerView,
   } from '@p2p-gostop/engine';
   import { onDestroy } from 'svelte';
   import type { BoardExtras } from '../game/adapter.ts';
+  import { handAssist, handAssistPlayer, hintLevelOf } from '../game/assist.ts';
+  import type { HintLevel } from '../game/assist.ts';
   import { boardNotices } from '../game/display.ts';
   import { formatMoney } from '../lib/format.ts';
   import type { BoardView, MoneyUnit, SeatView } from '../lib/view-types.ts';
+  import { settings } from '../settings/settings.svelte.ts';
   import { bannerActor, type Banner } from './banner.ts';
   import { stepLabel } from './settle-labels.ts';
   import { cardLabel, cardSrc } from './cards.ts';
@@ -42,9 +46,12 @@
       readonly staging?: readonly CardId[];
       readonly highlight?: readonly CardId[];
     };
+    soloPlayerView?: PlayerView | undefined;
     extras?: BoardExtras | null;
     /** 갤러리/후속 기본 보조의 시각 슬롯. 확보 짝 판정은 여기서 하지 않는다. */
     handVisualGroups?: readonly HandVisualGroup[];
+    /** 솔로 판 기록은 실제 보조 표식이 화면에 올라온 뒤 이 경로로 갱신한다. */
+    onhintdisplayed?: ((level: HintLevel) => void) | undefined;
     unit?: MoneyUnit;
     confirmDelay?: boolean;
     banner?: (Banner & { readonly id?: number }) | null;
@@ -73,8 +80,10 @@
 
   let {
     view,
+    soloPlayerView,
     extras = null,
     handVisualGroups = [],
+    onhintdisplayed,
     unit = '냥',
     confirmDelay = false,
     banner = null,
@@ -155,13 +164,26 @@
   );
   const pickFirst = $derived(busy ? null : (extras?.pickFirst ?? null));
   const playable = $derived(busy || landscape ? [] : view.playable);
-  const floorMonths = $derived(new Set(view.floor.map((g) => g.month)));
-  const matchable = $derived(
-    playable.filter((id) => {
-      const month = getCard(id).month;
-      return month === null || floorMonths.has(month);
-    }),
+  const localHintLevel = $derived(hintLevelOf(settings.value));
+  const soloAligned = $derived(
+    soloPlayerView === undefined || soloPlayerView.eventSeq === view.eventSeq,
   );
+  const assist = $derived(
+    soloPlayerView === undefined
+      ? handAssist(view, busy || landscape ? 'off' : localHintLevel)
+      : handAssistPlayer(
+          soloPlayerView,
+          busy || landscape || !soloAligned ? 'off' : localHintLevel,
+        ),
+  );
+  $effect(() => {
+    const level = localHintLevel;
+    const shown =
+      assist.matchable.length > 0 || assist.secured.length > 0 || assist.groups.length > 0;
+    // 상세 전용 설명은 #81/#82에서 붙는다. 지금 보이는 기본 표식은 기본 사용으로 기록한다.
+    if (shown && onhintdisplayed) onhintdisplayed(level === 'detail' ? 'basic' : level);
+  });
+  const matchable = $derived(assist.matchable);
 
   /** 누르고 있는 손패 카드 (먹게 될 바닥 카드 미리보기, spec 6.3) */
   let preview = $state<CardId | null>(null);
@@ -173,6 +195,7 @@
     }),
   );
   const handGroups = $derived<readonly HandVisualGroup[]>([
+    ...assist.groups,
     ...(extras?.bombMonths ?? []).map((month) => ({
       id: `bomb-${month}`,
       kind: 'bomb' as const,
@@ -189,6 +212,17 @@
       : []),
     ...handVisualGroups,
   ]);
+  const handLinks = $derived.by(() => {
+    const links: Record<number, 'bomb' | 'chongtong'> = {};
+    if (localHintLevel === 'off' || busy || landscape) return links;
+    for (const group of assist.groups) {
+      if (group.kind !== 'bomb' && group.kind !== 'chongtong') continue;
+      const month = getCard(group.cards[0]!).month;
+      if (month !== null && view.floor.some((floor) => floor.month === month))
+        links[month] = group.kind;
+    }
+    return links;
+  });
   const selectedHandGroup = $derived(
     handGroups.find((group) => group.kind === 'bomb' && group.cards.includes(preview ?? -1))?.id ??
       null,
@@ -357,6 +391,7 @@
     <Floor
       compact
       groups={view.floor}
+      {handLinks}
       deckCount={view.deckCount}
       highlight={floorHighlight}
       staging={view.staging ?? []}
@@ -483,8 +518,16 @@
       revision={view}
       {playable}
       {matchable}
+      cuesEnabled={localHintLevel !== 'off' && !busy && !landscape && soloAligned}
+      visualGroups={[
+        ...handGroups,
+        ...assist.secured.map((card) => ({
+          id: `secured-${card}`,
+          kind: 'secured' as const,
+          cards: [card],
+        })),
+      ]}
       {bombCards}
-      visualGroups={handGroups}
       selectedGroup={selectedHandGroup}
       onplay={play}
       oninvalidate={cancelReserved}
