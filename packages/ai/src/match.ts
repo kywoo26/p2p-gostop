@@ -1,11 +1,14 @@
 // 두 정책으로 한 판을 끝까지 둔다 (시뮬레이션·테스트 공용 진행기).
 // 정책에는 playerView 결과와 합법 수만 넘긴다(정보 은닉, AI-01). 정책이 합법 수가 아닌 것을 내면 예외.
 import {
+  applyUnchecked,
+  legalActions,
   newRound,
   playerView,
   reduce,
   sameAction,
   type Action,
+  type ApplyResult,
   type EngineEvent,
   type GameState,
   type RoundOptions,
@@ -42,9 +45,36 @@ export interface PlayRoundOptions {
   readonly now?: () => number;
   /** 결정 시간 측정용 시계(결정에는 영향 없음) */
   readonly clock?: () => number;
+  /** 비교·디버그: 합법 수 적용도 reduce로 재검증한다. 기본은 applyUnchecked. */
+  readonly debugReduce?: boolean;
+  /** 판 시작 시 좌석별 잔액(점 단위). 밀기 결정 전에 즉시 정산을 반영한다. */
+  readonly balancePoints?: readonly [number, number];
+  /** 독립 판 평가에서는 후속 판이 없으므로 밀지 않고 정산을 받는다. 기본 true. */
+  readonly allowPush?: boolean;
 }
 
 const MAX_STEPS = 500;
+
+function applyKnown(state: GameState, action: Action, debugReduce: boolean): ApplyResult {
+  if (!debugReduce) return applyUnchecked(state, action);
+  const checked = reduce(state, action);
+  if (!checked.ok) throw new Error(`합법 수가 거부됨: ${checked.message}`);
+  return checked;
+}
+
+function afterInstantPayouts(state: GameState, start: readonly [number, number]): [number, number] {
+  const balances: [number, number] = [...start];
+  for (const payout of state.instantPayouts) {
+    const amount = Math.min(
+      payout.points,
+      balances[payout.from],
+      state.rules.limitedLiability ? balances[payout.to] : Infinity,
+    );
+    balances[payout.from] -= amount;
+    balances[payout.to] += amount;
+  }
+  return balances;
+}
 
 export function playRound(
   policies: readonly [Policy, Policy],
@@ -72,6 +102,7 @@ export function playRound(
       rng: new Rng(mixSeed(opts.policySeeds[seat], n)),
       ...(opts.timeBudgetMs === undefined ? {} : { timeBudgetMs: opts.timeBudgetMs }),
       ...(opts.now === undefined ? {} : { now: opts.now }),
+      ...(opts.balancePoints === undefined ? {} : { balancePoints: opts.balancePoints }),
     };
     const t0 = opts.clock?.() ?? 0;
     const action = policies[seat].decide(view, legal, ctx);
@@ -84,13 +115,34 @@ export function playRound(
         `정책 ${policies[seat].name}이 합법 수가 아닌 수를 냈습니다: ${JSON.stringify(action)}`,
       );
     }
-    const result = reduce(state, action);
-    if (!result.ok) {
-      throw new Error(`합법 수가 거부됨: ${result.message}`);
-    }
+    const result = applyKnown(state, action, opts.debugReduce === true);
     state = result.state;
     actions.push(action);
     events.push(...result.events);
+  }
+  const winner = state.result?.winner;
+  if (opts.allowPush !== false && winner !== null && winner !== undefined) {
+    const push = legalActions(state, winner).find((action) => action.type === 'push');
+    if (push !== undefined) {
+      const n = counters[winner] ?? 0;
+      const ctx: DecisionContext = {
+        rng: new Rng(mixSeed(opts.policySeeds[winner], n)),
+        ...(opts.timeBudgetMs === undefined ? {} : { timeBudgetMs: opts.timeBudgetMs }),
+        ...(opts.now === undefined ? {} : { now: opts.now }),
+        ...(opts.balancePoints === undefined
+          ? {}
+          : { balancePoints: afterInstantPayouts(state, opts.balancePoints) }),
+      };
+      const t0 = opts.clock?.() ?? 0;
+      const choosePush = policies[winner].decidePush?.(playerView(state, winner), ctx) ?? false;
+      decisions.push({ seat: winner, kind: 'push', choices: 2, ms: (opts.clock?.() ?? 0) - t0 });
+      if (choosePush) {
+        const result = applyKnown(state, push, opts.debugReduce === true);
+        state = result.state;
+        actions.push(push);
+        events.push(...result.events);
+      }
+    }
   }
   return { state, actions, events, decisions };
 }

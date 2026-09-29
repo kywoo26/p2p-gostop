@@ -16,6 +16,7 @@ import {
 import { terminalPoints } from '../evaluator.ts';
 import { actingSeat, determinize } from '../knowledge.ts';
 import { heuristicAction, rollout, ruleGoStop, step } from '../rollout.ts';
+import { analyzePush } from '../push.ts';
 import { Rng } from '../rng.ts';
 import type { DecisionContext, Policy } from '../types.ts';
 import { DEFAULT_WEIGHTS, type SearchWeights, type Weights } from '../weights.ts';
@@ -31,6 +32,7 @@ export interface IsmctsOptions {
   readonly goStopMode?: 'ev' | 'rule' | 'search';
   /** 루트 탐색: halving = 공통 난수 + 순차 반감(기본) / uct = 자기 결정 트리 UCT */
   readonly searchMode?: 'uct' | 'halving';
+  readonly debugReduce?: boolean;
 }
 
 /** 기본 반복 상한: Node 기준 p95 ≤ 0.7s를 맞추는 값 (docs/ai-tuning.md) */
@@ -87,6 +89,7 @@ export function analyzeGoStop(
   samples: number,
   w: Weights,
   deadline: { readonly now: () => number; readonly until: number } | null = null,
+  debugReduce = false,
 ): GoStopAnalysis {
   const me = view.viewer;
   const sunk = view.instantPayouts.reduce(
@@ -96,7 +99,8 @@ export function analyzeGoStop(
   const base = determinize(view, rng);
   // 스톱 값은 공개 정보로 정확히 정해진다: 엔진의 stopPreview(FR-14)
   const stopPoints =
-    view.stopPreview?.points ?? terminalPoints(step(base, { type: 'stop', seat: me }), me) - sunk;
+    view.stopPreview?.points ??
+    terminalPoints(step(base, { type: 'stop', seat: me }, debugReduce), me) - sunk;
   let wins = 0;
   let losses = 0;
   let nagari = 0;
@@ -108,7 +112,7 @@ export function analyzeGoStop(
       break;
     }
     const det = n === 0 ? base : determinize(view, rng);
-    const end = rollout(step(det, { type: 'go', seat: me }), rng, w);
+    const end = rollout(step(det, { type: 'go', seat: me }, debugReduce), rng, w, debugReduce);
     const points = terminalPoints(end, me) - sunk;
     const winner = end.result?.winner ?? null;
     if (winner === me) {
@@ -152,6 +156,7 @@ export class IsmctsPolicy implements Policy {
   private readonly weights: Weights;
   private readonly goStopMode: 'ev' | 'rule' | 'search';
   private readonly searchMode: 'uct' | 'halving';
+  private readonly debugReduce: boolean;
   /** 마지막 탐색 통계 (디버그·테스트용) */
   lastStats: SearchStats | null = null;
   lastGoStop: GoStopAnalysis | null = null;
@@ -165,6 +170,17 @@ export class IsmctsPolicy implements Policy {
     this.weights = options.weights ?? DEFAULT_WEIGHTS;
     this.goStopMode = options.goStopMode ?? 'ev';
     this.searchMode = options.searchMode ?? 'halving';
+    this.debugReduce = options.debugReduce ?? false;
+  }
+
+  decidePush(view: PlayerView, ctx: DecisionContext): boolean {
+    const now = clockOf(ctx);
+    const budget = ctx.timeBudgetMs ?? this.defaultTimeBudgetMs;
+    const deadline = budget === null ? null : { now, until: now() + budget };
+    return (
+      analyzePush(view, ctx.rng, 16, this.weights, ctx.balancePoints, this.debugReduce, deadline)
+        .decision === 'push'
+    );
   }
 
   decide(view: PlayerView, legal: readonly Action[], ctx: DecisionContext): Action {
@@ -187,7 +203,14 @@ export class IsmctsPolicy implements Policy {
     }
     if ((first.type === 'go' || first.type === 'stop') && this.goStopMode === 'ev') {
       const samples = Math.max(GO_STOP_MIN_SAMPLES, this.maxIterations);
-      const analysis = analyzeGoStop(view, ctx.rng, samples, this.weights, deadline);
+      const analysis = analyzeGoStop(
+        view,
+        ctx.rng,
+        samples,
+        this.weights,
+        deadline,
+        this.debugReduce,
+      );
       this.lastGoStop = analysis;
       return legal.find((a) => a.type === analysis.decision) ?? first;
     }
@@ -271,7 +294,12 @@ export class IsmctsPolicy implements Policy {
         const det = determinize(view, rng);
         const seed = rng.nextU32();
         for (const c of alive) {
-          const end = rollout(step(det, c.action), new Rng(seed), w);
+          const end = rollout(
+            step(det, c.action, this.debugReduce),
+            new Rng(seed),
+            w,
+            this.debugReduce,
+          );
           c.total += utility(terminalPoints(end, me), w.search);
           c.n++;
           used++;
@@ -344,7 +372,13 @@ export class IsmctsPolicy implements Policy {
         }
       }
       path.push(chosen);
-      state = advanceToMe(step(state, chosen.action), me, rng, w);
+      state = advanceToMe(
+        step(state, chosen.action, this.debugReduce),
+        me,
+        rng,
+        w,
+        this.debugReduce,
+      );
       if (state.phase === 'end' || expanding) {
         break;
       }
@@ -352,7 +386,7 @@ export class IsmctsPolicy implements Policy {
       node = chosen.child;
       legal = legalActions(state, me);
     }
-    const end = state.phase === 'end' ? state : rollout(state, rng, w);
+    const end = state.phase === 'end' ? state : rollout(state, rng, w, this.debugReduce);
     const reward = utility(terminalPoints(end, me), w.search);
     for (const edge of path) {
       edge.visits++;
@@ -362,7 +396,13 @@ export class IsmctsPolicy implements Policy {
 }
 
 /** 상대 수와 한 장짜리 자기 수를 휴리스틱으로 진행해 내가 여러 수 중 골라야 하는 지점(또는 판 끝)까지 간다. */
-function advanceToMe(state: GameState, me: Seat, rng: Rng, w: Weights): GameState {
+function advanceToMe(
+  state: GameState,
+  me: Seat,
+  rng: Rng,
+  w: Weights,
+  debugReduce: boolean,
+): GameState {
   let s = state;
   for (let i = 0; i < 400 && s.phase !== 'end'; i++) {
     const seat = actingSeat(s);
@@ -373,7 +413,7 @@ function advanceToMe(state: GameState, me: Seat, rng: Rng, w: Weights): GameStat
     if (seat === me && legal.length > 1) {
       return s;
     }
-    s = step(s, heuristicAction(s, seat, legal, rng, w));
+    s = step(s, heuristicAction(s, seat, legal, rng, w), debugReduce);
   }
   return s;
 }

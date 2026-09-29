@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Policy } from '@p2p-gostop/ai';
 import {
   DEFAULT_CONFIG,
   bankruptcy,
@@ -109,6 +110,28 @@ describe('진행', () => {
     expect(records[0]?.dealer).toBe(records[1]?.dealer);
   });
 
+  it('독립 match는 후속 판이 없으므로 밀기 대신 정산을 받는다', () => {
+    let pushCalls = 0;
+    const alwaysPush: Policy = {
+      name: 'alwaysPush',
+      decide: (_view, legal) => {
+        const action = legal[0];
+        if (action === undefined) throw new Error('합법 수가 없습니다');
+        return action;
+      },
+      decidePush: () => {
+        pushCalls++;
+        return true;
+      },
+    };
+    const cfg = { ...RANDOM, mode: 'match' as const, preset: 'arcade' as const };
+    const records = runPair(cfg, { a: alwaysPush, b: alwaysPush }, 0);
+    expect(pushCalls).toBe(0);
+    expect(records).toHaveLength(2);
+    expect(records.every((r) => r.pushes === 0 && !r.pushed)).toBe(true);
+    expect(records.every((r) => r.winner === null || r.finalPoints > 0)).toBe(true);
+  });
+
   it('세션: 선·나가리 배수가 이어지고 판 번호가 1부터 L까지', () => {
     const cfg = { ...RANDOM, mode: 'session' as const };
     const records = runSession(cfg, makePolicies(cfg), 0);
@@ -119,6 +142,43 @@ describe('진행', () => {
       .map((prev) => (prev.winner === null ? Math.min(prev.carry * 2, 8) : 1));
     expect(records.slice(1).map((r) => r.carry)).toEqual(expected);
     expect(records[0]?.carry).toBe(1);
+  });
+
+  it('밀기: 마지막 Settled를 쓰고 nextPushes를 다음 판으로 넘긴다', () => {
+    const alwaysPush: Policy = {
+      name: 'alwaysPush',
+      decide: (_view, legal) => {
+        const action = legal[0];
+        if (action === undefined) throw new Error('합법 수가 없습니다');
+        return action;
+      },
+      decidePush: () => true,
+    };
+    const cfg = {
+      ...RANDOM,
+      mode: 'session' as const,
+      preset: 'arcade' as const,
+      sessionLength: 12,
+    };
+    const records = runSession(cfg, { a: alwaysPush, b: alwaysPush }, 0);
+    expect(records.some((r) => r.pushed)).toBe(true);
+    expect(records.filter((r) => r.pushed).every((r) => r.finalPoints === 0)).toBe(true);
+    expect(records.filter((r) => r.pushed).every((r) => r.netA === r.instantA)).toBe(true);
+    for (let i = 0; i < records.length - 1; i++) {
+      const current = records[i];
+      const next = records[i + 1];
+      if (current === undefined || next === undefined) throw new Error('판 기록 누락');
+      const expected = current.pushed
+        ? current.pushes + 1
+        : current.winner === null
+          ? current.pushes
+          : 0;
+      expect(next.pushes).toBe(expected);
+    }
+    const paidAfterPush = records.find((r) => r.pushes > 0 && r.winner !== null && !r.pushed);
+    expect(paidAfterPush).toBeDefined();
+    expect(paidAfterPush?.mulKinds).toContain('jackpot');
+    expect((paidAfterPush?.multiplier ?? 0) % 2 ** (paidAfterPush?.pushes ?? 0)).toBe(0);
   });
 
   it('결과는 워커 수와 무관하다 (워커 1 vs 2, 결정 시간 제외)', async () => {

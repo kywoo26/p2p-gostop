@@ -19,14 +19,18 @@ export interface DecisionContext {
   readonly timeBudgetMs?: number;
   /** 시계(ms). 기본은 globalThis.performance.now. 테스트에서 주입한다 */
   readonly now?: () => number;
+  /** 결정 직전 잔액(점 단위, 좌석 0/1). 세션이 없으면 무상한 기대값을 사용한다. */
+  readonly balancePoints?: readonly [number, number];
 }
 
 export interface Policy {
   /** 로그·시뮬레이션 표시용 이름 */
   readonly name: string;
   /**
-   * 합법 수 중 하나를 고른다. legal은 view.legal과 같은 목록이다(엔진 legalActions).
+   * 진행 중인 판에서 합법 수 중 하나를 고른다. legal은 view.legal과 같은 목록이다(엔진 legalActions).
    * 반환값은 항상 legal의 원소다.
    */
   decide(view: PlayerView, legal: readonly Action[], ctx: DecisionContext): Action;
+  /** 끝난 판의 밀기 선택. 밀지 않기는 엔진 액션이 아니므로 false면 정산을 받는다. */
+  decidePush?(view: PlayerView, ctx: DecisionContext): boolean;
 }

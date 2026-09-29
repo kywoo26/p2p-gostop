@@ -64,6 +64,28 @@ function restoredPending(h: ReturnType<typeof setup>) {
 }
 
 describe('#29 밀기 경로와 #43 정산 계약', () => {
+  it('동기 전송에서 액션 복구가 끝나면 60초 동안 hello를 더 보내지 않는다 (NP-03·NF-05, #78)', () => {
+    const h = setup(13);
+    for (let step = 0; step < 100 && (h.guest.view?.legal.length ?? 0) === 0; step++) {
+      const action = h.host.hostView()?.legal[0];
+      if (action === undefined) throw new Error('게스트 차례에 도달하지 못함');
+      expect(h.host.apply(action)).toBe(true);
+    }
+    const action = h.guest.view?.legal[0];
+    if (action === undefined) throw new Error('게스트 합법 수 없음');
+    h.guest.advanceTime(1_000);
+    h.host.authenticated = false;
+    const before = h.host.state;
+    h.guest.sendAction(action);
+    expect(h.host.state).toBe(before);
+    h.guest.advanceTime(6_000); // join 안에서 welcome·snapshot·재전송 응답이 모두 끝난다
+    expect(h.host.state).not.toBe(before);
+    expect(h.guest.seq).toBe(h.host.seq);
+    const helloCount = h.gw.sent.filter((m) => m.t === 'hello').length;
+    for (const at of [11_000, 21_000, 41_000, 61_000, 66_000]) h.guest.advanceTime(at);
+    expect(h.gw.sent.filter((m) => m.t === 'hello')).toHaveLength(helloCount);
+  });
+
   it('정상 게스트 push의 응답은 감시를 끝내며 시간이 지나도 재인증하지 않는다', () => {
     const h = pending(1);
     h.guest.advanceTime(1_000);
