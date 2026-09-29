@@ -3,7 +3,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { parseArgs, USAGE, type SideConfig } from './config.ts';
 import { runAll } from './pool.ts';
-import { summarize, toMarkdown } from './stats.ts';
+import { summarize } from './stats.ts';
+import { toMarkdown } from './report.ts';
 
 /** npm run은 작업 공간 폴더에서 실행되므로 상대 경로는 npm을 부른 폴더(INIT_CWD) 기준으로 푼다. */
 const fromCaller = (path: string): string =>
