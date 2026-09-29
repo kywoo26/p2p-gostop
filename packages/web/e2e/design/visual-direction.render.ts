@@ -39,6 +39,9 @@ for (const theme of ['ink', 'club', 'pop']) {
           scroll:
             document.documentElement.scrollWidth > 412 ||
             document.documentElement.scrollHeight > 915,
+          verticalText: [...document.querySelectorAll('#app *')].some((el) =>
+            getComputedStyle(el).writingMode.startsWith('vertical'),
+          ),
           digitSpread: Math.max(...digits) - Math.min(...digits),
           handOverlap: (() => {
             const hand = document.querySelector('.hand');
@@ -56,6 +59,17 @@ for (const theme of ['ink', 'club', 'pop']) {
       expect(layout.images).toBe(true);
       expect(layout.buttons).toBe(true);
       expect(layout.scroll).toBe(false);
+      expect(layout.verticalText).toBe(false);
+      if (scene === 'home') {
+        // 기능 라벨 외 홍보 문구가 다시 들어오는 것을 막는다.
+        expect(await page.locator('#app').innerText()).toMatch(
+          /^◈홈\s*☰\s*맞고\s*친구와 대전\s*↗\s*혼자 연습\s*→\s*기록\s*설정\s*진단$/,
+        );
+      }
+      if (scene === 'settlement') {
+        expect(await page.locator('.result-heading').innerText()).toBe('3번째 판 · 스톱\n승리');
+        expect(await page.locator('.result-foot').innerText()).toBe('3판 완료');
+      }
       expect(layout.handOverlap).toBe(false);
       // Linux Chromium에서는 단일 글리프 측정에 최대 1 CSS px 편차가 관찰된다.
       // 실제 금액은 고정 열에 우측 정렬한다. 실기기 숫자 정렬 검증은 별도다.

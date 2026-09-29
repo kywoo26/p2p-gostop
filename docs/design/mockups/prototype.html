@@ -199,15 +199,6 @@
       bottom: 28px;
       transform: rotate(14deg);
     }
-    .hero .seal {
-      position: absolute;
-      bottom: 70px;
-      left: 5px;
-      color: var(--accent);
-      font-size: 14px;
-      writing-mode: vertical-rl;
-      letter-spacing: 5px;
-    }
     .home-actions {
       display: grid;
       gap: 10px;
@@ -223,19 +214,10 @@
     .home-actions button span {
       font-size: 22px;
     }
-    .note {
-      display: flex;
-      gap: 14px;
-      margin: 24px 0;
-      padding: 18px 0;
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-    }
-    .note strong {
-      font-size: 22px;
-      color: var(--accent);
-    }
     .bottom-nav {
+      margin-top: 32px;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
       display: flex;
       justify-content: space-around;
       gap: 8px;
@@ -604,10 +586,6 @@
     [data-theme="club"] .hero-art:before {
       border-radius: 100px 100px 16px 16px;
     }
-    [data-theme="club"] .hero .seal {
-      left: 12px;
-      bottom: 28px;
-    }
     [data-theme="club"] .scoreboard {
       border: 1px solid var(--line);
       border-radius: 16px;
@@ -659,15 +637,6 @@
     [data-theme="pop"] .hero-art img:nth-child(2) {
       left: 80px;
       bottom: 22px;
-    }
-    [data-theme="pop"] .hero .seal {
-      writing-mode: horizontal-tb;
-      letter-spacing: 0;
-      bottom: 38px;
-      padding: 7px 12px;
-      background: var(--panel);
-      border-radius: 30px;
-      transform: rotate(-8deg);
     }
     [data-theme="pop"] .scoreboard {
       border: 0;
@@ -742,36 +711,12 @@
         : "ink";
       const scene = query.get("scene") || "home";
       document.body.dataset.theme = theme;
-      const variants = {
-        ink: {
-          brand: "사이 · 맞고",
-          kicker: "가까이, 한 판",
-          title: "마주 앉아<br>즐기는 맞고.",
-          subtitle: "두 사람 사이, 가볍고 깊은 한 판.",
-          seal: "한 판의 여유",
-        },
-        club: {
-          brand: "밤의 맞고",
-          kicker: "둘만의 테이블",
-          title: "오늘의 마지막<br>한 판을 위해.",
-          subtitle: "차분한 테이블. 선명한 승부.",
-          seal: "오직 우리 둘",
-        },
-        pop: {
-          brand: "맞고 클럽",
-          kicker: "같이 치면 더 재밌지",
-          title: "딱 한 판?<br>좋아, 한 판!",
-          subtitle: "친구와 착착. 혼자서도 가볍게.",
-          seal: "준비됐어?",
-        },
-      };
-      const v = variants[theme];
       const card = (id, extra = "") =>
         `<img src="../../../packages/web/public/cards/${id}.svg" alt="${id === "back" ? "카드 뒷면" : `${Math.floor(id / 4) + 1}월 화투`}" ${extra}>`;
-      const topBar = (label = v.brand) =>
+      const topBar = (label = "맞고") =>
         `<header class="top"><div class="brand"><i>◈</i>${label}</div><button class="menu" aria-label="메뉴">☰</button></header>`;
       const home = () =>
-        `${topBar()}<section class="hero"><div class="eyebrow">${v.kicker}</div><h1>${v.title}</h1><p>${v.subtitle}</p><div class="hero-art">${card(0)}${card(28)}</div><div class="seal">${v.seal}</div></section><div class="home-actions"><button class="primary">친구와 대전<span>↗</span></button><button class="secondary">혼자 연습<span>→</span></button></div><div class="note"><strong>02</strong><div><b>인터넷 없이, 두 사람만</b><p class="quiet">가까이 있는 친구를 초대해 보세요.</p></div></div><nav class="bottom-nav"><button>기록</button><button>설정</button><button>진단</button></nav><div class="build">p2p-gostop · 39e8af9</div>`;
+        `${topBar("홈")}<section class="hero"><h1>맞고</h1><div class="hero-art">${card(0)}${card(28)}</div></section><div class="home-actions"><button class="primary">친구와 대전<span>↗</span></button><button class="secondary">혼자 연습<span>→</span></button></div><nav class="bottom-nav"><button>기록</button><button>설정</button><button>진단</button></nav>`;
       const piles = (mine) =>
         `<div class="captured">${(mine
           ? [
@@ -794,15 +739,15 @@
           .join("")}</div>`;
       const prompt = () => {
         if (scene === "gostop")
-          return `<section class="prompt go" aria-label="고 스톱 선택"><div class="title"><span>7점, 계속할까요?</span><strong>700냥</strong></div><div class="pair"><button class="secondary">고 · 계속하기</button><button class="primary">스톱 · 700냥</button></div><p class="explain">지금 스톱 예상액 · 고 후 역전되면 고박 위험</p></section>`;
+          return `<section class="prompt go" aria-label="고 스톱 선택"><div class="title"><span>고 / 스톱 · 7점</span><strong>700냥</strong></div><div class="pair"><button class="secondary">고 · 계속하기</button><button class="primary">스톱 · 700냥</button></div><p class="explain">지금 스톱 예상액 · 고 후 역전되면 고박 위험</p></section>`;
         if (scene === "ppeok" || scene === "jjok")
-          return `<section class="prompt effect ${scene}" aria-label="사건 프레임"><div class="event"><strong>${scene === "ppeok" ? "뻑" : "쪽"}</strong><div><p>${scene === "ppeok" ? "나 · 바닥에 묶였어요" : "나 · 한 번에 가져왔어요"}</p><small>${scene === "ppeok" ? "같은 월 3장이 남았어요" : "획득패로 이동 중"}</small></div></div></section>`;
-        return `<section class="prompt target"><div class="title"><span>먹을 패를 골라 주세요</span><small class="quiet">내 차례</small></div><div class="pair"><button class="secondary" aria-label="4월 초단 먹기">${card(13)}<span>4월 · 초단<small>이 패 먹기</small></span></button><button class="secondary" aria-label="4월 피 먹기">${card(15)}<span>4월 · 피<small>이 패 먹기</small></span></button></div><p class="explain">바닥에서 강조된 패와 같은 그림이에요.</p></section>`;
+          return `<section class="prompt effect ${scene}" aria-label="사건 프레임"><div class="event"><strong>${scene === "ppeok" ? "뻑" : "쪽"}</strong><div><p>${scene === "ppeok" ? "나 · 바닥 3장" : "나 · 획득"}</p><small>${scene === "ppeok" ? "같은 월 3장 묶음" : "획득패로 이동 중"}</small></div></div></section>`;
+        return `<section class="prompt target"><div class="title"><span>먹을 패 선택</span><small class="quiet">내 차례</small></div><div class="pair"><button class="secondary" aria-label="4월 초단 먹기">${card(13)}<span>4월 · 초단<small>이 패 먹기</small></span></button><button class="secondary" aria-label="4월 피 먹기">${card(15)}<span>4월 · 피<small>이 패 먹기</small></span></button></div><p class="explain">바닥 후보 2장</p></section>`;
       };
       const game = () =>
-        `${topBar('3번째 판 <small class="quiet">· 정통</small>')}<section class="scoreboard"><div class="seat"><span class="avatar">상</span><span class="who">상대 <small>6장</small></span><span class="points">3<small>점</small></span><span>0고 · ×1</span><span class="balance">149,300냥</span></div><div class="seat mine"><span class="avatar">나</span><span class="who">나</span><span class="points">7<small>점</small></span><span>0고 · ×1</span><span class="balance">150,700냥</span></div></section>${piles(false)}<section class="floor" aria-label="바닥"><div class="deck">${card("back")}<small>더미 15</small></div><div class="floor-grid">${[1, 5, 10, 13, 15, 21, 26, 29].map((id, i) => `<div class="floor-card ${scene === "game" && [3, 4].includes(i) ? "match" : ""}">${card(id)}<span class="month">${Math.floor(id / 4) + 1}월</span></div>`).join("")}</div></section>${prompt()}${piles(true)}<section class="hand-wrap"><div class="hand-label"><b>내 손패</b><span>${scene === "game" || scene === "gostop" ? "선택 후 이어집니다" : "사건 재생 중"}</span></div><div class="hand">${[0, 4, 9, 12, 16, 20, 25, 28, 32, 37].map((id) => `<button aria-label="${Math.floor(id / 4) + 1}월 카드">${card(id)}<span class="month">${Math.floor(id / 4) + 1}월</span></button>`).join("")}</div></section>`;
+        `${topBar('3번째 판 <small class="quiet">· 정통</small>')}<section class="scoreboard"><div class="seat"><span class="avatar">상</span><span class="who">상대 <small>6장</small></span><span class="points">3<small>점</small></span><span>0고 · ×1</span><span class="balance">149,300냥</span></div><div class="seat mine"><span class="avatar">나</span><span class="who">나</span><span class="points">7<small>점</small></span><span>0고 · ×1</span><span class="balance">150,700냥</span></div></section>${piles(false)}<section class="floor" aria-label="바닥"><div class="deck">${card("back")}<small>더미 15</small></div><div class="floor-grid">${[1, 5, 10, 13, 15, 21, 26, 29].map((id, i) => `<div class="floor-card ${scene === "game" && [3, 4].includes(i) ? "match" : ""}">${card(id)}<span class="month">${Math.floor(id / 4) + 1}월</span></div>`).join("")}</div></section>${prompt()}${piles(true)}<section class="hand-wrap"><div class="hand-label"><b>내 손패</b><span>${scene === "game" || scene === "gostop" ? "선택 대기" : "사건 재생 중"}</span></div><div class="hand">${[0, 4, 9, 12, 16, 20, 25, 28, 32, 37].map((id) => `<button aria-label="${Math.floor(id / 4) + 1}월 카드">${card(id)}<span class="month">${Math.floor(id / 4) + 1}월</span></button>`).join("")}</div></section>`;
       const result = () =>
-        `${topBar("한 판의 기록")}<div class="result-heading"><div class="eyebrow">3번째 판 · 스톱</div><h1>잘 가져온 한 판.</h1><p class="quiet">내가 이겼어요</p></div><section class="result-hero"><div class="result-cards">${card(0)}${card(28)}</div><div class="eyebrow">이번 판 획득 금액</div><div class="payout">+700 <small>냥</small></div><p>7점 × 1배 × 점당 100냥</p></section><section><div class="eyebrow">점수와 배수</div><div class="ledger"><div><span>족보 점수</span><b>7점</b></div><div><span>고 가산</span><b>+0점</b></div><div><span>적용 배수</span><b>×1</b></div><div class="total"><span>최종 정산</span><b>700냥</b></div></div></section><section class="money"><div><span class="quiet">내 잔액</span><b>150,000 → 150,700냥</b></div><div><span class="quiet">상대 잔액</span><b>150,000 → 149,300냥</b></div></section><div class="pair"><button class="secondary">세션 종료</button><button class="primary">다음 판 →</button></div><p class="result-foot">함께한 3판 · 다음 판도 같은 규칙으로</p>`;
+        `${topBar("정산")}<div class="result-heading"><div class="eyebrow">3번째 판 · 스톱</div><h1>승리</h1></div><section class="result-hero"><div class="result-cards">${card(0)}${card(28)}</div><div class="eyebrow">이번 판 획득 금액</div><div class="payout">+700 <small>냥</small></div><p>7점 × 1배 × 점당 100냥</p></section><section><div class="eyebrow">점수와 배수</div><div class="ledger"><div><span>족보 점수</span><b>7점</b></div><div><span>고 가산</span><b>+0점</b></div><div><span>적용 배수</span><b>×1</b></div><div class="total"><span>최종 정산</span><b>700냥</b></div></div></section><section class="money"><div><span class="quiet">내 잔액</span><b>150,000 → 150,700냥</b></div><div><span class="quiet">상대 잔액</span><b>150,000 → 149,300냥</b></div></section><div class="pair"><button class="secondary">세션 종료</button><button class="primary">다음 판 →</button></div><p class="result-foot">3판 완료</p>`;
       const app = document.getElementById("app");
       app.className = `app ${scene === "home" ? "home" : scene === "settlement" ? "result" : "game"}`;
       app.innerHTML =

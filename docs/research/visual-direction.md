@@ -75,21 +75,21 @@
 
 ## 5. 한국어 타이포와 실제 용량 (VD-04)
 
-**측정:** Docker FontTools 4.61.1+Brotli 1.2.0. `39e8af9`의 `packages/web/src/**/*.svelte,ts`에서 한국어(주석 포함), 목업 한국어, ASCII/기호를 합한 **714개 문자**. 모든 가중치·OpenType 기능 유지, 힌팅 제거, WOFF2 출력. 번역 카탈로그가 없는 단계의 보수적인 문구 상한이며 사용자 이름/로그 전체 글리프를 보장하지 않는다. [스크립트](../design/mockups/font-study.py), [원본 해시·결과](../design/mockups/font-metrics.json), [코퍼스](../design/mockups/fonts/corpus.txt), [FontTools 공식](https://fonttools.readthedocs.io/en/latest/subset/index.html).
+**측정:** Docker FontTools 4.61.1+Brotli 1.2.0. `39e8af9`의 `packages/web/src/**/*.svelte,ts`에서 한국어(주석 포함), 목업 한국어, ASCII/기호를 합한 **703개 문자**. 모든 가중치·OpenType 기능 유지, 힌팅 제거, WOFF2 출력. 번역 카탈로그가 없는 단계의 보수적인 문구 상한이며 사용자 이름/로그 전체 글리프를 보장하지 않는다. [스크립트](../design/mockups/font-study.py), [원본 해시·결과](../design/mockups/font-metrics.json), [코퍼스](../design/mockups/fonts/corpus.txt), [FontTools 공식](https://fonttools.readthedocs.io/en/latest/subset/index.html).
 
-**실제 사용 글리프 별도 측정:** Playwright가 18개 화면의 `#app.innerText`를 수집했다. 아이콘 기호를 제외한 실제 표시 문구는 **200문자**이며, 같은 옵션의 가변 subset은 Pretendard **50.7 KiB**, SUIT **48.6 KiB**, Wanted **40.0 KiB**, Noto **36.7 KiB**였다. [표시 문구 코퍼스](../design/mockups/fonts/rendered-corpus.txt). 이 작은 표본을 앱 전체 용량으로 오인하지 않도록 아래 표/예산/동봉 파일에는 714문자 상한을 사용한다.
+**실제 사용 글리프 별도 측정:** Playwright가 18개 화면의 `#app.innerText`를 수집했다. 아이콘 기호를 제외한 실제 표시 문구는 **117문자**이며, 같은 옵션의 가변 subset은 Pretendard **32.3 KiB**, SUIT **30.2 KiB**, Wanted **24.8 KiB**, Noto **21.5 KiB**였다. [표시 문구 코퍼스](../design/mockups/fonts/rendered-corpus.txt). 이 작은 표본을 앱 전체 용량으로 오인하지 않도록 아래 표/예산/동봉 파일에는 703문자 상한을 사용한다.
 
-| 폰트 / 공식 출처 | 라이선스·측정 입력 | 입력 크기 → 714문자 가변 WOFF2 | 숫자 기능(실제 파일) | 판단 |
+| 폰트 / 공식 출처 | 라이선스·측정 입력 | 입력 크기 → 703문자 가변 WOFF2 | 숫자 기능(실제 파일) | 판단 |
 |---|---|---:|---|---|
-| [Pretendard Variable](https://github.com/orioncactus/pretendard) | OFL 1.1, v1.3.9 WOFF2 | 2,009.5 → **142.8 KiB** | `tnum` 있음, 기본 숫자는 가변 폭 | A 추천. 긴 한국어 설명과 작은 HUD에 균형 잡힌 기준 서체 |
-| [SUIT Variable](https://github.com/sun-typeface/SUIT), [공식 소개](https://sun.fo/suit/) | OFL 1.1, commit `55118d981336d8fce005eb62888c12c0568ef7b0` WOFF2 | 609.9 → **148.5 KiB** | `tnum` 있음, 기본 가변 폭 | B. 차분한 넓은 공간/얇은 위계와 비교. 기존 sunn-us URL만 보고 다운로드하지 않고 현행 sun-typeface 원본 확인 |
-| [Wanted Sans Variable](https://github.com/wanteddev/wanted-sans) | OFL 1.1, commit `02c9b822349c188ada95f9e2d90c2ed18f853235` WOFF2 | 1,259.1 → **107.8 KiB** | `tnum` 있음, 기본 가변 폭 | C. 무거운 제목과 기하적 인상, 가장 작은 측정 서브셋 |
-| [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) | OFL 1.1, google/fonts `23e54b51ddffbc7713c583748e3bd86f62b1fa4a` TTF | **TTF 10,170.5** → **118.0 KiB WOFF2** | 이 입력은 `tnum` 태그 없음. 기본 0~9 advance가 모두 521로 이미 등폭 | 다국어 fallback 강점. 입력 형식이 달라 원본 압축률을 다른 세 폰트와 순위 비교하면 안 됨 |
+| [Pretendard Variable](https://github.com/orioncactus/pretendard) | OFL 1.1, v1.3.9 WOFF2 | 2,009.5 → **140.3 KiB** | `tnum` 있음, 기본 숫자는 가변 폭 | A 추천. 긴 한국어 설명과 작은 HUD에 균형 잡힌 기준 서체 |
+| [SUIT Variable](https://github.com/sun-typeface/SUIT), [공식 소개](https://sun.fo/suit/) | OFL 1.1, commit `55118d981336d8fce005eb62888c12c0568ef7b0` WOFF2 | 609.9 → **145.2 KiB** | `tnum` 있음, 기본 가변 폭 | B. 차분한 넓은 공간/얇은 위계와 비교. 기존 sunn-us URL만 보고 다운로드하지 않고 현행 sun-typeface 원본 확인 |
+| [Wanted Sans Variable](https://github.com/wanteddev/wanted-sans) | OFL 1.1, commit `02c9b822349c188ada95f9e2d90c2ed18f853235` WOFF2 | 1,259.1 → **106.0 KiB** | `tnum` 있음, 기본 가변 폭 | C. 무거운 제목과 기하적 인상, 가장 작은 측정 서브셋 |
+| [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) | OFL 1.1, google/fonts `23e54b51ddffbc7713c583748e3bd86f62b1fa4a` TTF | **TTF 10,170.5** → **116.7 KiB WOFF2** | 이 입력은 `tnum` 태그 없음. 기본 0~9 advance가 모두 521로 이미 등폭 | 다국어 fallback 강점. 입력 형식이 달라 원본 압축률을 다른 세 폰트와 순위 비교하면 안 됨 |
 | 시스템 스택 | 시스템 설치 서체 사용, 폰트 재배포 없음 | **0B** | 기기·서체에 따라 다름, `tabular-nums`만으로 보장 불가 | 사용자 이름/로그 fallback. Apple SD Gothic Neo와 Android 서체의 폭·굵기 차이 때문에 주 UI 통일에는 불리 |
 
 | 구현 쟁점 | 권고 |
 |---|---|
-| unicode-range | CSS 선언만으로 파일 바이트가 줄지 않는다. 먼저 실제 glyph subset, 그 결과 cmap의 범위를 선언. 이번 목업은 한 파일/가족, 714문자 누락 0. 실서비스는 필요 시 숫자/공통 한글의 **비중복 분할**을 검토 |
+| unicode-range | CSS 선언만으로 파일 바이트가 줄지 않는다. 먼저 실제 glyph subset, 그 결과 cmap의 범위를 선언. 이번 목업은 한 파일/가족, 703문자 누락 0. 실서비스는 필요 시 숫자/공통 한글의 **비중복 분할**을 검토 |
 | 동적 서브셋 배포 | CDN용 수십 파일 전체를 로컬 복사하면 요청량과 **dist 전체 크기**는 별개. 현재 게이트는 dist 전체 합이므로 전체 한글 pack을 넣고 첫 화면만 작다고 주장하지 않음 |
 | 예산 | 사용자 제공 약1,007 KiB를 출발점으로 했고, 이 체크아웃의 Docker `build:web`은 **1,010.2 KiB**였다. 1,536−1,010.2=**525.8 KiB** 여유. 폰트160 + 효과/아이콘12 + 소리48 + 새 UI CSS/JS24 = **244 KiB 상한**, 예상 합 ≤1,254.2 KiB, 여유281.8 KiB. 채택 폰트는 **한 종만** 배포. 이 PR의 목업/폰트는 docs에만 있어 앱 증가0 |
 | 숫자 | `font-variant-numeric: tabular-nums`를 금액/점수/배수에 적용, 쉼표 포함 값은 고정 폭 열+오른쪽 정렬. tnum 태그 보존을 subset 설정에 명시 |

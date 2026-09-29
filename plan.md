@@ -102,7 +102,7 @@ p2p-gostop/
 
 ### 1.8 스택 확정 (v0.2, 웹·도구 계층. Android·CI 계층은 tech-stack.md 권장 스택 그대로)
 
-**시각 방향 조사 제안(2026-09-29, VD-01~05):** 앱 의존성은 추가하지 않는다. Tailwind·shadcn·Storybook·GSAP 금지는 유지하며 비교 근거는 `docs/research/visual-direction.md`, 채택 대기안은 `docs/design/visual-direction.md`에 둔다. 로컬 OFL 폰트 1종의 실제 문구 서브셋만 후속 구현 후보로 제안한다(자산 상한 160 KiB, 사용자 방향 선택 후 확정). 조사 재현에 한해 Docker `python:3.12-slim` 안의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)을 임시 설치해 WOFF2 용량·숫자 기능을 측정한다. 호스트 설치·앱 런타임·npm lock 변경은 없다. 목업 렌더는 기존 Playwright 1.63.0 컨테이너를 사용한다. 이 문단은 앱 스택 변경 승인이 아니다.
+**시각 방향 조사 제안(2026-09-29, VD-01~05):** 앱 의존성은 추가하지 않는다. Tailwind·shadcn·Storybook·GSAP 금지는 유지하며 비교 근거는 `docs/research/visual-direction.md`, 채택 대기안은 `docs/design/visual-direction.md`에 둔다. 로컬 OFL 폰트 1종의 실제 문구 서브셋만 후속 구현 후보로 제안한다(자산 상한 160 KiB, 사용자 방향 선택 후 확정). 조사 재현에 한해 Docker `python:3.12-slim` 안의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)을 임시 설치해 WOFF2 용량·숫자 기능을 측정한다. 방향 미확정 상태의 공통 OFL 파이프라인(`docs/design/fonts/`)은 같은 조사 도구로 해시·글리프·tnum/가변 축·160 KiB gate와 고지 원문 보존을 검증한다. 앱 연결은 채택 후 별도 PR이다. 호스트 설치·앱 런타임·npm lock 변경은 없다. 목업 렌더는 기존 Playwright 1.63.0 컨테이너를 사용한다. 이 문단은 앱 스택 변경 승인이 아니다.
 
 | 계층 | 선택 (2026-09-28 npm latest) | 비고 |
 |---|---|---|
