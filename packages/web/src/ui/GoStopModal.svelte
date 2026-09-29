@@ -33,13 +33,20 @@
     ongo,
     onstop,
   }: Props = $props();
+  // 엔진이 제공한 적용 배수만 요약한다. UI에서 위험 조건을 재판정하지 않는다.
+  const risks = $derived([
+    ...(detail?.steps.some((step) => step.kind === 'piBak') ? ['피박'] : []),
+    ...(detail?.steps.some((step) => step.kind === 'gwangBak') ? ['광박'] : []),
+  ]);
 </script>
 
-<PromptPanel title="고? 스톱?">
+<PromptPanel title={`고? 스톱?${detail?.capped ? ' · 상한 적용' : ''}`}>
   {#snippet actions()}
     <p class="risk">
       <strong>{score}점</strong>{#if opponent}<span>상대 {opponent.score}점 · 피 {opponent.pi}</span
-        >{/if}{#if detail?.capped}<span>상한 적용</span>{/if}
+        >{/if}{#if risks.length}<span class="risk-kind" aria-label={`${risks.join('·')} 위험`}
+          >{risks.join('·')}{risks.length === 1 ? ' 위험' : ''}</span
+        >{/if}
     </p>
     <div class="actions">
       <button type="button" class="go" data-choice="go" onclick={() => ongo?.()}
@@ -67,6 +74,10 @@
     margin: 0 0 2px;
     font-size: 14px;
     line-height: 20px;
+  }
+  .risk-kind {
+    color: var(--color-hand-bomb);
+    font-weight: 650;
   }
   .actions {
     display: grid;

@@ -32,7 +32,14 @@ for (const [width, height] of [
           labelHeight: labels.map((r) => r.height),
           collisions: labels.filter((label) => windows.some((art) => overlap(label, art))).length,
           slotOverlap: slots.some((r, i) => slots.slice(i + 1).some((other) => overlap(r, other))),
-          oldMarks: document.querySelectorAll('.hand .mark, .hand .badge').length,
+          monthMarks: document.querySelectorAll('.hand .mark').length,
+          labelSize: [...document.querySelectorAll('.hand-cue, .group-word')].map(
+            (el) => getComputedStyle(el).fontSize,
+          ),
+          brackets: [...document.querySelectorAll('.group-bracket')].map((el) => {
+            const rect = el.getBoundingClientRect();
+            return { width: rect.width, inside: rect.left >= 0 && rect.right <= innerWidth };
+          }),
           inside: slots.every(
             (r) => r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
           ),
@@ -49,10 +56,16 @@ for (const [width, height] of [
       ).toBe(true);
       expect(report.labelHeight.every((h) => h === 16)).toBe(true);
       if (width === 412 && height === 915)
-        expect(report.windows[0]!.height).toBeCloseTo(report.windows[5]!.height, 1);
+        expect(report.windows[0]!.height).toBeCloseTo(report.windows[9]!.height, 1);
       expect(report.collisions).toBe(0);
       expect(report.slotOverlap).toBe(false);
-      expect(report.oldMarks).toBe(0);
+      expect(report.monthMarks).toBe(10);
+      expect(report.labelSize.every((size) => size === '14px')).toBe(true);
+      expect(report.brackets.every((b) => b.inside && b.width === (width >= 410 ? 184 : 160))).toBe(
+        true,
+      );
+      await expect(page.locator('.group-word')).toHaveText(['폭탄', '흔들']);
+      await expect(page.locator('.hand')).not.toContainText(/대기|폭3|흔3/);
       expect(report.inside).toBe(true);
       expect(report.scoreSize).toBe('24px');
       expect(report.secondarySize).toBe('14px');
@@ -60,8 +73,13 @@ for (const [width, height] of [
       await expect(page.locator('[data-hand-group="sample-bomb"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-action="shake"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-cue="secured"]')).toHaveCount(1);
-      if (state === 'stop')
+      if (state === 'stop') {
         await expect(page.locator('[data-choice="stop"]')).toContainText('2,400냥');
+        await expect(page.locator('.risk-kind')).toHaveText('피박 위험');
+      } else {
+        await expect(page.locator('.idle-slot')).toContainText('내 차례');
+        await expect(page.locator('.idle-slot button')).toHaveText('판 정보');
+      }
       const { violations } = await new AxeBuilder({ page }).analyze();
       expect(violations).toEqual([]);
       await info.attach('손패 그림·표식 배치', {

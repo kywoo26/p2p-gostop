@@ -107,3 +107,22 @@ export function layoutExtras(kind: string): BoardExtras {
       : null,
   };
 }
+
+/** 위험 요약의 제공/미제공 비교용이며 정산 규칙의 기대값이 아니다. */
+export function feedbackExtras(stop: boolean): BoardExtras {
+  return {
+    ...layoutExtras('play'),
+    goStop: stop
+      ? {
+          points: 12,
+          multiplier: 2,
+          money: 2400,
+          capped: false,
+          steps: [
+            { kind: 'base', op: 'add', value: 12, total: 12 },
+            { kind: 'piBak', op: 'mul', value: 2, total: 24 },
+          ],
+        }
+      : null,
+  };
+}

@@ -8,6 +8,7 @@
     layoutFixture,
     layoutExtras,
     feedbackFixture,
+    feedbackExtras,
     feedbackGroups,
   } from '../../../lib/layout-fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
@@ -117,7 +118,11 @@
 {#if page === 'feedback-play' || page === 'feedback-stop'}
   <main>
     <h1 class="fixture-title">게임판 시각 검토</h1>
-    <Board view={feedbackFixture(page === 'feedback-stop')} handVisualGroups={feedbackGroups} />
+    <Board
+      view={feedbackFixture(page === 'feedback-stop')}
+      handVisualGroups={feedbackGroups}
+      extras={feedbackExtras(page === 'feedback-stop')}
+    />
   </main>
 {:else if page === 'layout-event' || page === 'layout-event-target'}
   <Board

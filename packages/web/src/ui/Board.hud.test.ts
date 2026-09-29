@@ -96,7 +96,7 @@ test('배수 의미는 스톱 선택 여부를 따라 바뀌며 숫자·현황�
     '누적 배수, 박 제외',
   );
   expect(screen.container.querySelectorAll('[role="status"]')).toHaveLength(1);
-  await expect.element(screen.getByText('생각 중…')).toBeVisible();
+  await expect.element(screen.getByText('상대 차례 · 생각 중')).toBeVisible();
   await screen.rerender({ view: goStop, busy: false, thinking: false });
   expect(screen.container.querySelector('.me .multiplier')?.getAttribute('aria-label')).toContain(
     '스톱 배수',

@@ -250,7 +250,7 @@
     />
   </div>
 
-  <div class="decision-area" inert={landscape}>
+  <div class="decision-area" class:idle-slot={!selecting && !extras?.canFlipOnly} inert={landscape}>
     <div class="decision-content">
       <EventRail
         {banner}
@@ -258,7 +258,7 @@
         {actor}
         blocked={selecting || !!extras?.canFlipOnly}
         idle={thinking
-          ? '생각 중…'
+          ? '상대 차례 · 생각 중'
           : busy
             ? '진행 중'
             : playable.length > 0
@@ -357,7 +357,7 @@
       onclick={() => {
         if (busy) onskip?.();
         infoDialog.showModal();
-      }}>판<br />정보</button
+      }}>판 정보</button
     >
   </div>
   <div class="captured-zone mine">
@@ -515,6 +515,19 @@
   .captured-zone :global(.group) {
     min-width: 0;
   }
+  .captured-zone :global(.name) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--color-hud-outline);
+    border-radius: 6px;
+    background: var(--color-hud);
+    color: var(--color-hud-text);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
   .captured-zone :global(.name small) {
     display: none;
   }
@@ -538,6 +551,19 @@
     gap: 8px;
     min-height: 0;
     align-items: center;
+  }
+  .decision-area.idle-slot {
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 3px;
+    padding-left: 12px;
+    border: 1px solid color-mix(in oklch, var(--color-hud-muted) 20%, transparent);
+    border-radius: 12px;
+    background: color-mix(in oklch, var(--color-hud) 25%, transparent);
+  }
+  .idle-slot .info-button {
+    padding: 0 12px;
+    white-space: nowrap;
   }
   .decision-content {
     min-height: 0;

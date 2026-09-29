@@ -11,6 +11,6 @@ export const HAND_CUES = {
   playable: { label: '낼 수 있음', short: '내기' },
   matchable: { label: '먹을 수 있음', short: '먹기' },
   secured: { label: '확정 획득 짝', short: '확정' },
-  bomb: { label: '폭탄 가능', short: '폭3' },
-  shake: { label: '흔들기 가능', short: '흔3' },
+  bomb: { label: '폭탄 가능', short: '폭탄' },
+  shake: { label: '흔들기 가능', short: '흔들' },
 } as const;

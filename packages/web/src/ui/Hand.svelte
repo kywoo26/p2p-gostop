@@ -8,7 +8,7 @@
   // 손가락을 떼기 전에 재생이 끝나 버튼이 풀릴 수 있다. 그 click은 건너뛰기용이었으므로 카드를 내지 않는다.
   import type { CardId } from '../lib/view-types.ts';
   import Card from './Card.svelte';
-  import { cardIndex, cardLabel, sortHand } from './cards.ts';
+  import { cardLabel, sortHand } from './cards.ts';
   import { HAND_CUES, type HandVisualGroup } from './hand-visual.ts';
 
   interface Props {
@@ -42,11 +42,25 @@
   const ONE_ROW_MAX = 5;
   const LONG_PRESS_MS = 400;
   const sorted = $derived(sortHand(cards));
-  const rows = $derived(
-    sorted.length <= ONE_ROW_MAX
-      ? [sorted]
-      : [sorted.slice(0, Math.ceil(sorted.length / 2)), sorted.slice(Math.ceil(sorted.length / 2))],
-  );
+  const rows = $derived.by(() => {
+    if (sorted.length <= ONE_ROW_MAX) return [sorted];
+    const middle = Math.ceil(sorted.length / 2);
+    // compact는 최대 6열(360px에서 328px). 월 순서를 보존하며 행동 묶음 경계를 우선한다.
+    const split = compact
+      ? ([middle, middle + 1, middle - 1].find(
+          (at) =>
+            at <= 6 &&
+            sorted.length - at <= 6 &&
+            !visualGroups.some(
+              (group) =>
+                group.kind !== 'secured' &&
+                group.cards.includes(sorted[at - 1]!) &&
+                group.cards.includes(sorted[at]!),
+            ),
+        ) ?? middle)
+      : middle;
+    return [sorted.slice(0, split), sorted.slice(split)];
+  });
   const myTurn = $derived(playable.length > 0);
 
   /** 누르기 시작한 카드·시각, 그때 낼 수 있었는지 (반응형일 필요 없음) */
@@ -127,7 +141,9 @@
           (group) => group.kind === 'secured' && group.cards.includes(id),
         )}
         {@const cue = secured ? 'secured' : canMatch ? 'matchable' : canPlay ? 'playable' : null}
-        {@const index = cardIndex(id)}
+        {@const fragment = group ? row.filter((card) => group.cards.includes(card)) : []}
+        {@const groupStart = group && fragment[0] === id}
+        {@const firstFragment = group && sorted.find((card) => group.cards.includes(card)) === id}
         <button
           type="button"
           class={[
@@ -159,21 +175,27 @@
               size="l"
               dimmed={!canPlay}
               flippable
-              marks={!compact}
               markAt={rows.length > 1 && r === 0 ? 'top' : 'bottom'}
             />
           </span>
           {#if compact}
             <span class="hand-label" data-cue={cue} aria-hidden="true">
-              <span class="month-index">{index?.month ?? '+'}</span>
-              <span class="match-mark"></span>
-              <span class="hand-cue" data-action={group?.kind}
-                >{group
-                  ? `${group.kind === 'bomb' ? '폭' : '흔'}${group.cards.length}`
-                  : cue
-                    ? HAND_CUES[cue].short
-                    : '대기'}</span
-              >
+              {#if !group && (cue === 'matchable' || cue === 'secured')}
+                <span class="match-mark"></span><span class="hand-cue">{HAND_CUES[cue].short}</span>
+              {/if}
+              {#if groupStart}
+                <span
+                  class="group-bracket"
+                  data-action={group.kind}
+                  style:width={`calc(${fragment.length} * var(--card-w-l) + ${(fragment.length - 1) * 8}px)`}
+                >
+                  {#if firstFragment}<span class="group-word">
+                      {#if cue === 'secured' || cue === 'matchable'}<span class="match-mark"
+                        ></span>{/if}
+                      {HAND_CUES[group.kind].short}
+                    </span>{/if}
+                </span>
+              {/if}
             </span>
           {/if}
         </button>
@@ -283,62 +305,72 @@
     display: none;
   }
   .hand-label {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0;
+    justify-content: center;
+    gap: 5px;
     height: 16px;
-    padding: 0 1px;
-    background: var(--color-hud);
     color: var(--color-hud-text);
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 650;
     line-height: 16px;
-    font-variant-numeric: tabular-nums;
-  }
-  .month-index {
-    font-weight: 750;
-  }
-  .hand-cue {
-    color: var(--color-hud-muted);
-    font-size: 12px;
-    line-height: 12px;
   }
   .match-mark {
     flex: none;
-    width: 6px;
-    height: 2px;
-    background: var(--color-hud-muted);
+    width: 8px;
+    height: 8px;
+    box-sizing: border-box;
   }
   .hand-label[data-cue='matchable'] {
     color: var(--color-hand-match);
   }
   .hand-label[data-cue='matchable'] .match-mark {
-    height: 6px;
-    background: currentColor;
+    border: 1.5px solid currentColor;
+    background: transparent;
     rotate: 45deg;
   }
   .hand-label[data-cue='secured'] {
     color: var(--color-hand-secured);
   }
   .hand-label[data-cue='secured'] .match-mark {
-    width: 6px;
-    height: 6px;
-    border: 3px double;
     border-radius: 50%;
-    background: none;
+    background: currentColor;
+    outline: 1px solid currentColor;
+    outline-offset: 2px;
   }
-  .hand-label[data-cue='secured'] .hand-cue:not([data-action]),
-  .hand-label[data-cue='matchable'] .hand-cue:not([data-action]) {
-    color: inherit;
-  }
-  .hand-cue[data-action='bomb'] {
+  .group-bracket {
+    position: absolute;
+    top: 1px;
+    left: 0;
+    height: 14px;
+    border: 1px solid var(--color-hand-bomb);
+    border-width: 0 1px 1px;
+    border-radius: 0 0 3px 3px;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     color: var(--color-hand-bomb);
-    border: 1px double;
-    border-width: 0 0 3px;
+    z-index: 1;
   }
-  .hand-cue[data-action='shake'] {
+  .group-bracket[data-action='shake'] {
     color: var(--color-hand-shake);
-    border-bottom: 2px dashed;
+    border-color: currentColor;
+    border-style: dashed;
+  }
+  .group-word {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+    background: var(--color-felt);
+  }
+  .group-word .match-mark {
+    color: var(--color-hand-secured);
+  }
+  .hand-label[data-cue='matchable'] .group-word .match-mark {
+    color: var(--color-hand-match);
   }
   .compact .group-selected {
     outline: 2px dashed var(--color-hand-bomb);
@@ -363,9 +395,6 @@
         calc(var(--hand-height, 184px) - var(--card-h-l) - 36px),
         var(--card-h-l)
       );
-    }
-    .hand-cue {
-      font-size: 12px;
     }
   }
 </style>

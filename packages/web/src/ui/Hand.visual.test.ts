@@ -18,7 +18,7 @@ test('폭탄 시각 묶음은 3장에만 적용하고 액션 판정을 대신하
     onplay,
   });
   expect(screen.container.querySelectorAll('.group-selected')).toHaveLength(3);
-  expect(screen.container.querySelectorAll('.mark, .badge')).toHaveLength(0);
+  expect(screen.container.querySelectorAll('.mark')).toHaveLength(4);
   expect(screen.container.querySelector('[data-slot="0"]')?.getAttribute('data-hand-cue')).toBe(
     'secured',
   );
@@ -29,7 +29,9 @@ test('폭탄 시각 묶음은 3장에만 적용하고 액션 판정을 대신하
   expect(onplay).toHaveBeenCalledTimes(1);
   expect(onplay.mock.calls[0]?.[0]).toBe(0);
   await screen.rerender({ visualGroups: [{ id: 'bomb-1', kind: 'bomb', cards: [0, 1] }] });
-  expect(screen.container.querySelector('[data-slot="0"] .hand-cue')?.textContent).toBe('폭2');
+  expect(screen.container.querySelectorAll('.group-word')).toHaveLength(1);
+  expect(screen.container.querySelector('.group-word')?.textContent).toContain('폭탄');
+  expect(screen.container.textContent).not.toContain('대기');
   await screen.rerender({ selectedGroup: null, visualGroups: [] });
   expect(screen.container.querySelectorAll('.group-selected')).toHaveLength(0);
   expect(screen.container.querySelector('[data-hand-cue="secured"]')).toBeNull();
