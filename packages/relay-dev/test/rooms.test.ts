@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { tokenHash } from '../src/auth.ts';
 import { describe, expect, it } from 'vitest';
 import {
   Rooms,
@@ -36,11 +37,14 @@ describe('공개 방', () => {
         now + INVITE_LIFETIME,
       ),
     ).toBe(true);
-    expect(rooms.claim(created.state, invite, now)).toBe(true);
-    expect(rooms.claim(created.state, invite, now)).toBe(false);
-    expect(rooms.claim(created.state, invite, now + CLAIM_LEASE + 1)).toBe(true);
-    expect(rooms.confirm(created.state, invite, resume, now + CLAIM_LEASE + 2)).toBe(true);
-    expect(rooms.claim(created.state, invite, now + CLAIM_LEASE + 3)).toBe(false);
+    const key = rooms.claim(created.state, invite, now);
+    expect(key).toBe(tokenHash(invite).toString('hex'));
+    expect(key).not.toBe(invite);
+    expect(created.state.claims.has(key!)).toBe(true);
+    expect(rooms.claim(created.state, invite, now)).toBeNull();
+    expect(rooms.claim(created.state, invite, now + CLAIM_LEASE + 1)).toBe(key);
+    expect(rooms.confirm(created.state, key!, resume, now + CLAIM_LEASE + 2)).toBe(true);
+    expect(rooms.claim(created.state, invite, now + CLAIM_LEASE + 3)).toBeNull();
     expect(rooms.auth.authenticate(created.state.room, 'guest', resume)).toBe('resume');
   });
   it('코드 15분, 방 절대 6시간, host 단절 10분', () => {

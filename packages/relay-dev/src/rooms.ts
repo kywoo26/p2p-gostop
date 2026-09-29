@@ -77,37 +77,42 @@ export class Rooms {
     const state = id ? this.get(id, now) : undefined;
     return state && !state.joined && state.codeExpiresAt > now ? state : undefined;
   }
-  claim(state: RoomState, token: string, now = Date.now()): boolean {
+  claim(state: RoomState, token: string, now = Date.now()): string | null {
     const key = tokenHash(token).toString('hex');
     const item = state.room.credentials.get(key);
-    if (!item || item.permission !== 'invite' || item.expiresAt <= now) return false;
+    if (!item || item.permission !== 'invite' || item.expiresAt <= now) return null;
     const until = state.claims.get(key);
-    if (until !== undefined && until > now) return false;
+    if (until !== undefined && until > now) return null;
     state.claims.set(key, now + CLAIM_LEASE);
-    return true;
+    return key;
   }
-  release(state: RoomState, token: string): void {
-    state.claims.delete(tokenHash(token).toString('hex'));
+  release(state: RoomState, key: string): void {
+    state.claims.delete(key);
   }
-  confirm(state: RoomState, inviteToken: string, resumeToken: string, now = Date.now()): boolean {
-    const key = tokenHash(inviteToken).toString('hex');
+  confirm(state: RoomState, key: string, resumeToken: string, now = Date.now()): boolean {
     const until = state.claims.get(key);
-    if (until === undefined || until <= now) return false;
-    if (!this.registerResume(state, resumeToken)) return false;
+    const credential = state.room.credentials.get(key);
+    if (
+      until === undefined ||
+      until <= now ||
+      credential?.permission !== 'invite' ||
+      credential.expiresAt <= now
+    )
+      return false;
+    if (!this.registerResume(state, resumeToken, now)) return false;
     state.room.credentials.delete(key);
     state.claims.delete(key);
     state.joined = true;
     this.codes.delete(state.code);
     return true;
   }
-  registerResume(state: RoomState, token: string): boolean {
-    const key = tokenHash(token).toString('hex');
-    if (state.room.credentials.has(key)) return false;
-    state.room.credentials.set(key, {
-      hash: tokenHash(token),
-      permission: 'resume',
-      expiresAt: state.expiresAt,
-    });
+  registerResume(state: RoomState, token: string, now = Date.now()): boolean {
+    return this.auth.registerGuest(state.room, token, 'resume', state.expiresAt, now);
+  }
+  acceptCode(state: RoomState, token: string, now = Date.now()): boolean {
+    if (state.joined || !this.registerResume(state, token, now)) return false;
+    state.joined = true;
+    this.codes.delete(state.code);
     return true;
   }
   delete(id: string): void {

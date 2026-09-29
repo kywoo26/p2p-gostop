@@ -8,7 +8,6 @@ import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 export interface ReleaseConfig {
   readonly id: string;
   readonly distDir: string;
-  readonly wireVersion: number;
 }
 interface Asset {
   readonly body: Buffer;
@@ -75,11 +74,7 @@ export class StaticSite {
     const releases: Release[] = [];
     const ids = new Set<string>();
     for (const config of configs) {
-      if (
-        !RELEASE_ID.test(config.id) ||
-        ids.has(config.id) ||
-        !Number.isInteger(config.wireVersion)
-      )
+      if (!RELEASE_ID.test(config.id) || ids.has(config.id))
         throw new Error('invalid release metadata');
       ids.add(config.id);
       const root = resolve(config.distDir);
@@ -92,10 +87,31 @@ export class StaticSite {
         hash.update(asset.body);
       }
       const digest = hash.digest('hex');
+      let metadata: unknown;
+      try {
+        const metadataPath = join(root, 'version.json');
+        if (!(await lstat(metadataPath)).isFile()) throw new Error('invalid metadata file');
+        metadata = JSON.parse(await readFile(metadataPath, 'utf8'));
+      } catch {
+        throw new Error('missing or invalid artifact version.json');
+      }
+      if (
+        !metadata ||
+        typeof metadata !== 'object' ||
+        !('wireVersion' in metadata) ||
+        !('hash' in metadata) ||
+        typeof metadata.wireVersion !== 'number' ||
+        !Number.isSafeInteger(metadata.wireVersion) ||
+        metadata.wireVersion < 1 ||
+        metadata.hash !== digest
+      )
+        throw new Error('artifact version/hash mismatch');
+      if (releases.length === 0 && metadata.wireVersion !== PROTOCOL_VERSION)
+        throw new Error('current artifact wire version mismatch');
       releases.push({
         id: config.id,
         hash: digest,
-        wireVersion: config.wireVersion,
+        wireVersion: metadata.wireVersion,
         path: `/r/${config.id}/${digest}/`,
         files,
       });

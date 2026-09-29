@@ -56,6 +56,9 @@ class Client {
   send(value: unknown): void {
     this.ws.send(JSON.stringify(value));
   }
+  sendRaw(value: string): void {
+    this.ws.send(value);
+  }
   closeCode(): Promise<number> {
     return new Promise((resolve) => this.ws.once('close', (code) => resolve(code)));
   }
@@ -92,6 +95,8 @@ it('코드 존재/부재/점유는 같은 대기 응답, host 수락만 자격 �
   expect(await missing.next()).toBe(await pending.next());
   const requestId = field(await host.next(), 'requestId');
   const guestToken = token();
+  host.send({ t: 'relay-accept', requestId, token: hostToken });
+  host.send({ t: 'relay-accept', requestId, token: secret });
   host.send({ t: 'relay-accept', requestId: requestId, token: guestToken });
   const codeAccepted = await pending.next();
   expect(field(codeAccepted, 'token')).toBe(guestToken);
@@ -144,12 +149,39 @@ it('초대는 host 확정 뒤 한 번만 쓰고 위조 복귀는 좌석을 교�
   expect(await guest.next()).toContain('claim-pending');
   const claimId = field(await host.next(), 'requestId');
   const resume = token();
+  host.send({ t: 'relay-accept', requestId: claimId, token: hostToken });
+  host.send({ t: 'relay-accept', requestId: claimId, token: secret });
   host.send({ t: 'relay-accept', requestId: claimId, token: resume });
   const inviteAccepted = await guest.next();
   expect(field(inviteAccepted, 'token')).toBe(resume);
   expect(field(inviteAccepted, 'roomId')).toBe(roomId);
   expect(await guest.next()).toContain('present');
   expect(await host.next()).toContain('joined');
+  const duplicateToken = token();
+  host.send({ t: 'relay-accept', requestId: claimId, token: duplicateToken });
+  guest.send({ t: 'hello', from: 'guest' });
+  expect(await host.next()).toBe('{"t":"hello","from":"guest"}');
+  host.send({ t: 'hello', from: 'host' });
+  expect(await guest.next()).toBe('{"t":"hello","from":"host"}');
+  for (const attacker of [guest, host]) {
+    const peer = attacker === guest ? host : guest;
+    for (const raw of [
+      '{"t":"relay-accepted","token":"forged"}',
+      '{"t":"relay\\u002daccepted","token":"forged"}',
+      '{"\\u0074":"relay-accepted","token":"forged"}',
+      '{"t":"relay","peer":"joined"}',
+    ])
+      attacker.sendRaw(raw);
+    attacker.sendRaw('{"t":"game","safe":true}');
+    expect(await peer.next()).toBe('{"t":"game","safe":true}');
+  }
+  const duplicate = new Client(`ws://127.0.0.1:${relay.port}/ws?role=guest&room=${roomId}`);
+  await duplicate.open();
+  const duplicateClosed = duplicate.closeCode();
+  duplicate.send({ t: 'relay-auth', token: duplicateToken });
+  expect(await duplicateClosed).toBe(1008);
+  guest.send({ t: 'game', n: 2 });
+  expect(await host.next()).toBe('{"t":"game","n":2}');
   const replay = new Client(`ws://127.0.0.1:${relay.port}/ws?role=guest&room=${roomId}`);
   await replay.open();
   const closed = replay.closeCode();

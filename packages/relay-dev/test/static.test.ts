@@ -6,6 +6,7 @@ import { afterEach, expect, it } from 'vitest';
 import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import { startRelay, type Relay } from '../src/index.ts';
 import { StaticSite } from '../src/static.ts';
+import { writeArtifact } from './artifact.ts';
 
 const origin = 'https://relay.example.test';
 let directory: string | undefined;
@@ -21,23 +22,23 @@ it('dist만 release/hash 경로로 제공하고 traversal·설정·sourcemap을 
   directory = await mkdtemp(join(tmpdir(), 'relay-static-'));
   const dist = join(directory, 'dist');
   await mkdir(join(dist, 'assets'), { recursive: true });
-  await writeFile(join(dist, 'index.html'), '<html>release</html>');
-  await writeFile(join(dist, 'assets', 'app.js'), 'console.log("local")');
+  await writeArtifact(dist, PROTOCOL_VERSION, {
+    'index.html': '<html>release</html>',
+    'assets/app.js': 'console.log("local")',
+  });
   await writeFile(join(dist, '.env'), 'secret');
   await writeFile(join(dist, 'config.json'), '{"secret":"hidden"}');
   await writeFile(join(dist, 'assets', 'app.js.map'), 'source');
   await writeFile(join(directory, 'outside.js'), 'outside');
   await symlink(join(directory, 'outside.js'), join(dist, 'assets', 'link.js'));
-  const site = await StaticSite.load([
-    { id: 'v0.2.2', distDir: dist, wireVersion: PROTOCOL_VERSION },
-  ]);
+  const site = await StaticSite.load([{ id: 'v0.2.2', distDir: dist }]);
   const path = site.current.path;
   expect(path).toMatch(/^\/r\/v0\.2\.2\/[0-9a-f]{64}\/$/);
   relay = await startRelay({
     publicMode: {
       creationSecret: randomBytes(32).toString('base64url'),
       allowedOrigins: [origin],
-      releases: [{ id: 'v0.2.2', distDir: dist, wireVersion: PROTOCOL_VERSION }],
+      releases: [{ id: 'v0.2.2', distDir: dist }],
     },
   });
   const base = `http://127.0.0.1:${relay.port}`;
@@ -60,6 +61,7 @@ it('dist만 release/hash 경로로 제공하고 traversal·설정·sourcemap을 
   for (const suffix of [
     '.env',
     'config.json',
+    'version.json',
     'assets/app.js.map',
     'assets/link.js',
     'assets/../outside.js',
@@ -74,14 +76,28 @@ it('dist만 release/hash 경로로 제공하고 traversal·설정·sourcemap을 
 
 it('중복 release 및 소스맵만 있는 artifact를 거부한다', async () => {
   directory = await mkdtemp(join(tmpdir(), 'relay-static-'));
-  await writeFile(join(directory, 'index.html'), 'ok');
-  await expect(
-    StaticSite.load([{ id: '../bad', distDir: directory, wireVersion: PROTOCOL_VERSION }]),
-  ).rejects.toThrow('invalid release metadata');
+  await writeArtifact(directory, PROTOCOL_VERSION, { 'index.html': 'ok' });
+  await expect(StaticSite.load([{ id: '../bad', distDir: directory }])).rejects.toThrow(
+    'invalid release metadata',
+  );
   await expect(
     StaticSite.load([
-      { id: 'v1.0.0', distDir: directory, wireVersion: PROTOCOL_VERSION },
-      { id: 'v1.0.0', distDir: directory, wireVersion: PROTOCOL_VERSION },
+      { id: 'v1.0.0', distDir: directory },
+      { id: 'v1.0.0', distDir: directory },
     ]),
   ).rejects.toThrow('invalid release metadata');
+  await rm(join(directory, 'version.json'));
+  await expect(StaticSite.load([{ id: 'v1.0.0', distDir: directory }])).rejects.toThrow(
+    'missing or invalid artifact version.json',
+  );
+  await symlink(join(directory, 'index.html'), join(directory, 'version.json'));
+  await expect(StaticSite.load([{ id: 'v1.0.0', distDir: directory }])).rejects.toThrow(
+    'missing or invalid artifact version.json',
+  );
+  await rm(join(directory, 'version.json'));
+  await writeArtifact(directory, PROTOCOL_VERSION, { 'index.html': 'ok' });
+  await writeFile(join(directory, 'index.html'), 'tampered');
+  await expect(StaticSite.load([{ id: 'v1.0.0', distDir: directory }])).rejects.toThrow(
+    'artifact version/hash mismatch',
+  );
 });
