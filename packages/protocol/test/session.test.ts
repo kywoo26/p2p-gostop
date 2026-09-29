@@ -919,6 +919,150 @@ describe('#40 absent는 인증을 되돌리지 않는다, 응답 없는 요청 �
     expect(h.guest.seq).toBe(h.host.seq);
   });
 
+  for (const lost of ['hello', 'welcome'] as const)
+    it(`재인증 ${lost} 유실에도 advanceTime이 hello를 재시도하고 요청을 복구한다`, () => {
+      const { h } = confirmedAtGuestTurn(16);
+      h.guest.advanceTime(1_000);
+      h.host.authenticated = false;
+      const state = h.host.state;
+      h.guest.sendAction(guestMoves(h.guest)[0]!);
+      h.link.flush(); // 인증 전 action은 응답 없이 버려진다
+      expect(h.host.state).toBe(state);
+      h.guest.advanceTime(6_000);
+      expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+      let welcomeFrame: string | null = null;
+      if (lost === 'hello') h.link.drop();
+      else {
+        h.link.deliver(); // hello를 받은 호스트가 welcome과 resync 프레임을 보낸다
+        welcomeFrame = frameType(h.link.queue[0]!.raw);
+        h.link.drop();
+        h.link.flush();
+      }
+      expect(welcomeFrame).toBe(lost === 'welcome' ? 'welcome' : null);
+      h.guest.advanceTime(10_999);
+      expect(h.link.queue).toEqual([]);
+      h.guest.advanceTime(11_000);
+      expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+      h.link.flush();
+      expect(h.host.state).not.toBe(state);
+      expect(h.guest.seq).toBe(h.host.seq);
+      h.guest.advanceTime(61_000);
+      expect(h.link.queue).toEqual([]);
+    });
+
+  it('welcome 뒤 재동기화 snapshot 유실에도 hello를 재시도해 outbox를 보낸다', () => {
+    const { h } = confirmedAtGuestTurn(20);
+    h.guest.advanceTime(1_000);
+    h.host.authenticated = false;
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    h.link.flush();
+    h.guest.advanceTime(6_000);
+    h.link.deliver(); // hello
+    h.link.deliver(); // welcome
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['snapshot']);
+    h.link.drop();
+    h.guest.advanceTime(11_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+  });
+
+  it('hello 재시도 간격은 5·10·20초 뒤 30초 상한이다', () => {
+    const { h } = confirmedAtGuestTurn(21);
+    h.guest.advanceTime(1_000);
+    h.host.authenticated = false;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    h.link.flush();
+    for (const at of [6_000, 11_000, 21_000, 41_000, 71_000]) {
+      h.guest.advanceTime(at - 1);
+      expect(h.link.queue).toEqual([]);
+      h.guest.advanceTime(at);
+      expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+      h.link.drop();
+    }
+  });
+
+  it('재인증 snapshot과 이전 요청의 STALE_SEQ가 재전송 action의 감시를 지우지 않는다', () => {
+    const { h } = confirmedAtGuestTurn(17);
+    h.guest.advanceTime(1_000);
+    h.host.authenticated = false;
+    const state = h.host.state;
+    h.guest.sendAction(guestMoves(h.guest)[0]!);
+    h.link.flush();
+    h.guest.advanceTime(6_000);
+    h.link.deliver(); // hello → welcome, snapshot/events
+    expect(frameType(h.link.queue[0]!.raw)).toBe('welcome');
+    h.link.deliver(); // welcome 뒤에는 재동기화 snapshot을 먼저 기다린다
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['snapshot']);
+    h.link.deliver(); // snapshot을 적용한 뒤 action을 다시 보낸다
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['action']);
+    h.link.drop(); // 재전송 action 유실
+    h.link.inject(
+      1,
+      encode({
+        t: 'snapshot',
+        seq: h.guest.seq - 1,
+        view: h.guest.view!,
+        ledger: h.guest.ledger!,
+        status: h.guest.status!,
+      }),
+    );
+    h.link.inject(
+      1,
+      encode({ t: 'reject', seq: h.guest.seq - 1, reason: 'STALE_SEQ', message: 'old' }),
+    );
+    h.link.flush();
+    h.guest.advanceTime(10_999);
+    expect(h.link.queue).toEqual([]);
+    h.guest.advanceTime(11_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+    h.link.flush();
+    expect(h.host.state).not.toBe(state);
+    expect(h.guest.seq).toBe(h.host.seq);
+  });
+
+  it('이전 판 ready의 status는 새 판 ready의 감시를 지우지 않는다', () => {
+    const h = setup({ seed: 18 });
+    h.guest.join();
+    playRound(h, new Picker(18));
+    h.guest.requestNextRound();
+    h.link.deliver();
+    const oldStatus = h.link.queue[0]!.raw;
+    expect(frameType(oldStatus)).toBe('status');
+    h.link.flush();
+    h.host.nextRound();
+    playRound(h, new Picker(19));
+    h.guest.advanceTime(1_000);
+    h.guest.requestNextRound();
+    h.link.drop(); // 새 ready 요청을 유실시킨다
+    h.link.inject(1, oldStatus);
+    h.link.deliver();
+    h.guest.advanceTime(6_000);
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['hello']);
+  });
+
+  it('단계 전환 뒤 무시된 ready도 실제 감시를 만들고 host status로 해제한다', () => {
+    const h = setup({ seed: 19 });
+    h.guest.join();
+    playRound(h, new Picker(19));
+    h.guest.advanceTime(1_000);
+    h.guest.requestNextRound();
+    expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['ready']);
+    h.host.nextRound();
+    const before = h.link.queue.filter((f) => frameType(f.raw) === 'status').length;
+    h.link.deliver(nth(h.link, 0, 0)); // 단계가 바뀐 뒤 ready를 배달한다
+    const statuses = h.link.queue.filter((f) => frameType(f.raw) === 'status');
+    expect(statuses).toHaveLength(before + 1);
+    const response = decode(statuses.at(-1)!.raw, 'host');
+    expect(response.ok && response.message.t === 'status' && response.message.status.stage).toBe(
+      'handshake',
+    );
+    h.link.flush();
+    h.guest.advanceTime(6_000);
+    expect(h.link.queue.filter((f) => frameType(f.raw) === 'hello')).toEqual([]);
+  });
+
   it('응답을 받은 요청은 다시 보내지 않는다 (거짓 재인증 없음)', () => {
     const h = setup({ seed: 15 });
     const picker = new Picker(15);
@@ -934,13 +1078,6 @@ describe('#40 absent는 인증을 되돌리지 않는다, 응답 없는 요청 �
     }
     h.guest.requestNextRound();
     h.guest.requestLedgerHistory(0);
-    h.link.flush();
-    h.guest.advanceTime((now += 60_000));
-    expect(h.link.queue).toEqual([]);
-    // 판 사이가 아닐 때 보낸 ready도 호스트가 단계로 답하므로 되풀이하지 않는다
-    h.host.nextRound();
-    h.link.flush();
-    h.link.inject(0, encode({ t: 'ready', round: h.host.roundNumber }));
     h.link.flush();
     h.guest.advanceTime((now += 60_000));
     expect(h.link.queue).toEqual([]);

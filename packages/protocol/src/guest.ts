@@ -79,6 +79,14 @@ export type GuestConnection = 'idle' | 'joining' | 'joined' | 'tokenRejected' | 
 
 const CHECK_LIMIT = 100;
 const ERROR_LIMIT = 200;
+const HELLO_RETRY_MAX_MS = 30_000;
+
+interface PendingRequest {
+  readonly message: GuestMessage;
+  readonly since: number;
+  readonly statusRev: number;
+  readonly round: number;
+}
 
 export class GuestSession {
   readonly transport: Transport;
@@ -117,14 +125,18 @@ export class GuestSession {
    * 말없이 버려진다. 연결이 끊긴 동안의 요청은 outbox에 두었다가 welcome 뒤에 보낸다(액션은 마지막 것 하나).
    */
   private linked = false;
+  /** welcome 뒤 호스트의 재동기화 프레임을 먼저 소비한 뒤 outbox를 보낸다. */
+  private awaitingResync = false;
   private readonly outbox = new Map<string, GuestMessage>();
   /**
    * 보냈지만 호스트 응답을 아직 못 본 요청과 보낸 시각. ping에는 답하면서 요청을 버리는 호스트(인증을 잃은 소켓 등, #40)를
    * 알아채기 위한 감시다. 응답이 오면 지우고, 시간이 지나면 hello로 다시 인증한 뒤 다시 보낸다.
    */
-  private readonly inflight = new Map<string, { message: GuestMessage; since: number }>();
+  private readonly inflight = new Map<string, PendingRequest>();
   private now = 0;
   private readonly ackTimeout: number;
+  private helloRetryAt: number | null = null;
+  private helloRetryDelay: number;
   private observations: MutableObservation[] = [];
   private readonly changeHandlers = new Set<(guest: GuestSession) => void>();
   private readonly logLine: (line: string) => void;
@@ -134,6 +146,7 @@ export class GuestSession {
     this.random32 = options.random32;
     this.logLine = options.log ?? (() => {});
     this.ackTimeout = options.ackTimeoutMs ?? 5_000;
+    this.helloRetryDelay = this.ackTimeout;
     this.token = options.sessionToken;
     this.seq = options.lastSeq ?? 0;
     const saved = options.restore;
@@ -229,6 +242,8 @@ export class GuestSession {
     this.connection = 'joining';
     this.outbox.clear();
     this.inflight.clear();
+    this.helloRetryAt = null;
+    this.awaitingResync = false;
     this.join();
     this.changed();
   }
@@ -255,22 +270,48 @@ export class GuestSession {
   }
   /** 게임 요청: 인증된 소켓이면 바로, 아니면 welcome 뒤로 미룬다 */
   private sendGame(message: GuestMessage): void {
-    if (this.linked) {
-      this.inflight.set(message.t, { message, since: this.now });
+    if (this.linked && !this.awaitingResync) {
+      this.inflight.set(message.t, {
+        message,
+        since: this.now,
+        statusRev: this.status?.rev ?? -1,
+        round: this.status?.round ?? 0,
+      });
       this.send(message);
     } else this.outbox.set(message.t, message);
   }
-  /** 받은 호스트 메시지가 응답해 주는 요청을 감시 목록에서 지운다 */
-  private settle(t: HostMessage['t']): void {
-    const answers: Record<string, readonly string[]> = {
-      events: ['action', 'bankruptcy'],
-      snapshot: ['action', 'bankruptcy', 'ready'],
-      reject: ['action', 'bankruptcy', 'ready', 'ledgerGet'],
-      status: ['ready', 'bankruptcy'],
-      ledgerPage: ['ledgerGet'],
-      sessionEnd: ['action', 'bankruptcy', 'ready', 'ledgerGet'],
-    };
-    for (const request of answers[t] ?? []) this.inflight.delete(request);
+  private flushOutbox(): void {
+    const pending = [...this.outbox.values()];
+    this.outbox.clear();
+    for (const message of pending) this.sendGame(message);
+  }
+  /** 응답의 순번·판·원장 위치가 해당 요청을 실제로 덮을 때만 감시를 지운다. */
+  private settle(m: HostMessage): void {
+    for (const [key, pending] of this.inflight) {
+      const request = pending.message;
+      let answered = false;
+      if (request.t === 'action') {
+        answered =
+          (m.t === 'events' && m.to > request.seq) ||
+          (m.t === 'snapshot' && m.seq >= request.seq) ||
+          (m.t === 'reject' && m.seq === request.seq);
+      } else if (request.t === 'ready') {
+        answered =
+          (m.t === 'status' || m.t === 'snapshot') &&
+          m.status.round >= request.round &&
+          m.status.rev > pending.statusRev;
+      } else if (request.t === 'bankruptcy') {
+        answered =
+          ((m.t === 'events' || m.t === 'snapshot' || m.t === 'status') &&
+            m.status.round >= pending.round &&
+            m.status.rev > pending.statusRev) ||
+          (m.t === 'reject' && m.reason === 'BANKRUPT' && m.seq === this.seq);
+      } else if (request.t === 'ledgerGet') {
+        answered = m.t === 'ledgerPage' && m.from === request.from;
+      }
+      if (m.t === 'sessionEnd') answered = true;
+      if (answered) this.inflight.delete(key);
+    }
   }
   /**
    * 외부 시계가 호출한다(호스트의 advanceTime과 같은 방식). 응답 없는 요청이 ackTimeoutMs를 넘으면 hello를 다시 보내고
@@ -279,6 +320,11 @@ export class GuestSession {
   advanceTime(nowMs: number): void {
     if (nowMs < this.now) return;
     this.now = nowMs;
+    if (this.helloRetryAt !== null && nowMs >= this.helloRetryAt) {
+      this.join();
+      this.helloRetryDelay = Math.min(this.helloRetryDelay * 2, HELLO_RETRY_MAX_MS);
+      this.helloRetryAt = nowMs + this.helloRetryDelay;
+    }
     const stale = [...this.inflight.values()].filter((f) => nowMs - f.since >= this.ackTimeout);
     if (stale.length === 0) return;
     this.logLine(`응답 없는 요청 ${stale.map((f) => f.message.t).join(',')}: hello로 다시 인증`);
@@ -286,6 +332,8 @@ export class GuestSession {
     this.inflight.clear();
     this.linked = false;
     this.join();
+    this.helloRetryDelay = this.ackTimeout;
+    this.helloRetryAt = nowMs + this.helloRetryDelay;
     this.changed();
   }
   sendLogs(entries: readonly string[]): void {
@@ -522,7 +570,10 @@ export class GuestSession {
     const parsed = decode(raw, 'host');
     if (!parsed.ok) {
       this.error(parsed.reason);
-      if (parsed.reason === 'VERSION_MISMATCH') this.connection = 'versionMismatch';
+      if (parsed.reason === 'VERSION_MISMATCH') {
+        this.connection = 'versionMismatch';
+        this.helloRetryAt = null;
+      }
       this.changed();
       return;
     }
@@ -533,14 +584,18 @@ export class GuestSession {
       this.logLine(`welcome 전 ${m.t} 무시`);
       return;
     }
-    this.settle(m.t);
+    // 오래된 프레임을 현재 요청의 응답으로 간주하지 않는다.
+    this.settle(m);
     switch (m.t) {
       case 'welcome':
         this.welcome(m);
         this.linked = true;
-        this.inflight.clear();
-        for (const pending of this.outbox.values()) this.sendGame(pending);
-        this.outbox.clear();
+        this.awaitingResync = this.outbox.size > 0 && m.status.stage !== 'lobby';
+        if (this.awaitingResync) this.helloRetryAt ??= this.now + this.ackTimeout;
+        else {
+          this.helloRetryAt = null;
+          this.flushOutbox();
+        }
         break;
       case 'snapshot':
         if (m.seq >= this.seq) this.accept(m, m.seq);
@@ -564,7 +619,10 @@ export class GuestSession {
         break;
       case 'reject':
         this.error(m.reason);
-        if (m.reason === 'TOKEN_INVALID') this.connection = 'tokenRejected';
+        if (m.reason === 'TOKEN_INVALID') {
+          this.connection = 'tokenRejected';
+          this.helloRetryAt = null;
+        }
         // STALE_SEQ면 호스트가 곧바로 스냅샷을 보낸다. 다시 hello하지 않는다(L-4).
         break;
       case 'commitHost':
@@ -589,6 +647,11 @@ export class GuestSession {
         break;
       case 'pong':
         break;
+    }
+    if (this.awaitingResync && (m.t === 'snapshot' || m.t === 'events' || m.t === 'status')) {
+      this.awaitingResync = false;
+      this.helloRetryAt = null;
+      this.flushOutbox();
     }
     this.changed();
   }
