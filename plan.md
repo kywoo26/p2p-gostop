@@ -102,6 +102,8 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
+**RP-01~07 원격 확장(승인 전):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`·개발 이미지로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
+
 **PA-01~04 전문 자산 평가(2026-09-29, 예산 개정 승인 전):** NF-03의 전체1.5MiB·게스트 첫 로딩≤2초와 기존 카테고리 예산은 현행 유지한다. `design/pro-assets`의 명시적 `PRO_ASSET_REVIEW=1` 평가 빌드만 초과 자산을 포함한다. 기본/릴리스 빌드에는 평가 팩을 제외하고 기존 용량 gate를 적용한다. `docs/research/pro-assets.md`의 NF-03 개정안은 리뷰·사용자 승인 전 규범이 아니다. 원본은 `assets-src/`, 평가 변환물은 `public/pro/`에 둔다. Pillow 10.2.0-1ubuntu1.3(HPND), FFmpeg 7:6.1.1-3ubuntu5(Ubuntu GPL dev 도구), libavif-bin 1.0.4-1ubuntu3(BSD-2-Clause)을 개발 이미지4에 고정 추가해 WebP/AVIF·해상도 단계·atlas·ogg/m4a·고지를 생성한다. 앱 런타임 npm 의존성0, Pixi/GSAP 등 금지 유지. 아트 디렉션은 `docs/design/art-direction.md`로 통일하고 RPG UI/Animal 팩은 제외한다. Met CC0 원화·기존 Hwatu의 CC BY-SA 4.0 파생 초상을 구분 고지하며 Commons48 원본은 유지한다. Ogg는 bitexact/serial=0과 두 번 인코딩 해시 검사를 고정한다. FPS·메모리·배터리 NF 후보는 연구 문서에만 두고 리뷰 전 spec를 바꾸지 않는다.
 정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
 
@@ -137,6 +139,56 @@ p2p-gostop/
 - 폴백: LOHS 실패 시 "시스템 핫스팟 켜기" 안내 + 이미 있는 Wi-Fi 인터페이스 IP 표시(FR-02).
 
 ---
+
+### 1.9 원격 중계 모드 개정안 (승인 전)
+
+근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-승인-전), [후보·공식 한도](docs/research/remote-play.md). **1순위 PC+Funnel(WS 실측 조건), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 임시 Tailscale 노드 공유(상대 설치 필요)**. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
+
+| 경로 | 구조·책임 |
+|---|---|
+| 현행 LAN | LOHS → Ktor 정적 웹/WS → Safari, Galaxy WebView 루프백 origin. 현행 LAN gate·host 루프백 검증 유지 |
+| 원격 1순위 | Galaxy WebView(권위 엔진) → **아웃바운드 WSS** → Funnel TCP 중계 → PC TLS 종단 → Docker 방 중계 ← iPhone/Mac WSS. 게스트 웹은 같은 PC의 HTTPS 번들. Galaxy용 웹은 APK의 로컬 번들 |
+| 원격 2순위 | 양단 아웃바운드 WSS → Worker 인증/라우팅 → 방당 SQLite-backed DO. HTTPS 정적 웹은 Pages. 클라우드도 규칙·원장·시드 보관/계산 없음 |
+| 임시 노드 공유 | 인증된 PC 중계를 private Serve로 공유, 상대 Tailscale 설치·계정·노드 초대 필요. 무설치 요구 충족으로 표시하지 않음 |
+
+| 설계 지점 | 구현 제안 |
+|---|---|
+| 같은 웹·프로토콜 | 한 release에서 만든 동일 dist를 APK와 PC/Pages에 복사. 모드 선택은 세션 생성 전에, endpoint와 인증 어댑터만 교체. 원격 주소를 임의 링크 query로 주입받지 않고 사용자 등록/배포 허용 목록과 비교. 기존 WsTransport send/onMessage/onClose/reconnect·세션 hello/snapshot 재사용 |
+| Android 아웃바운드 | Ktor는 APK 웹을 루프백에 서빙, WebView가 지정 공개 WSS에 직접 접속. 원격 진입 전에 LOHS 종료·LAN gate 명시적 false, 기존 `stopHotspot`의 addressOnly 전환만으로 끝내지 않음. HostBridge 허용 origin/메인 프레임·Network Security Config 127.0.0.1 예외 유지, remote 웹에 HostBridge 제공 금지 |
+| 호스트 실행 수명 | 엔진은 계속 WebView에 있으므로 백그라운드 실행 보장 없음. 화면 유지·복귀 재인증, 호스트 실행 정지 동안 입력/타이머 중단. LOHS 없는 원격 모드에서 connectedDevice FGS 사용 적합성은 Android 공식 문서 확인 후 결정; 서버 연결만으로 게임 실행을 보장한다고 쓰지 않음 |
+| PC 서버 | `packages/relay-dev`에 명시적 public 설정·방 API·정적 dist 서빙 추가, default loopback 개발 동작 유지. role별 소켓을 방별 map으로 분리, **공개 모드는 loopback 우회 없이 항상 토큰 검증**. 공용 자격 증명을 번들에 넣지 않고 운영자 생성 키를 Galaxy에 1회 등록. 게임 프레임은 내용 해석 없이 제한/중계, 방/인증 제어만 파싱 |
+| PC 인프라 | 같은 모노레포에 향후 `docker/relay/`와 전용 Compose 파일·운영 README. production artifact만 넣는 비root 컨테이너, 루프백 publish·read-only 파일 시스템·메모리/CPU 제한·재시작 정책. 기존 개발 이미지/Compose는 빌드·테스트용으로 유지. Docker socket/관리 API/진단 경로 공개 금지 |
+| Funnel 설정 | 기존 PC Tailscale의 MagicDNS·HTTPS·funnel 노드 속성 확인 후 `tailscale funnel --bg --https=443 <target>`(예: `http://127.0.0.1:17778`). 정책은 해당 PC만 허용. WSL2이면 Tailscale 실행 위치와 Docker 루프백 가시성·Windows 재부팅/로그인 전 가동을 확인. 별도 cloud 계정·배포 파이프라인 없이 기존 CI artifact를 PC에 설치/이전 artifact로 롤백 |
+| 인증 순서 | HTTPS 방 생성(운영자 키)→host 토큰→호스트 발급 초대 해시 등록→양쪽 WSS 첫 프레임 인증→역할 원자적 점유→기존 relay 알림/hello. 초대 claim 중에는 이전 socket 교체 금지, 호스트 승인/복귀 토큰 발급 완료 후만 좌석 확정. 모든 게임 메시지는 기존 decode·sessionToken 검증을 거침 |
+| 서버 상태 경계 | PC 방 메타데이터는 메모리 TTL·재시작 시 소실, 양쪽에 새 방/초대 안내. 폰의 원장 복구와 서버 방 복구를 구분. cloud DO는 소켓 attachment+최소 TTL 메타데이터/만료 alarm로 휴면 복원, 프레임/게임 로그는 저장 안 함 |
+| 서버 신뢰 | Funnel 사업자는 암호문 TCP 전달, PC가 TLS 종단·평문 중계. cloud 대안은 Cloudflare가 TLS 종단. 둘 다 악성 중계/웹 배포자를 배제하는 게임 양단 E2EE가 아니며 commit-reveal 한계 표시 |
+| 보안 컨텍스트 | 원격 Safari는 HTTPS이므로 AGENTS §3의 Clipboard/Share/Wake Lock 등 일부 제약 완화 **가능성**이 있음. 초기 범위는 기존 폴백·순수 JS 해시 유지. 나중에 mode+secureContext+지원 여부 검사를 갖춘 별도 어댑터/린트 예외를 승인받아 추가; LAN·서비스 워커·가로 잠금 등 전역 금지 일괄 해제 없음 |
+| 외부 요청 검사 | `check-bundle.ts`·`NoExternalUrlTest.kt`를 없애지 않고 지정 원격 HTTPS/WSS만 허용하는 검사로 개정. WSS·동적 URL·오프라인 런타임 외부 요청까지 negative test. 로컬/원격 모드 종료 뒤 예약 재연결/건강 확인 요청 0 |
+| cloud 패키지 대안 | `packages/relay-cloud`는 DO를 선택할 때만 추가. protocol의 공개 relay 계약만 공유하고 engine 실행 의존은 금지. imports/exports 변경 시 `docs/reviews/refactor-import-boundaries.md`·린트·probe 함께 수정. Node ws를 DO에서 그대로 실행할 수 있다고 가정하지 않음 |
+
+#### 배포·비밀·가용성
+
+| 대상 | 제안 |
+|---|---|
+| PC 기본 운영 | 고정 release artifact+SHA 식별자, 한 번 설치 후 필요 시 명시적 업데이트. 서버 생성 키는 PC secret 파일(제한된 권한)과 Galaxy 개인 설정에만, Tailscale state는 운영 PC의 보호된 상태로 보관. git/로그/공용 웹에 키 없음. 키 폐기·PC 이전·Funnel 중지/복구 절차 포함 |
+| 정적 웹 | release별 경로·content hash, 앱과 동일 artifact. 초기 지원은 현재 release와 직전 호환 release, 불일치 시 명시적 업데이트 안내; 게임 wire가 다르면 연결 거부. PC 정적 경로도 traversal/소스맵/설정 파일 노출 금지 |
+| cloud 선택 시만 | Workers Free·SQLite DO·Pages 기본 도메인, 유료 플랜/자동 과금 금지. GitHub Actions 기존 ubuntu-24.04/개발 이미지에서 검사·빌드→분리된 staging→검증된 artifact를 production으로 승격. DO/웹/APK 호환 행렬 확인 후 배포, 방 연결은 배포 중 끊길 수 있어 재접속 검증 |
+| cloud 비밀 | 최소 권한 Cloudflare API token은 GitHub environment secret, 서비스 생성 키는 Worker secret. PR/fork에 운영 secret 미제공. 운영/검증 DO namespace·생성 키 분리. 신규 CLI/Action 버전·권한은 RP-03에서 확정, 이 문서에 임의 최신 버전 추가 안 함 |
+| 비용·장애 | PC 전기·회선/관리 시간을 인정하고 추가 서비스 요금 0 유지. Funnel 수치 미공개 한도/PC 장애 또는 Cloudflare quota 초과 시 새 방 차단·진행 입력 잠금·재시도 안내, 유료 이전 없음. 오류 로그는 내용/토큰 없이 집계만. 관리자에게 임의 진단 업로드 없음 |
+
+#### 마일스톤·PR 분해 (모두 승인 후)
+
+| ID / 순서 | PR 범위 | 완료 기준·요구사항 |
+|---|---|---|
+| RP-01 | 규범 정합·인증 제어 계약·Funnel 검증 계획 | intend/AGENTS의 모드 예외, spec §13·프로토콜 부록·타이머 v3와 버전 조정. 공식 API(Context7)와 설치 Tailscale 버전 확인, 신뢰 경계/TTL 리뷰 |
+| RP-02 | PC 중계 서버 강화 | relay-dev 공개 모드·방/토큰·제한·TTL·정적 웹. 기존 relay 시나리오+교차 방/잘못된 토큰/프록시 loopback 공격/교체 경합 검증. NP-RP-01~07·NF-RP-01~03 |
+| RP-03 | 정적 배포·PC Docker/Funnel 운영 절차 | 동일 dist·버전별 URL·비밀/롤백·외부 경로 제한. Funnel WS/role query·2시간·재부팅 검증. 실패 또는 PC 독립 필요 시 **별도 RP-03C**로 relay-cloud·Pages/무료 배포 파이프라인 구현, 둘을 동시에 만들지 않음 |
+| RP-04 | Android 아웃바운드 모드 | WSS transport·endpoint 등록·화면/프로세스 복귀·LAN gate 닫힘. 서버 전용 모드/서비스 수명 JVM·WebView 검증, FR-RP-01/04/05 |
+| RP-05 | 방 코드·링크·QR·로비 UI | 링크 한 번 참여·코드 호스트 승인·초대 회수·만료·중계 불가/호스트 부재 구분. 복귀 토큰은 브라우저 해당 탭 저장, 종료 때 제거·다른 탭/기기 이전은 명시적 절차. FR-RP-02~05 |
+| RP-06 | Mac 가로 레이아웃 | UX-02 데스크톱 예외·키보드·확대·접근성·모바일 회귀. FR-RP-06 |
+| RP-07 | 통합 E2E·사람 검증·출시 판정 | Chromium/WebKit 두 클라이언트, 지연/손실·호스트 부재·quota·만료·재접속·commit-reveal·LAN 외부 요청 0. AC-RP-01~05; [실기기 절차](docs/device-test/remote-play.md)에 사용자가 준 결과만 기록 |
+
+모든 빌드·테스트는 저장소 루트의 `docker compose run --rm dev …`(이 환경 Docker는 `/home/k/.local/bin/docker`)로 실행한다. 문서 PR은 실제 Funnel 공개·클라우드 생성·실기기 결과를 수행/기록하지 않는다.
 
 ## 2. 개발 환경 (Docker)
 
