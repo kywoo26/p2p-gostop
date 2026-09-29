@@ -63,6 +63,7 @@ interface Awaiting {
 
 const CHECK_LABEL: Readonly<Record<RoundCheck['result'], string>> = {
   verified: '셔플 공정성 검증 통과',
+  aborted: '판 무효 (검증 대상 아님)',
   unverifiable: '검증 불가 (새로고침으로 기록을 잃음)',
   failed: '공정성 검증 실패',
 };

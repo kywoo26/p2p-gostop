@@ -24,6 +24,7 @@ import type { BoardView, SettlementView } from './view-types.ts';
 
 export type RoundCheck =
   | { readonly round: number; readonly result: 'verified' }
+  | { readonly round: number; readonly result: 'aborted'; readonly reason: string }
   | { readonly round: number; readonly result: 'unverifiable'; readonly reason: 'noCommitment' }
   | { readonly round: number; readonly result: 'failed'; readonly reason: VerifyFailure };
 
@@ -256,6 +257,15 @@ export class GuestSession {
       this.changed();
     }
     this.sendGame({ t: 'action', seq: this.seq, payload });
+  }
+  /** settled에서 승자가 게스트이면 밀기를 요청한다 */
+  push(): void {
+    const observed = this.view === null ? undefined : this.observation(this.view.round);
+    if (observed) {
+      observed.sent.push({ type: 'push', seat: 1 });
+      this.changed();
+    }
+    this.sendGame({ t: 'push', seq: this.seq });
   }
   /** settled 단계에서 다음 판을 요청한다. 시작은 호스트가 한다 */
   requestNextRound(): void {
@@ -633,6 +643,10 @@ export class GuestSession {
         break;
       case 'revealHost':
         this.revealHost(m);
+        break;
+      case 'roundAborted':
+        if (!this.decided(m.round))
+          this.recordCheck({ round: m.round, result: 'aborted', reason: m.reason });
         break;
       case 'bankruptcyPrompt':
         this.bankruptcy = { round: m.round, seats: m.seats, balances: m.balances };
