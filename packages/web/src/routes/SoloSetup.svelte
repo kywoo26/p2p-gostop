@@ -64,10 +64,10 @@
   <section aria-labelledby="solo-rules">
     <h2 id="solo-rules">규칙·금액</h2>
     <p>
-      {PRESET_LABEL[s.preset]} 규칙 · 점당 {formatMoney(s.perPoint, s.unit)} · 시작 {formatMoney(
-        effectiveStartBalance(s),
+      {s.customRules === null ? PRESET_LABEL[s.preset] : '사용자 지정'} 규칙 · 점당 {formatMoney(
+        s.perPoint,
         s.unit,
-      )}
+      )} · 시작 {formatMoney(effectiveStartBalance(s), s.unit)}
     </p>
     <a class="link" href="#/settings">설정에서 바꾸기</a>
   </section>

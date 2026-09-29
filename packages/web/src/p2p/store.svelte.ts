@@ -1,18 +1,23 @@
 // 앱 전체의 친구와 대전 상태: 호스트 방(HostGame) 또는 게스트 참가(GuestGame) 하나만 둔다.
 // 화면(HostRoom·GuestApp·Game)을 오가도 연결과 판이 유지된다.
-import { PRESETS } from '@p2p-gostop/engine';
-import { effectiveStartBalance, type AppSettings } from '../settings/settings.svelte.ts';
+import {
+  effectiveRules,
+  effectiveStartBalance,
+  type AppSettings,
+} from '../settings/settings.svelte.ts';
 import { GuestGame, type GuestOptions } from './guest.svelte.ts';
 import { clearHostSave, HostGame, loadHostSave, type HostConfig } from './host.svelte.ts';
+import { loadTimerPreference } from './host-save.ts';
 import { loadGuestState, readTicket } from './ticket.ts';
 
 export function hostConfigFrom(settings: AppSettings): HostConfig {
   return {
     preset: settings.preset,
-    rules: { ...PRESETS[settings.preset], gukjin: settings.gukjinAsk ? 'ask' : 'auto' },
+    rules: effectiveRules(settings),
     perPoint: settings.perPoint,
     startBalance: effectiveStartBalance(settings),
     hostName: settings.playerName,
+    timerDecisionMs: loadTimerPreference(),
   };
 }
 

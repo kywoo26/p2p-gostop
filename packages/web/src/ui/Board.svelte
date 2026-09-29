@@ -10,6 +10,7 @@
     type Action,
     type CardId,
     type Month,
+    type Seat,
     type PlayerView,
   } from '@p2p-gostop/engine';
   import { onDestroy } from 'svelte';
@@ -61,6 +62,9 @@
     thinking?: boolean;
     /** 마지막 탭→턴 종료 시간 ms (spec AC-06 계측, E2E가 읽는다) */
     turnMs?: number | null;
+    timerText?: string | null;
+    timerSeat?: Seat | null;
+    timeoutText?: string | null;
     onaction?: ((action: Action, at: number) => void) | undefined;
     onskip?: (() => void) | undefined;
     /** 판 정보 대화상자의 열림 상태를 게임 화면에 알린다 (U14). */
@@ -87,6 +91,9 @@
     busy = false,
     thinking = false,
     turnMs = null,
+    timerText = null,
+    timerSeat = null,
+    timeoutText = null,
     onaction,
     onskip,
     oninfochange,
@@ -344,6 +351,7 @@
     <div class="scoreboard" class:expanded={expandedHud} aria-label="양쪽 점수판">
       <SeatBar
         who="상대"
+        timerText={timerSeat !== null && timerSeat !== seat ? timerText : null}
         name={opponent.name}
         score={opponent.score}
         goCount={opponent.goCount}
@@ -353,6 +361,7 @@
       />
       <SeatBar
         who="나"
+        timerText={timerSeat === seat ? timerText : null}
         name={me.name}
         score={me.score}
         goCount={me.goCount}
@@ -391,6 +400,7 @@
 
   <div class="decision-area" class:idle-slot={!selecting && !view.canFlipOnly} inert={landscape}>
     <div class="decision-content">
+      {#if timeoutText && timerText}<p class="timer-prompt">{timerText} · {timeoutText}</p>{/if}
       <EventRail
         {banner}
         {toast}
@@ -532,6 +542,10 @@
       <h2>판 정보</h2>
       <button type="button" onclick={() => infoDialog.close()}>닫기</button>
     </header>
+    {#if timerText}
+      <p>{timerText}{timeoutText ? ` · ${timeoutText}` : ''}</p>
+      <p>판 정보를 보는 동안에도 시간은 흐릅니다.</p>
+    {/if}
     {#if pending?.kind === 'target'}<p>
         {pending.source === 'play' ? '낸 패' : '뒤집은 패'}: {cardLabel(pending.card)}
       </p>{/if}

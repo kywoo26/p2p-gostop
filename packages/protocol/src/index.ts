@@ -5,6 +5,7 @@ export * from './verify.ts';
 export * from './view.ts';
 export * from './relay.ts';
 export * from './ledger.ts';
+export * from './timer-policy.ts';
 export { ERROR_CODES } from './messages.ts';
 export type * from './messages.ts';
 export type * from './view-types.ts';
