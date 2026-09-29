@@ -138,7 +138,7 @@
 
 ### 3.6 P2P 제한시간 개정안 (#123, 승인 전)
 
-근거: [결정 §2.3](docs/design/interaction-decisions.md#23-p2p-기본-10초와-시간-초과--명세-개정이-필요한-추가-권고), [상용 조사 §6](docs/research/interaction-conventions.md#6-p2p-제한시간과-시간-초과-추가-조사). 상용 3사의 **10초·초과 카드 순서·프롬프트 기본값은 미확인**이다. 피망의 접속 종료 대행 정책은 평상시 초과 정책의 근거가 아니다. 아래는 제품 권고이며 합법성·점수 기대값은 여전히 `rules-commercial.md` §12만 따른다.
+근거: [결정 §2.3](docs/design/interaction-decisions.md#turn-timeout), [상용 조사 §6](docs/research/interaction-conventions.md#6-p2p-제한시간과-시간-초과-추가-조사). 상용 3사의 **10초·초과 카드 순서·프롬프트 기본값은 미확인**이다. 피망의 접속 종료 대행 정책은 평상시 초과 정책의 근거가 아니다. 아래는 제품 권고이며 합법성·점수 기대값은 여전히 `rules-commercial.md` §12만 따른다.
 
 | ID / 우선 | 개정 전 | 개정 후 제안 |
 |---|---|---|
