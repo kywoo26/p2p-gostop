@@ -399,7 +399,7 @@ describe('#16 commit-reveal 검증은 게스트가 본 판과 묶인다', () => 
       '0bdb386b44526b01',
       'ce8ab20417339aa1',
     ]);
-    const legacyView = structuredClone(h.guest.view!);
+    const legacyView = viaJson(h.guest.view!);
     for (const seat of legacyView.seats) Reflect.deleteProperty(seat, 'bombTokens');
     expect(viewDigest(h.guest.view!)).toBe(viewDigest(legacyView));
     h.gw.reset();
