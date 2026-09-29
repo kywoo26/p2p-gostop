@@ -30,6 +30,7 @@
 | compileSdk / targetSdk / minSdk | 36 / **36**(37 금지: LAN 인바운드 권한) / 33 |
 | Ktor | 3.6.0 (`ktor-server-cio`, `ktor-server-websockets`) |
 | androidx.webkit / ZXing core | 1.17.1 / 3.5.4 |
+| androidx.activity | 1.13.0 (`OnBackPressedCallback`, plan.md 1.8) |
 | Docker 이미지 | `node:24-bookworm-slim`, `cimg/android:2026.08.1-node`, `mcr.microsoft.com/playwright:v1.63.0-noble` |
 | GitHub Actions | `runs-on: ubuntu-24.04` 고정, checkout@v7, setup-java@v6, gradle/actions/setup-gradle@v6, setup-node@v7, upload-artifact@v7, softprops/action-gh-release@v3 |
 

@@ -11,6 +11,8 @@ test('웹 브리지는 no-op: 핫스팟 미지원, 공유 안 됨', async () => 
   await expect(bridge.vibrate([50])).resolves.toBeUndefined();
   const handle = await bridge.addListener('hotspot', () => {});
   await expect(handle.remove()).resolves.toBeUndefined();
+  const back = await bridge.addBackListener(() => {});
+  await expect(back.remove()).resolves.toBeUndefined();
 });
 
 /** 앱처럼 응답하는 가짜 HostBridge: 받은 요청을 기록하고 reply로 답한다 */
@@ -121,6 +123,19 @@ test('응답이 없으면 5초 뒤 포기한다 (앱이 모르는 요청)', asyn
   } finally {
     vi.useRealTimers();
   }
+});
+
+test('id 없는 Android Back 이벤트만 구독자에게 보내고 해제한다', async () => {
+  const { host, push } = fakeHost(() => null);
+  const bridge = createNativeBridge(host);
+  const seen: string[] = [];
+  const handle = await bridge.addBackListener(() => seen.push('back'));
+  push({ type: 'back' });
+  push({ type: 'back', id: 'reply' });
+  push({ type: 'other' });
+  await handle.remove();
+  push({ type: 'back' });
+  expect(seen).toEqual(['back']);
 });
 
 test('parseHotspot: 신뢰 경계 밖 JSON의 모양을 고친다', () => {
