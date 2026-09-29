@@ -38,9 +38,9 @@ docker run --rm --user "$(id -u):$(id -g)" -e PYTHONUSERBASE=/tmp/python \
   -v "$PWD:/work" -v /tmp/visual-research:/inputs:ro \
   python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f \
   sh -c 'pip install --quiet --user fonttools==4.61.1 brotli==1.2.0 && python /work/docs/design/fonts/build_app_font.py'
-docker compose run --rm dev npm run lint:fix
-docker compose run --rm dev npm run build -w packages/web
-docker compose run --rm dev npm run e2e -w packages/web -- e2e/fonts.spec.ts
+npm run lint:fix
+npm run build -w packages/web
+npm run e2e -w packages/web -- e2e/fonts.spec.ts
 ```
 
 `build_app_font.py`는 web의 비테스트 `.svelte`/`.ts`와 엔진 오류 문구(`reduce.ts`)의 한글을 모은다. 주석·갤러리도 포함해 실제 UI의 보수적 상한으로 잡고 ASCII와 지정 기호를 더한다. 코퍼스/해시는 이 문서 폴더, 배포 WOFF2/CSS/OFL은 `packages/web/src/styles/fonts`에 기록한다. 임의 이름과 그 밖의 유니코드는 시스템 fallback을 쓴다. 새 문구가 범위를 벗어나면 빌드의 `check-font.mjs`가 실패하므로 재생성해야 한다.

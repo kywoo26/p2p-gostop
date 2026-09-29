@@ -1,4 +1,4 @@
-"""PA-03: pinned Docker tools; offline conversion, provenance and byte inventory."""
+"""PA-03: pinned Ubuntu 24.04 apt tools (tools/setup-host.sh); offline conversion, provenance and byte inventory."""
 from pathlib import Path
 from PIL import Image, ImageOps, ImageChops, ImageDraw
 import hashlib, json, subprocess, tempfile, importlib.util
