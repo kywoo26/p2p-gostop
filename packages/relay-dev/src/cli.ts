@@ -1,6 +1,6 @@
 // 사용: node packages/relay-dev/src/cli.ts --port 17777  (환경변수 PORT, HOST도 지원)
 import { readFileSync } from 'node:fs';
-import { RELAY_PATH, RELAY_PORT } from '@p2p-gostop/protocol';
+import { PROTOCOL_VERSION, RELAY_PATH, RELAY_PORT } from '@p2p-gostop/protocol';
 import { startRelay } from './index.ts';
 
 const args = process.argv.slice(2);
@@ -23,10 +23,29 @@ const secret =
     ? readFileSync(process.env['RELAY_CREATION_SECRET_FILE'], 'utf8').trim()
     : '');
 const origins = (process.env['RELAY_ALLOWED_ORIGINS'] ?? '').split(',').filter(Boolean);
+const release = process.env['RELAY_RELEASE'];
+if (publicEnabled && !release) throw new Error('RELAY_RELEASE is required in public mode');
+const previous = process.env['RELAY_PREVIOUS_RELEASE'];
+const previousDir = process.env['RELAY_PREVIOUS_DIST_DIR'];
+if (previous && !previousDir) throw new Error('RELAY_PREVIOUS_DIST_DIR is required');
+const releases = release
+  ? [
+      {
+        id: release,
+        distDir: process.env['RELAY_DIST_DIR'] ?? 'packages/web/dist',
+        wireVersion: PROTOCOL_VERSION,
+      },
+      ...(previous && previousDir
+        ? [{ id: previous, distDir: previousDir, wireVersion: PROTOCOL_VERSION }]
+        : []),
+    ]
+  : [];
 const relay = await startRelay({
   port,
   host,
-  ...(publicEnabled ? { publicMode: { creationSecret: secret, allowedOrigins: origins } } : {}),
+  ...(publicEnabled
+    ? { publicMode: { creationSecret: secret, allowedOrigins: origins, releases } }
+    : {}),
   log: (line) => console.log(`[relay] ${line}`),
 });
 console.log(

@@ -10,6 +10,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { newToken, tokenHash, validToken } from './auth.ts';
 import { Rooms, displayCode, INVITE_LIFETIME } from './rooms.ts';
 import { SocketLimit, WindowLimit } from './limits.ts';
+import { StaticSite, type ReleaseConfig } from './static.ts';
 import {
   RELAY_CLOSE_POLICY,
   RELAY_CLOSE_REPLACED,
@@ -40,6 +41,7 @@ export interface RelayOptions {
   readonly publicMode?: {
     readonly creationSecret: string;
     readonly allowedOrigins: readonly string[];
+    readonly releases?: readonly ReleaseConfig[];
   };
 }
 
@@ -166,9 +168,10 @@ function bearer(header: string | undefined): string {
 }
 
 /** 공개 모드: 방/역할 인증과 수명은 LAN 중계와 독립적이다. */
-function startPublicRelay(options: RelayOptions): Promise<Relay> {
+async function startPublicRelay(options: RelayOptions): Promise<Relay> {
   const config = options.publicMode!;
   const rooms = new Rooms(config.creationSecret);
+  const site = config.releases ? await StaticSite.load(config.releases) : undefined;
   const limits = new WindowLimit();
   const seats = new Map<string, Partial<Record<Role, WebSocket>>>();
   const absence = new Set<WebSocket>();
@@ -233,16 +236,14 @@ function startPublicRelay(options: RelayOptions): Promise<Relay> {
         respondError(response, 503, 'capacity');
         return;
       }
-      response
-        .writeHead(201)
-        .end(
-          JSON.stringify({
-            roomId: created.state.room.id,
-            hostToken: created.hostToken,
-            code: displayCode(created.state.code),
-            expiresAt: created.state.expiresAt,
-          }),
-        );
+      response.writeHead(201).end(
+        JSON.stringify({
+          roomId: created.state.room.id,
+          hostToken: created.hostToken,
+          code: displayCode(created.state.code),
+          expiresAt: created.state.expiresAt,
+        }),
+      );
       return;
     }
     const match = /^\/api\/rooms\/([A-Za-z0-9_-]{22})(?:\/(credentials))?$/.exec(url.pathname);
@@ -295,6 +296,7 @@ function startPublicRelay(options: RelayOptions): Promise<Relay> {
         return;
       }
     }
+    if (site?.handle(request, response)) return;
     // 존재/부재/점유를 구분하는 HTTP 조회 경로는 제공하지 않는다.
     if (request.method === 'POST' && url.pathname === '/api/join') {
       if (!limits.take(`join-ip:${ip}`, 10, 60_000)) {
