@@ -4,11 +4,22 @@
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
   // 재생 중(busy)에는 입력을 받지 않고, 빈 바닥을 누르고 떼면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
-  import { getCard, type Action, type CardId, type Month } from '@p2p-gostop/engine';
+  import {
+    getCard,
+    sameAction,
+    type Action,
+    type CardId,
+    type Month,
+    type PlayerView,
+  } from '@p2p-gostop/engine';
+  import { onDestroy } from 'svelte';
   import type { BoardExtras } from '../game/adapter.ts';
+  import { handAssist, handAssistPlayer, hintLevelOf } from '../game/assist.ts';
+  import type { HintLevel } from '../game/assist.ts';
   import { boardNotices } from '../game/display.ts';
   import { formatMoney } from '../lib/format.ts';
   import type { BoardView, MoneyUnit, SeatView } from '../lib/view-types.ts';
+  import { settings } from '../settings/settings.svelte.ts';
   import { bannerActor, type Banner } from './banner.ts';
   import { stepLabel } from './settle-labels.ts';
   import { cardLabel, cardSrc } from './cards.ts';
@@ -34,10 +45,14 @@
       readonly staging?: readonly CardId[];
       readonly highlight?: readonly CardId[];
     };
+    soloPlayerView?: PlayerView | undefined;
     extras?: BoardExtras | null;
     /** 갤러리/후속 기본 보조의 시각 슬롯. 확보 짝 판정은 여기서 하지 않는다. */
     handVisualGroups?: readonly HandVisualGroup[];
+    /** 솔로 판 기록은 실제 보조 표식이 화면에 올라온 뒤 이 경로로 갱신한다. */
+    onhintdisplayed?: ((level: HintLevel) => void) | undefined;
     unit?: MoneyUnit;
+    confirmDelay?: boolean;
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
     /** 이벤트 재생 중 (입력 잠금) */
@@ -61,9 +76,12 @@
 
   let {
     view,
+    soloPlayerView,
     extras = null,
     handVisualGroups = [],
+    onhintdisplayed,
     unit = '냥',
+    confirmDelay = false,
     banner = null,
     toast = null,
     busy = false,
@@ -134,21 +152,43 @@
     for (const text of boardNotices(prev, next)) onnotice(text);
   });
   const pending = $derived(!busy && view.pending?.seat === seat ? view.pending : null);
+  const legal = $derived(
+    view.legal ?? view.playable.map((card) => ({ type: 'play' as const, seat, card })),
+  );
   const pickFirst = $derived(busy ? null : (extras?.pickFirst ?? null));
   const playable = $derived(busy || landscape ? [] : view.playable);
-  const floorMonths = $derived(new Set(view.floor.map((g) => g.month)));
-  const matchable = $derived(
-    playable.filter((id) => {
-      const month = getCard(id).month;
-      return month === null || floorMonths.has(month);
-    }),
+  const localHintLevel = $derived(hintLevelOf(settings.value));
+  const soloAligned = $derived(
+    soloPlayerView === undefined || soloPlayerView.eventSeq === view.eventSeq,
   );
+  const assist = $derived(
+    soloPlayerView === undefined
+      ? handAssist(view, busy || landscape ? 'off' : localHintLevel)
+      : handAssistPlayer(
+          soloPlayerView,
+          busy || landscape || !soloAligned ? 'off' : localHintLevel,
+        ),
+  );
+  $effect(() => {
+    const level = localHintLevel;
+    const shown =
+      assist.matchable.length > 0 || assist.secured.length > 0 || assist.groups.length > 0;
+    // 상세 전용 설명은 #81/#82에서 붙는다. 지금 보이는 기본 표식은 기본 사용으로 기록한다.
+    if (shown && onhintdisplayed) onhintdisplayed(level === 'detail' ? 'basic' : level);
+  });
+  const matchable = $derived(assist.matchable);
 
   /** 누르고 있는 손패 카드 (먹게 될 바닥 카드 미리보기, spec 6.3) */
   let preview = $state<CardId | null>(null);
-  /** 폭탄을 할 수 있는 월의 카드를 탭했을 때 확인 */
-  let bombCard = $state<CardId | null>(null);
+  let singleCard = $state<CardId | null>(null);
+  const bombCards = $derived(
+    playable.filter((card) => {
+      const month = getCard(card).month;
+      return month !== null && legal.some((a) => a.type === 'bomb' && a.month === month);
+    }),
+  );
   const handGroups = $derived<readonly HandVisualGroup[]>([
+    ...assist.groups,
     ...(extras?.bombMonths ?? []).map((month) => ({
       id: `bomb-${month}`,
       kind: 'bomb' as const,
@@ -165,10 +205,20 @@
       : []),
     ...handVisualGroups,
   ]);
+  const handLinks = $derived.by(() => {
+    const links: Record<number, 'bomb' | 'chongtong'> = {};
+    if (localHintLevel === 'off' || busy || landscape) return links;
+    for (const group of assist.groups) {
+      if (group.kind !== 'bomb' && group.kind !== 'chongtong') continue;
+      const month = getCard(group.cards[0]!).month;
+      if (month !== null && view.floor.some((floor) => floor.month === month))
+        links[month] = group.kind;
+    }
+    return links;
+  });
   const selectedHandGroup = $derived(
-    handGroups.find(
-      (group) => group.kind === 'bomb' && group.cards.includes(bombCard ?? preview ?? -1),
-    )?.id ?? null,
+    handGroups.find((group) => group.kind === 'bomb' && group.cards.includes(preview ?? -1))?.id ??
+      null,
   );
 
   const previewCards = $derived.by(() => {
@@ -181,29 +231,56 @@
     ...(view.highlight ?? []),
     ...previewCards,
   ]);
-  const selecting = $derived(
-    pickFirst !== null || bombCard !== null || (pending !== null && pending.kind !== 'play'),
-  );
+  const selecting = $derived(pickFirst !== null || (pending !== null && pending.kind !== 'play'));
   const awaiting = $derived(pending !== null || pickFirst !== null);
 
+  let reserved: { action: Action; at: number; timer: ReturnType<typeof setTimeout> } | null = null;
+  function cancelReserved() {
+    if (reserved !== null) clearTimeout(reserved.timer);
+    reserved = null;
+  }
+  $effect(() => {
+    if (busy || landscape || view.pending?.kind !== 'play') {
+      cancelReserved();
+      singleCard = null;
+    }
+    return () => {
+      cancelReserved();
+      singleCard = null;
+    };
+  });
+  onDestroy(cancelReserved);
+
   function act(action: Action, at = performance.now()) {
-    bombCard = null;
+    cancelReserved();
     preview = null;
+    singleCard = null;
     if (!landscape) onaction?.(action, at);
   }
 
-  function play(card: CardId, at: number) {
+  function play(card: CardId, at: number, single: boolean) {
     if (selecting || busy || landscape) return;
     const month = getCard(card).month;
-    if (month !== null && extras?.bombMonths.includes(month)) {
-      bombCard = card;
+    const action: Action =
+      !single && month !== null && bombCards.includes(card)
+        ? { type: 'bomb', seat, month }
+        : { type: 'play', seat, card };
+    if (!legal.some((candidate) => sameAction(candidate, action))) return;
+    if (!confirmDelay || single) {
+      act(action, at);
       return;
     }
-    act({ type: 'play', seat, card }, at);
-  }
-
-  function bombMonth(): Month | null {
-    return bombCard === null ? null : getCard(bombCard).month;
+    if (reserved !== null && sameAction(reserved.action, action)) {
+      cancelReserved();
+      return;
+    }
+    cancelReserved();
+    const timer = setTimeout(() => {
+      reserved = null;
+      if (!busy && !landscape && legal.some((candidate) => sameAction(candidate, action)))
+        act(action, at);
+    }, 120);
+    reserved = { action, at, timer };
   }
 
   function handCardsOfMonth(month: Month | null): CardId[] {
@@ -305,19 +382,20 @@
     <Floor
       compact
       groups={view.floor}
+      {handLinks}
       deckCount={view.deckCount}
       highlight={floorHighlight}
       staging={view.staging ?? []}
     />
   </div>
 
-  <div class="decision-area" class:idle-slot={!selecting && !extras?.canFlipOnly} inert={landscape}>
+  <div class="decision-area" class:idle-slot={!selecting && !view.canFlipOnly} inert={landscape}>
     <div class="decision-content">
       <EventRail
         {banner}
         {toast}
         {actor}
-        blocked={selecting || !!extras?.canFlipOnly}
+        blocked={selecting || view.canFlipOnly}
         idle={thinking
           ? '상대 차례 · 생각 중'
           : busy
@@ -326,12 +404,23 @@
               ? '내 차례'
               : '상대 차례'}
       />
-      {#if !busy && extras?.canFlipOnly}
+      {#if !busy && view.canFlipOnly && legal.some((a) => a.type === 'flipOnly') && (me.bombTokens ?? 0) > 0 && legal.length > 1}
         <button
           type="button"
           class="flip-only"
           data-choice="flipOnly"
-          onclick={(e) => act({ type: 'flipOnly', seat }, e.timeStamp)}>폭탄패로 뒤집기</button
+          onclick={(e) => act({ type: 'flipOnly', seat }, e.timeStamp)}
+          >뒤집기만 {me.bombTokens}회</button
+        >
+      {/if}
+      {#if !busy && singleCard !== null && bombCards.includes(singleCard)}
+        <button
+          type="button"
+          class="flip-only"
+          data-choice="single"
+          onclick={(e) => {
+            if (singleCard !== null) play(singleCard, e.timeStamp, true);
+          }}>선택 카드 한 장만 내기</button
         >
       {/if}
 
@@ -340,24 +429,6 @@
           poolSize={pickFirst.poolSize}
           taken={pickFirst.taken}
           onpick={(index) => act({ type: 'pickFirst', seat, index })}
-        />
-      {:else if bombCard !== null && pending?.kind === 'play'}
-        {@const month = bombMonth()}
-        <ChoicePrompt
-          title="폭탄?"
-          message={`${month}월 ${handCardsOfMonth(month).length}장으로 바닥 패를 한꺼번에 먹습니다`}
-          cards={handCardsOfMonth(month)}
-          choices={[
-            { id: 'bomb', label: '폭탄', primary: true },
-            { id: 'single', label: '한 장만' },
-            { id: 'cancel', label: '취소' },
-          ]}
-          onchoose={(id) => {
-            const card = bombCard;
-            if (id === 'cancel' || card === null || month === null) bombCard = null;
-            else if (id === 'bomb') act({ type: 'bomb', seat, month });
-            else act({ type: 'play', seat, card });
-          }}
         />
       {:else if pending?.kind === 'target'}
         <TargetModal
@@ -379,11 +450,11 @@
         />
       {:else if pending?.kind === 'shake'}
         <ChoicePrompt
-          title="흔들까요?"
+          title="흔들고 내기"
           message={`${pending.month}월 ${handCardsOfMonth(pending.month).length}장을 보여 주고 이기면 ×2`}
           cards={handCardsOfMonth(pending.month)}
           choices={[
-            { id: 'shake', label: '흔들기', primary: true },
+            { id: 'shake', label: '흔들고 내기' },
             { id: 'noShake', label: '그냥 내기' },
           ]}
           onchoose={(id) => act({ type: 'shake', seat, accept: id === 'shake' })}
@@ -434,12 +505,26 @@
     <Hand
       compact
       cards={me.hand ?? []}
+      revision={view}
       {playable}
       {matchable}
-      visualGroups={handGroups}
+      cuesEnabled={localHintLevel !== 'off' && !busy && !landscape && soloAligned}
+      visualGroups={[
+        ...handGroups,
+        ...assist.secured.map((card) => ({
+          id: `secured-${card}`,
+          kind: 'secured' as const,
+          cards: [card],
+        })),
+      ]}
+      {bombCards}
       selectedGroup={selectedHandGroup}
       onplay={play}
-      onpreview={(id) => (preview = id)}
+      oninvalidate={cancelReserved}
+      onpreview={(id) => {
+        preview = id;
+        if (id !== null) singleCard = bombCards.includes(id) ? id : null;
+      }}
     />
   </div>
   <dialog class="board-info" bind:this={infoDialog} aria-label="판 정보">

@@ -58,15 +58,27 @@ export function layoutFixture(kind: string, expanded = false): BoardView {
   };
   return {
     ...base,
+    legal:
+      kind === 'play' || kind === 'bomb' || kind === 'flip'
+        ? [
+            ...hand.map((card) => ({ type: 'play' as const, seat: 0 as const, card })),
+            ...(kind === 'bomb'
+              ? [{ type: 'bomb' as const, seat: 0 as const, month: 1 as const }]
+              : []),
+            ...(kind === 'flip' ? [{ type: 'flipOnly' as const, seat: 0 as const }] : []),
+          ]
+        : [],
+    canFlipOnly: kind === 'flip',
     floor,
     deckCount: kind === 'target' ? 15 : 16,
     pending: prompts[kind] ?? { kind: 'play', seat: 0 },
-    playable: kind === 'play' || kind === 'bomb' ? hand : [],
+    playable: kind === 'play' || kind === 'bomb' || kind === 'flip' ? hand : [],
     seats: [
       {
         ...base.seats[0],
         hand: kind === 'first' ? [] : hand,
         handCount: kind === 'first' ? 0 : 10,
+        bombTokens: kind === 'flip' ? 2 : 0,
         captured: empty,
         name: '가나다라마바사아자차카타파하',
         balance: expanded ? Number.MAX_SAFE_INTEGER : 51_200,
