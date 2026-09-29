@@ -1,25 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- p2p-gostop 자체 제작 카드 뒷면. CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) -->
+<!-- p2p-gostop 자체 제작 카드 뒷면. CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+     고전 화투의 붉은 뒷면: 앞면과 같은 판형·테두리, 짙은 주홍 바탕에 잔잔한 마름모 격자,
+     금색 이중 테와 모서리 꺾쇠, 가운데 매화 원문. 작은 크기에서 무늬가 번쩍이지 않게 격자 대비를 낮게 둔다. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="103.2" height="168.2" viewBox="0 0 103.2 168.2">
   <defs>
-    <!-- 마름모 격자 무늬 -->
-    <pattern id="lattice" width="12" height="12" patternUnits="userSpaceOnUse">
-      <path fill="none" stroke="#e8454b" stroke-width="1.2" d="M6 0L12 6L6 12L0 6Z"/>
+    <pattern id="lattice" width="8" height="8" patternUnits="userSpaceOnUse" x="3.6" y="0.1">
+      <path fill="none" stroke="#c42a2a" stroke-width="0.9" d="M4 0 8 4 4 8 0 4Z"/>
+      <circle cx="4" cy="4" r="0.9" fill="#c42a2a"/>
     </pattern>
   </defs>
-  <path fill="#b8141b" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
+  <!-- 바깥 판: 앞면 테두리와 같은 외곽 -->
+  <path fill="#ef1d1e" d="M5 0Q0 0 0 5v158.2q0 5 5 5h93.2q5 0 5-5V5q0-5-5-5z"/>
+  <!-- 밝은 외곽선: 녹색 탁자와 구분 (UX-12). 앱에서도 1 CSS px 실루엣을 보장한다. -->
+  <rect x="1.2" y="1.2" width="100.8" height="165.8" rx="4" fill="none" stroke="#fff1cb" stroke-width="2.4"/>
+  <!-- 안쪽 바탕 + 격자 -->
+  <path fill="#a8111a" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
   <path fill="url(#lattice)" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
-  <!-- 가운데 꽃 문양 -->
-  <circle cx="51.6" cy="84.1" r="24" fill="#b8141b" stroke="#111" stroke-width="2"/>
-  <circle cx="51.6" cy="84.1" r="19.5" fill="none" stroke="#f3c64a" stroke-width="1.5"/>
-  <g fill="#fff" stroke="#111" stroke-width="1.2">
-    <ellipse cx="51.6" cy="73.6" rx="5.5" ry="8.5"/>
-    <ellipse cx="51.6" cy="94.6" rx="5.5" ry="8.5"/>
-    <ellipse cx="41.1" cy="84.1" rx="8.5" ry="5.5"/>
-    <ellipse cx="62.1" cy="84.1" rx="8.5" ry="5.5"/>
+  <!-- 금색 이중 테 -->
+  <g fill="none" stroke="#f2c230">
+    <rect x="11" y="12" width="81.2" height="144.2" rx="4" stroke-width="1.4"/>
+    <rect x="14" y="15" width="75.2" height="138.2" rx="2.5" stroke-width="0.7"/>
   </g>
-  <circle cx="51.6" cy="84.1" r="4" fill="#f3c64a" stroke="#111" stroke-width="1.2"/>
-  <!-- 테두리 (Commons 세트와 같은 모양) -->
-  <path fill="#ef1d1e" d="M5 0Q0 0 0 5v158.2q0 5 5 5h93.2q5 0 5-5V5q0-5-5-5zm8.3 7.2h76.6q7 0 7 7V154q0 7-7 7H13.3q-7 0-7-7V14.2q0-7 7-7"/>
+  <!-- 모서리 꺾쇠 -->
+  <path fill="none" stroke="#f2c230" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M18 27v-9h9M23 23h4v4M85.2 27v-9h-9M80.2 23h-4v4M18 141.2v9h9M23 145.2h4v-4M85.2 141.2v9h-9M80.2 145.2h-4v-4"/>
+  <!-- 가운데 원문: 먹 테를 두른 주홍 원, 금 고리, 흰 매화 다섯 잎 -->
+  <circle cx="51.6" cy="84.1" r="21" fill="#ef1d1e" stroke="#000" stroke-width="1.8"/>
+  <circle cx="51.6" cy="84.1" r="17.6" fill="none" stroke="#f2c230" stroke-width="1.4"/>
+  <circle cx="51.6" cy="84.1" r="15.3" fill="none" stroke="#f2c230" stroke-width="0.6"/>
+  <g fill="#fff" stroke="#000" stroke-width="1.1" transform="translate(51.6 84.1)">
+    <path id="petal" d="M0-2.2C-4.6-4.4-6.2-9.4-3.8-12.2-2.3-13.8 0-13 0-11.2 0-13 2.3-13.8 3.8-12.2 6.2-9.4 4.6-4.4 0-2.2Z"/>
+    <use href="#petal" transform="rotate(72)"/>
+    <use href="#petal" transform="rotate(144)"/>
+    <use href="#petal" transform="rotate(216)"/>
+    <use href="#petal" transform="rotate(288)"/>
+  </g>
+  <!-- 꽃술: 가운데 금 원에서 잎 사이로 뻗는 짧은 먹선 -->
+  <path fill="none" stroke="#000" stroke-width="0.9" stroke-linecap="round" transform="translate(51.6 84.1)" d="M0 0 3.5-4.8M0 0 5.7 1.9M0 0 0 5.9M0 0-5.7 1.9M0 0-3.5-4.8"/>
+  <circle cx="51.6" cy="84.1" r="3.2" fill="#f2c230" stroke="#000" stroke-width="1"/>
+  <!-- 안쪽 먹선 (앞면과 같은 선) -->
   <path fill="none" stroke="#000" stroke-width="1.2" d="M13.3 7.2q-7 0-7 7V154q0 7 7 7h76.6q7 0 7-7V14.2q0-7-7-7z"/>
 </svg>

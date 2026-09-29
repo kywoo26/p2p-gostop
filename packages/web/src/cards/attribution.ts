@@ -32,7 +32,8 @@ export const ORIGINAL_ART_LICENSE = {
   name: 'CC0 1.0',
   title: 'Creative Commons Zero v1.0 Universal (퍼블릭 도메인 헌정)',
   url: 'https://creativecommons.org/publicdomain/zero/1.0/',
-  scope: '보너스 카드 3장(48~50번)과 카드 뒷면은 p2p-gostop 기여자가 직접 그렸다.',
+  scope:
+    '보너스 카드 3장(48~50번: 2피·2피·3피)과 카드 뒷면은 p2p-gostop 기여자가 Commons 세트와 같은 판형·테두리·색으로 직접 그렸다(Commons 그림을 옮기거나 변형하지 않음).',
 } as const;
 
 export const CODE_LICENSE = { name: 'MIT', scope: '앱 코드(엔진·UI)는 MIT 라이선스다.' } as const;
