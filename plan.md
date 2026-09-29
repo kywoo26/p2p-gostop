@@ -391,7 +391,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-RP-04 | 부분: 같은 방 역할 재인증·4001, 재시작 시 방 소실 | RP-04A/07 게임 hello·snapshot 복귀 및 중복 적용 검증 |
 | FR-RP-05 | 부분: host 단절 10분·방 절대 만료 | RP-05C/07 입력 잠금·오류 구별·세션 종료 안내 |
 | FR-RP-06 | 미구현: RP-02는 동일 웹 artifact 제공 경계만 지원 | RP-05B의 반응형 웹 UI·키보드·200% 확대 |
-| FR-RP-07 | 부분: 최소 `/health`·`/version` 응답 | RP-03 PC 스크립트·RP-04A health 검증·RP-05C 3단계 안내 |
+| FR-RP-07 | 부분: 최소 `/health`·`/version` 응답, RP-05C 3단계 안내·health 재시도·오류별 문구와 브라우저 검증 | RP-03 PC 스크립트 연계·RP-05A 방/초대 연결·실기기 검증 |
 | FR-RP-08 | 미구현: RP-02 서버는 Android LOHS/LAN gate를 제어하지 않음 | RP-04B/05C/07 원격 진입·복귀 시 핫스팟 차단 검증 |
 
 | ID | 상태 | 코드·검증 근거 | 남은 항목 |
