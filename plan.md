@@ -142,14 +142,14 @@ p2p-gostop/
 
 ### 1.9 원격 중계 모드 개정안 (승인 전)
 
-근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-승인-전), [후보·공식 한도](docs/research/remote-play.md). **1순위 PC+Funnel(2026-09-29 사용자 기본 WS 통과 확인), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 임시 Tailscale 노드 공유(상대 설치 필요)**. [실측 결과](docs/device-test/remote-play.md#결과-기록--2026-09-29-사용자-제공)에서 프록시 host의 1008 거절도 확인했으므로 RP-02는 루프백 제한을 토큰 기반 인증으로 대체한다. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
+근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-승인-전), [후보·공식 한도](docs/research/remote-play.md). **1순위 PC+Funnel(2026-09-29 사용자 기본 WS 통과 확인), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 선택적 RP-A 테일넷 직접 연결(상대 설치 필요·우선 구현 안 함)**. [실측 결과](docs/device-test/remote-play.md#결과-기록--2026-09-29-사용자-제공)에서 프록시 host의 1008 거절도 확인했으므로 RP-02는 루프백 제한을 토큰 기반 인증으로 대체한다. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
 
 | 경로 | 구조·책임 |
 |---|---|
 | 현행 LAN | LOHS → Ktor 정적 웹/WS → Safari, Galaxy WebView 루프백 origin. 현행 LAN gate·host 루프백 검증 유지 |
 | 원격 1순위 | Galaxy WebView(권위 엔진) → **아웃바운드 WSS** → Funnel TCP 중계 → PC TLS 종단 → Docker 방 중계 ← iPhone/Mac WSS. 게스트 웹은 같은 PC의 HTTPS 번들. Galaxy용 웹은 APK의 로컬 번들 |
 | 원격 2순위 | 양단 아웃바운드 WSS → Worker 인증/라우팅 → 방당 SQLite-backed DO. HTTPS 정적 웹은 Pages. 클라우드도 규칙·원장·시드 보관/계산 없음 |
-| 임시 노드 공유 | 인증된 PC 중계를 private Serve로 공유, 상대 Tailscale 설치·계정·노드 초대 필요. 무설치 요구 충족으로 표시하지 않음 |
+| 선택적 A안(RP-A) | 상대 Tailscale 앱/계정·Galaxy 노드 공유 → Galaxy 테일넷 HTTP/WS 직접 접속. PC·별도 게임 중계 불필요, 비보안 컨텍스트 유지. B안 선행 아님 |
 
 | 설계 지점 | 구현 제안 |
 |---|---|
@@ -163,7 +163,7 @@ p2p-gostop/
 | 서버 상태 경계 | PC 방 메타데이터는 메모리 TTL·재시작 시 소실, 양쪽에 새 방/초대 안내. 폰의 원장 복구와 서버 방 복구를 구분. cloud DO는 소켓 attachment+최소 TTL 메타데이터/만료 alarm로 휴면 복원, 프레임/게임 로그는 저장 안 함 |
 | 서버 신뢰 | Funnel 사업자는 암호문 TCP 전달, PC가 TLS 종단·평문 중계. cloud 대안은 Cloudflare가 TLS 종단. 둘 다 악성 중계/웹 배포자를 배제하는 게임 양단 E2EE가 아니며 commit-reveal 한계 표시 |
 | 보안 컨텍스트 | 원격 Safari는 HTTPS이므로 AGENTS §3의 Clipboard/Share/Wake Lock 등 일부 제약 완화 **가능성**이 있음. 초기 범위는 기존 폴백·순수 JS 해시 유지. 나중에 mode+secureContext+지원 여부 검사를 갖춘 별도 어댑터/린트 예외를 승인받아 추가; LAN·서비스 워커·가로 잠금 등 전역 금지 일괄 해제 없음 |
-| 외부 요청 검사 | `check-bundle.ts`·`NoExternalUrlTest.kt`를 없애지 않고 지정 원격 HTTPS/WSS만 허용하는 검사로 개정. WSS·동적 URL·오프라인 런타임 외부 요청까지 negative test. 로컬/원격 모드 종료 뒤 예약 재연결/건강 확인 요청 0 |
+| 외부 요청 검사 | `packages/web/scripts/check-bundle.mjs`·`NoExternalUrlTest.kt`를 없애지 않고 지정 원격 HTTPS/WSS만 허용하는 검사로 개정. WSS·동적 URL·오프라인 런타임 외부 요청까지 negative test. 로컬/원격 모드 종료 뒤 예약 재연결/건강 확인 요청 0 |
 | cloud 패키지 대안 | `packages/relay-cloud`는 DO를 선택할 때만 추가. protocol의 공개 relay 계약만 공유하고 engine 실행 의존은 금지. imports/exports 변경 시 `docs/reviews/refactor-import-boundaries.md`·린트·probe 함께 수정. Node ws를 DO에서 그대로 실행할 수 있다고 가정하지 않음 |
 
 #### 배포·비밀·가용성
@@ -176,17 +176,56 @@ p2p-gostop/
 | cloud 비밀 | 최소 권한 Cloudflare API token은 GitHub environment secret, 서비스 생성 키는 Worker secret. PR/fork에 운영 secret 미제공. 운영/검증 DO namespace·생성 키 분리. 신규 CLI/Action 버전·권한은 RP-03에서 확정, 이 문서에 임의 최신 버전 추가 안 함 |
 | 비용·장애 | PC 전기·회선/관리 시간을 인정하고 추가 서비스 요금 0 유지. Funnel 수치 미공개 한도/PC 장애 또는 Cloudflare quota 초과 시 새 방 차단·진행 입력 잠금·재시도 안내, 유료 이전 없음. 오류 로그는 내용/토큰 없이 집계만. 관리자에게 임의 진단 업로드 없음 |
 
-#### 마일스톤·PR 분해 (모두 승인 후)
+#### 두 안의 공통 전송 경계
 
-| ID / 순서 | PR 범위 | 완료 기준·요구사항 |
+[refactor-plan §4 전송 추상화](docs/refactor-plan.md#4-장기-계획-접점-있는-것-보존-필요한-것만-준비)의 기존 `Transport` 계약을 사용한다. **B안은 설정 가능한 중계 HTTPS/WSS URL + 공개 중계 인증 어댑터**, A안은 선택 시 Galaxy 테일넷 HTTP/WS URL + 현행 직접 연결 어댑터를 주입한다. 엔진·세션·hello/snapshot은 endpoint를 알지 않는다. B안 중계 URL은 호스트 설정에서 명시적으로 등록/변경하고 프로토콜·정규화된 origin을 검증하며, 공개 초대 링크의 임의 endpoint를 신뢰하지 않는다. 허용 origin은 배포 설정/사용자 확인으로 확정하고 검사 gate에 반영한다. A안이 미구현일 때 해당 선택 UI/접속 경로는 활성화하지 않는다. 방 토큰·저장·재접속은 모드+origin+room별로 격리, URL/모드 변경은 세션 종료 후 적용한다. RP-A의 HTTP 허용이 B안의 WSS 필수를 완화하지 않는다.
+
+#### RP-A 테일넷 직접 연결 — 선택적 확장, 기본 경로의 선행 아님
+
+사용자 최종 결정은 **B안 PC Docker 중계+Funnel·파트너 무설치/링크만을 1순위 구현**하는 것이다. A안은 파트너 설치를 받아들이는 경우의 선택적 확장으로만 남기며 우선 구현하지 않는다. Galaxy도 기존 테일넷 노드이므로 상대가 Tailscale 앱·계정을 준비하고 Galaxy 노드 공유를 수락하면 브라우저에서 `http://100.x.y.z:17777/` 또는 확인된 MagicDNS 이름으로 Galaxy Ktor에 접속한다. PC·별도 게임 중계·Funnel·클라우드 배포는 없다. 게임 호스트는 그대로 Galaxy WebView이며 WS host 역할은 루프백 전용이다. WireGuard 사설망의 기기 간 게임 연결이지만 Tailscale direct 실패 시 DERP 등 전송 중계를 쓸 수 있으므로 ‘항상 물리적 직접 연결’은 보장하지 않는다([공식 연결 유형](https://tailscale.com/docs/reference/connection-types)).
+
+| 변경 경계 | 최소 구현·수용 조건 |
+|---|---|
+| 선택 옵션 | `tailnetEnabled`(제안 이름) 기본 끔. 일반 `lanEnabled`와 분리해 설정에서 명시적으로 켠다. LOHS·주소만 표시를 자동으로 켜지 않으며, 테일넷 모드 동안 일반 LAN gate는 닫힘 |
+| IP 선택 | `IpSelector`에 별도 테일넷 선택 경로: 활성 VPN 인터페이스의 `100.64.0.0/10` 주소, Galaxy의 `tun0`는 우선 후보. 핫스팟의 VPN/CGNAT 감점은 그대로. 인터페이스 이름·100.x만으로 Tailscale이라고 단정하지 않으며 셀룰러 CGNAT·다른 VPN은 제외, 식별 불확실 시 닫힘. MagicDNS는 공유 상대의 실제 이름 해석 확인 후 표시, 실패 시 100.x 사용 |
+| 서버 gate | `SmokeServer`의 HTTP/guest WS에 테일넷 전용 허용 분기를 추가. 대상 로컬 주소/수신 인터페이스와 실제 peer 주소를 검증해 선택한 테일넷 경로만 허용, `100.64/10` 출발지 검사만으로 전체 LAN을 열지 않음. VPN 해제/주소 변경/옵션 끔이면 기존 해당 guest도 닫고 URL 제거. Android의 실제 VPN 전달 주소/인터페이스 확인이 불가능하면 허용 범위를 넓히지 않고 후속 설계 |
+| 홈·로비 | ‘테일넷 직접 연결(Tailscale 설치 필요)’ 표시, 테일넷 URL·QR과 핫스팟 SSID/IP를 명확히 구별. RP-A은 방 코드/공개 토큰/정적 서버 신규 배포 없음. 기존 1 guest·sessionToken·hello/snapshot 사용 |
+| 보안·플랫폼 | tailnet 정책으로 공유 상대→Galaxy TCP 17777만 허용, 공유 노드 격리(수신 연결만; 응답은 가능). 앱 gate로 테일넷 밖 요청 차단·공개 포트 포워딩 없음. HTTP는 WireGuard 터널 안이어도 **브라우저 비보안 컨텍스트**: 금지 API 유지. Android 앱 Funnel 서빙은 공식 지원 경로가 없어 사용하지 않음([Funnel 요구사항](https://tailscale.com/docs/features/tailscale-funnel)) |
+
+#### 마일스톤·PR 분해 (구현은 승인 후)
+
+시간은 **담당 1인의 구현·해당 자동 검증 합계 추정**, 각 행은 1일 이내(최대8시간) PR 범위다. 달력상 연속 일정/완료 보장이 아니며 리뷰·선행 병합 대기와 사람의 2시간 연결 시험은 별도다. 신규 경로는 후보 이름이며 RP-01에서 확정한다. `web/`는 `packages/web/`, `android/…/`는 `android/app/src/main/kotlin/com/kywoo26/p2pgostop/`를 뜻한다. 각 행 소유자는 해당 PR 담당이며 인계 전 같은 파일을 병렬 수정하지 않는다. **기본 실행 순서는 RP-01→02A→02B→02C→03→04A→04B→05A→05B→06→07**이다. 아래 RP-A1/A2는 별도 선택 시만 실행하며 기본 경로를 막지 않는다.
+
+공통 인계: 선행 PR 번호·병합 SHA·API/props/상태 계약·통과 테스트·남은 실패를 후속 PR 본문에 기록한다. [리팩터 소유권](docs/refactor-plan.md#5-에이전트용-변경-위치-지도와-소유권)·[스킨 시작 조건](docs/design/pro-skin-plan.md#1-시작-조건과-이식-경계)·§3이 정본이다. **RP-05/06 및 RP-A의 홈/로비 변경은 #104→후속 스킨 PR 병합 뒤** 디자인 담당이 경로/기준샷을 인계한다. 스킨 PR 번호가 정해지면 인계 기록에 연결하며 미병합 동안 UI 착수 금지. `p2p/*`·App/Game·bridge 접점은 **v0.2.2 UX 담당(#151 후속·§3 .2-A~C)과 상태/재접속 계약 조율 후 담당 변경 병합본으로 직렬 인계**한다. 합의가 없으면 net/Android 독립 부분까지만 진행한다.
+
+| PR / 일별 범위·예상 시간 | 단독 소유 파일·담당 영역 | 선행 병합 → 인계 조건·완료 기준 |
 |---|---|---|
-| RP-01 | 규범 정합·인증 제어 계약·Funnel 검증 계획 | intend/AGENTS의 모드 예외, spec §13·프로토콜 부록·타이머 v3와 버전 조정. 공식 API(Context7)와 설치 Tailscale 버전 확인, 신뢰 경계/TTL 리뷰 |
-| RP-02 | PC 중계 서버 강화 | relay-dev 공개 모드·방/토큰·제한·TTL·정적 웹. 기존 relay 시나리오+교차 방/잘못된 토큰/프록시 loopback 공격/교체 경합 검증. NP-RP-01~07·NF-RP-01~03 |
-| RP-03 | 정적 배포·PC Docker/Funnel 운영 절차 | 동일 dist·버전별 URL·비밀/롤백·외부 경로 제한. 기본 WS 통과 조건 해소; 관리 콘솔 funnel 노드 속성 1회 승인 절차 반영. 강화 중계의 인증/방 query·2시간·재부팅 검증은 후속. 운영 제약 또는 PC 독립 필요 시 **별도 RP-03C**로 relay-cloud·Pages/무료 배포 파이프라인 구현, 둘을 동시에 만들지 않음 |
-| RP-04 | Android 아웃바운드 모드 | WSS transport·endpoint 등록·화면/프로세스 복귀·LAN gate 닫힘. 서버 전용 모드/서비스 수명 JVM·WebView 검증, FR-RP-01/04/05 |
-| RP-05 | 방 코드·링크·QR·로비 UI | 링크 한 번 참여·코드 호스트 승인·초대 회수·만료·중계 불가/호스트 부재 구분. 복귀 토큰은 브라우저 해당 탭 저장, 종료 때 제거·다른 탭/기기 이전은 명시적 절차. FR-RP-02~05 |
-| RP-06 | Mac 가로 레이아웃 | UX-02 데스크톱 예외·키보드·확대·접근성·모바일 회귀. FR-RP-06 |
-| RP-07 | 통합 E2E·사람 검증·출시 판정 | Chromium/WebKit 두 클라이언트, 지연/손실·호스트 부재·quota·만료·재접속·commit-reveal·LAN 외부 요청 0. AC-RP-01~05; [실기기 절차](docs/device-test/remote-play.md)에 사용자가 준 결과만 기록 |
+| RP-01 · 공개 중계 규범/인증 계약, 4~6h | 문서 담당: `intend.md`, `AGENTS.md`, `spec.md`, `plan.md`, `docs/protocol.md` | 본 개정 리뷰·사용자 인터뷰 후 명세 승인(RP-A 불필요) → #123 문서 담당과 wire 버전/전송 제어 경계 합의, 공식 API·신규 파일/의존성 계획 확정. 게임 wire 변경은 별도 승인 |
+| RP-02A · 생성/역할 인증, 6~8h | 서버 담당: `packages/relay-dev/src/{index,cli}.ts`, 신규 `src/auth.ts`·대응 `test/` | RP-01 → 공개 모드 기본 비활성, loopback 우회 없는 토큰 인증·교체 전 인증 테스트. 인증 결과 타입/토큰 권한을 02B에 인계(NP-RP-01/02/05) |
+| RP-02B · 방·초대·TTL·제한, 6~8h | 서버 담당: relay-dev 신규 `src/rooms.ts`·`src/limits.ts`, `src/index.ts`·대응 `test/` | 02A 병합 → 코드/claim/만료·방 격리·큐 제한·재시작 소실 테스트, 방 API/오류·설정 계약을 02C/04에 인계(NP-RP-03~07) |
+| RP-02C · 정적 서빙, 4~6h | 서버 담당: relay-dev 신규 `src/static.ts`, `src/{index,cli}.ts`·대응 `test/` | 02B 병합 → dist만 제공·traversal/설정 노출 차단·버전 경로 검사. 실행 인자/포트/dist 경로를 RP-03에 인계; Docker/웹 UI 제외 |
+| RP-03 · PC artifact·Funnel 운영, 4~6h | 운영 담당: 신규 `docker/relay/**`·`compose.relay.yaml`, 운영 README·`docs/device-test/remote-play.md` | 02C 병합 → 비root/루프백 publish·비밀/롤백·1회 노드 승인 절차 검사. Docker/CI 담당과 기존 artifact 경계 인계, 공개 운영 전 사람 확인. **2시간 실측은 이 시간 밖**, 기본 WS PASS는 재사용 |
+| RP-04A · 공개 transport·Android 아웃바운드, 6~8h | 연결 담당: `web/src/net/**`, `web/scripts/check-bundle.mjs`, `android/…/{GameActivity,HotspotService}.kt`, `android/app/src/test/kotlin/com/kywoo26/p2pgostop/NoExternalUrlTest.kt` | 02B·03 및 Android 셸 담당 인계 → host 인증/endpoint 허용 목록·LAN gate 닫힘·transport 계약 테스트. net 공개 API를 UX 담당에게 인계; p2p/UI 수정 없음 |
+| RP-04B · 세션 재인증 연결, 4~6h | UX 인계받은 연결 담당: `web/src/p2p/{link,host.svelte,guest.svelte,common}.ts`·대응 테스트 | 04A + v0.2.2 UX 해당 PR 병합 → onConnection/hello/복귀 토큰 수명·4001·host 부재 계약 합의/테스트. 게임/정산 로직 변경 금지, RP-05 상태 모델 인계 |
+| RP-05A · 홈/호스트 로비·URL 설정·링크/QR, 6~8h | UI 담당: `web/src/routes/{Home,HostRoom,Settings}.svelte`, `p2p/{qr.ts,QrCode.svelte}`·전용 테스트. endpoint 저장은 04A의 net 계약 소비 | 04B + **#104→스킨 병합** + UX·§3 설정 담당 인계 → 중계 URL 등록/변경·공개 중계/핫스팟 주소 구별·초대 표시(RP-A 선택 UI는 미활성)·기존 폴백 검증. props/화면 상태/기준샷 인계 |
+| RP-05B · guest 코드/만료/복귀 UI, 4~6h | UI 담당: `web/src/routes/{GuestJoin,GuestApp}.svelte`, 필요 `App.svelte` 라우팅·전용 테스트 | 05A + §3 App 라우팅/UX 담당 병합·인계 → 코드 승인/토큰 탭 저장·만료/부재·다른 창 상태 검증. p2p 수정 필요 시 04B 담당 후속 PR로 먼저 인계 |
+| RP-06 · Mac 가로·접근성, 6~8h | 디자인 인계받은 UI 담당: `web/src/ui/{Board,Screen}.svelte`, `styles/tokens.css`, Mac 전용 browser/E2E·기준샷 | 05B + **#104→스킨 병합** + 디자인의 Board/토큰 인계 → 키보드/200%·모바일4화면 회귀, `--dur-*`/anim·p2p 변경 없음. 공용 기준샷 담당과 변경 목록 합의 |
+| RP-07 · 통합 자동 검증, 6~8h | 통합 담당: 신규 `web/e2e/remote-play.spec.ts`, `docs/device-test/remote-play.md` | 03~06 병합 → AC-RP-01~05·지연/단절/한도/기내 회귀. 사람 Funnel 2시간/PC 복구는 별도 일정, 결과 제공 전 완료 판정 금지 |
+
+선택적 RP-A도 아래 범위를 별도 승인한 경우에만 직렬 실행한다. 사람의 direct/DERP·VPN 해제 시험 시간은 별도다.
+
+| 확장 PR / 시간 | 소유 파일·경계 | 선행 병합·인계/완료 조건 |
+|---|---|---|
+| RP-A1 · 테일넷 주소/gate·설정 계약, 6~8h | Android 담당: `android/…/{net/IpSelector,server/SmokeServer,HotspotModel,HotspotService,GameActivity}.kt`·대응 JVM 테스트; 선택 시 spec A안 개정·프로토콜 모드 설명 | B안과 별개로 A안 선택·명세 승인·Android 셸 담당(§3 .3-C) 인계 → 기본 끔/경계 IP/다른 VPN/옵션 해제·LAN 회귀 검증, 브리지 응답 형태를 RP-A2에 전달 |
+| RP-A2 · 홈/로비 옵션·주소/QR, 4~6h | 웹 담당: `web/src/routes/{Home,HostRoom}.svelte`, `bridge/bridge.ts`, `p2p/{hotspot.svelte,qr}.ts`·전용 테스트, `docs/device-test/remote-play.md` | RP-A1 + #104 + 스킨 + UX의 해당 p2p/bridge 병합·인계 → 주소 종류·옵션/해제 UI 테스트, RP-A 사람 검증 요청. 공용 토큰/Board 수정 없음 |
+
+**RP-03C는 PC/Funnel 운영 제약 때문에 사용자가 Cloudflare 대안을 선택할 때만** 착수한다. 서버 구현 교체이며 UI/Android/게임 wire를 소유하지 않는다. 아래 각 PR도 하루 규모로 직렬 진행하고 기존 PC 경로와 동시에 신규 구축하지 않는다.
+
+| 대안 PR / 시간 | 소유 파일·경계 | 선행 병합·인계/완료 조건 |
+|---|---|---|
+| RP-03C1 · DO 인증/방 어댑터, 6~8h | cloud 담당: 신규 `packages/relay-cloud/{src,test,package.json,tsconfig.json}`; 필요 protocol 공개 relay 계약·루트 lock/import 경계 문서/린트/probe | RP-01·02A/B와 대안 선택 승인 → §1.8 버전/API 검토, Node 의존 없는 프레임·역할·방 인증 동등 벡터. protocol/도구 담당과 exports 인계 |
+| RP-03C2 · 휴면·TTL·quota 복구, 6~8h | cloud 담당: relay-cloud `src/`·`test/`만 | C1 병합 → attachment·만료 삭제·재시작/무료 한도 실패·게임 내용 무저장 테스트. deployment binding/compatibility 설정 계약을 C3에 인계 |
+| RP-03C3 · Pages/Worker 배포·rollback, 4~6h | 운영 담당: 신규 relay-cloud 배포 설정·`.github/workflows/remote-cloud.yml`, 운영/기기 절차 | C2·02C·03 artifact 계약 + CI 담당 인계 → Free·비밀/namespace 분리·동일 dist·버전/rollback 검사. 기존 release workflow 변경 필요 시 소유자 PR 선행; 공개 배포/사람 실측 대기는 별도 |
 
 모든 빌드·테스트는 저장소 루트의 `docker compose run --rm dev …`(이 환경 Docker는 `/home/k/.local/bin/docker`)로 실행한다. 문서 PR에서 에이전트는 실제 Funnel 공개·클라우드 생성·실기기 검증을 수행하지 않는다. 사용자가 제공한 2026-09-29 시험 결과만 `docs/device-test/remote-play.md`에 기록했다.
 
