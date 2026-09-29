@@ -146,7 +146,7 @@ p2p-gostop/
 
 ## 3. 마일스톤 상태
 
-코드 기준 main `f697ff4`(v0.2.0 + PR #54·#55). 과거 검토의 결함·측정값은 리뷰 원문에 보존하며, 병합 자체를 수용 기준 통과로 간주하지 않는다.
+코드 기준 main `9651364`(v0.2.0 + PR #54·#55·#59). 과거 검토의 결함·측정값은 리뷰 원문에 보존하며, 병합 자체를 수용 기준 통과로 간주하지 않는다.
 
 | 단계 | 현재 상태·남은 기준 | 근거 |
 |---|---|---|
@@ -154,14 +154,14 @@ p2p-gostop/
 | M1 엔진 | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28) | [M1 리뷰](docs/reviews/M1-review.md), [규칙 벡터](docs/rules-vectors.md) |
 | M2 AI·머니 | 조건부 진행: AC-03 미달(61.4%/79.1%), MN-03·AC-10 부분(표준 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67 |
 | M3 솔로 UI | 구현·표시 수정 병합(#34); UX 규범 격차는 후속 | [M3 리뷰](docs/reviews/M3-review.md), [UI 규범](docs/design/ui-spec.md) |
-| M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54); 웹 밀기·로비 준비·판 무효 UI 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/M4-protocol-review.md), #30·#44·#58·#60 |
+| M4 정식 P2P | 통합·프로토콜 후속 병합(#42·#54·#59); 웹 밀기·로비 준비·판 무효 UI 및 E2E 단언 보강 남음 | [프로토콜 리뷰](docs/reviews/M4-protocol-review.md), #30·#44·#58·#60 |
 | M5 실기기 | 현재 UI AC-08·AC-09 미검증, iPhone 확보 후 재개(#75) | [통합 절차](docs/device-test/procedure.md), [결과 로그](docs/device-test/results.md) |
 | M6 완성도 | Galaxy 호스트·솔로 우선, P1·AC 전부 충족해야 v1.0.0 | [Galaxy·솔로 세부 계획](https://github.com/kywoo26/p2p-gostop/pull/76) |
 
 ### 현재 트랙
 
 - 제품 우선순위·PR별 소유권·완료 조건은 [Galaxy·솔로 세부 계획](https://github.com/kywoo26/p2p-gostop/pull/76)(PR #76)에만 둔다. 여기서 작업 목록을 복제하지 않는다. Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 보류한다.
-- 진행 중: AI #56, 응답 유실 복구 #59와 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. `dev.sh`는 체크아웃별 compose 프로젝트명을 부여해 볼륨을 분리한다.
+- 진행 중: AI #56, 병합된 응답 유실 복구 #59의 웹 연결 #60, 개발 진입점 #38, 빌드·릴리스 성능 #73. 각 PR 소유 파일·계약을 침범하지 않는다. `dev.sh`는 체크아웃별 compose 프로젝트명을 부여해 볼륨을 분리한다.
 - 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 끝난 리뷰·통합·수정 트랙은 위 상태 표와 리뷰 이력으로 대체한다.
 - 작업은 워크트리·브랜치·PR로 격리한다. 위임 시 Codex(Paseo)를 기본으로 판단·리뷰는 Astra, 구현은 Sol, 저위험 정리는 Luna를 배분하며 Claude 서브에이전트는 사용자 명시 때만 쓴다. 병합은 CI 녹색 + reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터만 수행한다.
 

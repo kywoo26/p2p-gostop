@@ -56,9 +56,9 @@
 ### 1.4 비행기 모드
 
 - AOSP `ActiveModeWarden`에는 SoftAP 시작 시 비행기 모드 검사가 없고, "SoftAp was enabled during airplane mode"라는 처리 분기가 있다. 즉 **AOSP 기준으로는 비행기 모드 중에도 LOHS 시작 가능**(Wi-Fi STA가 꺼져 있어도 AP 모드 매니저 단독으로 기동). [ActiveModeWarden.java](https://github.com/LineageOS/android_packages_modules_Wifi/blob/lineage-23.2/service/java/com/android/server/wifi/ActiveModeWarden.java)
-- 단, **삼성 One UI 7 이후 시스템 "모바일 핫스팟"은 비행기 모드에서 켤 수 없다는 사용자 보고**가 있다(S25, 2025-02, adb 우회도 실패. OnePlus 13에서는 동작). LOHS가 같은 제한을 받는지는 공개 자료가 없어 **미검증**. [XDA 스레드](https://xdaforums.com/t/airplane-mode-disables-mobile-hotspot-no-workaround.4717988/), [Samsung Community](https://us.community.samsung.com/t5/Tips/Airplane-mode/td-p/3282684)
+- 단, **삼성 One UI 7 이후 시스템 "모바일 핫스팟"은 비행기 모드에서 켤 수 없다는 사용자 보고**가 있다(S25, 2025-02, adb 우회도 실패. OnePlus 13에서는 동작). 조사 당시 공개 자료로는 LOHS의 같은 제한을 확인하지 못했다. 이후 S25 Ultra 실기기 성공은 결과 로그에 보존했다. [XDA 스레드](https://xdaforums.com/t/airplane-mode-disables-mobile-hotspot-no-workaround.4717988/), [Samsung Community](https://us.community.samsung.com/t5/Tips/Airplane-mode/td-p/3282684)
 - 비행기 모드를 켠 뒤 Wi-Fi를 다시 켜는 것 자체는 Android 표준 기능이며(기기가 "비행기 모드에서 Wi-Fi 유지"를 기억), 핫스팟 AP 동작과는 별개다. [Pixel 도움말](https://support.google.com/pixelphone/answer/12639358?hl=en)
-- **최우선 실기기 검증 항목**: 사용자 Android 16 기기에서 (1) 비행기 모드 ON → (2) Wi-Fi ON → (3) LOHS 시작 → (4) iPhone 접속.
+- **실기기 확인**: [M0 회차 1·2](../device-test/results.md)에서 비행기 모드 ON → Wi-Fi ON → LOHS 시작 → iPhone 접속 성공. 다른 기기와 B/C 경로는 통합 절차로 검증한다.
 
 ### 1.5 핫스팟 게이트웨이 IP 얻기
 

@@ -244,6 +244,8 @@ PNG는 디자인 설명용 도식이며 실제 카드 도상을 복제하지 않
 
 `routes/Game.svelte`는 공통 메뉴·정산·파산·3분 대기 화면과 E2E용 data-round/data-balances/data-seq/data-play-timings를 제공한다. Android gameActive·keepScreenOn은 웹에서 브리지로 전달한다.
 
+초기 Docker 계측(2026-09-28)은 Chromium p50 568~571ms·최대 596ms, WebKit p50 578~635ms·최대 599~737ms였고, 2코어 CI WebKit은 p50 660ms·최대 849ms까지 흔들렸다. 계획 상한을 540→500ms로 낮춘 근거이며 실기기 측정값은 아니다.
+
 AC-06 계측은 click timeStamp→이벤트 재생·스냅 완료를 기록한다. 현재 솔로 E2E는 p50≤700ms·두 번째 최대≤900ms를 단언하며 CI WebKit 보정 배율이 있다. 계획 상한 단위 테스트도 있으나 P2P는 시간 기록만 하므로 #58, 실기기 예산은 #70에서 검증한다.
 
 남은 웹 기능: 로비 준비·P2P 기록·판 무효 UI(#44, abortRound API는 이미 구현), 밀기 선택·정산 라벨(#30·#31), 규칙 토글/화폐 단위/잔액(#62), 진동·효과 강도(#49), AI 생각 시간(#65), 리플레이 내보내기(#71). 효과음은 Web Audio 합성 최소판이다.

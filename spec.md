@@ -170,7 +170,7 @@ RoundPhase:
 | ID | 우선 | 요구사항 |
 |---|---|---|
 | NP-01 | P0 | 전송: WebSocket over HTTP(핫스팟 내부 사설 IP, 평문). 메시지는 JSON. 향후 BLE로 교체 가능하도록 전송 인터페이스(`send/onMessage/onClose`)로 추상화. |
-| NP-02 | P0 | 호스트 권위. 게스트 → 호스트: `hello{name, sessionToken?}`, `action{seq, payload}`, `ping`. 호스트 → 게스트: `welcome{seat, sessionToken, rules, ledger}`, `snapshot{view}`, `events{from, list}`, `reject{seq, reason}`, `pong`. 게임 메시지의 원장은 요약(잔액·최근 항목)이고 전체 이력은 따로 요청한다. 판 사이 대기·파산·commit-reveal 메시지를 포함한 전체 목록은 docs/protocol.md 3장(v2). |
+| NP-02 | P0 | 호스트 권위. 게스트 → 호스트: `hello{name, sessionToken?}`, `action{seq, payload, requestId?}`, `ping`. 호스트 → 게스트: `welcome{seat, sessionToken, rules, ledger}`, `snapshot{view, requestId?}`, `events{from, list, requestId?}`, `reject{seq, reason, requestId?}`, `pong`. 게임 메시지의 원장은 요약(잔액·최근 항목)이고 전체 이력은 따로 요청한다. 판 사이 대기·파산·commit-reveal 메시지를 포함한 전체 목록은 docs/protocol.md 3장(v2). 요청별 응답 감시·재전송은 §5(#59), 웹 시계 연결은 #60 미완. |
 | NP-03 | P0 | 순번(seq)과 재동기화: 게스트는 마지막 수신 이벤트 순번을 기억하고 재접속 시 보낸다. 호스트는 차이만 보내거나 스냅샷을 다시 보낸다. |
 | NP-04 | P0 | 프로토콜 버전 필드. 불일치 시 게스트에 "호스트 앱 업데이트 필요" 또는 "페이지 새로고침" 안내. 웹 클라이언트는 호스트가 서빙하므로 오래 열린 페이지 등 구버전 클라이언트에서도 불일치할 수 있음. |
 | NP-05 | P1 | 하트비트: 게스트 ping 25초 간격. 호스트는 60초 무응답 시 끊김 처리. 배터리를 위해 더 잦게 하지 않는다. |
@@ -296,10 +296,10 @@ RoundPhase:
 | AC-03 | 상용급 AI 강도 기준 충족 | AI-04 셀프플레이 표. *(2026-09-28 미달: 61.4%/79.1%, 기준 65%/80%; #66 재도전)* |
 | AC-04 | 헤드리스 브라우저 2개로 전체 세션 자동 플레이 성공 | Playwright Chromium(호스트 역할) + WebKit(게스트 역할), 20판 연속, 재접속 시나리오 포함. |
 | AC-05 | WebKit에서 UI 회귀 없음 | Playwright WebKit 스크린샷 비교, 주요 화면 7종. |
-| AC-06 | 턴 애니메이션 총합 ≤ 700ms(빠름) | 자동 계측(이벤트 재생 시간 로그). |
+| AC-06 | 턴 애니메이션 총합 ≤ 700ms(빠름) | 자동 계측(이벤트 재생 시간 로그). *(부분: 솔로 E2E·계획 상한 검사, P2P 단언 #58·Galaxy 실측 #70 미완.)* |
 | AC-07 | 첫 로딩 전송량 ≤ 1.5MB | 빌드 리포트. |
-| AC-08 | Android: 핫스팟 켜기 → QR 표시 → 클라이언트 접속 → 1판 완료 | 사용자 실기기 테스트 + 로그 제출. 자동화 불가 항목. |
-| AC-09 | iPhone Safari: Wi-Fi QR → 접속 → 1판 완료 → 화면 끄고 켜기 후 복귀 | 사용자 실기기 테스트. |
+| AC-08 | Android: 핫스팟 켜기 → QR 표시 → 클라이언트 접속 → 1판 완료 | 사용자 실기기 테스트 + 로그 제출. *(현재 정식 UI 미검증; #75.)* |
+| AC-09 | iPhone Safari: Wi-Fi QR → 접속 → 1판 완료 → 화면 끄고 켜기 후 복귀 | 사용자 실기기 테스트. *(현재 정식 UI 미검증; iPhone 확보 후 #75 재개.)* |
 | AC-10 | 시작 잔액 산정 문서 존재, 설정 기본값과 일치 | `docs/money-model.md` 검토. *(2026-09-28 부분 충족: 표준 프리셋 3,000판만; 정통·아케이드는 표준값 준용)* |
 
 ---
