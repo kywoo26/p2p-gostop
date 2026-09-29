@@ -191,6 +191,7 @@ const FIXTURE_SAMPLES = 3;
 
 async function fixedTurnMs(page: Page, fixture: TimingFixture, query: string): Promise<number> {
   // 매 표본을 같은 저장 세션에서 시작한다. 무작위 판의 다른 이벤트 경로가 섞이지 않는다.
+  await page.setViewportSize({ width: 412, height: 915 });
   await page.goto(`./${query}#/`);
   await page.evaluate(
     (save) => localStorage.setItem('gostop.solo.v1', JSON.stringify(save)),
@@ -201,6 +202,9 @@ async function fixedTurnMs(page: Page, fixture: TimingFixture, query: string): P
   const solo = page.getByTestId('solo');
   await expect(solo).toHaveAttribute('data-can-act', 'true', { timeout: 10_000 });
   await expect(solo).toHaveAttribute('data-play-timings', '');
+  if (query === '?speed=fast') await expect(page.locator('html')).not.toHaveAttribute('data-speed');
+  else await expect(page.locator('html')).toHaveAttribute('data-speed', 'normal');
+  await expect(page.locator('[aria-label="내 손패"] button')).toHaveCount(fixture.hand.length);
   // 2줄 손패의 윗줄은 아래쪽이 겹친다. 실제로 노출된 위쪽 20px을 탭한다.
   await page
     .locator(`[aria-label="내 손패"] [data-slot="${fixture.card}"]`)
@@ -220,10 +224,18 @@ async function fixedTimingTable(
   for (const fixture of TIMING_FIXTURES) {
     const samples: number[] = [];
     for (let i = 0; i < FIXTURE_SAMPLES; i++) {
-      samples.push(
-        await test.step(`${fixture.label} seed=1 card=${fixture.card} ${fixture.events.join('→')} #${i + 1}`, () =>
-          fixedTurnMs(page, fixture, speed === 'fast' ? '?speed=fast' : '')),
-      );
+      // 앞선 턴의 AI 작업·저장 쓰기가 다음 fixture를 덮지 않게 표본마다 탭을 닫는다.
+      const samplePage = await page.context().newPage();
+      const errors = watchErrors(samplePage);
+      try {
+        samples.push(
+          await test.step(`${fixture.label} seed=1 card=${fixture.card} ${fixture.events.join('→')} #${i + 1}`, () =>
+            fixedTurnMs(samplePage, fixture, speed === 'fast' ? '?speed=fast' : '')),
+        );
+        expect(errors).toEqual([]);
+      } finally {
+        await samplePage.close();
+      }
     }
     const sorted = [...samples].sort((a, b) => a - b);
     const p50 = sorted[1] ?? 0;
@@ -247,8 +259,6 @@ test.describe('턴 시간 계측 (@timing)', () => {
     { tag: '@timing' },
     async ({ page, browserName }) => {
       test.setTimeout(4 * 60_000);
-      const errors = watchErrors(page);
-      await page.setViewportSize({ width: 412, height: 915 });
       const factor = process.env['CI'] && browserName === 'webkit' ? CI_WEBKIT_BUDGET_FACTOR : 1;
       const sorted = (await fixedTimingTable(page, 'fast', factor)).sort((a, b) => a - b);
       const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
@@ -260,7 +270,6 @@ test.describe('턴 시간 계측 (@timing)', () => {
       // spec 6.4: 700ms(빠름). 꼬리는 스케줄링 이상치 하나를 흡수하도록 두 번째로 큰 값을 900ms로 본다(이슈 #20)
       expect(p50).toBeLessThanOrEqual(700 * factor);
       expect(secondMax).toBeLessThanOrEqual(900 * factor);
-      expect(errors).toEqual([]);
     },
   );
 
@@ -269,12 +278,8 @@ test.describe('턴 시간 계측 (@timing)', () => {
     { tag: '@timing' },
     async ({ page }) => {
       test.setTimeout(5 * 60_000);
-      const errors = watchErrors(page);
-      await page.setViewportSize({ width: 412, height: 915 });
       const all = await fixedTimingTable(page, 'normal', 1);
-      expect(await page.locator('html').getAttribute('data-speed')).toBe('normal');
       console.log(`[UX-15] 보통 탭→턴 종료 ms (${test.info().project.name}): ${all.join(',')}`);
-      expect(errors).toEqual([]);
     },
   );
 });
