@@ -147,3 +147,57 @@ for (const state of ['play', 'target', 'gostop']) {
     expect(edges[1]!.bottom).toBeLessThanOrEqual(816);
   });
 }
+
+// 리뷰 P2: 접근성 트리에서 숨긴 카운터도 실제 화면의 교차 감사에는 포함한다.
+test('감사 반례: aria-hidden 카운터가 잔액 위를 덮으면 실패한다', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.goto('./#/dev/gallery/fan-play');
+  await expect(page.locator('.table')).toHaveAttribute('data-floor-fits', 'true');
+  await page.evaluate(() => document.fonts.ready);
+  expect((await page.evaluate(auditLayout)).issues).toEqual([]);
+  await page.evaluate(() => {
+    const counter = document.querySelector<HTMLElement>('.mine-hud .counter')!;
+    const balance = document.querySelector('.mine-hud .balance')!.getBoundingClientRect();
+    counter.style.cssText = `position:fixed;left:${balance.left}px;top:${balance.top}px;width:48px;height:24px;z-index:100`;
+    counter.setAttribute('aria-hidden', 'true');
+  });
+  expect(
+    (await page.evaluate(auditLayout)).issues.some(
+      (issue) =>
+        issue.startsWith('overlap:') && issue.includes('counter') && issue.includes('balance'),
+    ),
+  ).toBe(true);
+});
+
+test('감사 반례: aria-hidden 텍스트 교차 검출, display none이면 제외', async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.goto('./#/dev/gallery/fan-play');
+  await expect(page.locator('.table')).toHaveAttribute('data-floor-fits', 'true');
+  await page.evaluate(() => {
+    for (const label of ['probe-one', 'probe-two']) {
+      const el = document.createElement('span');
+      el.textContent = label;
+      el.className = label;
+      el.setAttribute('aria-hidden', 'true');
+      el.style.cssText =
+        'position:fixed;left:100px;top:100px;font:14px sans-serif;background:red;color:white;z-index:100';
+      document.body.append(el);
+    }
+  });
+  const clashes = () =>
+    page
+      .evaluate(auditLayout)
+      .then((report) =>
+        report.issues.filter(
+          (issue) =>
+            issue.startsWith('overlap:') &&
+            issue.includes('probe-one') &&
+            issue.includes('probe-two'),
+        ),
+      );
+  expect(await clashes()).toHaveLength(1);
+  await page.locator('.probe-two').evaluate((el) => {
+    el.style.display = 'none';
+  });
+  expect(await clashes()).toEqual([]);
+});

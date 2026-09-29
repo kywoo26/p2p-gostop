@@ -82,6 +82,25 @@ try {
   }
   await writeFile(`${out}/overlap-report.json`, JSON.stringify(reports, null, 2));
   const failed = reports.filter((r) => r.issues.length);
+  await writeFile(
+    `${out}/README.md`,
+    [
+      '# Pro skin captures',
+      '',
+      'Reproduce: `node packages/web/scripts/audit-overlap.mjs` (host Playwright).',
+      '',
+      `Screens: ${reports.length}; failed: ${failed.length}. Report: [JSON](overlap-report.json).`,
+      '',
+      '| Engine | Viewport | Scene | Capture | Issues |',
+      '|---|---|---|---|---|',
+      ...reports.map(
+        (r) =>
+          `| ${r.engine} | ${r.width}×${r.height} | ${r.scene} | [PNG](${r.capture}) | ${r.issues.length} |`,
+      ),
+      '',
+    ].join('\n'),
+  );
+
   console.log(
     JSON.stringify(
       {

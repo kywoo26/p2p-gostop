@@ -1,9 +1,10 @@
-// UX-06/11: 브라우저 안에서 실행하는 공통 기하 검사. 허용 겹침은 카드 스택과 손패 위 필수 선택 시트뿐.
+// UX-06/11: 브라우저 공통 기하 검사. 의도된 카드 스택·모달/선택창만 교차를 허용한다.
 export function auditLayout() {
   const issues: string[] = [];
   // 스크롤 본문 밖의 사각형과 닫힌 details는 실제로 그려지지 않는다.
   const paintedRect = (el: HTMLElement) => {
     const r = el.getBoundingClientRect();
+    let fixed = getComputedStyle(el).position === 'fixed';
     let left = r.left,
       top = r.top,
       right = r.right,
@@ -19,14 +20,25 @@ export function auditLayout() {
         p = parent.getBoundingClientRect();
       if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0)
         return new DOMRect();
-      if (['auto', 'scroll', 'hidden', 'clip'].includes(s.overflowX)) {
+      // viewport 기준 fixed는 중간 overflow 조상에게 잘리지 않는다.
+      // transform/paint containment가 fixed의 기준을 바꾸면 그 조상부터 클립한다.
+      if (
+        s.transform !== 'none' ||
+        s.filter !== 'none' ||
+        s.perspective !== 'none' ||
+        /paint|layout|strict|content/.test(s.contain) ||
+        /transform|filter|perspective/.test(s.willChange)
+      )
+        fixed = false;
+      if (!fixed && ['auto', 'scroll', 'hidden', 'clip'].includes(s.overflowX)) {
         left = Math.max(left, p.left);
         right = Math.min(right, p.right);
       }
-      if (['auto', 'scroll', 'hidden', 'clip'].includes(s.overflowY)) {
+      if (!fixed && ['auto', 'scroll', 'hidden', 'clip'].includes(s.overflowY)) {
         top = Math.max(top, p.top);
         bottom = Math.min(bottom, p.bottom);
       }
+      if (s.position === 'fixed') fixed = true;
     }
     return new DOMRect(left, top, Math.max(0, right - left), Math.max(0, bottom - top));
   };
@@ -38,9 +50,7 @@ export function auditLayout() {
       r.height > 1 &&
       s.display !== 'none' &&
       s.visibility !== 'hidden' &&
-      Number(s.opacity) > 0 &&
-      s.clipPath === 'none' &&
-      !el.closest('[aria-hidden="true"], .sr-only')
+      Number(s.opacity) > 0
     );
   };
   const describe = (el: HTMLElement) =>
@@ -62,7 +72,15 @@ export function auditLayout() {
   const allowed = (a: HTMLElement, b: HTMLElement) => {
     // 브라우저 최상위 모달과 inert 배경의 교차는 메뉴의 의도된 가림이다.
     if (Boolean(a.closest('dialog:modal')) !== Boolean(b.closest('dialog:modal'))) return true;
-    for (const selector of ['.captured .stack', '.floor .group', '.deck', '.staging']) {
+    // 홈의 장식 카드 부채는 서로만 겹친다. 메뉴·본문과의 교차는 계속 검사한다.
+    for (const selector of [
+      '.captured .stack',
+      '.floor .group',
+      '.deck',
+      '.staging',
+      '.hero-art',
+      '.pro-home-art',
+    ]) {
       if (a.closest(selector) && a.closest(selector) === b.closest(selector)) return true;
     }
     if (
@@ -176,8 +194,41 @@ export function auditLayout() {
       }),
     );
     monthGaps.push(distance);
-    if (!document.querySelector('[data-floor-folded="true"]') && distance > 12)
-      issues.push(`month separated: ${cell.dataset['month']} ${distance}`);
+    const slot = Number(cell.dataset['floorSlot']);
+    if (
+      !peers.some((peer) => {
+        const other = Number(peer.dataset['floorSlot']);
+        return (
+          Math.max(
+            Math.abs((slot % 5) - (other % 5)),
+            Math.abs(Math.floor(slot / 5) - Math.floor(other / 5)),
+          ) === 1
+        );
+      })
+    )
+      issues.push(`month separated: ${cell.dataset['month']}`);
+  }
+  const grid = board?.querySelector('.floor')?.getBoundingClientRect();
+  if (grid) {
+    const cw = Math.min(60, grid.width / 5),
+      ch = Math.min(48 / 0.614 + 12, grid.height / 3);
+    const used = new Set<number>();
+    for (const cell of floorCells) {
+      const slot = Number(cell.dataset['floorSlot']),
+        r = cell.getBoundingClientRect();
+      if (!Number.isInteger(slot) || slot < 0 || slot > 14 || slot === 7 || used.has(slot))
+        issues.push(`floor grid slot: ${slot}`);
+      used.add(slot);
+      const left = grid.left + (grid.width - 5 * cw) / 2 + (slot % 5) * cw;
+      const top = grid.top + (grid.height - 3 * ch) / 2 + Math.floor(slot / 5) * ch;
+      if (
+        r.left < left - 0.5 ||
+        r.right > left + cw + 0.5 ||
+        r.top < top - 0.5 ||
+        r.bottom > top + ch + 0.5
+      )
+        issues.push(`floor outside cell: ${slot}`);
+    }
   }
   const center = board?.querySelector('.center')?.getBoundingClientRect();
   // 진영의 상태판은 차례와 무관하게 같은 바탕·안쪽 여백을 가진다.
