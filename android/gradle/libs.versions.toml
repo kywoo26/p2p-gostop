@@ -9,7 +9,7 @@ zxing = "3.5.4"
 webkit = "1.17.1"
 activity = "1.13.0"
 junit = "4.13.2"
-json = "20260719"
+json = "20260814"
 
 [libraries]
 # AGP 9 내장 Kotlin의 기본 KGP(2.2.x)를 2.4.20으로 올리기 위한 buildscript classpath 전용 항목.
