@@ -231,6 +231,34 @@ it('미인증 방당 2·전체 8·5초 경계와 거절 후 좌석 보존', asyn
   expect(host.ws.readyState).toBe(WebSocket.OPEN);
 });
 
+it('전체 8개 미만이어도 한 방의 미인증 3번째는 1013, 다른 방은 5초까지 유지된다', async () => {
+  const clock = new ManualClock();
+  const base = await start(clock);
+  const first = (await create(base)).room!;
+  const second = (await create(base)).room!;
+  const waiting = [
+    await open(relay!.port, `/ws?role=guest&room=${first.roomId}`),
+    await open(relay!.port, `/ws?role=guest&room=${first.roomId}`),
+  ];
+  expect(waiting.every((client) => client.ws.readyState === WebSocket.OPEN)).toBe(true);
+  const third = new Client(`ws://127.0.0.1:${relay!.port}/ws?role=guest&room=${first.roomId}`);
+  const thirdClose = third.closed();
+  await third.open();
+  const thirdCode = await Promise.race([
+    thirdClose,
+    new Promise<number>((resolve) => setTimeout(() => resolve(-1), 1_000)),
+  ]);
+  expect(thirdCode).toBe(1013);
+  const other = await open(relay!.port, `/ws?role=guest&room=${second.roomId}`);
+  expect(other.ws.readyState).toBe(WebSocket.OPEN);
+  expect(waiting.every((client) => client.inbox.length === 0)).toBe(true);
+  await clock.advance(4_999);
+  expect([...waiting, other].every((client) => client.ws.readyState === WebSocket.OPEN)).toBe(true);
+  const timedOut = [...waiting, other].map((client) => client.closed());
+  await clock.advance(1);
+  expect(await Promise.all(timedOut)).toEqual([1008, 1008, 1008]);
+});
+
 it('참여 IP·방 10/분은 위조 전달 헤더로 우회할 수 없고 정각에 복구한다', async () => {
   const clock = new ManualClock();
   const base = await start(clock);
@@ -302,7 +330,7 @@ it('코드 요청은 방당 2건이고 60초 정각에 같은 unavailable로 종
   expect(await Promise.all(unavailable)).toEqual(Array(3).fill('{"t":"relay-join-unavailable"}'));
 });
 
-it('인증 소켓의 순간 40프레임 뒤 41번째를 닫고 정상 상대 좌석을 보존한다', async () => {
+it('인증 소켓의 순간 40프레임 뒤 41번째를 닫는다', async () => {
   const clock = new ManualClock();
   const base = await start(clock);
   const room = (await create(base)).room!;
@@ -311,6 +339,43 @@ it('인증 소켓의 순간 40프레임 뒤 41번째를 닫고 정상 상대 좌
   const closed = host.closed();
   host.send('frame-40');
   expect(await closed).toBe(1013);
+});
+
+it('guest 프레임 폭주 1013 뒤 host가 남고 새 guest 재인증·양방향 전달이 된다', async () => {
+  const clock = new ManualClock();
+  const base = await start(clock);
+  const room = (await create(base)).room!;
+  const guestToken = token();
+  expect(
+    (
+      await fetch(`${base}/api/rooms/${room.roomId}/credentials`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${room.hostToken}` },
+        body: JSON.stringify({
+          token: guestToken,
+          permission: 'resume',
+          expiresAt: clock.now() + 60_000,
+        }),
+      })
+    ).status,
+  ).toBe(201);
+  const host = await seat(relay!.port, room, 'host', room.hostToken);
+  const guest = await seat(relay!.port, room, 'guest', guestToken);
+  expect(await host.next()).toContain('joined');
+  for (let n = 0; n < 40; n++) guest.send(`burst-${n}`);
+  const closed = guest.closed();
+  guest.send('burst-40');
+  expect(await closed).toBe(1013);
+  for (let n = 0; n < 40; n++) expect(await host.next()).toBe(`burst-${n}`);
+  expect(await host.next()).toContain('left');
+  expect(host.ws.readyState).toBe(WebSocket.OPEN);
+  const reconnect = await seat(relay!.port, room, 'guest', guestToken);
+  expect(await host.next()).toContain('joined');
+  reconnect.send('after-limit');
+  expect(await host.next()).toBe('after-limit');
+  host.send('host-still-playing');
+  expect(await reconnect.next()).toBe('host-still-playing');
+  expect(host.ws.readyState).toBe(WebSocket.OPEN);
 });
 
 it('인증 소켓은 다음 초에 20프레임만 다시 허용하고 128KiB/초를 넘으면 닫는다', async () => {
