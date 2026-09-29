@@ -9,7 +9,7 @@
 services:
   dev:
     build: docker
-    image: p2p-gostop-dev:2 # docker/Dockerfile을 바꾸면 이 태그를 올린다(없는 태그면 run이 자동으로 빌드)
+    image: p2p-gostop-dev:3 # docker/Dockerfile을 바꾸면 이 태그를 올린다(없는 태그면 run이 자동으로 빌드)
     user: '1000:1000' # dev(=WSL 사용자 uid 1000). 소스 트리 파일 소유자가 바뀌지 않는다.
     working_dir: /work
     init: true # Ctrl-C가 npm·vite·gradle까지 전달되도록

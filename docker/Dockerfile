@@ -48,6 +48,9 @@ RUN set -eux; \
     groupmod -n dev ubuntu; \
     usermod -l dev -d /home/dev -m -c dev ubuntu; \
     install -d -o dev -g dev /work /home/dev/.gradle /home/dev/.npm /home/dev/.android; \
+    install -d -m 700 -o dev -g dev /home/dev/.claude; \
     git config --system --add safe.directory /work
 
+COPY --chmod=755 dev-entrypoint.sh /usr/local/bin/dev-entrypoint
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint"]
 WORKDIR /work

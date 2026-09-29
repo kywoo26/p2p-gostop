@@ -145,7 +145,7 @@ p2p-gostop/
 
 | 파일 | 역할 |
 |---|---|
-| `docker/Dockerfile` | 단일 개발 이미지 `p2p-gostop-dev`. 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`(Node 24.20.0, Chromium·WebKit) + Temurin JDK 21(`eclipse-temurin` 이미지에서 `COPY --from`) + Android SDK(cmdline-tools SHA-256 고정, `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`; 설치 후 sdkmanager 삭제). 2026-09-29 설치 개정은 platform-tools 37.0.1, android-36 revision 2, build-tools 36.0.0. 사용자 `dev`(uid/gid 1000). 에뮬레이터 없음. 약 4.3GB(압축 1.2GB). `cimg/android`(11.9GB)와 `node:24-bookworm-slim`은 더 쓰지 않는다. |
+| `docker/Dockerfile` | 단일 개발 이미지 `p2p-gostop-dev`. 베이스 `mcr.microsoft.com/playwright:v1.63.0-noble`(Node 24.20.0, Chromium·WebKit) + Temurin JDK 21(`eclipse-temurin` 이미지에서 `COPY --from`) + Android SDK(cmdline-tools SHA-256 고정, `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`; 설치 후 sdkmanager 삭제). 2026-09-29 설치 개정은 platform-tools 37.0.1, android-36 revision 2, build-tools 36.0.0. 사용자 `dev`(uid/gid 1000). `/home/dev/.claude`를 dev 소유로 만들어 새 볼륨을 초기화하고, 진입점에서 옛 root 소유 `node_modules`를 감지한다. 에뮬레이터 없음. 약 4.3GB(압축 1.2GB). `cimg/android`(11.9GB)와 `node:24-bookworm-slim`은 더 쓰지 않는다. |
 | `compose.yaml`(저장소 루트) | 서비스 `dev` 하나. 루트에 두는 이유: Compose 기본 탐색 파일이라 `-f` 없이 저장소 어느 하위 폴더에서도 `docker compose run --rm dev …`가 된다. 저장소를 `/work`에 바인드 마운트(`node_modules` 포함, 볼륨·소유자 보정 없음), `user: 1000:1000`, `ipc: host`(Playwright), `init: true`, 기본 `bridge` 망. 이름 고정 볼륨 `p2p-gostop-gradle`·`p2p-gostop-npm`·`p2p-gostop-android`(디버그 서명 키)는 모든 체크아웃이 일부러 공유한다(동시 Gradle 빌드 2개로 공유 캐시 확인). |
 | `.devcontainer/devcontainer.json` | 같은 `dev` 서비스를 VS Code·Codespaces·devcontainer CLI가 쓴다(`workspaceFolder: /work`, `remoteUser: dev`, `updateRemoteUserUID`, `postCreateCommand: npm ci`). Claude Code 공식 feature와 컨테이너별 `/home/dev/.claude` 볼륨을 추가한다. 안에서는 `npm`·`android/gradlew`를 그대로 실행한다. |
 | 루트 `package.json` | 옛 셸 래퍼에만 있던 태스크 중 남은 것은 `test:browser`(web 위임) 하나. Gradle은 감싸지 않고 `android/gradlew -p android <task>`를 그대로 쓴다. 포맷은 편집 훅 없이 `lint:fix`(PR #39 결정). |
@@ -153,7 +153,7 @@ p2p-gostop/
 
 - 사용: `docker compose run --rm dev <명령>`(전체 목록은 AGENTS.md 5장). 워크트리마다 Compose 프로젝트(=폴더 이름)가 달라 컨테이너가 자연히 분리된다. 프로젝트명 로직은 없다.
 - 이미지 갱신: `docker/Dockerfile`을 바꾸면 `compose.yaml`의 `image:` 태그를 올린다. 없는 태그면 `run`이 자동 빌드한다. 매번 빌드(`pull_policy: build`)는 쓰지 않는다: 실행마다 1~2초가 붙고, 베이스 이미지 메타데이터를 원격 조회해 오프라인(기내)에서 실패한다.
-- CI는 `docker/check-dev-image-tag.sh`로 Dockerfile 변경과 이미지 태그 갱신을 비교한다. `compose.yaml`에 기본 게시 포트는 두지 않고, 개발 서버를 열 때만 `run -p 5173:5173` 또는 `run -p 17777:17777`을 쓴다(Dev Container의 `forwardPorts`는 유지).
+- CI는 `docker/check-dev-image-tag.sh`로 Dockerfile 변경과 이미지 태그 갱신을 비교한다. 로컬에서는 커밋 간 변경과 인덱스·작업 트리 변경을 각각 비교한다. `compose.yaml`에 기본 게시 포트는 두지 않고, 개발 서버를 열 때만 `run -p 5173:5173` 또는 `run -p 17777:17777`을 쓴다(Dev Container의 `forwardPorts`는 유지).
 - `npm ci` 측정(WSL2 ext4 바인드 마운트, 이 머신): 257개 패키지 캐시 없음 4초, 캐시 있음 3초. 명명 볼륨 대비 불리하지 않다.
 - 알려진 제약: 워크트리 안에서는 `.git`이 호스트 절대 경로의 공용 git 디렉터리를 가리키는데 컨테이너에 마운트되지 않아, 워크트리에서 만든 APK는 `versionName 0.0.0-dev`·`GIT_SHA unknown`이다(기존 옛 셸 래퍼와 같음, 메인 체크아웃과 CI는 정상). 웹 빌드 해시는 `.git`을 직접 읽어 워크트리에서도 나온다.
 - 에뮬레이터는 선택 사항(핫스팟 검증 불가, tech-stack 6장). 필요해지면 이 이미지에 `emulator` 패키지를 더한 별도 태그를 만들고 `--device /dev/kvm`으로 쓴다. WebView 셸 스모크에만 사용.
