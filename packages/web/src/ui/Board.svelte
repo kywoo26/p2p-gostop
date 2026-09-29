@@ -41,6 +41,8 @@
     turnMs?: number | null;
     onaction?: ((action: Action, at: number) => void) | undefined;
     onskip?: (() => void) | undefined;
+    /** 판 정보 대화상자의 열림 상태를 게임 화면에 알린다 (U14). */
+    oninfochange?: ((open: boolean) => void) | undefined;
     /**
      * 짧게 알릴 문구 (국진 열끗↔쌍피 이동, 피 뺏기: M3 리뷰 S-2·I-4). 한 번만 부른다.
      * 표시·지우기(토스트 타이머)는 부르는 쪽이 한다.
@@ -61,6 +63,7 @@
     turnMs = null,
     onaction,
     onskip,
+    oninfochange,
     onnotice,
     root = $bindable(null),
   }: Props = $props();
@@ -71,6 +74,33 @@
   const myStats = $derived(seatStats(me));
   const opponentStats = $derived(seatStats(opponent));
   const actor = $derived(banner ? bannerActor(banner, seat) : null);
+
+  // #104의 판 정보 UI가 들어오면 dialog[aria-label="판 정보"]의 open 상태를
+  // Game에 전달한다. showModal/close/ESC 모두 open 속성 변경으로 관찰된다.
+  $effect(() => {
+    const board = root;
+    if (board === null || oninfochange === undefined) return;
+    let reported = false;
+    const report = () => {
+      const open =
+        board.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')?.open ?? false;
+      if (open === reported) return;
+      reported = open;
+      oninfochange(open);
+    };
+    const observer = new MutationObserver(report);
+    observer.observe(board, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['open'],
+    });
+    report();
+    return () => {
+      observer.disconnect();
+      if (reported) oninfochange(false);
+    };
+  });
 
   /** 직전에 그린 판 (알림 비교용, 반응형일 필요 없음) */
   let previous: Props['view'] | null = null;

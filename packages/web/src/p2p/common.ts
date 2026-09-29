@@ -24,7 +24,7 @@ export const PRESET_LABEL: Readonly<Record<PresetId | 'custom', string>> = {
   custom: '사용자 지정',
 };
 
-/** welcome으로 받은 규칙이 어느 프리셋인지 (국진 자동/매번 묻기는 기기 선택이라 비교에서 뺀다) */
+/** welcome으로 받은 호스트 규칙이 어느 프리셋인지 (국진 선택은 별도 설정이라 비교에서 뺀다) */
 export function presetOf(rules: RuleOptions): PresetId | 'custom' {
   const strip = (r: RuleOptions) => JSON.stringify({ ...r, gukjin: null });
   const key = strip(rules);

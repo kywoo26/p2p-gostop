@@ -1,6 +1,13 @@
 // 게임 화면(routes/Game.svelte)이 쓰는 공통 모양: 솔로·호스트·게스트가 같은 게임판·정산 화면을 쓴다(docs/design/ui-spec.md 13장).
 // 화면은 playback(재생 큐의 반응형 상태)과 아래 값만 읽고, 입력은 submit/nextRound/refill/end로만 올린다.
-import type { Action } from '@p2p-gostop/engine';
+import {
+  equivalentTargets,
+  sameAction,
+  uniqueLegalAction,
+  type Action,
+  type PlayerView,
+} from '@p2p-gostop/engine';
+import type { BoardView } from '@p2p-gostop/protocol';
 import type { Playback } from './playback.svelte.ts';
 
 export type GameMode = 'solo' | 'host' | 'guest';
@@ -57,4 +64,70 @@ export interface GameController {
   end(): void;
   attach(root: HTMLElement | null): void;
   skipAnimations(): void;
+  /** C01·C02: 재생 후 최신 권위 뷰에서만 자동 입력을 예약한다. */
+  autoAdvance(held: boolean): void;
+}
+
+/** BoardView의 floor/target pending은 PlayerView와 같은 공개 구조다. */
+export function automaticAction(view: BoardView): Action | null {
+  if (view.pending?.seat !== view.viewer || view.phase !== 'turn') return null;
+  if (view.pending.kind === 'target') {
+    const target = equivalentTargets(view as unknown as PlayerView, view.pending).representative;
+    const action: Action | null =
+      target === null ? null : { type: 'chooseTarget', seat: view.viewer, card: target };
+    return action !== null && view.legal.some((legal) => sameAction(legal, action)) ? action : null;
+  }
+  if (view.pending.kind !== 'play') return null;
+  return uniqueLegalAction(view.legal);
+}
+
+/** 같은 권위 순번의 입력은 한 번만 보낸다. 예약 사이에 뷰/보류 조건이 바뀌면 버린다. */
+export class AutoChoice {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private sent = new Set<string>();
+  private readonly current: () => { view: BoardView | null; ready: boolean };
+  private readonly submit: (action: Action) => boolean;
+  private readonly onSent: ((action: Action) => void) | undefined;
+
+  constructor(
+    current: () => { view: BoardView | null; ready: boolean },
+    submit: (action: Action) => boolean,
+    onSent?: (action: Action) => void,
+  ) {
+    this.current = current;
+    this.submit = submit;
+    this.onSent = onSent;
+  }
+
+  advance(held: boolean): void {
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    if (held) return;
+    const { view, ready } = this.current();
+    const action = ready && view !== null ? automaticAction(view) : null;
+    if (view === null || action === null) return;
+    const key = `${view.round}:${view.eventSeq}:${view.viewer}:${JSON.stringify(action)}`;
+    if (this.sent.has(key)) return;
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      const latest = this.current();
+      const next = latest.ready && latest.view !== null ? automaticAction(latest.view) : null;
+      if (
+        latest.view?.round !== view.round ||
+        latest.view.eventSeq !== view.eventSeq ||
+        next === null ||
+        !sameAction(next, action)
+      )
+        return;
+      if (this.submit(action)) {
+        this.sent.add(key);
+        this.onSent?.(action);
+      }
+    }, 0);
+  }
+
+  dispose(): void {
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+  }
 }
