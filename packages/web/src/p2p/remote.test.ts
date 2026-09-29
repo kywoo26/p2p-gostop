@@ -256,4 +256,36 @@ describe('RP-04B 초대와 참여 경계', () => {
       vi.useRealTimers();
     }
   });
+
+  it('NP-RP-03: 초대 인증 1008 뒤 retry는 폐기된 transport에 머무르지 않는다', async () => {
+    const sockets: FakeSocket[] = [];
+    const guest = createRemoteGuest({
+      allowedOrigin: 'https://relay.example.test',
+      storage: {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+      },
+      socketFactory: () => {
+        const socket = new FakeSocket();
+        sockets.push(socket);
+        return socket as unknown as WebSocket;
+      },
+      onTransport: () => {
+        throw new Error('unexpected transport');
+      },
+    });
+    const link = `https://relay.example.test/r/v1/${'a'.repeat(64)}/#/join?room=${room}&t=${token}`;
+    try {
+      const joining = guest.joinByLink(link, '친구');
+      sockets[0]!.open();
+      sockets[0]!.close(1008);
+      expect(await joining).toEqual({ ok: false, code: 'invalid' });
+      guest.retry();
+      expect(guest.snapshot).toMatchObject({ state: 'error', error: 'invalid' });
+      expect(sockets).toHaveLength(1);
+    } finally {
+      guest.leave();
+    }
+  });
 });

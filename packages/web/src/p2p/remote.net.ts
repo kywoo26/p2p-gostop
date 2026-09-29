@@ -34,6 +34,14 @@ function memory(): SettingsStore {
   };
 }
 
+function deferred(): { promise: Promise<void>; release: () => void } {
+  let release = () => {};
+  const promise = new Promise<void>((done) => {
+    release = done;
+  });
+  return { promise, release };
+}
+
 afterEach(async () => {
   await Promise.allSettled(cleanup.splice(0).map((close) => close()));
   if (child && child.exitCode === null && child.signalCode === null) {
@@ -246,4 +254,195 @@ it('FR-RP-04: 같은 방 복귀는 기존 역할 소켓을 4001로 교체하고 
   await host.close();
   await until(resumed, (snapshot) => snapshot.state === 'ended');
   expect(await resumed.resume()).toEqual({ ok: false, code: 'invalid' });
+}, 15_000);
+
+it('FR-RP-01: close 중 진행 중인 /version 응답이 도착해도 방 생성과 transport가 부활하지 않는다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const entered = deferred();
+  const release = deferred();
+  const requests: string[] = [];
+  let transports = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push(`${init?.method ?? 'GET'} ${url}`);
+      if (url.endsWith('/version')) {
+        entered.release();
+        await release.promise;
+      }
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {
+      transports++;
+    },
+  });
+  cleanup.push(() => host.close());
+  const creating = host.createRoom();
+  await entered.promise;
+  await host.close();
+  release.release();
+  await expect(creating).rejects.toThrow('cancelled');
+  expect(requests.some((request) => request.includes('POST '))).toBe(false);
+  expect(transports).toBe(0);
+  expect(host.snapshot.state).toBe('ended');
+  expect(host.snapshot.room).toBeUndefined();
+  expect(storage.getItem('p2p-gostop.remote-room.v1')).toBeNull();
+}, 15_000);
+
+it('FR-RP-01: close 뒤 방 생성 201이 도착하면 자격을 읽어 서버 방을 DELETE한다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const entered = deferred();
+  const release = deferred();
+  let deletes = 0;
+  let invites = 0;
+  let transports = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url.endsWith('/api/rooms')) {
+        const response = await adapter.fetcher(input, init);
+        entered.release();
+        await release.promise;
+        return response;
+      }
+      if (url.endsWith('/credentials')) invites++;
+      if (init?.method === 'DELETE') deletes++;
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {
+      transports++;
+    },
+  });
+  cleanup.push(() => host.close());
+  const creating = host.createRoom();
+  await entered.promise;
+  await host.close();
+  release.release();
+  await expect(creating).rejects.toThrow('cancelled');
+  expect(deletes).toBe(1);
+  expect(invites).toBe(0);
+  expect(transports).toBe(0);
+  expect(host.snapshot.state).toBe('ended');
+  expect(storage.getItem('p2p-gostop.remote-room.v1')).toBeNull();
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+}, 15_000);
+
+it('FR-RP-01: 201 뒤 초대 등록 실패는 보존한 hostToken으로 방을 DELETE한다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const deleted: string[] = [];
+  let deleteAuthorization = '';
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/credentials')) return new Response(null, { status: 503 });
+      if (init?.method === 'DELETE') {
+        deleted.push(url);
+        deleteAuthorization = new Headers(init.headers).get('Authorization') ?? '';
+      }
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {
+      throw new Error('unexpected transport');
+    },
+  });
+  cleanup.push(() => host.close());
+  await expect(host.createRoom()).rejects.toThrow('unavailable');
+  expect(deleted).toHaveLength(1);
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+  expect(storage.getItem('p2p-gostop.remote-room.v1')).toBeNull();
+  const response = await adapter.fetcher(deleted[0]!, {
+    method: 'DELETE',
+    headers: { Authorization: deleteAuthorization },
+  });
+  expect(response.status).toBe(401);
+}, 15_000);
+
+it('FR-RP-01: close가 초대 등록 대기 중인 서버 방을 지우고 후속 연결을 막는다', async () => {
+  const base = await startRelay();
+  const adapter = adapt(base);
+  const settings = memory();
+  const storage = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const entered = deferred();
+  const release = deferred();
+  let transports = 0;
+  let deletes = 0;
+  const host = createRemoteHost({
+    settings,
+    storage,
+    fetcher: (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/credentials')) {
+        entered.release();
+        await release.promise;
+      }
+      if (init?.method === 'DELETE') deletes++;
+      return adapter.fetcher(input, init);
+    }) as typeof fetch,
+    socketFactory: adapter.socketFactory,
+    onTransport: () => {
+      transports++;
+    },
+  });
+  cleanup.push(() => host.close());
+  const creating = host.createRoom();
+  await entered.promise;
+  await host.close();
+  release.release();
+  await expect(creating).rejects.toThrow('cancelled');
+  expect(deletes).toBeGreaterThanOrEqual(1);
+  expect(transports).toBe(0);
+  expect(host.snapshot.state).toBe('ended');
+  expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+}, 15_000);
+
+it('FR-RP-01: checkHealth의 외부 signal 취소는 fetch를 중단하고 snapshot을 바꾸지 않는다', async () => {
+  const settings = memory();
+  saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+  const entered = deferred();
+  let fetchSignal: AbortSignal | undefined;
+  const host = createRemoteHost({
+    settings,
+    storage: memory(),
+    fetcher: ((_input: RequestInfo | URL, init?: RequestInit) => {
+      fetchSignal = init?.signal ?? undefined;
+      entered.release();
+      return new Promise<Response>((_resolve, reject) => {
+        fetchSignal?.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+      });
+    }) as typeof fetch,
+    onTransport: () => {},
+  });
+  const seen: RemoteSnapshot[] = [];
+  const unsubscribe = host.subscribe((snapshot) => seen.push(snapshot));
+  const controller = new AbortController();
+  const checking = host.checkHealth({ signal: controller.signal });
+  await entered.promise;
+  controller.abort();
+  await expect(checking).rejects.toMatchObject({ name: 'RelayHealthError', code: 'cancelled' });
+  expect(fetchSignal?.aborted).toBe(true);
+  expect(host.snapshot).toMatchObject({ state: 'idle' });
+  expect(seen).toHaveLength(1);
+  unsubscribe();
 }, 15_000);
