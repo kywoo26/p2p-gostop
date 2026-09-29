@@ -79,7 +79,7 @@ describe('#12 BoardView 상세 필드 (M3 어댑터의 상위 집합)', () => {
     }
   });
   it('fast-check: 모든 상태·양 좌석에서 legal·firstPick·폭탄·뒤집기·고스톱·배수·inFlight가 엔진과 일치하고 숨은 카드가 없다', () => {
-    const counts = { pickFirst: 0, goStop: 0, target: 0, bomb: 0, flipOnly: 0 };
+    const counts = { pickFirst: 0, goStop: 0, target: 0, bomb: 0, flipOnly: 0, revealed: 0 };
     assert(
       property(nat({ max: 100_000 }), (seed) => {
         walk(seed, (state) => {
@@ -98,6 +98,7 @@ describe('#12 BoardView 상세 필드 (M3 어댑터의 상위 집합)', () => {
               expect(view.seats[seat].gukjinAsPi).toBe(pv.seats[seat].score.gukjinAsPi);
               expect(view.seats[seat].bombs).toBe(pv.seats[seat].bombs);
               expect(view.seats[seat].revealed).toEqual(pv.seats[seat].revealed);
+              if ((view.seats[seat].revealed?.length ?? 0) > 0) counts.revealed++;
               expect(
                 (view.seats[seat].revealed ?? []).every((id) =>
                   state.seats[seat].hand.includes(id),
@@ -155,6 +156,7 @@ describe('#12 BoardView 상세 필드 (M3 어댑터의 상위 집합)', () => {
     expect(counts.pickFirst).toBeGreaterThan(0);
     expect(counts.goStop).toBeGreaterThan(0);
     expect(counts.target).toBeGreaterThan(0);
+    expect(counts.revealed).toBeGreaterThan(0);
   }, 60_000);
 
   it('현재 배수는 차례가 아니라 보는 좌석 기준이고 대박판을 곱한다 (리뷰 S-1)', () => {

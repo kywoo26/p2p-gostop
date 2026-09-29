@@ -11,6 +11,7 @@ const cards = z.array(card).check(z.maxLength(51));
 const hex64 = z.string().check(z.regex(/^[0-9a-f]{64}$/));
 const round = z.number().check(z.int(), z.minimum(1));
 const shortText = z.string().check(z.maxLength(80));
+const abortReason = z.string().check(z.minLength(1), z.maxLength(80));
 const money = z.number();
 
 const actionSchema = z.union([
@@ -66,9 +67,9 @@ const seatView = z.object({
   score: z.number(),
   goCount: nat,
   shakes: nat,
-  bombs: nat,
-  gukjinAsPi: z.boolean(),
-  revealed: cards,
+  bombs: z.optional(z.nullable(nat)),
+  gukjinAsPi: z.optional(z.boolean()),
+  revealed: z.optional(cards),
   ppeokCount: nat,
   balance: money,
   progress: z.object({ gwang: nat, godori: nat, dan: nat, pi: nat }),
@@ -136,7 +137,7 @@ const boardSchema = z.object({
   pending: z.nullable(prompt),
   playable: cards,
   round,
-  pushes: nat,
+  pushes: z.optional(nat),
   eventSeq: nat,
   legal: z.array(actionSchema).check(z.maxLength(64)),
   firstPick: z.nullable(z.object({ poolSize: nat, taken: z.nullable(nat) })),
@@ -171,10 +172,10 @@ const settlement = z.object({
     .check(z.maxLength(8)),
   steps,
   finalPoints: z.number(),
-  gukjinAsPi: z.tuple([z.boolean(), z.boolean()]),
-  pushed: z.boolean(),
-  forfeitedPoints: z.number(),
-  nextPushes: nat,
+  gukjinAsPi: z.optional(z.tuple([z.boolean(), z.boolean()])),
+  pushed: z.optional(z.boolean()),
+  forfeitedPoints: z.optional(z.number()),
+  nextPushes: z.optional(nat),
   pointValue: money,
   amount: money,
   unit: z.enum(['냥', '원', '점']),
@@ -272,7 +273,7 @@ export const hostSchema = z.union([
   z.object({ t: z.literal('pong') }),
   z.object({ t: z.literal('commitHost'), round, hash: hex64 }),
   z.object({ t: z.literal('revealGuestRequest'), round, guestHash: hex64 }),
-  z.object({ t: z.literal('roundAborted'), round, reason: shortText }),
+  z.object({ t: z.literal('roundAborted'), round, reason: abortReason }),
   z.object({
     t: z.literal('revealHost'),
     round,

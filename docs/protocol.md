@@ -103,8 +103,8 @@
 ```
 
 - 판이 끝나면 **settled에서 멈춘다**(#26). 정산 화면(`settlement`)은 다음 판이 실제로 분배될 때까지 모든 snapshot·events에 실린다. 게스트 `requestNextRound()`는 요청일 뿐이고 다음 판은 호스트 `nextRound()`로 시작한다.
-- `rules.push`가 켜지고 승자에게 합법 `push`가 있으면 settled에서 정산을 잠시 보류한다. 호스트 승자는 `host.push()`, 게스트 승자는 `guest.push()`로 민다. 호스트 승자가 받으면 `host.acceptRound()`(또는 `nextRound()`), 게스트 승자가 받으면 `ready`가 보류한 정산을 확정한다. 게스트 승자가 선택하기 전에는 호스트 `nextRound()`가 거부된다. 밀면 포기한 점수만 기록하고 판돈 이동은 없으며 `nextPushes`를 다음 판 `RoundOptions.pushes`에 넘긴다. `revealHost`의 액션 열에는 push도 들어가고 게스트는 마지막 정산과 리플레이를 대조한다.
-- 게스트가 3분 이상 없고 현재 엔진 단계가 `turn`이면 호스트가 `abortRound(reason)`으로 판을 무효로 할 수 있다. 이미 지급된 즉시 정산은 유지하고 판 정산·나가리 이월·선은 그대로 둔다. `roundAborted`를 보내 양쪽을 settled 대기로 옮기며, 게스트 검증은 `aborted`로 기록한다. 재접속 때도 무효 알림을 다시 보낸다.
+- `rules.push`가 켜지고 승자에게 합법 `push`가 있으면 settled에서 정산을 잠시 보류한다. 호스트 승자는 `host.push()`, 게스트 승자는 `guest.push()`로 민다. 호스트 승자가 받으면 `host.acceptRound()`(또는 `nextRound()`), 게스트 승자가 받으면 `ready`가 보류한 정산을 확정한다. 게스트 승자가 선택하기 전에는 호스트 `nextRound()`가 거부된다. 다만 게스트가 3분 이상 부재하면 호스트가 `acceptRound({forSeat: 1, reason: 'absent'})`로 대신 받을 수 있다. 밀면 포기한 점수만 기록하고 판돈 이동은 없으며 `nextPushes`를 다음 판 `RoundOptions.pushes`에 넘긴다. `revealHost`의 액션 열에는 push도 들어가고 게스트는 마지막 정산과 리플레이를 대조한다. 밀기 보류 중 저장·복원해도 정산은 계속 보류되며, 세션 종료 시에는 보류 판을 먼저 받아 원장과 `revealHost`를 확정한 뒤 `sessionEnd`를 보낸다.
+- 게스트가 3분 이상 없고 현재 엔진 단계가 `turn`이면 호스트가 `abortRound(reason)`으로 판을 무효로 할 수 있다. 이미 지급된 즉시 정산은 유지하고 판 정산·나가리 이월·선은 그대로 둔다. 무효 판의 스냅샷은 `legal`·`playable`을 비워 입력을 막는다. `roundAborted`를 보내 양쪽을 settled 대기로 옮기며, 게스트 검증은 `aborted`로 기록한다. 재접속 때(세션이 이미 ended여도) 무효 알림을 `sessionEnd`보다 먼저 다시 보낸다.
 - 파산: 판 정산 뒤 잔액이 0인 좌석이 있으면 bankrupt 단계. 그 좌석이 고른다(호스트 좌석은 `host.chooseBankruptcy(choice)`, 게스트 좌석은 `bankruptcy` 메시지. 남의 좌석 선택은 `BANKRUPT` 거부). **재충전은 파산한 좌석만** 시작 잔액으로 되돌리고 `recharge` 원장 항목을 남긴다(상대 잔액 유지). 제로섬 대조는 "잔액 합 = 시작 잔액 × 2 + 재충전 합"(`ledgerDelta`로 항목 합 = 잔액 − 시작 잔액). 종료를 고르면 ended와 `sessionEnd`. 프롬프트는 재접속 때 다시 보낸다.
 
 ## 5. 핸드셰이크 복구 (#13)

@@ -29,14 +29,38 @@ function move(host: HostSession, guest: GuestSession, picker: Picker): void {
   const theirs = guest.view?.legal ?? [];
   const action: Action | undefined = picker.pick(mine.length > 0 ? mine : theirs);
   if (!action) throw new Error('합법 수 없음');
-  if (action.seat === 0 && !host.apply(action)) throw new Error('호스트 합법 수 거부');
-  else guest.sendAction(action);
+  if (action.seat === 0) {
+    if (!host.apply(action)) throw new Error('호스트 합법 수 거부');
+  } else guest.sendAction(action);
 }
 
 function finish(host: HostSession, guest: GuestSession, seed: number): void {
   const picker = new Picker(seed + 50);
   for (let i = 0; i < 400 && host.stage === 'playing'; i++) move(host, guest, picker);
   expect(host.stage).toBe('settled');
+}
+
+function pending(winner: 0 | 1) {
+  for (let seed = 0; seed < 40; seed++) {
+    const h = setup(seed, true);
+    finish(h.host, h.guest, seed);
+    if (h.host.state?.result?.winner === winner) return h;
+  }
+  throw new Error(`승자 ${winner} 판을 찾지 못함`);
+}
+
+function restoredPending(h: ReturnType<typeof setup>) {
+  const savedHost: HostSessionState = viaJson(h.host.toJSON());
+  const savedGuest = viaJson(h.guest.toJSON());
+  const [hw, gw] = createMemoryTransportPair();
+  const host = HostSession.fromJSON(hw, savedHost, { random32: secrets(900) });
+  const guest = new GuestSession(gw, {
+    name: '게스트',
+    random32: secrets(901),
+    restore: savedGuest,
+  });
+  guest.join();
+  return { host, guest, hw, gw };
 }
 
 describe('#29 밀기 경로와 #43 정산 계약', () => {
@@ -49,8 +73,9 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     expect(h.guest.settlement).toBeNull();
     expect(h.host.ledger.entries.every((entry) => entry.kind !== 'round')).toBe(true);
     expect(h.host.apply({ type: 'push', seat: winner === 0 ? 1 : 0 })).toBe(false);
-    if (winner === 0 && !h.host.push()) throw new Error('호스트 밀기 거부');
-    else h.guest.push();
+    if (winner === 0) {
+      if (!h.host.push()) throw new Error('호스트 밀기 거부');
+    } else h.guest.push();
     expect(h.host.settlement?.pushed).toBe(true);
     expect(h.host.settlement?.nextPushes).toBe(1);
     expect(h.guest.settlement?.pushed).toBe(true);
@@ -101,6 +126,9 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
       if (h.host.nextRound()) throw new Error('게스트 선택 전 다음 판 시작');
       const seq = h.host.seq;
       const balances = h.host.ledger.balances;
+      h.guest.sendAction({ type: 'push', seat: 0 });
+      expect(h.guest.errors).toContain('ILLEGAL_ACTION');
+      expect(h.host.seq).toBe(seq);
       h.guest.push();
       expect(h.host.seq).toBeGreaterThan(seq);
       expect(h.host.settlement?.pushed).toBe(true);
@@ -123,6 +151,73 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     }
     expect(hostWin).toBe(true);
   });
+
+  it.each([
+    { winner: 0 as const, choice: 'push' as const },
+    { winner: 0 as const, choice: 'accept' as const },
+    { winner: 1 as const, choice: 'push' as const },
+    { winner: 1 as const, choice: 'accept' as const },
+  ])('밀기 보류 저장·복원 후 승자 $winner의 $choice 선택', ({ winner, choice }) => {
+    const h = restoredPending(pending(winner));
+    expect(h.host.stage).toBe('settled');
+    expect(h.host.state?.phase).toBe('end');
+    expect(h.host.settlement).toBeNull();
+    expect(h.host.settlementView).toBeNull();
+    expect(h.host.ledger.entries.some((entry) => entry.kind === 'round')).toBe(false);
+    let accepted = true;
+    if (winner === 0 && choice === 'push') accepted = h.host.push();
+    else if (winner === 0) accepted = h.host.acceptRound();
+    else if (choice === 'push') h.guest.push();
+    else h.guest.requestNextRound();
+    expect(accepted).toBe(true);
+    expect(h.host.settlement?.pushed).toBe(choice === 'push');
+    expect(h.host.ledger.entries.some((entry) => entry.kind === 'round')).toBe(choice === 'accept');
+    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.host.nextRound()).toBe(true);
+  });
+
+  it('게스트 승자 부재 3분 뒤 호스트 대리 수락은 정산·검증을 끝낸다', () => {
+    const h = pending(1);
+    expect(h.host.acceptRound({ forSeat: 1, reason: 'absent' })).toBe(false);
+    h.gw.disconnect();
+    h.host.advanceTime(179_999);
+    expect(h.host.acceptRound({ forSeat: 1, reason: 'absent' })).toBe(false);
+    h.host.advanceTime(180_000);
+    expect(h.host.acceptRound({ forSeat: 1, reason: 'absent' })).toBe(true);
+    expect(h.host.ledger.entries.some((entry) => entry.kind === 'round')).toBe(true);
+    h.gw.reconnect();
+    h.guest.rejoin();
+    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.errors).not.toContain('COMMIT_INVALID');
+  });
+
+  it('밀기 완료 뒤 저장·복원은 재발행된 마지막 Settled를 보존한다', () => {
+    const original = pending(0);
+    expect(original.host.push()).toBe(true);
+    const settled = viaJson(original.host.ledger);
+    const restored = restoredPending(original);
+    expect(restored.host.settlement?.pushed).toBe(true);
+    expect(restored.host.settlement?.forfeitedPoints).toBeGreaterThan(0);
+    expect(restored.host.settlement?.nextPushes).toBe(1);
+    expect(restored.host.ledger).toEqual(settled);
+    expect(restored.host.nextRound()).toBe(true);
+    expect(restored.host.state?.round.pushes).toBe(1);
+  });
+
+  it('밀기 보류에서 세션 종료는 먼저 정산과 revealHost를 보낸다', () => {
+    const h = pending(1);
+    h.gw.disconnect();
+    h.host.end();
+    expect(h.host.ledger.entries.some((entry) => entry.kind === 'round')).toBe(true);
+    expect(h.host.stage).toBe('ended');
+    const types = h.hw.sent.map((message) => message.t);
+    expect(types.lastIndexOf('revealHost')).toBeGreaterThan(-1);
+    expect(types.lastIndexOf('revealHost')).toBeLessThan(types.lastIndexOf('sessionEnd'));
+    h.gw.reconnect();
+    h.guest.rejoin();
+    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.errors).not.toContain('COMMIT_INVALID');
+  });
 });
 
 describe('#44 판 무효', () => {
@@ -140,12 +235,16 @@ describe('#44 판 무효', () => {
     expect(h.host.abortRound('시간 초과')).toBe(false);
     h.host.advanceTime(180_000);
     expect(h.host.abortRound('시간 초과')).toBe(true);
+    expect(h.host.guestView()?.legal).toEqual([]);
+    expect(h.host.guestView()?.playable).toEqual([]);
     expect(h.host.abortRound('중복')).toBe(false);
     expect(h.host.ledger).toEqual(before);
     expect(h.host.dealer).toBe(dealer);
     expect(h.host.carry).toBe(carry);
     h.gw.reconnect();
     h.guest.rejoin();
+    expect(h.guest.view?.legal).toEqual([]);
+    expect(h.guest.view?.playable).toEqual([]);
     expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'aborted', reason: '시간 초과' });
     expect(h.guest.errors).not.toContain('COMMIT_INVALID');
     expect(h.host.nextRound()).toBe(true);
@@ -217,5 +316,20 @@ describe('#44 판 무효', () => {
     });
     expect(h.host.stage).toBe('playing');
     expect(h.guest.errors).not.toContain('COMMIT_INVALID');
+  });
+
+  it('무효 뒤 종료하고 재접속해도 aborted가 sessionEnd보다 먼저 도착한다', () => {
+    const h = setup(18);
+    const picker = new Picker(18);
+    for (let i = 0; i < 30 && h.host.state?.phase !== 'turn'; i++) move(h.host, h.guest, picker);
+    h.gw.disconnect();
+    h.host.advanceTime(180_000);
+    expect(h.host.abortRound('복귀 없음')).toBe(true);
+    h.host.end();
+    h.gw.reconnect();
+    h.guest.rejoin();
+    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'aborted', reason: '복귀 없음' });
+    expect(h.guest.errors).not.toContain('COMMIT_INVALID');
+    expect(h.guest.ended).toEqual({ reason: 'host', seat: null });
   });
 });

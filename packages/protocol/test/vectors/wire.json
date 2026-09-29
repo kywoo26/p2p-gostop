@@ -633,7 +633,7 @@
     "value": {
       "t": "roundAborted",
       "round": 3,
-      "reason": 42
+      "reason": ""
     }
   }
 ]

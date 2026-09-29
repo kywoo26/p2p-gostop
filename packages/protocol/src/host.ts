@@ -13,7 +13,6 @@ import {
   reduce,
   replay,
   sameAction,
-  settle,
   type Action,
   type EngineEvent,
   type GameState,
@@ -122,6 +121,13 @@ export interface HostSessionState {
 const RESYNC_EVENT_LIMIT = 40;
 const LEDGER_PAGE_BYTES = 56 * 1024;
 const DIAGNOSTIC_LIMIT = 200;
+
+/** 엔진은 밀기 때 Settled를 재발행하므로 리플레이의 마지막 정산만 유효하다. */
+function lastSettlement(events: readonly EngineEvent[]): Settlement {
+  const event = events.findLast((item) => item.type === 'Settled');
+  if (event?.type !== 'Settled') throw new Error('종료 판에 Settled 이벤트가 없습니다');
+  return event.settlement;
+}
 
 export class HostSession {
   readonly transport: Transport;
@@ -266,15 +272,21 @@ export class HostSession {
     if (ok) this.changed();
     return ok;
   }
-  /** 호스트 승자가 밀지 않고 정산을 받는다. 다음 판은 별도로 시작한다 */
-  acceptRound(): boolean {
+  /** 승자가 밀지 않고 정산을 받는다. 게스트 승자 대리 수락은 3분 부재 뒤에만 가능하다. */
+  acceptRound(options?: { readonly forSeat: 1; readonly reason: 'absent' }): boolean {
+    if (this.stageValue !== 'settled' || this.state?.phase !== 'end' || this.settlement !== null)
+      return false;
+    const winner = this.state.result?.winner;
+    if (winner === 0 && options !== undefined) return false;
     if (
-      this.stageValue !== 'settled' ||
-      this.state?.phase !== 'end' ||
-      this.state.result?.winner !== 0 ||
-      this.settlement !== null
+      winner === 1 &&
+      (options?.forSeat !== 1 ||
+        options.reason !== 'absent' ||
+        this.connected ||
+        this.logicalTime - this.lastGuestActivity < 180_000)
     )
       return false;
+    if (winner === null || winner === undefined) return false;
     this.finishRound();
     this.changed();
     return true;
@@ -368,13 +380,25 @@ export class HostSession {
   }
   private viewFor(seat: Seat): BoardView | null {
     if (this.state === null) return null;
-    return {
+    const view: BoardView = {
       ...toBoardView(playerView(this.state, seat, { ledger: engineLedger(this.ledger) }), {
         names: this.names,
         ledger: this.ledger,
       }),
       eventSeq: this.seq,
     };
+    return this.lastAbort?.round === view.round
+      ? {
+          ...view,
+          legal: [],
+          playable: [],
+          pending: null,
+          firstPick: null,
+          goStop: null,
+          bombMonths: [],
+          canFlipOnly: false,
+        }
+      : view;
   }
   private snapshot(): void {
     const view = this.viewFor(1);
@@ -479,8 +503,7 @@ export class HostSession {
       this.settlement !== null
     )
       return;
-    const lastSettled = this.events.findLast((event) => event.type === 'Settled');
-    const result = lastSettled?.type === 'Settled' ? lastSettled.settlement : settle(this.state);
+    const result = lastSettlement(this.events);
     this.settlement = result;
     this.lastAbort = null;
     const applied = withSettlement(this.ledger, result, this.rules);
@@ -539,6 +562,8 @@ export class HostSession {
     this.snapshot();
   }
   private finishSession(reason: 'bankruptcy' | 'host', seat: Seat | null): void {
+    if (this.stageValue === 'settled' && this.state?.phase === 'end' && this.settlement === null)
+      this.finishRound();
     this.ended = true;
     this.endReason = reason;
     this.bankrupt = [];
@@ -629,7 +654,8 @@ export class HostSession {
       case 'bankrupt':
       case 'ended':
         this.snapshot();
-        if (this.lastReveal) this.send(this.lastReveal);
+        if (this.lastAbort) this.send({ t: 'roundAborted', ...this.lastAbort });
+        else if (this.lastReveal) this.send(this.lastReveal);
         if (this.stageValue === 'bankrupt') this.sendBankruptcyPrompt();
         if (this.stageValue === 'ended' && this.endReason !== null)
           this.send({ t: 'sessionEnd', reason: this.endReason, seat: null });
@@ -935,14 +961,15 @@ export class HostSession {
       }));
       if (this.current!.firstSeq + result.events.length - 1 !== this.seq)
         throw new Error('저장된 순번과 리플레이 이벤트 수가 맞지 않습니다');
-      if (this.state.phase === 'end') this.settlement = settle(this.state);
+      if (this.state.phase === 'end' && data.settlementView !== null)
+        this.settlement = lastSettlement(result.events);
     } else if (this.lastReveal !== null) {
       // 핸드셰이크 중이면 방금 끝난 판을 화면에 남긴다.
       const last = this.lastReveal;
       const result = replay(this.rules, last.seed, last.actions, last.options);
       if (result.ok) {
         this.state = result.state;
-        this.settlement = settle(result.state);
+        this.settlement = lastSettlement(result.events);
       }
     }
   }
