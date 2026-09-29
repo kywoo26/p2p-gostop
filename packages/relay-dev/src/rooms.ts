@@ -29,7 +29,7 @@ export function newRoomCode(): string {
 export function displayCode(code: string): string {
   return `${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8)}`;
 }
-export function normalizeCode(code: string): string {
+function normalizeCode(code: string): string {
   return code.replaceAll('-', '').toUpperCase();
 }
 

@@ -20,10 +20,10 @@ export const newToken = (bytes: number): string => randomBytes(bytes).toString('
 export const validToken = (value: unknown): value is string =>
   typeof value === 'string' && TOKEN.test(value) && Buffer.from(value, 'base64url').length === 32;
 export const tokenHash = (value: string): Buffer => createHash('sha256').update(value).digest();
-export const equalHash = (left: Buffer, right: Buffer): boolean =>
+const equalHash = (left: Buffer, right: Buffer): boolean =>
   left.length === right.length && timingSafeEqual(left, right);
 
-export function validCreationSecret(value: string): boolean {
+function validCreationSecret(value: string): boolean {
   return validToken(value);
 }
 

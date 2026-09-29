@@ -93,7 +93,9 @@ it('코드 존재/부재/점유는 같은 대기 응답, host 수락만 자격 �
   const requestId = field(await host.next(), 'requestId');
   const guestToken = token();
   host.send({ t: 'relay-accept', requestId: requestId, token: guestToken });
-  expect(field(await pending.next(), 'token')).toBe(guestToken);
+  const codeAccepted = await pending.next();
+  expect(field(codeAccepted, 'token')).toBe(guestToken);
+  expect(field(codeAccepted, 'roomId')).toBe(roomId);
   const guest = new Client(`ws://127.0.0.1:${relay.port}/ws?role=guest&room=${roomId}`);
   await guest.open();
   guest.send({ t: 'relay-auth', token: guestToken });
@@ -143,7 +145,9 @@ it('초대는 host 확정 뒤 한 번만 쓰고 위조 복귀는 좌석을 교�
   const claimId = field(await host.next(), 'requestId');
   const resume = token();
   host.send({ t: 'relay-accept', requestId: claimId, token: resume });
-  expect(await guest.next()).toContain(resume);
+  const inviteAccepted = await guest.next();
+  expect(field(inviteAccepted, 'token')).toBe(resume);
+  expect(field(inviteAccepted, 'roomId')).toBe(roomId);
   expect(await guest.next()).toContain('present');
   expect(await host.next()).toContain('joined');
   const replay = new Client(`ws://127.0.0.1:${relay.port}/ws?role=guest&room=${roomId}`);

@@ -49,7 +49,9 @@ const relay = await startRelay({
   log: (line) => console.log(`[relay] ${line}`),
 });
 console.log(
-  `[relay] listening on ${publicEnabled ? 'public' : 'LAN'} ${host}:${relay.port}${RELAY_PATH}`,
+  publicEnabled
+    ? `[relay] public listening on ${host}:${relay.port}${RELAY_PATH}`
+    : `[relay] listening on ws://${host}:${relay.port}${RELAY_PATH}?role=host|guest`,
 );
 
 const shutdown = () => {

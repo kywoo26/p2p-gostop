@@ -365,10 +365,13 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
       socket.close(CLOSE_INVALID_ROLE);
       return;
     }
-    if (
-      !limits.take(`attempt-ip:${ip}`, 10, 60_000) ||
-      (state && !limits.take(`attempt-room:${state.room.id}`, 10, 60_000))
-    ) {
+    if (!limits.take(`attempt-ip:${ip}`, 10, 60_000)) {
+      socket.close(1013);
+      return;
+    }
+    const roomAllowed = state ? limits.take(`attempt-room:${state.room.id}`, 10, 60_000) : true;
+    // 코드 채널은 방당 제한에 닿아도 무효 코드와 같은 대기 응답을 보낸다.
+    if (!join && !roomAllowed) {
       socket.close(1013);
       return;
     }
@@ -384,6 +387,7 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
     let waitClaim = false;
     const rate = new SocketLimit();
     let lastPong = Date.now();
+    let lastPing = Date.now();
     socket.on('pong', () => {
       lastPong = Date.now();
     });
@@ -394,6 +398,7 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
       send(socket, JSON.stringify({ t: 'relay-join-pending' }));
       if (
         state &&
+        roomAllowed &&
         !seats.get(state.room.id)?.guest &&
         [...pending.values()].filter((p) => p.roomId === state.room.id && p.kind === 'code')
           .length < 2
@@ -516,7 +521,14 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
               rooms.release(current, item.inviteToken);
             }
             current.joined = true;
-            send(item.socket, JSON.stringify({ t: 'relay-accepted', token: control.token }));
+            send(
+              item.socket,
+              JSON.stringify({
+                t: 'relay-accepted',
+                roomId: current.room.id,
+                token: control.token,
+              }),
+            );
             if (item.kind === 'invite') seat(current.room.id, 'guest', item.socket);
             else item.socket.close(1000);
             pending.delete(control.requestId);
@@ -555,12 +567,16 @@ async function startPublicRelay(options: RelayOptions): Promise<Relay> {
     socket.on('error', () => {});
     const heartbeat = setInterval(() => {
       if (socket.readyState !== WebSocket.OPEN) return;
-      if (Date.now() - lastPong >= 60_000) {
+      const now = Date.now();
+      if (now - lastPong >= 60_000) {
         socket.terminate();
         return;
       }
-      socket.ping();
-    }, 25_000);
+      if (now - lastPing >= 25_000) {
+        socket.ping();
+        lastPing = now;
+      }
+    }, 5_000);
     heartbeat.unref();
     socket.on('close', () => clearInterval(heartbeat));
   });
