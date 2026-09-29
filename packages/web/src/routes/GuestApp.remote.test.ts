@@ -98,10 +98,10 @@ test('만료와 버전 오류를 구분하고 재시도할 수 있다 (FR-RP-05,
   const screen = await render(GuestApp, { remoteController: fake });
   fake.set({ state: 'error', error: 'expired', peerPresent: false });
   await expect.element(screen.getByRole('alert')).toBeVisible();
-  expect(screen.getByRole('alert').element().textContent).toContain('초대가 만료되었습니다');
+  expect(screen.getByRole('alert').element().textContent).toContain('초대 만료');
   fake.set({ state: 'error', error: 'version', peerPresent: true });
   await expect.element(screen.getByRole('button', { name: '새로고침' })).toBeVisible();
-  expect(screen.getByRole('alert').element().textContent).toContain('페이지를 새로고침하고');
+  expect(screen.getByRole('alert').element().textContent).toContain('같은 배포 버전으로 업데이트');
   fake.set({ state: 'reconnecting', error: 'network', peerPresent: false, reconnectAttempt: 2 });
   await screen.getByRole('button', { name: '다시 시도' }).click();
   expect(fake.calls).toContain('retry');

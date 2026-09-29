@@ -2,6 +2,8 @@
   import type { PresetId } from '@p2p-gostop/engine';
   import type { MoneyUnit } from '../lib/view-types.ts';
   import type { TimerSettings } from '@p2p-gostop/protocol';
+  import { REMOTE_ERROR_MESSAGES } from '../p2p/remote-messages.ts';
+  import type { RemoteErrorCode } from '../p2p/remote.ts';
 
   export type GuestConnection =
     'idle' | 'connecting' | 'open' | 'closed' | 'replaced' | 'stopped' | 'rejected';
@@ -15,43 +17,13 @@
     readonly timerSettings: TimerSettings;
   }
 
-  export type RemoteJoinError =
-    | 'auth'
-    | 'replaced'
-    | 'host-absent'
-    | 'room-ended'
-    | 'version'
-    | 'network'
-    | 'expired'
-    | 'invalid'
-    | 'unavailable'
-    | 'denied'
-    | 'timeout'
-    | string;
-
-  const TEMPORARY_REMOTE_MESSAGES: Record<string, string> = {
-    expired: '초대가 만료되었습니다. 호스트에게 새 링크나 코드를 요청하세요.',
-    denied: '호스트가 참여 요청을 거절했습니다.',
-    timeout: '60초 안에 승인을 받지 못했습니다. 다시 요청하세요.',
-    unavailable: '지금 참여할 수 없습니다. 코드와 방 상태를 확인하세요.',
-    invalid: '이 초대로 참여할 수 없습니다. 호스트에게 새 초대 링크를 요청하세요.',
-    'room-ended': '방이 종료되었습니다. 새 초대를 요청하세요.',
-    'host-absent': '호스트 응답을 기다리는 중입니다. 호스트 앱이 열려 있는지 확인하세요.',
-    replaced: '다른 창에서 접속 중입니다.',
-    version:
-      '버전이 맞지 않습니다. 페이지를 새로고침하고, 계속되면 호스트 앱 업데이트를 요청하세요.',
-    incompatible:
-      '버전이 맞지 않습니다. 페이지를 새로고침하고, 계속되면 호스트 앱 업데이트를 요청하세요.',
-    network: '중계에 연결할 수 없습니다. 네트워크와 중계 주소를 확인하세요.',
-    http: '중계가 요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요.',
-    cors: '이 페이지에서 중계 접속이 허용되지 않습니다. 초대 링크를 다시 확인하세요.',
-    invalidResponse: '중계 응답을 확인할 수 없습니다. 중계 주소를 확인하세요.',
-    auth: '참여 자격을 확인할 수 없습니다. 새 초대를 요청하세요.',
-  };
+  export type RemoteJoinError = RemoteErrorCode;
 
   export function remoteErrorMessage(error: RemoteJoinError | undefined): string | null {
     if (!error || error === 'cancelled') return null;
-    return TEMPORARY_REMOTE_MESSAGES[error] ?? '연결할 수 없습니다. 잠시 후 다시 시도하세요.';
+    const message = REMOTE_ERROR_MESSAGES[error];
+    const action = error === 'invalid' ? '호스트에게 새 초대 링크를 요청하세요.' : message.action;
+    return `${message.title}. ${message.detail} ${action}`;
   }
 
   export interface RemoteJoinView {
@@ -159,7 +131,7 @@
 
   const remoteMessage = $derived(
     remote?.error === 'invalid' && remote.mode === 'code'
-      ? '코드로 참여할 수 없습니다. 방 코드를 다시 확인하세요.'
+      ? `${REMOTE_ERROR_MESSAGES.invalid.title}. ${REMOTE_ERROR_MESSAGES.invalid.detail} ${REMOTE_ERROR_MESSAGES.invalid.action}`
       : remoteErrorMessage(remote?.error),
   );
 </script>

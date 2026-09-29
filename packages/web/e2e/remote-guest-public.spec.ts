@@ -118,7 +118,7 @@ test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 �
 
     await enterCode(page, 'ABCD-EFGH-JKMN');
     await relay.advance(60_001);
-    await expect(page.getByRole('alert')).toContainText('지금 참여할 수 없습니다');
+    await expect(page.getByRole('alert')).toContainText('원격 대전 이용 불가');
 
     const deniedRoom = await createRoom(relay.base, relay.secret);
     const host = new WebSocket(
@@ -144,7 +144,7 @@ test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 �
     const requested = await request;
     expect(requested.nickname).toBe('동료');
     host.send(JSON.stringify({ t: 'relay-deny', requestId: requested.requestId }));
-    await expect(page.getByRole('alert')).toContainText('호스트가 참여 요청을 거절했습니다');
+    await expect(page.getByRole('alert')).toContainText('참여 거절');
 
     const expiredRoom = await createRoom(relay.base, relay.secret);
     const token = randomBytes(32).toString('base64url');
@@ -161,7 +161,7 @@ test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 �
     await page.reload();
     await page.getByRole('textbox', { name: '이름' }).fill('동료');
     await page.getByRole('button', { name: '참여하기' }).click();
-    await expect(page.getByRole('alert')).toContainText('초대가 만료되었습니다');
+    await expect(page.getByRole('alert')).toContainText('초대 만료');
     expect(serverCloseCodes.slice(beforeExpired)).toContain(4003);
 
     const invalidRoom = await createRoom(relay.base, relay.secret);
@@ -172,7 +172,7 @@ test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 �
     await page.getByRole('textbox', { name: '이름' }).fill('동료');
     await page.getByRole('button', { name: '참여하기' }).click();
     await expect(page.getByRole('alert')).toContainText(
-      '이 초대로 참여할 수 없습니다. 호스트에게 새 초대 링크를 요청하세요.',
+      '주소 또는 코드 오류. 입력한 중계 주소나 초대 코드를 확인할 수 없습니다. 호스트에게 새 초대 링크를 요청하세요.',
     );
     expect(serverCloseCodes.slice(beforeInvalid)).toContain(1008);
   } finally {

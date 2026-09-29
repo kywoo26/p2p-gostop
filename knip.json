@@ -5,13 +5,20 @@
     "type": true
   },
   "workspaces": {
-    ".": {},
+    ".": {
+      "entry": [
+        "tools/relay/check-static.ts",
+        "tools/relay/create-credentials.ts",
+        "tools/relay/write-qr.ts"
+      ]
+    },
     "packages/*": {},
     "tools/*": {},
     "packages/relay-dev": {
       "entry": ["test/remote-ui-server.ts"]
     },
     "packages/web": {
+      "ignoreBinaries": ["openssl"],
       "entry": [
         "scripts/*.mjs",
         "svgo.config.d.mts",

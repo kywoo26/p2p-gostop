@@ -160,7 +160,7 @@ async function axe(page: Page): Promise<string[]> {
     .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
 }
 
-test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀 (AC-04)', async ({
+test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀 (AC-04) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   // 두 브라우저를 직접 띄우는 테스트라 프로젝트마다 반복하지 않는다
@@ -183,7 +183,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
 
     // 호스트: 홈 → 친구와 대전 → 방 열기 (브라우저라 핫스팟은 "Android 앱에서만")
     await hostPage.goto(`${base}/${query}&role=host#/`);
-    await hostPage.getByRole('button', { name: '친구와 대전' }).click();
+    await hostPage.getByRole('button', { name: '핫스팟 대전' }).click();
     await expect(hostPage.getByRole('heading', { name: '방 열기' })).toBeVisible();
     await expect(hostPage.getByTestId('guest-status')).toHaveText(/기다리는 중/);
     await expect(hostPage.getByRole('img', { name: '게임 주소 QR' })).toBeVisible();
@@ -340,7 +340,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
   }
 });
 
-test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 보인다 (spec 2.4)', async ({
+test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 보인다 (spec 2.4) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', '한 번만 실행');
@@ -352,7 +352,7 @@ test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 �
     const host = await browser.newPage();
     const guest = await browser.newPage();
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await host.getByRole('button', { name: '핫스팟 대전' }).click();
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();
@@ -370,7 +370,7 @@ test('게스트가 보통 나가기를 누르면 호스트에 연결 끊김이 �
   }
 });
 
-test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53, NP-10)', async ({
+test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53, NP-10) @guest @paired', async ({
   baseURL,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', '한 번만 실행 (Chromium 호스트 + WebKit 게스트)');
@@ -386,7 +386,7 @@ test('결정 초과·게스트 복귀 잔여·호스트 실행 공백 (FR-51~53,
     const guestContext = await guestBrowser.newContext();
     let guest = await guestContext.newPage();
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '친구와 대전' }).click();
+    await host.getByRole('button', { name: '핫스팟 대전' }).click();
     await expect(host.getByRole('combobox', { name: '생각 시간' })).toHaveValue('10000');
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');

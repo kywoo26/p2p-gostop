@@ -60,6 +60,6 @@ test('하위 배포 경로에서 링크·코드·승인 대기·불가 화면 (F
   await expect.poll(() => joinSocket).not.toBeNull();
   const socket = joinSocket as unknown as { send(message: string): void };
   socket.send(JSON.stringify({ t: 'relay-join-unavailable' }));
-  await expect(page.getByRole('alert')).toContainText('지금 참여할 수 없습니다');
+  await expect(page.getByRole('alert')).toContainText('원격 대전 이용 불가');
   await capture('unavailable');
 });

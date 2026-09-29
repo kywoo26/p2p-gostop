@@ -10,7 +10,9 @@ for (const viewport of [
   { width: 430, height: 822 },
   { width: 412, height: 915 },
 ]) {
-  test(`PA-04 professional assets ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
+  test(`PA-04 professional assets ${viewport.width}x${viewport.height} @visual @full`, async ({
+    page,
+  }, info) => {
     await page.setViewportSize(viewport);
     const external: string[] = [];
     const assets: string[] = [];
@@ -49,7 +51,7 @@ for (const viewport of [
   });
 }
 
-test('PA-03 first screen defers VFX/audio and download failure preserves controls', async ({
+test('PA-03 first screen defers VFX/audio and download failure preserves controls @visual @full', async ({
   page,
 }) => {
   const requests: string[] = [];
@@ -66,7 +68,9 @@ test('PA-03 first screen defers VFX/audio and download failure preserves control
   await expect(page.locator('[data-pro-ready=true]')).toBeVisible();
 });
 
-test('PA-04 reduced motion leaves a stable readable event frame', async ({ page }) => {
+test('PA-04 reduced motion leaves a stable readable event frame @visual @full', async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/?visual=pro&motion=1#/dev/gallery/pro-ppeok');
   await expect(page.locator('[data-pro-ready=true]')).toBeVisible();

@@ -24,7 +24,9 @@ for (const [width, height] of [
     'event',
     'event-target',
   ]) {
-    test(`${width}×${height} ${state}: 6행·12월/뻑·손패10·입력 무가림`, async ({ page }, info) => {
+    test(`${width}×${height} ${state}: 6행·12월/뻑·손패10·입력 무가림 @layout`, async ({
+      page,
+    }, info) => {
       await page.setViewportSize({ width, height });
       await page.goto(`./#/dev/gallery/layout-${state}`);
       await page.evaluate(() => document.fonts.ready);
@@ -157,7 +159,7 @@ for (const [width, height] of [
   }
 }
 
-test('압축 획득패 상세: 카드 이름·키보드 닫기·초점 복귀', async ({ page }) => {
+test('압축 획득패 상세: 카드 이름·키보드 닫기·초점 복귀 @layout', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 734 });
   await page.goto('./#/dev/gallery/board');
   const opener = page.getByRole('button', { name: '판 정보' });
@@ -172,7 +174,7 @@ test('압축 획득패 상세: 카드 이름·키보드 닫기·초점 복귀', 
   await expect(opener).toBeFocused();
 });
 
-test('가로 방향 입력 잠금·세로 복귀', async ({ page }) => {
+test('가로 방향 입력 잠금·세로 복귀 @layout', async ({ page }) => {
   await page.setViewportSize({ width: 780, height: 360 });
   await page.goto('./#/dev/gallery/layout-play');
   await expect(page.getByRole('alert')).toHaveText('세로로 돌려 게임을 계속하세요');
