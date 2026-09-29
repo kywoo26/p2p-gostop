@@ -17,7 +17,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 PRO = ROOT / 'public/pro'
 OUT = ROOT / 'public/skin'
-IDS = ['felt', 'wood', 'gold', 'leather', 'key-art'] + [f'avatar-{n:02}' for n in range(1, 13)]
+# Final HUD has no portrait/leather consumers; keep the source variants in the review pack.
+IDS = ['felt', 'wood', 'gold', 'key-art']
 manifest = {item['id']: item for item in json.loads((ROOT / 'assets-src/manifest.json').read_text())}
 catalog = json.loads((ROOT / 'src/pro-assets/catalog.json').read_text())
 check = '--check' in sys.argv
