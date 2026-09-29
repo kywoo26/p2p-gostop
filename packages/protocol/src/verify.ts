@@ -91,6 +91,7 @@ export function viewDigest(view: BoardView): string {
       dealer: view.dealer,
       deckCount: view.deckCount,
       multiplier: view.multiplier,
+      pushes: view.pushes,
       floor: view.floor,
       seats: view.seats.map((s) => ({
         handCount: s.handCount,
@@ -99,6 +100,9 @@ export function viewDigest(view: BoardView): string {
         score: s.score,
         goCount: s.goCount,
         shakes: s.shakes,
+        bombs: s.bombs,
+        gukjinAsPi: s.gukjinAsPi,
+        revealed: s.revealed,
         ppeokCount: s.ppeokCount,
       })),
     }),
@@ -117,6 +121,10 @@ export function settlementDigest(settlement: SettlementView | Settlement): strin
       reason,
       finalPoints: settlement.finalPoints,
       steps: settlement.steps,
+      gukjinAsPi: settlement.gukjinAsPi,
+      pushed: settlement.pushed ?? false,
+      forfeitedPoints: settlement.forfeitedPoints ?? 0,
+      nextPushes: settlement.nextPushes ?? 0,
     }),
   );
 }

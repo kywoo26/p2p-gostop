@@ -40,6 +40,10 @@ export interface SeatView {
   readonly score: number;
   readonly goCount: number;
   readonly shakes: number;
+  readonly bombs?: number | null;
+  readonly gukjinAsPi?: boolean;
+  /** 규칙상 이미 공개되어 상대도 아는 손패 */
+  readonly revealed?: readonly CardId[];
   readonly ppeokCount: number;
   /** 가상 머니 잔액 (MN-01, 단위는 설정) */
   readonly balance: number;
@@ -91,6 +95,8 @@ export interface BoardViewCore {
   /** 보는 좌석이 지금 낼 수 있는 손패 (FR-12 하이라이트, legal의 play에서 뽑은 중복 없는 목록) */
   readonly playable: readonly CardId[];
   readonly round: number;
+  /** 이번 판에 적용되는 연속 밀기 횟수 */
+  readonly pushes?: number;
   /** 마지막으로 반영한 이벤트 순번 (NP-03) */
   readonly eventSeq: number;
 }
@@ -215,6 +221,7 @@ export interface SettleStepView {
   readonly value: number;
   /** 이 단계까지 적용한 점수 */
   readonly total: number;
+  readonly origin?: 'push';
 }
 
 export type ScoreRowKind =
@@ -236,6 +243,10 @@ export interface SettlementView {
   readonly breakdown: readonly { readonly kind: ScoreRowKind; readonly points: number }[];
   readonly steps: readonly SettleStepView[];
   readonly finalPoints: number;
+  readonly gukjinAsPi?: readonly [boolean, boolean];
+  readonly pushed?: boolean;
+  readonly forfeitedPoints?: number;
+  readonly nextPushes?: number;
   /** 점당 금액 */
   readonly pointValue: number;
   readonly amount: number;
