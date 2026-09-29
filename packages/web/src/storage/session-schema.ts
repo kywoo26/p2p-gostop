@@ -49,6 +49,7 @@ const Settlement = z.object({
   nextPushes: z.optional(Money),
 });
 const Record = z.object({
+  hintUsage: z.optional(z.enum(['off', 'basic', 'detail'])),
   round: Money,
   winner: z.nullable(Seat),
   reason: EndReason,
@@ -99,6 +100,7 @@ const Config = z
 
 export const SessionV1 = z
   .object({
+    hintUsage: z.optional(z.enum(['off', 'basic', 'detail'])),
     version: z.literal(1),
     roundNumber: Money.check(z.gte(1)),
     phase: z.enum(['playing', 'pushDecision', 'roundOver', 'bankrupt', 'ended']),

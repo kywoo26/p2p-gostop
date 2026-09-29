@@ -353,11 +353,11 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-43 | 미구현 | E/src/settle.ts 박 정산만 존재, W/src/ui/Board.svelte에 양방향 조건 설명 없음 | 현재 박 조건 설명 #81·#87·#82 | 미 |
 | FR-44 | 부분 | W/src/ui/Board.svelte 합법 폭탄/흔들기, E/src/interaction-assist.ts; E/test/interaction-assist.test.ts | 조건부 사건 설명·표식 연결 #80·#81·#82·#115 | 미 |
 | FR-45 | 부분 | W/src/ui/GoStopModal.svelte·Board.svelte, P/src/view.ts; W/src/ui/Board.prompts.test.ts | 정적 대기/위험 설명·뷰 변경 수명 통합 #82 | 미 |
-| FR-46 | 부분 | W/src/settings/settings.svelte.ts `hintLevel`(신규 기본 basic)·routes/Settings.svelte·e2e/settings-rules.spec.ts | 끔/기본/상세 로컬 선택·복원 구현; 실제 보조 표시·늦은 결과 폐기 #80·#115 | 미 |
-| FR-47 | 부분 | E/src/view.ts·interaction-assist.ts, P/src/view.ts; E/test/api.test.ts·interaction-assist.test.ts, P/test/view.test.ts 은닉 | 추가 힌트의 DOM/ARIA/로그 동일성 #115·#87·#143·#90 | — |
-| FR-48 | 부분 | E/src/preview.ts·interaction-assist.ts, P/src/view.ts; E/test/interaction-assist.test.ts·api.test.ts | 상세 순수 API·선 형태/라벨·200%·초점 통합 #81·#115·#51 | 미 |
+| FR-46 | 부분 | W/src/settings/settings.svelte.ts `hintLevel`(기본 basic)·routes/Settings.svelte·e2e/settings-rules.spec.ts 선택·복원, W/src/game/assist.ts·ui/Board.svelte 로컬 설정 소비·기본 표식 데이터 반영 #80·#115 | 카드 상태 CSS는 디자인 리드 소유; 상세 설명·늦은 결과 폐기 #81/#82 | 미 |
+| FR-47 | 부분 | E/src/view.ts·interaction-assist.ts 공개 카드 최소 입력, P/src/view.ts; W/src/game/assist.ts 솔로 PlayerView 직접 계산·P2P BoardView wire 필드 투영·test/assist.test.ts 은닉 | 추가 힌트의 DOM/ARIA/로그 동일성 #87·#143·#90 | — |
+| FR-48 | 부분 | E/src/preview.ts·interaction-assist.ts, P/src/view.ts; W/src/game/assist.ts·ui/Board.svelte 기본 매칭/확정/행동 상태 데이터 | 카드 상태 CSS·상세 순수 API·200%·초점 통합 #81·#51 | 미 |
 | FR-49 | 미구현 | A/src/policies/ismcts.ts는 CPU 전용, W/src/settings/settings.svelte.ts에 조언 opt-in/요청 경로 없음 | 솔로 전용 조언·P2P 계산 차단 회귀 #90 | — |
-| FR-50 | 미구현 | W/src/game/records.ts·storage/session-schema.ts에 판별 힌트 최고 단계/조언 사용 기록 없음 | 단조 사용 이력·옛 기록 미확인 #80·#90·#44 | — |
+| FR-50 | 부분 | W/src/game/session.ts·solo.svelte.ts·storage/session-schema.ts에 실제 손패 표식 표시 기반 단조 hintUsage 훅·판 기록, session-save.test.ts의 v0/v1 복원→정산 미확인 보존 #80·#115 | 옛 기록 미확인 UI·AI 조언 사용 #90·#44 | — |
 | FR-51 | 미구현 | W/src/routes/HostRoom.svelte·P/src/messages.ts에 P2P 제한 설정 없음 | 10초 기본·호스트 끄기/조정은 확정, 후보값·세부 계약 제안 #123 | 미 |
 | FR-52 | 미구현 | W/src/ui/Board.svelte에 결정별 남은 초/준비 상태 시계 없음 | 예약 HUD 시계 #123 | 미 |
 | FR-53 | 미구현 | P/src/host.ts advanceTime은 연결 감시이며 결정 초과 액션 실행 없음 | 결정당 최대1회 초과 정책(제안) #123 | — |
@@ -439,7 +439,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ### 요약·의도별 달성도
 
-고유 ID **86개 중 완료 45·부분 25·미구현 10·미검증 6**. 완료율은 **45/86 = 52.3%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
+고유 ID **86개 중 완료 45·부분 26·미구현 9·미검증 6**. 완료율은 **45/86 = 52.3%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
 
 - **기내 오프라인 1:1:** 아키텍처·M0 기내 모드 연결·자동20판 경로 확보, 현재 정식 UI 실기기 AC-08/09 미검증(#75).
 - **iPhone 무설치:** Safari HTTP 진입·QR 스모크 달성, 현재 게임/잠금복귀를 실기기로 다시 확인해야 함(#75).
