@@ -69,6 +69,30 @@ test('솔로: 메뉴 열람 중 유일 수 보류, 복귀 후 최신 뷰에서 �
     .toBe(1);
 });
 
+test('솔로: 판 정보 열람 중 유일 수 보류, 닫으면 한 번만 저장', async ({ page }) => {
+  const game = createScenario({ hands: [[c('5열')], [c('10열')]], floor: [c('8광')] });
+  await openSave(page, game, true);
+  await page.evaluate(() => {
+    const board = document.querySelector('[data-testid="board"]');
+    if (board === null) throw new Error('게임판 없음');
+    // #104가 이 이름의 대화상자를 Board에 추가한다. 연결 계약을 먼저 검증한다.
+    const dialog = document.createElement('dialog');
+    dialog.setAttribute('aria-label', '판 정보');
+    board.append(dialog);
+    dialog.showModal();
+  });
+  await expect(page.getByTestId('solo')).toHaveAttribute('data-auto-held', 'true');
+  await page.evaluate(() => (window as typeof window & { showForTest: () => void }).showForTest());
+  await page.waitForTimeout(100);
+  expect((await actions(page)).filter((a) => a.type === 'play' && a.seat === 0)).toHaveLength(0);
+  await page
+    .getByRole('dialog', { name: '판 정보' })
+    .evaluate((dialog: HTMLDialogElement) => dialog.close());
+  await expect
+    .poll(async () => (await actions(page)).filter((a) => a.type === 'play' && a.seat === 0).length)
+    .toBe(1);
+});
+
 test('솔로: 동등 바닥 대상은 힌트 설정 없이 최소 ID를 한 번 선택', async ({ page }) => {
   const played = c('8광');
   const initial = createScenario({

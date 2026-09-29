@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Scene from '../pro-assets/Scene.svelte';
   // 게임판 (spec 6.2): 상단 상대 정보·획득패, 중앙 바닥·더미, 하단 내 획득패·상태·손패, 오버레이(배너·선택 창).
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
   // 재생 중(busy)에는 입력을 받지 않고, 판을 탭하면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
@@ -40,6 +41,8 @@
     turnMs?: number | null;
     onaction?: ((action: Action, at: number) => void) | undefined;
     onskip?: (() => void) | undefined;
+    /** 판 정보 대화상자의 열림 상태를 게임 화면에 알린다 (U14). */
+    oninfochange?: ((open: boolean) => void) | undefined;
     /**
      * 짧게 알릴 문구 (국진 열끗↔쌍피 이동, 피 뺏기: M3 리뷰 S-2·I-4). 한 번만 부른다.
      * 표시·지우기(토스트 타이머)는 부르는 쪽이 한다.
@@ -60,6 +63,7 @@
     turnMs = null,
     onaction,
     onskip,
+    oninfochange,
     onnotice,
     root = $bindable(null),
   }: Props = $props();
@@ -70,6 +74,33 @@
   const myStats = $derived(seatStats(me));
   const opponentStats = $derived(seatStats(opponent));
   const actor = $derived(banner ? bannerActor(banner, seat) : null);
+
+  // #104의 판 정보 UI가 들어오면 dialog[aria-label="판 정보"]의 open 상태를
+  // Game에 전달한다. showModal/close/ESC 모두 open 속성 변경으로 관찰된다.
+  $effect(() => {
+    const board = root;
+    if (board === null || oninfochange === undefined) return;
+    let reported = false;
+    const report = () => {
+      const open =
+        board.querySelector<HTMLDialogElement>('dialog[aria-label="판 정보"]')?.open ?? false;
+      if (open === reported) return;
+      reported = open;
+      oninfochange(open);
+    };
+    const observer = new MutationObserver(report);
+    observer.observe(board, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['open'],
+    });
+    report();
+    return () => {
+      observer.disconnect();
+      if (reported) oninfochange(false);
+    };
+  });
 
   /** 직전에 그린 판 (알림 비교용, 반응형일 필요 없음) */
   let previous: Props['view'] | null = null;
@@ -147,6 +178,7 @@
   bind:this={root}
   onpointerdowncapture={skipIfBusy}
 >
+  <Scene scene="table" />
   <SeatBar
     who="상대"
     name={opponent.name}

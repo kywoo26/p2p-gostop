@@ -94,7 +94,18 @@
   let menuDialog = $state<HTMLDialogElement | null>(null);
   let confirming = $state<MenuItem | null>(null);
   let menuOpen = $state(false);
+  let boardInfoOpen = $state(false);
   let visible = $state(document.visibilityState === 'visible');
+  const autoHeld = $derived(
+    !visible ||
+      menuOpen ||
+      boardInfoOpen ||
+      waiting ||
+      ended ||
+      !pb.idle ||
+      !controller.canAct ||
+      controller.pushDecision !== null,
+  );
   let previousFocus: HTMLElement | null = null;
   // 새 Game 인스턴스는 이미 전달된 Back을 소비한 상태에서 시작한다.
   let handledBackToken = untrack(() => backToken);
@@ -107,10 +118,9 @@
 
   $effect(() => {
     const c = controller;
-    // 재생 큐·연결·응답 대기·메뉴가 끝난 뒤의 최신 뷰에서만 다시 판정한다.
+    // 재생 큐·연결·응답 대기·메뉴·판 정보 열람이 끝난 뒤 최신 뷰에서 다시 판정한다.
     void pb.board;
-    const held =
-      !visible || menuOpen || waiting || ended || !pb.idle || !c.canAct || c.pushDecision !== null;
+    const held = autoHeld;
     untrack(() => c.autoAdvance(held));
     return () => untrack(() => c.autoAdvance(true));
   });
@@ -204,7 +214,7 @@
   data-start-balance={stats.startBalance}
   data-seq={stats.seq ?? ''}
   data-can-act={controller.canAct}
-  data-auto-held={!visible || menuOpen || waiting || ended || !pb.idle || !controller.canAct}
+  data-auto-held={autoHeld}
   data-play-timings={playTimings}
   data-play-plans={playPlans}
 >
@@ -223,6 +233,7 @@
       turnMs={pb.lastTiming?.ms ?? null}
       onaction={(action, at) => controller.submit(action, at)}
       onskip={() => controller.skipAnimations()}
+      oninfochange={(open) => (boardInfoOpen = open)}
       onnotice={(text) => pb.showToast(text)}
       bind:root
     />
