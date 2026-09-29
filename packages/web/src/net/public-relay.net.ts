@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -34,7 +34,13 @@ afterEach(async () => {
 
 async function startPublicRelay(): Promise<string> {
   distDir = await mkdtemp(join(tmpdir(), 'rp04a-relay-'));
-  await writeFile(join(distDir, 'index.html'), '<!doctype html><title>test</title>');
+  const html = '<!doctype html><title>test</title>';
+  await writeFile(join(distDir, 'index.html'), html);
+  const hash = createHash('sha256').update('index.html').update('\0').update(html).digest('hex');
+  await writeFile(
+    join(distDir, 'version.json'),
+    JSON.stringify({ wireVersion: PROTOCOL_VERSION, hash }),
+  );
   child = spawn(process.execPath, [resolve('../../packages/relay-dev/src/cli.ts')], {
     cwd: process.cwd(),
     env: {
@@ -197,4 +203,93 @@ it('RELAY_PUBLIC=1에서 health, 코드 수락, 첫 인증, 게임 프레임, 40
   transports.push(replacement);
   expect(await replaced).toMatchObject({ type: 'stopped', reason: 'replaced' });
   expect(guest.state).toBe('stopped');
+}, 15_000);
+
+it('RELAY_PUBLIC=1에서 invite 수락 후 같은 게스트 소켓으로 첫 게임 프레임을 전달한다', async () => {
+  const base = await startPublicRelay();
+  const createdResponse = await fetch(`${base}/api/rooms`, {
+    method: 'POST',
+    headers: { Origin: origin, Authorization: `Bearer ${creationSecret}` },
+  });
+  expect(createdResponse.status).toBe(201);
+  const created = (await createdResponse.json()) as {
+    roomId: string;
+    hostToken: string;
+    expiresAt: number;
+  };
+  const inviteToken = randomBytes(32).toString('base64url');
+  const resumeToken = randomBytes(32).toString('base64url');
+  const credentials = await fetch(`${base}/api/rooms/${created.roomId}/credentials`, {
+    method: 'POST',
+    headers: {
+      Origin: origin,
+      Authorization: `Bearer ${created.hostToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      token: inviteToken,
+      permission: 'invite',
+      expiresAt: Math.min(created.expiresAt, Date.now() + 60_000),
+    }),
+  });
+  expect(credentials.status).toBe(201);
+
+  let guestConnections = 0;
+  const factory = (url: string): globalThis.WebSocket => {
+    if (url.includes('role=guest')) guestConnections++;
+    return new WebSocket(url.replace('wss://relay.example.test', base.replace('http:', 'ws:')), {
+      origin,
+    }) as unknown as globalThis.WebSocket;
+  };
+  const endpoint = {
+    baseUrl: origin,
+    allowedOrigin: origin,
+    room: created.roomId,
+    role: 'host' as const,
+    token: created.hostToken,
+  };
+  const host = createPublicTransport(endpoint, { socketFactory: factory });
+  transports.push(host);
+  await next<ConnectionEvent>((done) =>
+    host.onConnection((event) => {
+      if (event.type === 'open') done(event);
+    }),
+  );
+  const claim = next<RelayControl>((done) =>
+    host.onControl((control) => {
+      if (control.t === 'relay-claim') done(control);
+    }),
+  );
+  const guest = createPublicTransport(
+    { ...endpoint, role: 'guest', token: inviteToken },
+    { socketFactory: factory },
+  );
+  transports.push(guest);
+  guest.send({ t: 'hello', v: PROTOCOL_VERSION, name: 'same-socket' });
+  const accepted = next<RelayControl>((done) =>
+    guest.onControl((control) => {
+      if (control.t === 'relay-accepted') done(control);
+    }),
+  );
+  const opened = next<ConnectionEvent>((done) =>
+    guest.onConnection((event) => {
+      if (event.type === 'open') done(event);
+    }),
+  );
+  const firstGameFrame = next<string>((done) => host.onMessage(done));
+  const request = await claim;
+  expect(request.t).toBe('relay-claim');
+  if (request.t !== 'relay-claim') throw new Error('invalid claim');
+  expect(
+    host.sendControl({ t: 'relay-accept', requestId: request.requestId, token: resumeToken }),
+  ).toBe(true);
+  expect(await accepted).toEqual({
+    t: 'relay-accepted',
+    roomId: created.roomId,
+    token: resumeToken,
+  });
+  expect(await opened).toMatchObject({ type: 'open' });
+  expect(await firstGameFrame).toBe(`{"t":"hello","v":${PROTOCOL_VERSION},"name":"same-socket"}`);
+  expect(guestConnections).toBe(1);
+  expect(guest.state).toBe('open');
 }, 15_000);

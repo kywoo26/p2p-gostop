@@ -486,9 +486,9 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | 요구사항 ID | 상태 | RP-04A 근거 | 남은 검증·담당 |
 |---|---|---|---|
 | FR-RP-01·FR-RP-08 | 부분 | `GameActivity` 원격 모드 진입/복귀, `HotspotService` LOHS 취소·LAN gate 닫힘·loopback CIO 재바인딩, Activity·Service가 사용하는 부수효과 포트의 순수 JVM 회귀 gate. 원격은 Activity 가시 수명 일반 Service, LAN만 `connectedDevice` FGS | RP-05 모드/health 재시도 UI 경로 미검증·인계, Galaxy 실제 권한/서비스 수명·핫스팟 경로 사람 확인 |
-| NP-RP-01 | 부분 | `web/src/net` WSS/room/역할 URL·첫 `relay-auth`/재인증/4001 정책, `relay-*` 제어 콜백, 게임 프레임 무변경, `RELAY_PUBLIC=1` 실중계 `test:net` | RP-04B/05 수락·재접속 UI 연결 |
+| NP-RP-01 | 부분 | `web/src/net` WSS/room/역할 URL·첫 `relay-auth`/재인증/4001 정책, 파싱된 최상위 `t`의 `relay-*` 제어 콜백, 게임 프레임 무변경. #161 `f40e180`의 `RELAY_PUBLIC=1` 실중계에서 invite 수락 뒤 같은 게스트 소켓으로 첫 hello 전달·코드 참여·4001 확인 | RP-04B/05 수락·재접속 UI 연결 |
 | NP-RP-02 | 부분 | 생성 자격을 번들에 넣지 않고 호스트 설정 저장소에 주입하는 net API, room·역할 토큰은 URL에서 제외 | RP-02 방/역할 토큰 발급·검증, RP-05 설정 UI·비밀 취급 기기 확인 |
-| NP-RP-08 | 부분 | 설정 HTTPS origin의 유한 `/health` 확인·취소·redirect 거절·wire 버전 대조·CORS/연결 실패 안내 코드, `check-bundle.mjs`의 정적 HTTP/WS URL gate, 공개 중계 health 실응답 `test:net` | RP-02 허용 Origin CORS 응답, RP-05C health UI 진입/재시도·화면 종료 취소·기내 요청0 E2E **미검증·인계** |
+| NP-RP-08 | 부분 | 설정 HTTPS origin의 유한 `/health` 확인·취소·redirect 거절·wire 버전 대조·CORS/연결 실패 안내 코드, `check-bundle.mjs`의 정적 HTTP/WS URL gate, #161 `f40e180` 실중계 health·허용 Origin CORS/preflight 응답 `test:net` | RP-05C health UI 진입/재시도·화면 종료 취소·기내 요청0 E2E **미검증·인계** |
 
 ### 이슈 정리 결과 (초기 정리와 리뷰 반영 시점 구분)
 
