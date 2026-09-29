@@ -1,6 +1,6 @@
 // 사용: node packages/relay-dev/src/cli.ts --port 17777  (환경변수 PORT, HOST도 지원)
 import { readFileSync } from 'node:fs';
-import { PROTOCOL_VERSION, RELAY_PATH, RELAY_PORT } from '@p2p-gostop/protocol';
+import { RELAY_PATH, RELAY_PORT } from '@p2p-gostop/protocol';
 import { startRelay } from './index.ts';
 
 const args = process.argv.slice(2);
@@ -36,11 +36,8 @@ const releases = release
       {
         id: release,
         distDir: process.env['RELAY_DIST_DIR'] ?? 'packages/web/dist',
-        wireVersion: PROTOCOL_VERSION,
       },
-      ...(previous && previousDir
-        ? [{ id: previous, distDir: previousDir, wireVersion: PROTOCOL_VERSION }]
-        : []),
+      ...(previous && previousDir ? [{ id: previous, distDir: previousDir }] : []),
     ]
   : [];
 const relay = await startRelay({

@@ -64,6 +64,32 @@ it('256-bit 생성 키, 역할 범위, 인증 전 무전달 및 위조 교체 �
   )
     throw new Error('invalid create response');
   const { roomId, hostToken } = result;
+  const otherCreated = await fetch(`${base}/api/rooms`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const other: unknown = await otherCreated.json();
+  if (
+    !other ||
+    typeof other !== 'object' ||
+    !('roomId' in other) ||
+    !('hostToken' in other) ||
+    typeof other.roomId !== 'string' ||
+    typeof other.hostToken !== 'string'
+  )
+    throw new Error('other room');
+  for (const forbidden of [secret, hostToken, other.hostToken]) {
+    const response = await fetch(`${base}/api/rooms/${roomId}/credentials`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${hostToken}` },
+      body: JSON.stringify({
+        token: forbidden,
+        permission: 'resume',
+        expiresAt: Date.now() + 60_000,
+      }),
+    });
+    expect(response.status).toBe(400);
+  }
   expect(Buffer.from(roomId, 'base64url')).toHaveLength(16);
   expect(Buffer.from(hostToken, 'base64url')).toHaveLength(32);
   const guestToken = randomBytes(32).toString('base64url');
@@ -98,6 +124,13 @@ it('256-bit 생성 키, 역할 범위, 인증 전 무전달 및 위조 교체 �
   const hostGame = next(host);
   guest.send('game');
   expect(await hostGame).toBe('game');
+  const crossRoom = await connect(relay.port, 'guest', other.roomId);
+  const crossClosed = closed(crossRoom);
+  crossRoom.send(JSON.stringify({ t: 'relay-auth', token: guestToken }));
+  expect(await crossClosed).toBe(1008);
+  const stillForwarded = next(host);
+  guest.send('still game');
+  expect(await stillForwarded).toBe('still game');
 });
 
 it('역할 해시와 만료를 구분한다', () => {
@@ -109,4 +142,13 @@ it('역할 해시와 만료를 구분한다', () => {
   expect(auth.authenticate(room, 'host', guestToken)).toBeNull();
   expect(auth.authenticate(room, 'guest', hostToken)).toBeNull();
   expect(auth.authenticate(room, 'guest', guestToken, Date.now() + 20_000)).toBeNull();
+  expect(auth.register(room, hostToken, secret, 'resume', Date.now() + 10_000)).toBe(false);
+  expect(auth.registerGuest(room, hostToken, 'resume', Date.now() + 10_000)).toBe(false);
+  expect(auth.registerGuest(room, secret, 'resume', Date.now() + 10_000)).toBe(false);
+  const other = auth.create();
+  expect(auth.authenticate(other.room, 'guest', guestToken)).toBeNull();
+  expect(auth.registerGuest(other.room, hostToken, 'resume', Date.now() + 10_000)).toBe(false);
+  expect(auth.authenticate(other.room, 'guest', hostToken)).toBeNull();
+  auth.rooms.delete(room.id);
+  expect(auth.registerGuest(other.room, hostToken, 'resume', Date.now() + 10_000)).toBe(false);
 });

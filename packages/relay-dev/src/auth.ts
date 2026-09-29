@@ -30,6 +30,7 @@ function validCreationSecret(value: string): boolean {
 export class RoomAuth {
   readonly rooms = new Map<string, PublicRoom>();
   readonly creationHash: Buffer;
+  private readonly issuedHostHashes = new Set<string>();
   constructor(secret: string) {
     if (!validCreationSecret(secret)) throw new Error('256-bit creation credential required');
     this.creationHash = tokenHash(secret);
@@ -46,6 +47,7 @@ export class RoomAuth {
       credentials: new Map(),
       createdAt: now,
     };
+    this.issuedHostHashes.add(room.hostHash.toString('hex'));
     this.rooms.set(id, room);
     return { room, hostToken };
   }
@@ -58,17 +60,28 @@ export class RoomAuth {
     guestToken: unknown,
     permission: GuestPermission,
     expiresAt: number,
+    now = Date.now(),
   ): boolean {
-    if (
-      !this.isHost(room, hostToken) ||
-      !validToken(guestToken) ||
-      !Number.isSafeInteger(expiresAt) ||
-      expiresAt <= Date.now()
-    )
+    if (!this.isHost(room, hostToken)) return false;
+    return this.registerGuest(room, guestToken, permission, expiresAt, now);
+  }
+  registerGuest(
+    room: PublicRoom,
+    guestToken: unknown,
+    permission: GuestPermission,
+    expiresAt: number,
+    now = Date.now(),
+  ): boolean {
+    if (!validToken(guestToken) || !Number.isSafeInteger(expiresAt) || expiresAt <= now)
       return false;
     const hash = tokenHash(guestToken);
     const key = hash.toString('hex');
-    if (room.credentials.has(key) || equalHash(room.hostHash, hash)) return false;
+    if (
+      room.credentials.has(key) ||
+      equalHash(this.creationHash, hash) ||
+      this.issuedHostHashes.has(key)
+    )
+      return false;
     room.credentials.set(key, { hash, permission, expiresAt });
     return true;
   }
@@ -80,7 +93,12 @@ export class RoomAuth {
   ): GuestPermission | 'host' | null {
     if (!room || !validToken(token)) return null;
     if (role === 'host') return this.isHost(room, token) ? 'host' : null;
-    const credential = room.credentials.get(tokenHash(token).toString('hex'));
-    return credential && credential.expiresAt > now ? credential.permission : null;
+    const hash = tokenHash(token);
+    let permission: GuestPermission | null = null;
+    for (const credential of room.credentials.values()) {
+      const matches = equalHash(credential.hash, hash);
+      if (matches && credential.expiresAt > now) permission = credential.permission;
+    }
+    return permission;
   }
 }

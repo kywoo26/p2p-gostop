@@ -1,11 +1,11 @@
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { WebSocket, type RawData } from 'ws';
-import { PROTOCOL_VERSION } from '@p2p-gostop/protocol';
 import { startRelay, type Relay } from '../src/index.ts';
+import { writeArtifact } from './artifact.ts';
 
 const local = 'http://127.0.0.1:17777';
 const guest = 'https://relay.example.test';
@@ -25,13 +25,12 @@ afterEach(async () => {
 async function server(origins: string[]): Promise<string> {
   directory = await mkdtemp(join(tmpdir(), 'relay-cors-'));
   const dist = join(directory, 'dist');
-  await mkdir(dist);
-  await writeFile(join(dist, 'index.html'), '<html>public</html>');
+  await writeArtifact(dist, 2, { 'index.html': '<html>public</html>' });
   relay = await startRelay({
     publicMode: {
       creationSecret: secret,
       allowedOrigins: origins,
-      releases: [{ id: 'v0.2.2', distDir: dist, wireVersion: PROTOCOL_VERSION }],
+      releases: [{ id: 'v0.2.2', distDir: dist }],
     },
   });
   return `http://127.0.0.1:${relay.port}`;
