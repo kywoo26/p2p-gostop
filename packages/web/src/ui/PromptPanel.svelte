@@ -32,7 +32,7 @@
   aria-labelledby={titleId}
   transition:fly={{ y: 24, duration: durationMs('modal') }}
 >
-  <h2 id={titleId}>{title}</h2>
+  <h2 id={titleId} tabindex="-1">{title}</h2>
   {#if children}<div class="prompt-content" use:scrollRegion role="region" aria-label="선택 설명">
       <div>{@render children()}</div>
     </div>{/if}

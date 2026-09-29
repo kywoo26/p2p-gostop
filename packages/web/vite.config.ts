@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
@@ -47,8 +47,22 @@ function gitShortHash(): string {
 export default defineConfig({
   // Android assets(127.0.0.1:17777/)와 로컬 미리보기 어디서나 열리도록 상대 경로
   base: './',
-  plugins: [svelte()],
+  plugins: [
+    svelte(),
+    {
+      name: 'exclude-prototype-assets-from-release',
+      closeBundle() {
+        if (process.env['PRO_ASSET_REVIEW'] === '1') return;
+        const dir = resolve(repoRoot, 'packages/web/dist/pro');
+        if (!existsSync(dir)) return;
+        for (const name of readdirSync(dir)) {
+          if (name !== 'NOTICE.md') rmSync(resolve(dir, name), { recursive: true, force: true });
+        }
+      },
+    },
+  ],
   define: {
+    'import.meta.env.PRO_ASSET_REVIEW': JSON.stringify(process.env['PRO_ASSET_REVIEW'] === '1'),
     __BUILD_ID__: JSON.stringify(gitShortHash()),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },

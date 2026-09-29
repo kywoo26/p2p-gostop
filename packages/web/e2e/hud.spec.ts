@@ -114,6 +114,15 @@ test('HUD 실제 메뉴: 예약 위치 일치·클릭·복귀', async ({ page },
   await expect(page.getByTestId('my-score')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   const menu = page.getByTestId('game-menu');
+  const prompt = page.getByRole('dialog', { name: '선 고르기' });
+  await expect(prompt.locator('h2')).toBeFocused();
+  await expect(prompt).toHaveAttribute('aria-modal', 'true');
+  await expect(prompt).toHaveAttribute('aria-owns', (await menu.getAttribute('id'))!);
+  // 상위 메뉴는 선택창의 접근성 소유 관계와 Tab 순서에 포함된다.
+  await page.keyboard.press('Shift+Tab');
+  await expect(menu).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(prompt.locator('[tabindex="0"], button:enabled').first()).toBeFocused();
   const geometry = await page.evaluate(() => {
     const button = document.querySelector('[data-testid="game-menu"]')!;
     const actual = button.getBoundingClientRect();

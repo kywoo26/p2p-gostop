@@ -63,6 +63,31 @@ main을 병합했다. 충돌은 폰트 코퍼스/메타/CSS/WOFF2 재생성과 C
 
 ## #104 / #147 통합 순서
 
-**#104 구조·표식·HUD 정보 설계 + 기본 A 외관·정산을 먼저 병합 가능하게 하고, [#147 아트 디렉션](https://github.com/kywoo26/p2p-gostop/pull/147) 확정 후 별도 스킨 PR로 전문 질감·프레임·일러스트를 입힌다.** #104에는 전문 자산·평가 플래그·예산 예외가 없다. 후속 스킨은 6행/선택예약/손패 표식/문턱칩/48px/가림0 계약을 재검증한다. 본선1.5MiB는 유지한다.
+**#104 구조·표식·HUD 정보 설계 + 기본 A 외관·정산을 먼저 병합하고 `design/pro-skin`에서 전문 질감·프레임·일러스트를 적용한다.** #147은 main에 병합되어 이번 동기화에 평가 경로/파이프라인이 포함되지만 기본 앱에는 켜지지 않는다. #104는 프로토타입 배치를 본선으로 이식하지 않는다. 후속 스킨은 6행/선택예약/손패 표식/문턱칩/48px/가림0 계약을 재검증한다. 본선1.5MiB는 유지한다.
 
 최종 Docker 검증(main1287e7f 병합 후): npm ci/lint/check 통과(경고0), Node519·브라우저330, build1,228.1KiB/1,536KiB·외부URL0·폰트140.8KiB, 전체 E2E254통과/기존6skip, Android assembleDebug/testDebugUnitTest/lint 통과. 이번 실행은 기준샷 갱신 없이 통과했다. 정산14장 및 손패 피드백6장은 `packages/web/test-results/design-a-settlement/`·`design-a-feedback/`에 별도 복사했다.
+
+## 리뷰 5352348641 반영 + main 24bf1e0 동기화
+
+위 검증은 이전 제출 결과다. 후속 main에는 #148·#150·#147·#149가 포함된다. Home/Screen/Board 충돌은 기본 #104 구조와 main의 opt-in 평가 경로를 함께 보존했다. 제한시간 개정안은 문서만 합치며, NF-03 승인 대기/본선 전체1.5MiB를 유지한다. #151 설정 기준샷 병합 순서는 사용자 조율이며 이번 수정에서 settings PNG는 갱신하지 않는다.
+
+| 리뷰 | 수정 | 회귀 증거 |
+|---|---|---|
+| 중요1 · UX-07/24 | PromptPanel 공통 제목 초점 진입/순환/복귀, aria-modal·게임판 배경 inert. 상위 메뉴는 aria-owns 및 Tab 순서로 연결하고 네이티브 메뉴가 열린 동안 초점 가두기를 중단한다. 사라진 opener는 유효 제어로 복귀, 전환 중 창끼리 잠금 공유 | Board.input: 대상/고스톱/국진/흔들기/총통/선 고르기 + 폭탄 취소, 다음 창·busy·등장 반전. Chromium/WebKit22검사 |
+| 중요2 · UX-10/#52 | 빈 바닥에서 시작한 짧은 탭의 pointerup만 스킵. 정보 버튼의 별도 skip 호출 제거 | HUD/손패/바닥 카드/선택 행/정보 버튼0, 취소/드래그/다른 pointer0, 스킵 후 동일 연쇄 내기0 |
+| 중요3 · UX-24 | 버튼 접근성 이름 ‘스톱 · 2,000냥’ | Board.test의 금액 포함 role 이름 단언, 고스톱 ARIA2 갱신 |
+| 경미4 · #144 | 확정 조건에 상대 revealed의 같은 월 없음 추가 | ui-spec §14.5/15.1 및 이 문서 정정. 공개 흔들기 패가 남으면 match 반례 명시. 실게임 판정은 추가하지 않음 |
+
+UX-24 제목 초점 때문에 target/gostop 제목에 기존 focus-visible 링이 나타난다. 해당 gallery PNG4와 layout PNG16만 리뷰 수정으로 갱신했다. layout의 손패9점 hit-test는 선택 중에는 inert로 입력이 제외됨을, 일반 상태에는 그대로 입력 가능함을 검사한다. 그림 노출·기하·최소4화면 계약은 유지한다. main License PNG는 양쪽 변경이 합쳐진 화면으로 다시 검사했다.
+
+| 접근성 | 리뷰 전 | 리뷰 후 |
+|---|---|---|
+| 초점·배경 | dialog open만, 손패 등 배경 입력 가능 | 진입·Tab 순환·복귀 + inert, 애니메이션 중 재등장도 잠금 유지 |
+| 스톱 이름 | ‘스톱’ | ‘스톱 · 금액’ |
+| 대비/입력 | A 토큰·48px·간격 계약 | 동일, 초점 링은 기존 토큰 |
+| reduced-motion | #86 scale0 | 동일, 시간 토큰/anim 변경0 |
+| 실기기/200% | 사람/#51 확인 대기 | 동일; 자동화 통과로 대체 주장하지 않음 |
+
+Context7 도구가 노출되지 않아 [Svelte effect/lifecycle](https://svelte.dev/docs/svelte/$effect), [MDN dialog](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role), [WAI-ARIA modal pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) 공식 문서를 직접 확인했다. 인라인 dialog의 배치를 유지하려고 초점 순환과 inert를 명시적으로 구현했다.
+
+메뉴 진입점의 접근성 소유 관계는 [MDN aria-owns](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-owns), 상위 네이티브 메뉴 감지는 [MDN :modal](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:modal)을 따른다. 실제 VoiceOver/TalkBack 읽기 순서는 사람 확인 대기다.

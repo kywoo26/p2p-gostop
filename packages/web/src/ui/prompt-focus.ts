@@ -21,38 +21,55 @@ function focusable(panel: HTMLElement): HTMLElement[] {
 export function promptFocus(panel: HTMLDialogElement) {
   const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const board = panel.closest('.board');
+  const menu = board
+    ?.closest('.game')
+    ?.querySelector<HTMLButtonElement>('[data-testid="game-menu"]');
+  const activeTargets = () => [...focusable(panel), ...(menu && available(menu) ? [menu] : [])];
+  const suspended = () => !!panel.closest('[inert]') || !!document.querySelector('dialog:modal');
   const siblings: HTMLElement[] = [];
-  let released = false;
-  panels.add(panel);
-  for (let child: HTMLElement = panel; child.parentElement; child = child.parentElement) {
-    for (const sibling of child.parentElement.children) {
-      if (
-        !(sibling instanceof HTMLElement) ||
-        sibling === child ||
-        sibling.matches('script, style')
-      )
-        continue;
-      const lock = locks.get(sibling) ?? { count: 0, previous: sibling.inert };
-      lock.count++;
-      locks.set(sibling, lock);
-      sibling.inert = true;
-      siblings.push(sibling);
+  let released = true;
+  const focusFirst = () =>
+    (panel.querySelector<HTMLElement>('h2') ?? panel).focus({ preventScroll: true });
+  function acquire() {
+    if (!released) return;
+    released = false;
+    panel.inert = false;
+    panels.add(panel);
+    if (menu) {
+      if (!menu.id) menu.id = `${panel.getAttribute('aria-labelledby')}-menu`;
+      panel.setAttribute('aria-owns', menu.id);
     }
-    if (child.parentElement === document.body) break;
+    for (let child: HTMLElement = panel; child.parentElement; child = child.parentElement) {
+      for (const sibling of child.parentElement.children) {
+        if (
+          !(sibling instanceof HTMLElement) ||
+          sibling === child ||
+          sibling.matches('script, style')
+        )
+          continue;
+        const lock = locks.get(sibling) ?? { count: 0, previous: sibling.inert };
+        lock.count++;
+        locks.set(sibling, lock);
+        sibling.inert = true;
+        siblings.push(sibling);
+      }
+      if (child.parentElement === board || child.parentElement === document.body) break;
+    }
+    document.addEventListener('keydown', keydown, true);
+    document.addEventListener('focusin', retainFocus);
+    queueMicrotask(() => {
+      if (!released) focusFirst();
+    });
   }
-  const focusFirst = () => (focusable(panel)[0] ?? panel).focus({ preventScroll: true });
-  queueMicrotask(() => {
-    if (!released) focusFirst();
-  });
 
   function keydown(event: KeyboardEvent) {
-    if (released) return;
+    if (released || suspended()) return;
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
     }
     if (event.key !== 'Tab') return;
-    const targets = focusable(panel);
+    const targets = activeTargets();
     const index = targets.indexOf(document.activeElement as HTMLElement);
     if (index === -1 || (event.shiftKey ? index === 0 : index === targets.length - 1)) {
       event.preventDefault();
@@ -60,13 +77,14 @@ export function promptFocus(panel: HTMLDialogElement) {
     }
   }
   function retainFocus(event: FocusEvent) {
-    if (!released && !panel.contains(event.target as Node) && !panel.closest('[inert]'))
+    if (!released && !suspended() && !panel.contains(event.target as Node) && event.target !== menu)
       focusFirst();
   }
   function release() {
     if (released) return;
     released = true;
     panels.delete(panel);
+    panel.removeAttribute('aria-owns');
     panel.inert = true; // 사라지는 애니메이션 중 중복 선택 방지
     document.removeEventListener('keydown', keydown, true);
     document.removeEventListener('focusin', retainFocus);
@@ -77,6 +95,7 @@ export function promptFocus(panel: HTMLDialogElement) {
         locks.delete(sibling);
       }
     }
+    siblings.length = 0;
     queueMicrotask(() => {
       if ([...panels].some((node) => node.isConnected)) return;
       if (previous && available(previous) && previous !== document.body) {
@@ -90,12 +109,13 @@ export function promptFocus(panel: HTMLDialogElement) {
       }
     });
   }
-  document.addEventListener('keydown', keydown, true);
-  document.addEventListener('focusin', retainFocus);
+  acquire();
+  panel.addEventListener('introstart', acquire);
   panel.addEventListener('outrostart', release);
   return {
     destroy() {
       release();
+      panel.removeEventListener('introstart', acquire);
       panel.removeEventListener('outrostart', release);
     },
   };

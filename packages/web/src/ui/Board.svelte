@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Scene from '../pro-assets/Scene.svelte';
   // 게임판 (spec 6.2, FR-40): 상단 양쪽 점수판·상대 획득패, 중앙 바닥·더미, 선택 영역, 내 획득패·현황·손패.
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
   // 재생 중(busy)에는 입력을 받지 않고, 빈 바닥을 누르고 떼면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
@@ -231,6 +232,7 @@
   onpointerupcapture={finishSkip}
   onpointercancel={() => (skipPress = null)}
 >
+  <Scene scene="table" />
   <div class="hud" inert={landscape} data-testid="hud">
     <div class="scoreboard" class:expanded={expandedHud} aria-label="양쪽 점수판">
       <SeatBar

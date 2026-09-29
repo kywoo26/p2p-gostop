@@ -1,0 +1,222 @@
+{
+  "version": 2,
+  "config": {
+    "preset": "arcade",
+    "rules": {
+      "bonusCards": 3,
+      "bonusSteal": true,
+      "dealFloorBonusSteal": false,
+      "twoCardBomb": "off",
+      "ppeokPayout": "points",
+      "firstTtadakPayout": true,
+      "threePpeokPoints": 7,
+      "chongtongPoints": 10,
+      "chongtongContinue": true,
+      "bonusChongtong": "firstTurn",
+      "floorChongtong": "nagari",
+      "bothChongtong": "nagari",
+      "piBakThreshold": 7,
+      "piBakZeroExempt": true,
+      "lastTurnPpeokSteal": false,
+      "nagariCap": 8,
+      "goScoring": "plusNAndDouble",
+      "gukjin": "auto",
+      "push": true,
+      "jackpotRound": {
+        "every": 5,
+        "multiplier": 2
+      },
+      "missions": "off",
+      "firstDealer": "pickCard",
+      "naturalPpeokSteal": true,
+      "hudang": false,
+      "limitedLiability": false
+    },
+    "perPoint": 100,
+    "startBalance": 1000000,
+    "hostName": "호스트"
+  },
+  "state": {
+    "v": 1,
+    "rules": {
+      "bonusCards": 3,
+      "bonusSteal": true,
+      "dealFloorBonusSteal": false,
+      "twoCardBomb": "off",
+      "ppeokPayout": "points",
+      "firstTtadakPayout": true,
+      "threePpeokPoints": 7,
+      "chongtongPoints": 10,
+      "chongtongContinue": true,
+      "bonusChongtong": "firstTurn",
+      "floorChongtong": "nagari",
+      "bothChongtong": "nagari",
+      "piBakThreshold": 7,
+      "piBakZeroExempt": true,
+      "lastTurnPpeokSteal": false,
+      "nagariCap": 8,
+      "goScoring": "plusNAndDouble",
+      "gukjin": "auto",
+      "push": true,
+      "jackpotRound": {
+        "every": 5,
+        "multiplier": 2
+      },
+      "missions": "off",
+      "firstDealer": "pickCard",
+      "naturalPpeokSteal": true,
+      "hudang": false,
+      "limitedLiability": false
+    },
+    "names": ["호스트", "게스트"],
+    "token": "fixture-token",
+    "seq": 105,
+    "roundNumber": 1,
+    "dealer": null,
+    "carry": 1,
+    "pushes": 0,
+    "ledger": {
+      "perPoint": 100,
+      "startBalance": 1000000,
+      "balances": [1000000, 1000000],
+      "entries": []
+    },
+    "stage": "settled",
+    "rev": 3,
+    "guestName": "게스트",
+    "guestConfirmed": true,
+    "guestReady": false,
+    "bankrupt": [],
+    "endReason": null,
+    "autoStart": true,
+    "unit": "냥",
+    "round": {
+      "hostSecret": "0101010101010101010101010101010101010101010101010101010101010101",
+      "hostHash": "72cd6e8422c407fb6d098690f1130b7ded7ec2f7f5e1d30bd9d521f015363793",
+      "guestHash": "72cd6e8422c407fb6d098690f1130b7ded7ec2f7f5e1d30bd9d521f015363793",
+      "guestSecret": "0101010101010101010101010101010101010101010101010101010101010101",
+      "options": {
+        "roundNumber": 1,
+        "carry": 1,
+        "pushes": 0
+      },
+      "firstSeq": 1,
+      "actions": [
+        {
+          "type": "pickFirst",
+          "seat": 0,
+          "index": 0
+        },
+        {
+          "type": "pickFirst",
+          "seat": 1,
+          "index": 1
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 5
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 2
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 9
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 7
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 16
+        },
+        {
+          "type": "chooseTarget",
+          "seat": 0,
+          "card": 17
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 10
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 21
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 12
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 22
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 13
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 26
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 24
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 30
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 28
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 31
+        },
+        {
+          "type": "play",
+          "seat": 1,
+          "card": 36
+        },
+        {
+          "type": "play",
+          "seat": 0,
+          "card": 38
+        },
+        {
+          "type": "chooseTarget",
+          "seat": 0,
+          "card": 45
+        },
+        {
+          "type": "stop",
+          "seat": 0
+        }
+      ],
+      "startBalances": [1000000, 1000000]
+    },
+    "settlementView": null,
+    "lastReveal": null,
+    "lastAbort": null
+  },
+  "records": []
+}

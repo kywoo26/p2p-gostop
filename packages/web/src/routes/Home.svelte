@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Scene from '../pro-assets/Scene.svelte';
+  import { proEnabled } from '../pro-assets/runtime.ts';
+  import { cardSrc } from '../ui/cards.ts';
   // 홈 화면 (spec 6.2): 친구와 대전(방 열기) / 혼자 연습 / 기록 / 설정 / 진단. 진행 중인 대전·연습이 있으면 맨 위에 이어하기.
   import { BUILD_ID, BUILD_TIME } from '../lib/build-info.ts';
 
@@ -23,11 +26,14 @@
 </script>
 
 <main class="home">
+  <Scene scene="home" />
   <header class="hero">
     <h1>맞고 P2P</h1>
-    <div class="hero-art" aria-hidden="true">
-      <img src="cards/0.svg" alt="" /><img src="cards/28.svg" alt="" />
-    </div>
+    {#if proEnabled}<div class="pro-home-art" aria-hidden="true">
+        {#each [0, 8, 28] as const as id (id)}<img src={cardSrc(id)} alt="" />{/each}
+      </div>{:else}<div class="hero-art" aria-hidden="true">
+        <img src="cards/0.svg" alt="" /><img src="cards/28.svg" alt="" />
+      </div>{/if}
   </header>
   <nav aria-label="메인 메뉴">
     {#if match}

@@ -22,7 +22,7 @@ for (const kind of ['target', 'gostop', 'gukjin', 'shake', 'chongtong', 'first']
     const dialog = screen.container.querySelector<HTMLDialogElement>('.prompt')!;
     const buttons = [...dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
     expect(dialog.getAttribute('aria-modal')).toBe('true');
-    await vi.waitFor(() => expect(document.activeElement).toBe(buttons[0]));
+    await vi.waitFor(() => expect(document.activeElement).toBe(dialog.querySelector('h2')));
     for (const selector of ['.hud', '.hand-zone', '.center', '.info-button']) {
       expect(screen.container.querySelector(selector)!.closest('[inert]')).not.toBeNull();
     }
@@ -76,7 +76,7 @@ test('선택 연쇄와 선택 후 busy: 초점은 다음 창, 이후 유효 판 
   screen.container.querySelector<HTMLButtonElement>('[data-slot="6"]')!.focus();
   await screen.rerender({ view: layoutFixture('target') });
   await screen.rerender({ view: layoutFixture('gostop') });
-  await vi.waitFor(() => expect(document.activeElement?.getAttribute('data-choice')).toBe('go'));
+  await vi.waitFor(() => expect(document.activeElement?.textContent).toContain('고? 스톱?'));
   await screen.rerender({ view: layoutFixture('play'), busy: true });
   await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('판 정보'));
   expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).toBeNull();
@@ -134,4 +134,21 @@ test('빈 바닥 취소·드래그·다른 pointer·카드에서 시작한 연�
   pointer(screen.container.querySelector('.card')!, 'pointerdown');
   pointer(empty, 'pointerup');
   expect(onskip).not.toHaveBeenCalled();
+});
+
+test('등장/사라짐을 빠르게 되돌려도 재등장한 선택 창의 잠금과 초점 유지', async () => {
+  document.documentElement.dataset['speed'] = 'normal';
+  const screen = await render(Board, { view: layoutFixture('target') });
+  await screen.rerender({ busy: true });
+  await screen.rerender({ busy: false });
+  await vi.waitFor(() => {
+    const dialog = screen.container.querySelector('.prompt:not([inert])')!;
+    expect(dialog).not.toBeNull();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).not.toBeNull();
+  });
+  await screen.rerender({ view: layoutFixture('play') });
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).toBeNull(),
+  );
 });
