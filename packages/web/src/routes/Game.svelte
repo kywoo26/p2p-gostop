@@ -81,6 +81,12 @@
       .map((t) => t.ms)
       .join(','),
   );
+  const playPlans = $derived(
+    pb.timings
+      .filter((t) => t.action === 'play' || t.action === 'bomb' || t.action === 'flipOnly')
+      .map((t) => t.plannedMs)
+      .join(','),
+  );
   const stats = $derived(controller.stats);
 
   // ---- 메뉴 (이슈 #10) ----
@@ -181,6 +187,7 @@
   data-seq={stats.seq ?? ''}
   data-can-act={controller.canAct}
   data-play-timings={playTimings}
+  data-play-plans={playPlans}
 >
   <div
     class="board-wrap"
