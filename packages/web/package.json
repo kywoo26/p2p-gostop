@@ -17,7 +17,7 @@
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
     "test:browser": "vitest run",
-    "test:net": "vitest run --config src/net/vitest.config.ts",
+    "test:net": "vitest run --config src/p2p/vitest.net.config.ts",
     "e2e": "playwright test"
   },
   "dependencies": {
