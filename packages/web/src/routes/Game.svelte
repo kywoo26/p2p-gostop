@@ -226,6 +226,7 @@
       view={pb.board}
       {extras}
       unit={settings.value.unit}
+      confirmDelay={'confirmDelay' in settings.value && settings.value.confirmDelay === true}
       banner={pb.banner}
       toast={pb.toast}
       busy={pb.busy || !controller.canAct}

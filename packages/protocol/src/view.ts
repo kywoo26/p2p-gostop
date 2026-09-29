@@ -121,6 +121,7 @@ function seatOf(
     goCount: s.goCount,
     shakes: s.shakes,
     bombs: s.bombs,
+    bombTokens: s.bombTokens,
     gukjinAsPi: s.score.gukjinAsPi,
     revealed: s.revealed,
     ppeokCount: s.ppeokCount,
