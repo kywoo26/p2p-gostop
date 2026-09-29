@@ -142,7 +142,7 @@ p2p-gostop/
 
 ### 1.9 원격 중계 모드 개정안 (승인 전)
 
-근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-승인-전), [후보·공식 한도](docs/research/remote-play.md). **1순위 PC+Funnel(WS 실측 조건), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 임시 Tailscale 노드 공유(상대 설치 필요)**. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
+근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-승인-전), [후보·공식 한도](docs/research/remote-play.md). **1순위 PC+Funnel(2026-09-29 사용자 기본 WS 통과 확인), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 임시 Tailscale 노드 공유(상대 설치 필요)**. [실측 결과](docs/device-test/remote-play.md#결과-기록--2026-09-29-사용자-제공)에서 프록시 host의 1008 거절도 확인했으므로 RP-02는 루프백 제한을 토큰 기반 인증으로 대체한다. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
 
 | 경로 | 구조·책임 |
 |---|---|
@@ -182,13 +182,13 @@ p2p-gostop/
 |---|---|---|
 | RP-01 | 규범 정합·인증 제어 계약·Funnel 검증 계획 | intend/AGENTS의 모드 예외, spec §13·프로토콜 부록·타이머 v3와 버전 조정. 공식 API(Context7)와 설치 Tailscale 버전 확인, 신뢰 경계/TTL 리뷰 |
 | RP-02 | PC 중계 서버 강화 | relay-dev 공개 모드·방/토큰·제한·TTL·정적 웹. 기존 relay 시나리오+교차 방/잘못된 토큰/프록시 loopback 공격/교체 경합 검증. NP-RP-01~07·NF-RP-01~03 |
-| RP-03 | 정적 배포·PC Docker/Funnel 운영 절차 | 동일 dist·버전별 URL·비밀/롤백·외부 경로 제한. Funnel WS/role query·2시간·재부팅 검증. 실패 또는 PC 독립 필요 시 **별도 RP-03C**로 relay-cloud·Pages/무료 배포 파이프라인 구현, 둘을 동시에 만들지 않음 |
+| RP-03 | 정적 배포·PC Docker/Funnel 운영 절차 | 동일 dist·버전별 URL·비밀/롤백·외부 경로 제한. 기본 WS 통과 조건 해소; 관리 콘솔 funnel 노드 속성 1회 승인 절차 반영. 강화 중계의 인증/방 query·2시간·재부팅 검증은 후속. 운영 제약 또는 PC 독립 필요 시 **별도 RP-03C**로 relay-cloud·Pages/무료 배포 파이프라인 구현, 둘을 동시에 만들지 않음 |
 | RP-04 | Android 아웃바운드 모드 | WSS transport·endpoint 등록·화면/프로세스 복귀·LAN gate 닫힘. 서버 전용 모드/서비스 수명 JVM·WebView 검증, FR-RP-01/04/05 |
 | RP-05 | 방 코드·링크·QR·로비 UI | 링크 한 번 참여·코드 호스트 승인·초대 회수·만료·중계 불가/호스트 부재 구분. 복귀 토큰은 브라우저 해당 탭 저장, 종료 때 제거·다른 탭/기기 이전은 명시적 절차. FR-RP-02~05 |
 | RP-06 | Mac 가로 레이아웃 | UX-02 데스크톱 예외·키보드·확대·접근성·모바일 회귀. FR-RP-06 |
 | RP-07 | 통합 E2E·사람 검증·출시 판정 | Chromium/WebKit 두 클라이언트, 지연/손실·호스트 부재·quota·만료·재접속·commit-reveal·LAN 외부 요청 0. AC-RP-01~05; [실기기 절차](docs/device-test/remote-play.md)에 사용자가 준 결과만 기록 |
 
-모든 빌드·테스트는 저장소 루트의 `docker compose run --rm dev …`(이 환경 Docker는 `/home/k/.local/bin/docker`)로 실행한다. 문서 PR은 실제 Funnel 공개·클라우드 생성·실기기 결과를 수행/기록하지 않는다.
+모든 빌드·테스트는 저장소 루트의 `docker compose run --rm dev …`(이 환경 Docker는 `/home/k/.local/bin/docker`)로 실행한다. 문서 PR에서 에이전트는 실제 Funnel 공개·클라우드 생성·실기기 검증을 수행하지 않는다. 사용자가 제공한 2026-09-29 시험 결과만 `docs/device-test/remote-play.md`에 기록했다.
 
 ## 2. 개발 환경 (Docker)
 
