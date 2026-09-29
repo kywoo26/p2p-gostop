@@ -1,14 +1,23 @@
 // RP-03A / NP-RP-02. WSL 호스트에서 한 번 실행한다. 비밀은 stdout에 쓰지 않는다.
 import { randomBytes } from 'node:crypto';
-import { mkdir, open } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdir, open, realpath } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { dirname, resolve } from 'node:path';
 
 const output = process.argv[2];
 const path = resolve(output ?? '');
-if (output === undefined || !path.startsWith('/relay-secret/')) {
-  throw new Error('비밀은 저장소 밖 /relay-secret 바인드 마운트에만 생성합니다');
+const allowed = resolve(homedir(), '.local/share/p2p-gostop/relay/creation-secret');
+if (output === undefined || path !== allowed) {
+  throw new Error(
+    '비밀은 사용자 홈의 .local/share/p2p-gostop/relay/creation-secret에만 생성합니다',
+  );
 }
-await mkdir(resolve(path, '..'), { recursive: true, mode: 0o700 });
+await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+const homeReal = await realpath(homedir());
+const parentReal = await realpath(dirname(path));
+if (parentReal !== resolve(homeReal, '.local/share/p2p-gostop/relay')) {
+  throw new Error('생성 경로에 심볼릭 링크가 있습니다');
+}
 const file = await open(path, 'wx', 0o600);
 try {
   await file.writeFile(`${randomBytes(32).toString('base64url')}\n`, 'utf8');
