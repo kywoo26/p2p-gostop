@@ -49,7 +49,7 @@
   >
     {#if multiplier === null}—{:else}×{multiplier}{/if}
   </span>
-  <span class="balance" aria-label={`${who} 잔액 ${formatMoney(balance, unit)}`}
+  <span class="balance" aria-label={`${who} 잔액 ${formatMoney(balance, unit)}`} title="잔액"
     >{formatMoney(balance, unit)}</span
   >
 </div>
@@ -60,10 +60,10 @@
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
     align-items: center;
-    column-gap: 6px;
+    column-gap: 8px;
     row-gap: 0;
     min-height: 0;
-    padding: 0 var(--space-2);
+    padding: 0 8px;
     color: var(--color-hud-text);
     background: var(--color-hud);
     font-size: var(--hud-font-size);
@@ -72,8 +72,8 @@
   }
 
   .me {
-    outline: var(--hud-border);
-    outline-offset: calc(-1 * var(--hud-border-width));
+    background: var(--color-hud-my-surface);
+    box-shadow: inset 3px 0 var(--color-hud-mine);
   }
   .identity {
     display: flex;
@@ -83,7 +83,8 @@
     font: inherit;
   }
   .who {
-    color: var(--color-hud-muted);
+    color: var(--color-hud-text);
+    font-weight: 750;
     flex-shrink: 0;
   }
   .name {
@@ -97,7 +98,15 @@
     color: var(--color-hud-mine);
   }
   .score {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    gap: 2px;
     white-space: nowrap;
+  }
+  .score > span {
+    font-size: 12px;
+    color: var(--color-hud-muted);
   }
   .score b {
     font-size: var(--hud-score-font-size);
@@ -115,6 +124,7 @@
   .balance {
     text-align: right;
     white-space: nowrap;
+    font-weight: 600;
   }
   .expanded {
     grid-template-rows: var(--hud-score-line-height) var(--hud-money-line-height);

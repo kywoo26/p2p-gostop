@@ -55,6 +55,13 @@ for (const state of ['board', 'board-target', 'board-gostop']) {
         text: ['hud-text', 'hud-muted', 'hud-mine'].map((token) =>
           contrast(color(token), color('hud')),
         ),
+        mineText: ['hud-text', 'hud-muted', 'hud-mine'].map((token) =>
+          contrast(color(token), color('hud-my-surface')),
+        ),
+        scoreFont: getComputedStyle(document.querySelector('.score b')!).fontSize,
+        handCues: ['hand-match', 'hand-secured', 'hand-bomb', 'hand-shake'].map((token) =>
+          contrast(color(token), color('hud')),
+        ),
         chips: [
           contrast(color('hud-muted'), color('hud-chip')),
           contrast(color('hud-complete'), color('hud-complete-bg')),
@@ -76,7 +83,14 @@ for (const state of ['board', 'board-target', 'board-gostop']) {
     expect(layout.inside).toBe(true);
     expect(layout.overflow).toBe(0);
     expect(layout.centered).toBeLessThan(1);
-    for (const ratio of [...layout.text, ...layout.chips, layout.progress])
+    expect(layout.scoreFont).toBe('24px');
+    for (const ratio of [
+      ...layout.text,
+      ...layout.mineText,
+      ...layout.handCues,
+      ...layout.chips,
+      layout.progress,
+    ])
       expect(ratio).toBeGreaterThanOrEqual(4.5);
     for (const ratio of layout.outline) expect(ratio).toBeGreaterThanOrEqual(3);
     const { violations } = await new AxeBuilder({ page })

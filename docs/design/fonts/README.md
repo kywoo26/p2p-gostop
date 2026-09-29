@@ -45,4 +45,4 @@ docker compose run --rm dev npm run e2e -w packages/web -- e2e/fonts.spec.ts
 
 `build_app_font.py`는 web의 비테스트 `.svelte`/`.ts`와 엔진 오류 문구(`reduce.ts`)의 한글을 모은다. 주석·갤러리도 포함해 실제 UI의 보수적 상한으로 잡고 ASCII와 지정 기호를 더한다. 코퍼스/해시는 이 문서 폴더, 배포 WOFF2/CSS/OFL은 `packages/web/src/styles/fonts`에 기록한다. 임의 이름과 그 밖의 유니코드는 시스템 fallback을 쓴다. 새 문구가 범위를 벗어나면 빌드의 `check-font.mjs`가 실패하므로 재생성해야 한다.
 
-현재 WOFF2 **143,112 B(139.8 KiB)**, 상한 160 KiB. CSS `unicode-range`, 가변 `wght` 45–930, `tnum`을 보존했다. Chromium/WebKit에서 400/500/700/800을 검사한다. Chromium은 24px 단일 숫자에서 최대 1px 편차가 있으므로 여러 자리의 완전한 폭 일치를 주장하지 않는다. 수치 열은 고정 폭·우측 정렬로 구현하며 실기기 검증은 별도다. [배포 고지](NOTICE.md), [측정 메타데이터](app-metrics.json).
+현재 WOFF2 **143,932 B(140.6 KiB)**, 상한 160 KiB. CSS `unicode-range`, 가변 `wght` 45–930, `tnum`을 보존했다. Chromium/WebKit에서 400/500/700/800을 검사한다. Chromium은 24px 단일 숫자에서 최대 1px 편차가 있으므로 여러 자리의 완전한 폭 일치를 주장하지 않는다. 수치 열은 고정 폭·우측 정렬로 구현하며 실기기 검증은 별도다. [배포 고지](NOTICE.md), [측정 메타데이터](app-metrics.json).

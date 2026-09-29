@@ -4,7 +4,12 @@
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
   import { DUR } from '../../../anim/durations.ts';
   import { fixtures } from '../../../lib/fixtures.ts';
-  import { layoutFixture, layoutExtras } from '../../../lib/layout-fixtures.ts';
+  import {
+    layoutFixture,
+    layoutExtras,
+    feedbackFixture,
+    feedbackGroups,
+  } from '../../../lib/layout-fixtures.ts';
   import { normalizeSettings } from '../../../settings/settings.svelte.ts';
   import { bannerFor } from '../../../ui/banner.ts';
   import Board from '../../../ui/Board.svelte';
@@ -109,7 +114,12 @@
   });
 </script>
 
-{#if page === 'layout-event' || page === 'layout-event-target'}
+{#if page === 'feedback-play' || page === 'feedback-stop'}
+  <main>
+    <h1 class="fixture-title">게임판 시각 검토</h1>
+    <Board view={feedbackFixture(page === 'feedback-stop')} handVisualGroups={feedbackGroups} />
+  </main>
+{:else if page === 'layout-event' || page === 'layout-event-target'}
   <Board
     view={layoutFixture(page.endsWith('target') ? 'target' : 'play')}
     banner={{ kind: 'ppeok', text: '뻑 · 상대가 같은 월 세 장을 남겼습니다', seat: 1 }}
@@ -267,6 +277,14 @@
 {/if}
 
 <style>
+  .fixture-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .gallery {
     display: grid;
     gap: var(--space-6);

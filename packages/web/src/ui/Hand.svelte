@@ -8,7 +8,8 @@
   // 손가락을 떼기 전에 재생이 끝나 버튼이 풀릴 수 있다. 그 click은 건너뛰기용이었으므로 카드를 내지 않는다.
   import type { CardId } from '../lib/view-types.ts';
   import Card from './Card.svelte';
-  import { cardLabel, sortHand } from './cards.ts';
+  import { cardIndex, cardLabel, sortHand } from './cards.ts';
+  import { HAND_CUES, type HandVisualGroup } from './hand-visual.ts';
 
   interface Props {
     compact?: boolean;
@@ -17,13 +18,26 @@
     playable: readonly CardId[];
     /** 바닥에 같은 월이 있어 먹을 수 있는 카드 (FR-12 예고 표식) */
     matchable?: readonly CardId[];
+    /** 시각 슬롯. 확정 획득 판정은 공개 보조 API가 전달하며 UI가 숨은 패를 읽지 않는다. */
+    visualGroups?: readonly HandVisualGroup[];
+    /** 후속 사건 PR은 같은 group ID의 3개 data-slot을 이동 기준점으로 사용한다. */
+    selectedGroup?: string | null;
     /** 카드를 냈다. at = 탭 시각(performance.now 기준, spec AC-06 계측) */
     onplay?: ((id: CardId, at: number) => void) | undefined;
     /** 누르고 있는 카드 (떼면 null) */
     onpreview?: ((id: CardId | null) => void) | undefined;
   }
 
-  let { compact = false, cards, playable, matchable = [], onplay, onpreview }: Props = $props();
+  let {
+    compact = false,
+    cards,
+    playable,
+    matchable = [],
+    visualGroups = [],
+    selectedGroup = null,
+    onplay,
+    onpreview,
+  }: Props = $props();
 
   const ONE_ROW_MAX = 5;
   const LONG_PRESS_MS = 400;
@@ -106,13 +120,31 @@
       {#each row as id, i (id)}
         {@const canPlay = playable.includes(id)}
         {@const canMatch = canPlay && matchable.includes(id)}
+        {@const group = visualGroups.find(
+          (group) => group.kind !== 'secured' && group.cards.includes(id),
+        )}
+        {@const secured = visualGroups.some(
+          (group) => group.kind === 'secured' && group.cards.includes(id),
+        )}
+        {@const cue = secured ? 'secured' : canMatch ? 'matchable' : canPlay ? 'playable' : null}
+        {@const index = cardIndex(id)}
         <button
           type="button"
-          class={['slot', { playable: canPlay, matchable: canMatch }]}
+          class={[
+            'slot',
+            {
+              playable: canPlay,
+              matchable: canMatch,
+              'group-selected': group && group.id === selectedGroup,
+            },
+          ]}
           style:transform={compact ? 'none' : fan(i, row.length)}
-          aria-label={`${cardLabel(id)}${canMatch ? ' (먹을 수 있음)' : ''} 내기`}
+          aria-label={`${cardLabel(id)}${secured ? ' (확정 획득 짝)' : canMatch ? ' (먹을 수 있음)' : ''}${group ? ` (${HAND_CUES[group.kind].label})` : ''} 내기`}
           disabled={!canPlay}
           data-slot={id}
+          data-hand-group={group?.id}
+          data-hand-cue={cue}
+          data-hand-action={group?.kind}
           onpointerup={release}
           onpointercancel={abandon}
           onpointerleave={release}
@@ -121,13 +153,29 @@
           oncontextmenu={(e) => e.preventDefault()}
           onclick={(e) => activate(id, e)}
         >
-          <Card
-            {id}
-            size="l"
-            dimmed={!canPlay}
-            flippable
-            markAt={rows.length > 1 && r === 0 ? 'top' : 'bottom'}
-          />
+          <span class="art-window">
+            <Card
+              {id}
+              size="l"
+              dimmed={!canPlay}
+              flippable
+              marks={!compact}
+              markAt={rows.length > 1 && r === 0 ? 'top' : 'bottom'}
+            />
+          </span>
+          {#if compact}
+            <span class="hand-label" data-cue={cue} aria-hidden="true">
+              <span class="month-index">{index?.month ?? '+'}</span>
+              <span class="match-mark"></span>
+              <span class="hand-cue" data-action={group?.kind}
+                >{group
+                  ? `${group.kind === 'bomb' ? '폭' : '흔'}${group.cards.length}`
+                  : cue
+                    ? HAND_CUES[cue].short
+                    : '대기'}</span
+              >
+            </span>
+          {/if}
         </button>
       {/each}
     </div>
@@ -167,7 +215,7 @@
     -webkit-user-select: none;
   }
 
-  .slot.playable > :global(.card) {
+  .slot.playable :global(.card) {
     translate: 0 -6px;
   }
 
@@ -187,20 +235,137 @@
     cursor: default;
   }
   .hand.compact {
-    --card-w-l: 56px;
-    --card-h-l: calc(56px / 0.614);
+    --card-w-l: 48px;
+    --card-h-l: calc(var(--card-w-l) / 0.614);
+    --hand-art-visible: 50px;
     padding-bottom: 0;
+    gap: 4px;
   }
   .compact .slot {
+    display: grid;
+    grid-template-rows: auto 16px;
+    width: var(--card-w-l);
+    border-radius: 3px;
     background: var(--color-felt);
+  }
+  .art-window {
+    display: contents;
+  }
+  .compact .art-window {
+    display: block;
+    height: var(--card-h-l);
+    overflow: hidden;
+    border-radius: 3px 3px 0 0;
+  }
+  .compact .row:not(:last-child) .art-window {
+    height: var(--hand-art-visible);
+  }
+  /* 기존 FLIP이 설정/회수하는 will-change 동안만 이동 경로를 연다. 시간축은 변경하지 않는다. */
+  .compact .art-window:has(:global(.card[style*='will-change'])) {
+    overflow: visible;
+  }
+  .compact .slot:has(:global(.card[style*='will-change'])) {
+    z-index: var(--z-moving);
+  }
+  .compact .slot:has(:global(.card[style*='will-change'])) .hand-label {
+    visibility: hidden;
   }
   .compact .row {
     gap: 8px;
   }
   .compact .row + .row {
-    margin-top: calc(56px - var(--card-h-l));
+    margin-top: 0;
   }
-  .compact .slot.playable > :global(.card) {
+  .compact .slot.playable :global(.card) {
     translate: none;
+  }
+  .compact .slot.matchable::after {
+    display: none;
+  }
+  .hand-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    height: 16px;
+    padding: 0 1px;
+    background: var(--color-hud);
+    color: var(--color-hud-text);
+    font-size: 12px;
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .month-index {
+    font-weight: 750;
+  }
+  .hand-cue {
+    color: var(--color-hud-muted);
+    font-size: 12px;
+    line-height: 12px;
+  }
+  .match-mark {
+    flex: none;
+    width: 6px;
+    height: 2px;
+    background: var(--color-hud-muted);
+  }
+  .hand-label[data-cue='matchable'] {
+    color: var(--color-hand-match);
+  }
+  .hand-label[data-cue='matchable'] .match-mark {
+    height: 6px;
+    background: currentColor;
+    rotate: 45deg;
+  }
+  .hand-label[data-cue='secured'] {
+    color: var(--color-hand-secured);
+  }
+  .hand-label[data-cue='secured'] .match-mark {
+    width: 6px;
+    height: 6px;
+    border: 3px double;
+    border-radius: 50%;
+    background: none;
+  }
+  .hand-label[data-cue='secured'] .hand-cue:not([data-action]),
+  .hand-label[data-cue='matchable'] .hand-cue:not([data-action]) {
+    color: inherit;
+  }
+  .hand-cue[data-action='bomb'] {
+    color: var(--color-hand-bomb);
+    border: 1px double;
+    border-width: 0 0 3px;
+  }
+  .hand-cue[data-action='shake'] {
+    color: var(--color-hand-shake);
+    border-bottom: 2px dashed;
+  }
+  .compact .group-selected {
+    outline: 2px dashed var(--color-hand-bomb);
+    outline-offset: 2px;
+  }
+  .compact .slot:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: var(--focus-offset);
+  }
+  .compact .group-selected .hand-label {
+    background: var(--color-hand-bomb);
+    color: var(--color-on-accent);
+  }
+  .compact .group-selected .hand-cue {
+    color: inherit;
+  }
+  @media (min-width: 410px) {
+    .hand.compact {
+      --card-w-l: 56px;
+      --hand-art-visible: clamp(
+        56px,
+        calc(var(--hand-height, 184px) - var(--card-h-l) - 36px),
+        var(--card-h-l)
+      );
+    }
+    .hand-cue {
+      font-size: 12px;
+    }
   }
 </style>

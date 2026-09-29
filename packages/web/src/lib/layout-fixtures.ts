@@ -3,6 +3,41 @@ import type { Month } from '@p2p-gostop/engine';
 import type { BoardExtras } from '@p2p-gostop/protocol';
 import { fixtures } from './fixtures.ts';
 import type { BoardView, FloorGroupView, PromptView } from './view-types.ts';
+import type { HandVisualGroup } from '../ui/hand-visual.ts';
+
+/** 사용자 검토용 시각 슬롯. 확보 판정의 기대값/합법 진행을 뜻하지 않는다. */
+export const feedbackGroups: readonly HandVisualGroup[] = [
+  { id: 'sample-bomb', kind: 'bomb', cards: [0, 1, 2] },
+  { id: 'sample-shake', kind: 'shake', cards: [8, 9, 10] },
+  { id: 'sample-secured', kind: 'secured', cards: [24] },
+];
+export function feedbackFixture(stop = false): BoardView {
+  const view = layoutFixture(stop ? 'gostop' : 'play');
+  const cards = [0, 1, 2, 8, 9, 10, 24, 32, 36, 44];
+  return {
+    ...view,
+    multiplier: 2,
+    pending: stop
+      ? { kind: 'goStop', seat: 0, score: 12, goCount: 1, stopAmount: 2400 }
+      : view.pending,
+    playable: stop ? [] : cards,
+    seats: [
+      {
+        ...view.seats[0],
+        name: '나',
+        score: 12,
+        hand: cards,
+        captured: {
+          gwang: [28, 40],
+          yeol: [4, 12, 29],
+          tti: [5, 13],
+          pi: [3, 7, 11, 15, 19, 23, 27, 31, 35],
+        },
+      },
+      { ...view.seats[1], name: '상대', score: 5 },
+    ],
+  };
+}
 
 const floor: FloorGroupView[] = Array.from({ length: 12 }, (_, i) => ({
   month: (i + 1) as Month,

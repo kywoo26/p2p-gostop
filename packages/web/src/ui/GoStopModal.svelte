@@ -48,6 +48,7 @@
       <button
         type="button"
         class="stop"
+        class:large-amount={formatMoney(stopAmount, unit).length > 8}
         data-choice="stop"
         aria-label="스톱"
         onclick={() => onstop?.()}
@@ -94,8 +95,13 @@
     background: var(--color-accent);
   }
   .stop strong {
+    font-size: 22px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  .stop.large-amount strong {
     font-size: 14px;
     line-height: 20px;
-    overflow-wrap: anywhere;
   }
 </style>

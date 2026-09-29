@@ -44,7 +44,11 @@
       data-state={state}
       aria-label={`${item.label}${item.key === 'pi' ? ' 가치' : ''} ${item.value}/${item.target}, ${state === 'complete' ? '첫 기준 달성' : state === 'near' ? (item.key === 'pi' ? '1피 남음' : '1장 남음') : '미달'}`}
     >
-      {item.label} <b>{item.value}/{item.target}</b>
+      <span
+        class="state-mark"
+        aria-hidden="true"
+        data-symbol={state === 'complete' ? '+' : state === 'near' ? '!' : '·'}
+      ></span>{item.label} <b>{item.value}/{item.target}</b>
     </li>
   {/each}
   <li class="counter" data-stat="ppeok">뻑 {ppeokCount}</li>
@@ -59,14 +63,14 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: baseline;
-    column-gap: 8px;
+    column-gap: 4px;
     row-gap: 0;
     margin: 0;
     padding: 0;
     list-style: none;
 
     color: var(--color-hud-text);
-    font-size: var(--hud-font-size);
+    font-size: 12px;
     line-height: var(--hud-line-height);
     font-variant-numeric: tabular-nums;
   }
@@ -74,12 +78,22 @@
     white-space: nowrap;
   }
   .milestone {
-    padding: 3px 4px;
+    padding: 3px 2px;
     border: var(--hud-border-width) var(--hud-border-style) transparent;
     border-radius: var(--hud-chip-radius);
     background: var(--color-hud-chip);
     color: var(--color-hud-muted);
     text-align: center;
+  }
+  .state-mark {
+    font-weight: 800;
+    margin-right: 2px;
+  }
+  .state-mark::before {
+    content: attr(data-symbol);
+  }
+  .milestone b {
+    font-size: 14px;
   }
   .milestone[data-state='complete'] {
     color: var(--color-hud-complete);

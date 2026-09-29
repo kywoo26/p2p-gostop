@@ -27,12 +27,13 @@
   --radius-pill: 999px;
 
   /* HUD / FR-40, ui-spec §14. 메뉴 버튼은 Game.svelte(.1-B)가 예약 영역에 배치한다. */
-  --color-hud: oklch(22% 0.025 170);
+  --color-hud: oklch(18% 0.018 170);
+  --color-hud-my-surface: oklch(29% 0.027 160);
   --color-hud-text: oklch(96% 0.015 90);
   --color-hud-muted: oklch(80% 0.025 160);
   --color-hud-outline: oklch(67% 0.025 160);
   --color-hud-mine: oklch(88% 0.08 90);
-  --color-hud-chip: oklch(25% 0.025 170);
+  --color-hud-chip: oklch(20% 0.018 170);
   --color-hud-complete: oklch(88% 0.1 160);
   --color-hud-complete-bg: oklch(30% 0.05 170);
   --color-hud-near: oklch(87% 0.09 90);
@@ -41,7 +42,7 @@
   --hud-menu-gap: 8px;
   --hud-font-size: 0.875rem;
   --hud-line-height: 20px;
-  --hud-score-font-size: 20px;
+  --hud-score-font-size: 24px;
   --hud-score-line-height: 24px;
   --hud-score-font-weight: 750;
   --hud-money-line-height: 18px;
@@ -53,8 +54,13 @@
   --hud-border-style: solid;
   --hud-border: var(--hud-border-width) var(--hud-border-style) var(--color-hud-outline);
   --hud-near-border-style: dashed;
-  --hud-radius: var(--radius-panel);
-  --hud-chip-radius: var(--radius-panel);
+  --hud-radius: 10px;
+  --hud-chip-radius: 6px;
+  /* FR-46~50 시각 슬롯. 문자·실선/이중선/점선/원형을 항상 함께 사용한다. */
+  --color-hand-match: var(--color-accent);
+  --color-hand-secured: oklch(88% 0.1 160);
+  --color-hand-bomb: oklch(88% 0.09 65);
+  --color-hand-shake: oklch(87% 0.07 290);
 
   /* 이벤트 배너 색 (spec 6.5). 색만으로 구분하지 않고 문구를 함께 쓴다 (NF-08). */
   --color-event-ppeok: oklch(64% 0.21 27);

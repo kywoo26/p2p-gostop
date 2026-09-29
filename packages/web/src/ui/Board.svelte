@@ -17,6 +17,7 @@
   import Floor from './Floor.svelte';
   import GoStopModal from './GoStopModal.svelte';
   import Hand from './Hand.svelte';
+  import type { HandVisualGroup } from './hand-visual.ts';
   import PickFirstPrompt from './PickFirstPrompt.svelte';
   import SeatBar from './SeatBar.svelte';
   import SeatProgress from './SeatProgress.svelte';
@@ -33,6 +34,8 @@
       readonly highlight?: readonly CardId[];
     };
     extras?: BoardExtras | null;
+    /** 갤러리/후속 기본 보조의 시각 슬롯. 확보 짝 판정은 여기서 하지 않는다. */
+    handVisualGroups?: readonly HandVisualGroup[];
     unit?: MoneyUnit;
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
@@ -56,6 +59,7 @@
   let {
     view,
     extras = null,
+    handVisualGroups = [],
     unit = '냥',
     banner = null,
     toast = null,
@@ -113,6 +117,28 @@
   let preview = $state<CardId | null>(null);
   /** 폭탄을 할 수 있는 월의 카드를 탭했을 때 확인 */
   let bombCard = $state<CardId | null>(null);
+  const handGroups = $derived<readonly HandVisualGroup[]>([
+    ...(extras?.bombMonths ?? []).map((month) => ({
+      id: `bomb-${month}`,
+      kind: 'bomb' as const,
+      cards: handCardsOfMonth(month),
+    })),
+    ...(pending?.kind === 'shake'
+      ? [
+          {
+            id: `shake-${pending.month}`,
+            kind: 'shake' as const,
+            cards: handCardsOfMonth(pending.month),
+          },
+        ]
+      : []),
+    ...handVisualGroups,
+  ]);
+  const selectedHandGroup = $derived(
+    handGroups.find(
+      (group) => group.kind === 'bomb' && group.cards.includes(bombCard ?? preview ?? -1),
+    )?.id ?? null,
+  );
 
   const previewCards = $derived.by(() => {
     if (preview === null) return [];
@@ -350,6 +376,8 @@
       cards={me.hand ?? []}
       {playable}
       {matchable}
+      visualGroups={handGroups}
+      selectedGroup={selectedHandGroup}
       onplay={play}
       onpreview={(id) => (preview = id)}
     />
@@ -438,16 +466,14 @@
 
   .scoreboard {
     display: grid;
-    grid-template-columns: minmax(2rem, 1fr) max-content max-content max-content minmax(
-        0,
-        max-content
-      );
-    column-gap: 6px;
+    grid-template-columns:
+      minmax(32px, 64px) minmax(max-content, 1fr)
+      max-content max-content max-content;
+    column-gap: 8px;
     min-width: 0;
     height: var(--hud-height);
     grid-template-rows: repeat(2, minmax(0, 1fr));
-    outline: var(--hud-border);
-    outline-offset: calc(-1 * var(--hud-border-width));
+    box-shadow: 0 0 0 1px var(--color-hud-outline);
     border-radius: var(--hud-radius);
     overflow: hidden;
   }
@@ -534,7 +560,7 @@
   }
   .hand-zone {
     min-height: 0;
-    padding-top: 12px;
+    padding-top: 0;
   }
   .center {
     position: relative;
@@ -617,6 +643,20 @@
     .captured-zone > :global(.captured) {
       position: static;
       visibility: visible;
+    }
+  }
+  @media (min-width: 410px) and (min-height: 900px) {
+    .board.two-hands {
+      --hand-height: clamp(
+        184px,
+        calc(
+          100dvh - max(8px, var(--board-safe-top, env(safe-area-inset-top))) -
+            max(8px, var(--board-safe-bottom, env(safe-area-inset-bottom))) - 20px -
+            var(--hud-height) - var(--capture-height) - var(--my-capture-height) -
+            var(--decision-height) - 208px
+        ),
+        220px
+      );
     }
   }
   .board.first-pick {
