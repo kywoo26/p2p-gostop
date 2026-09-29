@@ -27,7 +27,7 @@
 5. **검증**: 실제로 둔 세션을 엔진 원장(`applySettlement`·`applyInstantPayout`, 올인 상한)으로 정산해 시작 40,000일 때의 파산 수를 몬테카를로 예측과 비교.
 
 ```sh
-./dev.sh sim --mode session --a commercial --b commercial --rounds 3000 --session-length 30 \
+docker compose run --rm dev npm run sim -- --mode session --a commercial --b commercial --rounds 3000 --session-length 30 \
   --per-point 100 --start-balance 40000 --preset standard --seed 11
 ```
 

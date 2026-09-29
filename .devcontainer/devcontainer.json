@@ -1,0 +1,27 @@
+// Dev Container (containers.dev). compose.yaml의 dev 서비스를 그대로 쓴다(로컬 docker compose run·CI와 같은 이미지).
+// VS Code "Reopen in Container" / Codespaces / devcontainer CLI 안에서는 npm, android/gradlew를 그냥 실행하면 된다.
+{
+  "name": "p2p-gostop",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "dev",
+  "runServices": ["dev"],
+  "workspaceFolder": "/work",
+  "remoteUser": "dev",
+  "updateRemoteUserUID": true,
+  // compose 서비스에는 상주 명령이 없으므로 도구가 대기 명령으로 바꿔 띄운다
+  "overrideCommand": true,
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [5173, 17777],
+  "postCreateCommand": "npm ci",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "svelte.svelte-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "oxc.oxc-vscode",
+        "JetBrains.kotlin-server"
+      ]
+    }
+  }
+}

@@ -260,6 +260,8 @@ Playwright WebKit과 iOS Safari의 거리 ([Playwright browsers 문서](https://
 | Google 공식 Android SDK 이미지 | 없음 | | `google/android-emulator-container-scripts`는 이미지가 아니라 스크립트 모음이며 README상 "실험적" 기능. |
 | `budtmo/docker-android` | v3.7.0-p1 (2026-09-18) | 2.6~3.3GB | 에뮬레이터 이미지가 Android 9~14(API 28~34)뿐. **API 35/36/37 없음.** `--device /dev/kvm` 필요. |
 
+> **2026-09-29 결정(plan.md 2장 v0.7):** 위 후보 중 하나를 그대로 쓰지 않고 `mcr.microsoft.com/playwright:v1.63.0-noble`을 베이스로 Temurin 21(`eclipse-temurin:21.0.12.1_1-jdk-noble`에서 `COPY --from`)과 Android SDK(cmdline-tools 23.0 SHA-256 고정 → `platforms;android-36`, `build-tools;36.0.0`, `platform-tools`)를 얹은 **단일 개발 이미지**(`docker/Dockerfile`)를 만든다. 약 4.3GB(압축 1.2GB, 이 머신 캐시된 베이스 기준 빌드 약 1분)로 `cimg/android:2026.08.1-node`(11.9GB 로컬)보다 작고, 웹·E2E·APK가 한 이미지에서 돈다. `cimg/android`와 `node:24-bookworm-slim`은 더 쓰지 않는다. 로컬(`compose.yaml`)·Dev Container·CI가 이 이미지를 공유한다.
+
 KVM과 에뮬레이터에 대한 정직한 평가:
 - 이 개발 머신에서 직접 시험한 결과, WSL2는 `/dev/kvm`을 노출하지만 사용자 `k`가 `kvm` 그룹에 없어 권한 오류(EACCES)가 난다(`sudo usermod -aG kvm k`로 해결). **Docker Desktop 4.89.0(WSL2 백엔드)에서 `--device /dev/kvm`을 주면 컨테이너 안에서 KVM이 동작**했다(`KVM_CREATE_VM` 성공).
 - 그러나 에뮬레이터의 Wi-Fi는 VirtIO Wi-Fi(mac80211_hwsim) **클라이언트**가 호스트 측 가상 AP에 붙는 구조다. 게스트 내 SoftAP/LOHS가 동작하거나 외부 기기(iPhone)가 붙을 수 있다는 공식 근거는 없다 → **핫스팟은 에뮬레이터로 검증 불가로 간주**. 가상 Bluetooth/Wi-Fi는 이 프로젝트의 핵심 위험을 줄여 주지 않는다. ([에뮬레이터 고급 네트워킹](https://developer.android.com/studio/run/emulator-networking-advanced))
@@ -294,7 +296,7 @@ KVM과 에뮬레이터에 대한 정직한 평가:
 | 단위 테스트 | Vitest **5.0.2** | Vite 8과 같은 설정 공유. |
 | E2E | `@playwright/test` **1.63.0** (Chromium + WebKit 26.6) | iOS Safari 근사치 1차 필터. 최종은 실기기. |
 | QR | 웹: `uqr` **0.1.3** (SVG) / Android(필요 시): ZXing core **3.5.4** | QR을 웹 UI에서 그리면 Android 쪽 의존성 제로. |
-| 로컬 빌드 이미지 | `cimg/android:2026.08.1-node` | JDK 21, platforms 34~37, Node 포함. 한 이미지로 APK+웹 빌드. |
+| 로컬 빌드 이미지 | ~~`cimg/android:2026.08.1-node`~~ → 2026-09-29부터 자체 단일 이미지 `docker/Dockerfile`(6장 결정 참조) | JDK 21, platform 36, Node·Playwright 브라우저 포함. 한 이미지로 APK+웹 빌드+E2E. |
 | 웹 테스트 이미지 | `mcr.microsoft.com/playwright:v1.63.0-noble` | 공식, npm 버전과 일치. |
 | Node | **24.21.0 LTS** | Vite 8/Vitest 5/Playwright 요구치 충족. |
 | CI | GitHub Actions `ubuntu-24.04` 고정, `checkout@v7`, `setup-java@v6`, `setup-gradle@v6`, `setup-node@v7`, `action-gh-release@v3` | 11월 ubuntu-latest 26.04 전환 회피. |
