@@ -4,6 +4,7 @@
 // 국진은 쌍피·열끗 번갈아, 대상·선 고르기·낼 카드는 무작위. 제시·선택 횟수는 window.__auto에 남는다.
 // 턴 시간 계측(@timing)은 playwright.config.ts의 전용 프로젝트에서 다른 테스트가 끝난 뒤 브라우저별로 차례로 돈다.
 import { expect, type Page, test } from '@playwright/test';
+import { TIMING_FIXTURES, timingSave, type TimingFixture } from './timing-fixtures.ts';
 
 interface AutoStats {
   seed: number;
@@ -186,58 +187,74 @@ test('혼자 연습: 쉬움 상대 20판 자동 플레이 · 국진 묻기 · �
  */
 const CI_WEBKIT_BUDGET_FACTOR = 1.25;
 
+const FIXTURE_SAMPLES = 3;
+
+async function fixedTurnMs(page: Page, fixture: TimingFixture, query: string): Promise<number> {
+  // 매 표본을 같은 저장 세션에서 시작한다. 무작위 판의 다른 이벤트 경로가 섞이지 않는다.
+  await page.goto(`./${query}#/`);
+  await page.evaluate(
+    (save) => localStorage.setItem('gostop.solo.v1', JSON.stringify(save)),
+    timingSave(fixture),
+  );
+  await page.reload();
+  await page.getByRole('button', { name: /이어하기/ }).click({ timeout: 10_000 });
+  const solo = page.getByTestId('solo');
+  await expect(solo).toHaveAttribute('data-can-act', 'true', { timeout: 10_000 });
+  await expect(solo).toHaveAttribute('data-play-timings', '');
+  // 2줄 손패의 윗줄은 아래쪽이 겹친다. 실제로 노출된 위쪽 20px을 탭한다.
+  await page
+    .locator(`[aria-label="내 손패"] [data-slot="${fixture.card}"]`)
+    .click({ position: { x: 20, y: 20 }, timeout: 10_000 });
+  if (fixture.id === 'banner') await expect(page.locator('.banner.kind-ppeok')).toBeVisible();
+  await expect(solo).toHaveAttribute('data-play-timings', /^\d+$/);
+  await expect(solo).toHaveAttribute('data-phase', 'playing');
+  return Number(await solo.getAttribute('data-play-timings'));
+}
+
+async function fixedTimingTable(
+  page: Page,
+  speed: 'fast' | 'normal',
+  factor: number,
+): Promise<number[]> {
+  const all: number[] = [];
+  for (const fixture of TIMING_FIXTURES) {
+    const samples: number[] = [];
+    for (let i = 0; i < FIXTURE_SAMPLES; i++) {
+      samples.push(
+        await test.step(`${fixture.label} seed=1 card=${fixture.card} ${fixture.events.join('→')} #${i + 1}`, () =>
+          fixedTurnMs(page, fixture, speed === 'fast' ? '?speed=fast' : '')),
+      );
+    }
+    const sorted = [...samples].sort((a, b) => a - b);
+    const p50 = sorted[1] ?? 0;
+    const [minimum, maximum] = fixture[speed];
+    const detail = `${fixture.id} seed=1 card=${fixture.card} events=${fixture.events.join('→')} ${speed} samples=${sorted.join(',')} p50=${p50} range=${minimum}~${maximum * factor}`;
+    console.log(`[UX-15·AC-06] ${test.info().project.name} ${detail}`);
+    test.info().annotations.push({ type: 'fixed-turn-ms', description: detail });
+    expect(p50, detail).toBeGreaterThanOrEqual(minimum);
+    expect(p50, detail).toBeLessThanOrEqual(maximum * factor);
+    all.push(...samples);
+  }
+  return all;
+}
+
 test.describe('턴 시간 계측 (@timing)', () => {
   // 전용 프로젝트(timing-*)에서 다른 테스트가 모두 끝난 뒤 혼자 돈다(playwright.config.ts). 파일 안에서도 직렬로.
   test.describe.configure({ mode: 'serial' });
 
   test(
-    '혼자 연습: 빠름 속도 · 탭→턴 종료 p50 ≤ 700ms (AC-06, spec 6.4)',
+    '혼자 연습: 고정 3경로 빠름 · 탭→턴 종료 p50 ≤ 700ms (AC-06, spec 6.4)',
     { tag: '@timing' },
     async ({ page, browserName }) => {
       test.setTimeout(4 * 60_000);
       const errors = watchErrors(page);
       await page.setViewportSize({ width: 412, height: 915 });
-      await startSolo(page, '?speed=fast', '쉬움');
-      const read = async () =>
-        ((await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '')
-          .split(',')
-          .filter(Boolean)
-          .map(Number);
-      // 표본에서 빼는 수 (PR #34 리뷰 I-1):
-      // - 판을 끝낸 수: 재생 뒤 정산 화면 전에 결과를 보는 고정 대기(700ms, game/solo.svelte.ts)가 같이 기록된다.
-      //   판이 끝난 순간의 마지막 기록이 그 수다(CPU가 끝냈으면 평범한 수 하나를 더 빼는 셈이라 보수적).
-      // - 내 선택 창에서 멈춘 수(promptAfter, autoStep이 기록): spec 6.4 예산은 "선택 없을 때"다.
-      // - 50ms 미만: 애니메이션이 하나도 없는 기록은 턴 재생 시간이 아니다.
-      let all: number[] = [];
-      const roundEnd = new Set<number>();
-      let prompt = new Set<number>();
-      let timings: number[] = [];
-      for (let rounds = 1; rounds <= 5; rounds++) {
-        await playRounds(page, rounds);
-        all = await read();
-        if (all.length > 0) roundEnd.add(all.length - 1);
-        prompt = new Set(
-          await page.evaluate(
-            () => (window as unknown as { __auto: AutoStats }).__auto.promptAfter,
-          ),
-        );
-        timings = all.filter((ms, i) => !roundEnd.has(i) && !prompt.has(i) && ms >= 50);
-        if (timings.length >= 8) break;
-      }
-      expect(timings.length).toBeGreaterThanOrEqual(5);
-      const sorted = [...timings].sort((a, b) => a - b);
-      const at = (q: number) =>
-        sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))] ?? 0;
-      const p50 = at(0.5);
-      const p90 = at(0.9);
+      const factor = process.env['CI'] && browserName === 'webkit' ? CI_WEBKIT_BUDGET_FACTOR : 1;
+      const sorted = (await fixedTimingTable(page, 'fast', factor)).sort((a, b) => a - b);
+      const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
       const secondMax = sorted.at(-2) ?? 0;
       const max = sorted.at(-1) ?? 0;
-      const factor = process.env['CI'] && browserName === 'webkit' ? CI_WEBKIT_BUDGET_FACTOR : 1;
-      const pick = (set: Set<number>) => [...set].map((i) => all[i]).join(',');
-      const line =
-        `n=${timings.length} p50=${p50} p90=${p90} 두번째최대=${secondMax} max=${max} ` +
-        `all=${sorted.join(',')} | 제외: 판 끝=${pick(roundEnd)} 선택 창=${pick(prompt)} ` +
-        `50ms 미만=${all.filter((ms) => ms < 50).join(',')} | 예산 배율 ${factor}`;
+      const line = `고정 3경로×${FIXTURE_SAMPLES} n=${sorted.length} p50=${p50} 두번째최대=${secondMax} max=${max} all=${sorted.join(',')} | 예산 배율 ${factor}`;
       test.info().annotations.push({ type: 'turn-ms', description: line });
       console.log(`[AC-06] 탭→턴 종료 ms (${test.info().project.name}): ${line}`);
       // spec 6.4: 700ms(빠름). 꼬리는 스케줄링 이상치 하나를 흡수하도록 두 번째로 큰 값을 900ms로 본다(이슈 #20)
@@ -248,41 +265,15 @@ test.describe('턴 시간 계측 (@timing)', () => {
   );
 
   test(
-    '혼자 연습: 기본 보통 속도의 선택 없는 턴 p50 1.4~2.4초 (UX-15, AC-06)',
+    '혼자 연습: 고정 3경로 보통 · 대표 매칭+획득 p50 1.4~2.4초 (UX-15, AC-06)',
     { tag: '@timing' },
     async ({ page }) => {
       test.setTimeout(5 * 60_000);
       const errors = watchErrors(page);
       await page.setViewportSize({ width: 412, height: 915 });
-      await startSolo(page, '', '쉬움');
+      const all = await fixedTimingTable(page, 'normal', 1);
       expect(await page.locator('html').getAttribute('data-speed')).toBe('normal');
-      let timings: number[] = [];
-      for (let rounds = 1; rounds <= 2; rounds++) {
-        await playRounds(page, rounds);
-        const all = ((await page.getByTestId('solo').getAttribute('data-play-timings')) ?? '')
-          .split(',')
-          .filter(Boolean)
-          .map(Number);
-        const prompt = new Set(
-          await page.evaluate(
-            () => (window as unknown as { __auto: AutoStats }).__auto.promptAfter,
-          ),
-        );
-        timings = all.filter((ms, i) => i !== all.length - 1 && !prompt.has(i) && ms >= 100);
-        if (timings.length >= 5) break;
-      }
-      expect(timings.length).toBeGreaterThanOrEqual(5);
-      const sorted = [...timings].sort((a, b) => a - b);
-      const p50 = sorted[Math.floor(sorted.length / 2)] ?? 0;
-      console.log(
-        `[UX-15] 보통 탭→턴 종료 ms (${test.info().project.name}): n=${sorted.length} p50=${p50} all=${sorted.join(',')}`,
-      );
-      test.info().annotations.push({
-        type: 'normal-turn-ms',
-        description: `n=${sorted.length} p50=${p50} all=${sorted.join(',')}`,
-      });
-      expect(p50).toBeGreaterThanOrEqual(1400);
-      expect(p50).toBeLessThanOrEqual(2400);
+      console.log(`[UX-15] 보통 탭→턴 종료 ms (${test.info().project.name}): ${all.join(',')}`);
       expect(errors).toEqual([]);
     },
   );
