@@ -7,9 +7,9 @@
     "screens": [
       {
         "scene": "home",
-        "readyMs": 67.40000000037253,
-        "transferBytes": 325431,
-        "encodedBytes": 321231,
+        "readyMs": 68.5,
+        "transferBytes": 379244,
+        "encodedBytes": 375344,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -21,27 +21,23 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           }
         ]
       },
       {
         "scene": "board",
-        "readyMs": 442.2999999988824,
-        "transferBytes": 505131,
-        "encodedBytes": 490731,
+        "readyMs": 447,
+        "transferBytes": 553330,
+        "encodedBytes": 539530,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -53,39 +49,31 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           }
         ]
       },
       {
         "scene": "pro-ppeok",
-        "readyMs": 818.9000000003725,
-        "transferBytes": 748745,
-        "encodedBytes": 734045,
+        "readyMs": 784.5,
+        "transferBytes": 791910,
+        "encodedBytes": 777810,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -97,43 +85,35 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           }
         ]
       },
       {
         "scene": "pro-jjok",
-        "readyMs": 818.9000000003725,
-        "transferBytes": 890051,
-        "encodedBytes": 875051,
+        "readyMs": 784.5,
+        "transferBytes": 931750,
+        "encodedBytes": 917350,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -145,47 +125,39 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           }
         ]
       },
       {
         "scene": "pro-ttadak",
-        "readyMs": 818.9000000003725,
-        "transferBytes": 1105965,
-        "encodedBytes": 1090665,
+        "readyMs": 784.5,
+        "transferBytes": 1130340,
+        "encodedBytes": 1115640,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -197,51 +169,43 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           }
         ]
       },
       {
         "scene": "pro-bomb",
-        "readyMs": 818.9000000003725,
-        "transferBytes": 1326079,
-        "encodedBytes": 1310479,
+        "readyMs": 784.5,
+        "transferBytes": 1342222,
+        "encodedBytes": 1327222,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -253,55 +217,47 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           },
           {
             "url": "/pro/bomb-1x.webp",
-            "bytes": 219814
+            "bytes": 211582
           }
         ]
       },
       {
         "scene": "pro-go",
-        "readyMs": 818.9000000003725,
-        "transferBytes": 1326079,
-        "encodedBytes": 1310479,
+        "readyMs": 784.5,
+        "transferBytes": 1342222,
+        "encodedBytes": 1327222,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -313,55 +269,47 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           },
           {
             "url": "/pro/bomb-1x.webp",
-            "bytes": 219814
+            "bytes": 211582
           }
         ]
       },
       {
         "scene": "settlement",
-        "readyMs": 2445.699999999255,
-        "transferBytes": 1326079,
-        "encodedBytes": 1310479,
+        "readyMs": 2405.10000000149,
+        "transferBytes": 1381666,
+        "encodedBytes": 1366366,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
@@ -373,68 +321,64 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
             "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "bytes": 1428
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           },
           {
             "url": "/pro/bomb-1x.webp",
-            "bytes": 219814
+            "bytes": 211582
+          },
+          {
+            "url": "/pro/settlement-art-1x.webp",
+            "bytes": 39144
           }
         ]
       }
     ],
     "samples": [
       {
-        "hz": 60.06305623178258,
+        "hz": 60.0187433949428,
         "p95Ms": 16.700000000000728,
         "maxMs": 16.800000000000182,
         "frames": 301
       },
       {
-        "hz": 60.01754665815919,
+        "hz": 60.02353081939545,
         "p95Ms": 16.700000000000728,
         "maxMs": 16.80000000000109,
         "frames": 301
       },
       {
-        "hz": 60.01634996908121,
+        "hz": 60.01994017945717,
         "p95Ms": 16.700000000000728,
-        "maxMs": 16.80000000000109,
+        "maxMs": 16.80000000000291,
         "frames": 301
       }
     ]
@@ -447,9 +391,9 @@
     "screens": [
       {
         "scene": "home",
-        "readyMs": 82.19999999925494,
-        "transferBytes": 413381,
-        "encodedBytes": 409181,
+        "readyMs": 71.79999999888241,
+        "transferBytes": 533938,
+        "encodedBytes": 530038,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -461,27 +405,23 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           }
         ]
       },
       {
         "scene": "board",
-        "readyMs": 396.19999999925494,
-        "transferBytes": 601493,
-        "encodedBytes": 587093,
+        "readyMs": 381.2999999988824,
+        "transferBytes": 721896,
+        "encodedBytes": 708096,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -493,39 +433,31 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           }
         ]
       },
       {
         "scene": "pro-ppeok",
-        "readyMs": 667.3000000007451,
-        "transferBytes": 1225561,
-        "encodedBytes": 1210861,
+        "readyMs": 652.0999999996275,
+        "transferBytes": 1310714,
+        "encodedBytes": 1296614,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -537,43 +469,35 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           }
         ]
       },
       {
         "scene": "pro-jjok",
-        "readyMs": 667.3000000007451,
-        "transferBytes": 1598767,
-        "encodedBytes": 1583767,
+        "readyMs": 652.0999999996275,
+        "transferBytes": 1661768,
+        "encodedBytes": 1647368,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -585,47 +509,39 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           }
         ]
       },
       {
         "scene": "pro-ttadak",
-        "readyMs": 667.3000000007451,
-        "transferBytes": 2067815,
-        "encodedBytes": 2052515,
+        "readyMs": 652.0999999996275,
+        "transferBytes": 2087748,
+        "encodedBytes": 2073048,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -637,51 +553,43 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           }
         ]
       },
       {
         "scene": "pro-bomb",
-        "readyMs": 667.3000000007451,
-        "transferBytes": 2595339,
-        "encodedBytes": 2579739,
+        "readyMs": 652.0999999996275,
+        "transferBytes": 2575854,
+        "encodedBytes": 2560854,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -693,55 +601,47 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           },
           {
             "url": "/pro/bomb-3x.webp",
-            "bytes": 527224
+            "bytes": 487806
           }
         ]
       },
       {
         "scene": "pro-go",
-        "readyMs": 667.3000000007451,
-        "transferBytes": 2595339,
-        "encodedBytes": 2579739,
+        "readyMs": 652.0999999996275,
+        "transferBytes": 2575854,
+        "encodedBytes": 2560854,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -753,55 +653,47 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           },
           {
             "url": "/pro/bomb-3x.webp",
-            "bytes": 527224
+            "bytes": 487806
           }
         ]
       },
       {
         "scene": "settlement",
-        "readyMs": 1959,
-        "transferBytes": 2595339,
-        "encodedBytes": 2579739,
+        "readyMs": 1951.699999999255,
+        "transferBytes": 2663810,
+        "encodedBytes": 2648510,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
@@ -813,67 +705,63 @@
           },
           {
             "url": "/pro/gold-3x.webp",
-            "bytes": 3854
+            "bytes": 3002
           },
           {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           },
           {
             "url": "/pro/bomb-3x.webp",
-            "bytes": 527224
+            "bytes": 487806
+          },
+          {
+            "url": "/pro/settlement-art-3x.webp",
+            "bytes": 87656
           }
         ]
       }
     ],
     "samples": [
       {
-        "hz": 60.20613624131195,
+        "hz": 60.12664549248125,
         "p95Ms": 16.700000000000728,
         "maxMs": 16.800000000000182,
-        "frames": 302
+        "frames": 301
       },
       {
-        "hz": 60.021137011709584,
+        "hz": 60.017546658145825,
         "p95Ms": 16.700000000000728,
         "maxMs": 16.80000000000109,
         "frames": 301
       },
       {
-        "hz": 60.017546658172556,
-        "p95Ms": 16.700000000000728,
+        "hz": 60.01634996908565,
+        "p95Ms": 16.799999999999272,
         "maxMs": 16.80000000000291,
         "frames": 301
       }
@@ -887,13 +775,17 @@
     "screens": [
       {
         "scene": "home",
-        "readyMs": 141,
-        "transferBytes": 325635,
-        "encodedBytes": 321435,
+        "readyMs": 133,
+        "transferBytes": 379452,
+        "encodedBytes": 375552,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -901,31 +793,27 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
-          },
-          {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           }
         ]
       },
       {
         "scene": "board",
-        "readyMs": 480,
-        "transferBytes": 505865,
-        "encodedBytes": 491465,
+        "readyMs": 462,
+        "transferBytes": 554068,
+        "encodedBytes": 540268,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -933,43 +821,35 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           }
         ]
       },
       {
         "scene": "pro-ppeok",
-        "readyMs": 779,
-        "transferBytes": 749479,
-        "encodedBytes": 734779,
+        "readyMs": 772,
+        "transferBytes": 792648,
+        "encodedBytes": 778548,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -977,47 +857,39 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           }
         ]
       },
       {
         "scene": "pro-jjok",
-        "readyMs": 779,
-        "transferBytes": 890785,
-        "encodedBytes": 875785,
+        "readyMs": 772,
+        "transferBytes": 932488,
+        "encodedBytes": 918088,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -1025,51 +897,43 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           }
         ]
       },
       {
         "scene": "pro-ttadak",
-        "readyMs": 779,
-        "transferBytes": 1106699,
-        "encodedBytes": 1091399,
+        "readyMs": 772,
+        "transferBytes": 1131078,
+        "encodedBytes": 1116378,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -1077,55 +941,47 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           }
         ]
       },
       {
         "scene": "pro-bomb",
-        "readyMs": 779,
-        "transferBytes": 1326813,
-        "encodedBytes": 1311213,
+        "readyMs": 772,
+        "transferBytes": 1342960,
+        "encodedBytes": 1327960,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -1133,59 +989,51 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           },
           {
             "url": "/pro/bomb-1x.webp",
-            "bytes": 219814
+            "bytes": 211582
           }
         ]
       },
       {
         "scene": "pro-go",
-        "readyMs": 779,
-        "transferBytes": 1326813,
-        "encodedBytes": 1311213,
+        "readyMs": 772,
+        "transferBytes": 1342960,
+        "encodedBytes": 1327960,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -1193,59 +1041,51 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           },
           {
             "url": "/pro/bomb-1x.webp",
-            "bytes": 219814
+            "bytes": 211582
           }
         ]
       },
       {
         "scene": "settlement",
-        "readyMs": 2091,
-        "transferBytes": 1326813,
-        "encodedBytes": 1311213,
+        "readyMs": 2101,
+        "transferBytes": 1382404,
+        "encodedBytes": 1367104,
         "assets": [
           {
             "url": "/pro/felt-1x.webp",
             "bytes": 14090
+          },
+          {
+            "url": "/pro/leather-1x.webp",
+            "bytes": 1428
           },
           {
             "url": "/pro/wood-1x.webp",
@@ -1253,69 +1093,61 @@
           },
           {
             "url": "/pro/gold-1x.webp",
-            "bytes": 1182
+            "bytes": 874
           },
           {
-            "url": "/pro/leather-1x.webp",
-            "bytes": 1246
+            "url": "/pro/key-art-1x.webp",
+            "bytes": 54482
           },
           {
-            "url": "/pro/frame-1x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-1x.webp",
-            "bytes": 478
-          },
-          {
-            "url": "/pro/avatar-me-1x.webp",
-            "bytes": 1556
-          },
-          {
-            "url": "/pro/avatar-other-1x.webp",
+            "url": "/pro/avatar-01-1x.webp",
             "bytes": 2238
           },
           {
-            "url": "/pro/avatar-ring-1x.webp",
-            "bytes": 6416
+            "url": "/pro/avatar-10-1x.webp",
+            "bytes": 2658
           },
           {
             "url": "/pro/ppeok-1x.webp",
-            "bytes": 243314
+            "bytes": 238280
           },
           {
             "url": "/pro/jjok-1x.webp",
-            "bytes": 141006
+            "bytes": 139540
           },
           {
             "url": "/pro/ttadak-1x.webp",
-            "bytes": 215614
+            "bytes": 198290
           },
           {
             "url": "/pro/bomb-1x.webp",
-            "bytes": 219814
+            "bytes": 211582
+          },
+          {
+            "url": "/pro/settlement-art-1x.webp",
+            "bytes": 39144
           }
         ]
       }
     ],
     "samples": [
       {
-        "hz": 57.42771684945164,
-        "p95Ms": 37,
-        "maxMs": 57,
-        "frames": 288
+        "hz": 59.188162367526495,
+        "p95Ms": 34,
+        "maxMs": 44,
+        "frames": 296
       },
       {
-        "hz": 59.37624950019992,
-        "p95Ms": 30,
-        "maxMs": 50,
+        "hz": 59.45730247406225,
+        "p95Ms": 32,
+        "maxMs": 44,
+        "frames": 298
+      },
+      {
+        "hz": 59.26960686489723,
+        "p95Ms": 32,
+        "maxMs": 43,
         "frames": 297
-      },
-      {
-        "hz": 59.78804239152169,
-        "p95Ms": 31,
-        "maxMs": 49,
-        "frames": 299
       }
     ]
   },
@@ -1327,435 +1159,379 @@
     "screens": [
       {
         "scene": "home",
-        "readyMs": 100,
-        "transferBytes": 413585,
-        "encodedBytes": 409385,
+        "readyMs": 101,
+        "transferBytes": 534146,
+        "encodedBytes": 530246,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
-          },
-          {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           }
         ]
       },
       {
         "scene": "board",
-        "readyMs": 441,
-        "transferBytes": 602227,
-        "encodedBytes": 587827,
+        "readyMs": 461,
+        "transferBytes": 722634,
+        "encodedBytes": 708834,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           }
         ]
       },
       {
         "scene": "pro-ppeok",
-        "readyMs": 741,
-        "transferBytes": 1226295,
-        "encodedBytes": 1211595,
+        "readyMs": 761,
+        "transferBytes": 1311452,
+        "encodedBytes": 1297352,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           }
         ]
       },
       {
         "scene": "pro-jjok",
-        "readyMs": 741,
-        "transferBytes": 1599501,
-        "encodedBytes": 1584501,
+        "readyMs": 761,
+        "transferBytes": 1662506,
+        "encodedBytes": 1648106,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           }
         ]
       },
       {
         "scene": "pro-ttadak",
-        "readyMs": 741,
-        "transferBytes": 2068549,
-        "encodedBytes": 2053249,
+        "readyMs": 761,
+        "transferBytes": 2088486,
+        "encodedBytes": 2073786,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           }
         ]
       },
       {
         "scene": "pro-bomb",
-        "readyMs": 741,
-        "transferBytes": 2596073,
-        "encodedBytes": 2580473,
+        "readyMs": 761,
+        "transferBytes": 2576592,
+        "encodedBytes": 2561592,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           },
           {
             "url": "/pro/bomb-3x.webp",
-            "bytes": 527224
+            "bytes": 487806
           }
         ]
       },
       {
         "scene": "pro-go",
-        "readyMs": 741,
-        "transferBytes": 2596073,
-        "encodedBytes": 2580473,
+        "readyMs": 761,
+        "transferBytes": 2576592,
+        "encodedBytes": 2561592,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           },
           {
             "url": "/pro/bomb-3x.webp",
-            "bytes": 527224
+            "bytes": 487806
           }
         ]
       },
       {
         "scene": "settlement",
-        "readyMs": 2066,
-        "transferBytes": 2596073,
-        "encodedBytes": 2580473,
+        "readyMs": 2180,
+        "transferBytes": 2664548,
+        "encodedBytes": 2649248,
         "assets": [
           {
             "url": "/pro/felt-3x.webp",
             "bytes": 59048
           },
           {
-            "url": "/pro/gold-3x.webp",
-            "bytes": 3854
-          },
-          {
             "url": "/pro/wood-3x.webp",
             "bytes": 46782
           },
           {
+            "url": "/pro/gold-3x.webp",
+            "bytes": 3002
+          },
+          {
             "url": "/pro/leather-3x.webp",
-            "bytes": 5816
+            "bytes": 6406
           },
           {
-            "url": "/pro/frame-3x.webp",
-            "bytes": 1068
+            "url": "/pro/key-art-3x.webp",
+            "bytes": 121362
           },
           {
-            "url": "/pro/button-3x.webp",
-            "bytes": 478
+            "url": "/pro/avatar-01-3x.webp",
+            "bytes": 8476
           },
           {
-            "url": "/pro/avatar-me-3x.webp",
-            "bytes": 4636
-          },
-          {
-            "url": "/pro/avatar-other-3x.webp",
-            "bytes": 7242
-          },
-          {
-            "url": "/pro/avatar-ring-3x.webp",
-            "bytes": 6744
+            "url": "/pro/avatar-10-3x.webp",
+            "bytes": 10292
           },
           {
             "url": "/pro/ppeok-3x.webp",
-            "bytes": 623768
+            "bytes": 588518
           },
           {
             "url": "/pro/jjok-3x.webp",
-            "bytes": 372906
+            "bytes": 350754
           },
           {
             "url": "/pro/ttadak-3x.webp",
-            "bytes": 468748
+            "bytes": 425680
           },
           {
             "url": "/pro/bomb-3x.webp",
-            "bytes": 527224
+            "bytes": 487806
+          },
+          {
+            "url": "/pro/settlement-art-3x.webp",
+            "bytes": 87656
           }
         ]
       }
     ],
     "samples": [
       {
-        "hz": 51.906568177280896,
-        "p95Ms": 49,
-        "maxMs": 68,
-        "frames": 260
+        "hz": 53.54645354645355,
+        "p95Ms": 45,
+        "maxMs": 57,
+        "frames": 268
       },
       {
-        "hz": 52.14785214785215,
-        "p95Ms": 47,
-        "maxMs": 67,
-        "frames": 261
+        "hz": 53.37864854058377,
+        "p95Ms": 44,
+        "maxMs": 56,
+        "frames": 267
       },
       {
-        "hz": 52.30584947095229,
-        "p95Ms": 46,
-        "maxMs": 69,
-        "frames": 262
+        "hz": 53.98920215956809,
+        "p95Ms": 44,
+        "maxMs": 58,
+        "frames": 270
       }
     ]
   }

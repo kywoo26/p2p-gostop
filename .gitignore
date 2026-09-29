@@ -37,3 +37,5 @@ CLAUDE.local.md
 
 # 다운로드 작업 캐시
 .visual-source/
+# Offline Python asset tool bytecode
+__pycache__/

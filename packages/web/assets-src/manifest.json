@@ -1,80 +1,5 @@
 [
   {
-    "id": "frame",
-    "pack": "ui-pack-adventure",
-    "file": "ui-pack-adventure/PNG/Double/panel_brown_dark_corners_a.png",
-    "kind": "image",
-    "group": "shared",
-    "base": 128,
-    "sha256": "89fca2ce36da3fec9eb0d5b21d907d831bed9bff775d7e6c1113c2451a18d38d",
-    "bytes": 859,
-    "author": "Kenney",
-    "license": "CC0-1.0",
-    "source": "https://kenney.nl/assets/ui-pack-adventure",
-    "download": "https://kenney.nl/media/pages/assets/ui-pack-adventure/9a877376bc-1723597274/kenney_ui-pack-adventure.zip",
-    "preview": "https://kenney.nl/media/pages/assets/ui-pack-adventure/6ee19514ca-1723597272/sample.png"
-  },
-  {
-    "id": "button",
-    "pack": "ui-pack-adventure",
-    "file": "ui-pack-adventure/PNG/Double/button_brown.png",
-    "kind": "image",
-    "group": "shared",
-    "base": 128,
-    "sha256": "777b61044bc1d4502895c14e32966f21c98009f5579f94308779974087b3b48e",
-    "bytes": 454,
-    "author": "Kenney",
-    "license": "CC0-1.0",
-    "source": "https://kenney.nl/assets/ui-pack-adventure",
-    "download": "https://kenney.nl/media/pages/assets/ui-pack-adventure/9a877376bc-1723597274/kenney_ui-pack-adventure.zip",
-    "preview": "https://kenney.nl/media/pages/assets/ui-pack-adventure/6ee19514ca-1723597272/sample.png"
-  },
-  {
-    "id": "avatar-ring",
-    "pack": "ui-pack-adventure",
-    "file": "ui-pack-adventure/PNG/Double/minimap_ring_brown_detail.png",
-    "kind": "image",
-    "group": "shared",
-    "base": 128,
-    "sha256": "58ddfe66bb631763a9fdb62e33e764ed307a6f5e946b3dd11c1fc95fc17e8ac3",
-    "bytes": 6194,
-    "author": "Kenney",
-    "license": "CC0-1.0",
-    "source": "https://kenney.nl/assets/ui-pack-adventure",
-    "download": "https://kenney.nl/media/pages/assets/ui-pack-adventure/9a877376bc-1723597274/kenney_ui-pack-adventure.zip",
-    "preview": "https://kenney.nl/media/pages/assets/ui-pack-adventure/6ee19514ca-1723597272/sample.png"
-  },
-  {
-    "id": "avatar-me",
-    "pack": "animal-pack",
-    "file": "animal-pack/PNG/Round/panda.png",
-    "kind": "image",
-    "group": "table",
-    "base": 64,
-    "sha256": "894617bfebaba8c90d1479097142ca7e65e5f4090d92adf9f28d5deeacb33525",
-    "bytes": 5186,
-    "author": "Kenney",
-    "license": "CC0-1.0",
-    "source": "https://kenney.nl/assets/animal-pack",
-    "download": "https://kenney.nl/media/pages/assets/animal-pack/480cf9f223-1677669996/kenney_animal-pack.zip",
-    "preview": "https://kenney.nl/media/pages/assets/animal-pack/3562615d13-1677669990/preview.png"
-  },
-  {
-    "id": "avatar-other",
-    "pack": "animal-pack",
-    "file": "animal-pack/PNG/Round/parrot.png",
-    "kind": "image",
-    "group": "table",
-    "base": 64,
-    "sha256": "0ff2e8c39413781773f46d40d918f4c0516012e6ed4d3736c2b0a875fd06c7f5",
-    "bytes": 6003,
-    "author": "Kenney",
-    "license": "CC0-1.0",
-    "source": "https://kenney.nl/assets/animal-pack",
-    "download": "https://kenney.nl/media/pages/assets/animal-pack/480cf9f223-1677669996/kenney_animal-pack.zip",
-    "preview": "https://kenney.nl/media/pages/assets/animal-pack/3562615d13-1677669990/preview.png"
-  },
-  {
     "id": "ppeok",
     "pack": "para-1",
     "file": "para-1/particlefx_10.png",
@@ -87,7 +12,9 @@
     "license": "CC0-1.0",
     "source": "https://opengameart.org/content/animated-particle-effects-1",
     "download": "https://opengameart.org/sites/default/files/para_CC0_particlefx-1.zip",
-    "preview": "https://opengameart.org/content/animated-particle-effects-1"
+    "preview": "https://opengameart.org/content/animated-particle-effects-1",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "jjok",
@@ -102,7 +29,9 @@
     "license": "CC0-1.0",
     "source": "https://opengameart.org/content/animated-particle-effects-1",
     "download": "https://opengameart.org/sites/default/files/para_CC0_particlefx-1.zip",
-    "preview": "https://opengameart.org/content/animated-particle-effects-1"
+    "preview": "https://opengameart.org/content/animated-particle-effects-1",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "ttadak",
@@ -117,7 +46,9 @@
     "license": "CC0-1.0",
     "source": "https://opengameart.org/content/animated-particle-effects-1",
     "download": "https://opengameart.org/sites/default/files/para_CC0_particlefx-1.zip",
-    "preview": "https://opengameart.org/content/animated-particle-effects-1"
+    "preview": "https://opengameart.org/content/animated-particle-effects-1",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "bomb",
@@ -132,7 +63,9 @@
     "license": "CC0-1.0",
     "source": "https://opengameart.org/content/animated-particle-effects-1",
     "download": "https://opengameart.org/sites/default/files/para_CC0_particlefx-1.zip",
-    "preview": "https://opengameart.org/content/animated-particle-effects-1"
+    "preview": "https://opengameart.org/content/animated-particle-effects-1",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "smoke",
@@ -147,7 +80,9 @@
     "license": "CC0-1.0",
     "source": "https://opengameart.org/content/animated-particle-effects-1",
     "download": "https://opengameart.org/sites/default/files/para_CC0_particlefx-1.zip",
-    "preview": "https://opengameart.org/content/animated-particle-effects-1"
+    "preview": "https://opengameart.org/content/animated-particle-effects-1",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "glow",
@@ -162,7 +97,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/particle-pack",
     "download": "https://kenney.nl/media/pages/assets/particle-pack/f8fe0f8cb8-1677578741/kenney_particle-pack.zip",
-    "preview": "https://kenney.nl/media/pages/assets/particle-pack/d50c7fc9b6-1677578655/preview.png"
+    "preview": "https://kenney.nl/media/pages/assets/particle-pack/d50c7fc9b6-1677578655/preview.png",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "spark",
@@ -177,7 +114,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/particle-pack",
     "download": "https://kenney.nl/media/pages/assets/particle-pack/f8fe0f8cb8-1677578741/kenney_particle-pack.zip",
-    "preview": "https://kenney.nl/media/pages/assets/particle-pack/d50c7fc9b6-1677578655/preview.png"
+    "preview": "https://kenney.nl/media/pages/assets/particle-pack/d50c7fc9b6-1677578655/preview.png",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "card",
@@ -192,7 +131,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/casino-audio",
     "download": "https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip",
-    "preview": "https://kenney.nl/media/pages/assets/casino-audio/225669dbea-1677590184/preview-2.png"
+    "preview": "https://kenney.nl/media/pages/assets/casino-audio/225669dbea-1677590184/preview-2.png",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "chips",
@@ -207,7 +148,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/casino-audio",
     "download": "https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip",
-    "preview": "https://kenney.nl/media/pages/assets/casino-audio/225669dbea-1677590184/preview-2.png"
+    "preview": "https://kenney.nl/media/pages/assets/casino-audio/225669dbea-1677590184/preview-2.png",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "hit",
@@ -222,7 +165,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/impact-sounds",
     "download": "https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip",
-    "preview": "https://kenney.nl/media/pages/assets/impact-sounds/4ef56f2408-1677589755/foley-preview.ogg"
+    "preview": "https://kenney.nl/media/pages/assets/impact-sounds/4ef56f2408-1677589755/foley-preview.ogg",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "success",
@@ -237,7 +182,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/interface-sounds",
     "download": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
-    "preview": "https://kenney.nl/media/pages/assets/interface-sounds/428fc5f14c-1677589445/preview_interface.png"
+    "preview": "https://kenney.nl/media/pages/assets/interface-sounds/428fc5f14c-1677589445/preview_interface.png",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "go",
@@ -252,7 +199,9 @@
     "license": "CC0-1.0",
     "source": "https://kenney.nl/assets/interface-sounds",
     "download": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
-    "preview": "https://kenney.nl/media/pages/assets/interface-sounds/428fc5f14c-1677589445/preview_interface.png"
+    "preview": "https://kenney.nl/media/pages/assets/interface-sounds/428fc5f14c-1677589445/preview_interface.png",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "felt",
@@ -267,7 +216,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Fabric037",
     "download": "https://ambientcg.com/get?file=Fabric037_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Fabric037"
+    "preview": "https://ambientcg.com/view?id=Fabric037",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "felt-NormalGL",
@@ -282,7 +233,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Fabric037",
     "download": "https://ambientcg.com/get?file=Fabric037_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Fabric037"
+    "preview": "https://ambientcg.com/view?id=Fabric037",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "felt-Roughness",
@@ -297,7 +250,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Fabric037",
     "download": "https://ambientcg.com/get?file=Fabric037_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Fabric037"
+    "preview": "https://ambientcg.com/view?id=Fabric037",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "leather",
@@ -312,7 +267,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Leather037",
     "download": "https://ambientcg.com/get?file=Leather037_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Leather037"
+    "preview": "https://ambientcg.com/view?id=Leather037",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "leather-NormalGL",
@@ -327,7 +284,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Leather037",
     "download": "https://ambientcg.com/get?file=Leather037_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Leather037"
+    "preview": "https://ambientcg.com/view?id=Leather037",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "leather-Roughness",
@@ -342,7 +301,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Leather037",
     "download": "https://ambientcg.com/get?file=Leather037_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Leather037"
+    "preview": "https://ambientcg.com/view?id=Leather037",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "gold",
@@ -357,7 +318,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Metal034",
     "download": "https://ambientcg.com/get?file=Metal034_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Metal034"
+    "preview": "https://ambientcg.com/view?id=Metal034",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "gold-NormalGL",
@@ -372,7 +335,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Metal034",
     "download": "https://ambientcg.com/get?file=Metal034_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Metal034"
+    "preview": "https://ambientcg.com/view?id=Metal034",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "gold-Roughness",
@@ -387,7 +352,9 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Metal034",
     "download": "https://ambientcg.com/get?file=Metal034_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Metal034"
+    "preview": "https://ambientcg.com/view?id=Metal034",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
   },
   {
     "id": "wood",
@@ -402,6 +369,284 @@
     "license": "CC0-1.0",
     "source": "https://ambientcg.com/view?id=Wood050",
     "download": "https://ambientcg.com/get?file=Wood050_1K-JPG.zip",
-    "preview": "https://ambientcg.com/view?id=Wood050"
+    "preview": "https://ambientcg.com/view?id=Wood050",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Resize, palette grading, normal-light bake where supplied, atlas packing or audio transcoding."
+  },
+  {
+    "id": "key-art",
+    "pack": "met",
+    "file": "met/37107.jpg",
+    "kind": "art",
+    "group": "home",
+    "base": 512,
+    "author": "Katsushika Hokusai / The Metropolitan Museum of Art, JP660 (The Francis Lathrop Collection, Purchase, Frederick C. Hewitt Fund, 1911)",
+    "license": "CC0-1.0",
+    "source": "https://www.metmuseum.org/art/collection/search/37107",
+    "download": "https://images.metmuseum.org/CRDImages/as/original/DP146847.jpg",
+    "preview": "https://images.metmuseum.org/CRDImages/as/original/DP146847.jpg",
+    "crop": [0.06, 0.25, 0.97, 0.57],
+    "changes": "Public domain woodblock print; cropped, ink/paper duotone, resized and encoded.",
+    "bytes": 1513524,
+    "sha256": "83fb3b90b9edd2159bfca2c443d7f2e71ef98707bc61c08b1c842f528f7d6f4a",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "settlement-art",
+    "pack": "met",
+    "file": "met/37107.jpg",
+    "kind": "art",
+    "group": "settlement",
+    "base": 512,
+    "author": "Katsushika Hokusai / The Metropolitan Museum of Art, JP660 (The Francis Lathrop Collection, Purchase, Frederick C. Hewitt Fund, 1911)",
+    "license": "CC0-1.0",
+    "source": "https://www.metmuseum.org/art/collection/search/37107",
+    "download": "https://images.metmuseum.org/CRDImages/as/original/DP146847.jpg",
+    "preview": "https://images.metmuseum.org/CRDImages/as/original/DP146847.jpg",
+    "crop": [0.06, 0.25, 0.97, 0.49],
+    "changes": "Public domain woodblock print; cropped, ink/paper duotone, resized and encoded.",
+    "bytes": 1513524,
+    "sha256": "83fb3b90b9edd2159bfca2c443d7f2e71ef98707bc61c08b1c842f528f7d6f4a",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "avatar-01",
+    "pack": "portraits",
+    "file": "portraits/1.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_January_Hikari.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_January_Hikari.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_January_Hikari.svg",
+    "cardId": 0,
+    "cardSha256": "2c398bcee577627c6b095844ded8d91aefd59d74f75f9142ce3777c6d29ad3b1",
+    "crop": [-8, 8, 104],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 34637,
+    "sha256": "f33be65870d8aef7f906aafeea606aa1782d0fa059424542915790d7bedc64d1",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-02",
+    "pack": "portraits",
+    "file": "portraits/2.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_February_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_February_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_February_Tane.svg",
+    "cardId": 4,
+    "cardSha256": "664ec3b16e762206f4f0b4e9fb4b84d5caba9316d0c3a44ef86c722ea189ef4c",
+    "crop": [8, 25, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 57453,
+    "sha256": "1de6c570b0fa0ce3df5835bbf09563c18967ff1c6ec99ad4a7ce64183d7dcb46",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-03",
+    "pack": "portraits",
+    "file": "portraits/3.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_March_Hikari.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_March_Hikari.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_March_Hikari.svg",
+    "cardId": 8,
+    "cardSha256": "1dc5a5f5a17fc0512faa1c3d71dd48d4f2327de4e96f45ab501a4de1bc1f481f",
+    "crop": [8, 8, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 93165,
+    "sha256": "33a151908be01ae282933d7d492952963f8690d59b1a69e6807c99eacbab649e",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-04",
+    "pack": "portraits",
+    "file": "portraits/4.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_April_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_April_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_April_Tane.svg",
+    "cardId": 12,
+    "cardSha256": "b58b6c93e89d4b01e2184ab48b8ea911dcbddf294f42e57cb07c14bca95442ce",
+    "crop": [8, 18, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 75514,
+    "sha256": "f0b3e7cc946e6eadc1397d3c866756a3256ef19f391fc98e76eb2aa666432787",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-05",
+    "pack": "portraits",
+    "file": "portraits/5.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_May_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_May_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_May_Tane.svg",
+    "cardId": 16,
+    "cardSha256": "2e2d20a6ccea6ef3897c2c35927fcb4b8d5047e713768fcef153028fff958f7f",
+    "crop": [8, 42, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 46502,
+    "sha256": "f6efb9427aa00c76c57195dcc585f520a41f0890914a8b1790f80a3cfa22f459",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-06",
+    "pack": "portraits",
+    "file": "portraits/6.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_June_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_June_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_June_Tane.svg",
+    "cardId": 20,
+    "cardSha256": "3cf4b13a614aa2a599538c11569e6f7a40d536ec3d12c5acd36ab55af21d6391",
+    "crop": [8, 65, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 72878,
+    "sha256": "0fd4a5e287ffff8edb82082119e7b11b3555a9778671b0987b135e53a98e1534",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-07",
+    "pack": "portraits",
+    "file": "portraits/7.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_July_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_July_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_July_Tane.svg",
+    "cardId": 24,
+    "cardSha256": "cb374e738a436dccb55808b6d55d5d671dd125245cbab2fff706f55e35062227",
+    "crop": [8, 68, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 69824,
+    "sha256": "ba2293d9ee9b9606586b8fa4b19b76c1db56455c0877786629715d216c067caf",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-08",
+    "pack": "portraits",
+    "file": "portraits/8.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_August_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_August_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_August_Tane.svg",
+    "cardId": 29,
+    "cardSha256": "61beaa23fc54d7cf1cf45f15a090855ee39abc827e4cf5c50d7594830b2ab9b1",
+    "crop": [8, 20, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 58922,
+    "sha256": "dd6b4384726be5ea732b2e8973e4e781718532548d721a3ba35304e04d1f5519",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-09",
+    "pack": "portraits",
+    "file": "portraits/9.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_September_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_September_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_September_Tane.svg",
+    "cardId": 32,
+    "cardSha256": "a85c6e44315bd8039fb1b1c7f83b1ffdd6730a6889ecf8ba40ff4fff6037301e",
+    "crop": [8, 58, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 52348,
+    "sha256": "97f1291008e8b5c9dd2f98d2abacb7738adae74200583e4e15af6d36761337ce",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-10",
+    "pack": "portraits",
+    "file": "portraits/10.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_October_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_October_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_October_Tane.svg",
+    "cardId": 36,
+    "cardSha256": "ab6786b5ff7e8f15d33e3980b34bf6960c74ac322f6d56b81e7b283ec3c54bb4",
+    "crop": [8, 50, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 64582,
+    "sha256": "4f6e2b1a17fdb407fda76db0905ce1772989bdce16cb5ea97259b20fbf747b81",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-11",
+    "pack": "portraits",
+    "file": "portraits/11.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_November_Hikari.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_November_Hikari.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_November_Hikari.svg",
+    "cardId": 40,
+    "cardSha256": "2053b5f15e0348418076dd424a0ce4e7e20c5be3e3e734fd2ebd405666ac3a7c",
+    "crop": [8, 8, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 53806,
+    "sha256": "27b858c9a34b2734eb72b825cfb920266302838bde74eaf0b6f4a480c0b415d7",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "avatar-12",
+    "pack": "portraits",
+    "file": "portraits/12.png",
+    "kind": "portrait",
+    "group": "table",
+    "base": 64,
+    "author": "Spenĉjo; Marcus Richert; based on Hanafuda graphics by Louie Mantia, Jr.",
+    "license": "CC-BY-SA-4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hwatu_December_Tane.svg",
+    "download": "https://commons.wikimedia.org/wiki/File:Hwatu_December_Tane.svg",
+    "preview": "https://commons.wikimedia.org/wiki/File:Hwatu_December_Tane.svg",
+    "cardId": 45,
+    "cardSha256": "e5fe7c6086da7e90fb2e2adb579fffa10001ee57b4d252a609aeac66957dcc6c",
+    "crop": [8, 40, 86],
+    "changes": "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0.",
+    "bytes": 63301,
+    "sha256": "914327d46defcb23a0be766ddf7aeee1053ee0d301c0d587285a3f04252c4dec",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
   }
 ]

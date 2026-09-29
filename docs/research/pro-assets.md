@@ -23,22 +23,22 @@
 |---|---|---|---|
 | [ambientCG Fabric037](https://ambientcg.com/view?id=Fabric037) | [CC0](https://docs.ambientcg.com/license/), 무료 | 1K JPG PBR 팩 9MB 표기, 직조 표면·Color/NormalGL/Roughness. 사진 스캔이라 주장하지 않음(원본 procedural) | **실사용** 먹빛 펠트 판/Home 배경. albedo+normal 조명 베이크, 원본 맵 보관. 런타임 PBR 셰이더가 아니라 2D 베이크 |
 | [ambientCG Wood050](https://ambientcg.com/view?id=Wood050) | CC0, 무료 | 1K Color | **실사용** 나무 테두리. 앞선 검토에서 확보한 동일 원본 해시 고정 |
-| [ambientCG Leather037](https://ambientcg.com/view?id=Leather037) | CC0, 무료 | 1K 팩 7MB 표기, photometric stereo 가죽 | **실사용** HUD/홈 패 받침, 거친 표면과 어두운 글자 받침 분리 |
+| [ambientCG Leather037](https://ambientcg.com/view?id=Leather037) | CC0, 무료 | 1K 팩 7MB 표기, photometric stereo 가죽 | **실사용** HUD 읽기 면, 거친 표면과 어두운 글자 받침 분리 |
 | [ambientCG Metal034](https://ambientcg.com/view?id=Metal034) | CC0, 무료 | 1K 팩 3MB 표기, gold material | **실사용** 판 금속 트림. 실시간 반사 없음 |
 | [Poly Haven Leather Red 02](https://polyhaven.com/a/leather_red_02) | [CC0](https://polyhaven.com/license), 무료 | Rob Tuytel, 1K~8K, albedo/normal/roughness. 페이지에 각 맵 미리보기 | 후보. 붉은 가죽이 A 먹빛보다 강해 이번 기본판 제외 |
-| [Kenney UI Pack Adventure](https://kenney.nl/assets/ui-pack-adventure), [원본 sample](https://kenney.nl/media/pages/assets/ui-pack-adventure/6ee19514ca-1723597272/sample.png) | CC0, 무료 | 130개, Vector·PNG Default/Double, 패널/버튼/초상 링 | **실사용** brown dark corners 패널, brown 버튼·초상 링. nine-slice로 모서리 유지. 장르가 RPG에 가까운 한계는 사용자 검토 대상 |
+| [Kenney UI Pack Adventure](https://kenney.nl/assets/ui-pack-adventure), [원본 sample](https://kenney.nl/media/pages/assets/ui-pack-adventure/6ee19514ca-1723597272/sample.png) | CC0, 무료 | 130개, Vector·PNG Default/Double, 패널/버튼/초상 링 | **제외 확정**. 원본/생성파일/요청 제거, A 자체 CSS 1px 프레임으로 교체 |
 | [Kenney Fantasy UI Borders](https://kenney.nl/assets/fantasy-ui-borders), [sample](https://kenney.nl/media/pages/assets/fantasy-ui-borders/ac36214d33-1701602364/sample.png) | CC0, 무료 | 140개, 모노 프레임·SVG | 비교 후보. 과도한 장식과 모노 픽셀 인상이 있어 이번 프레임에서는 제외 |
 | [para Animated Particle Effects #1](https://opengameart.org/content/animated-particle-effects-1) | CC0, 무료 | 1024² atlas, 128² ×64프레임, 14종/변형. 페이지 원본 GIF/이미지 미리보기 | **실사용** 10번 붉은 충격=뻑, 07 청색 스파크=쪽, 13 금색 링=따닥/고/정산, 09 불꽃 링=폭탄, 04 연기=후속 잔향 후보. 원본 프레임 보존 |
 | [para #2](https://opengameart.org/content/animated-particle-effects-2) | CC0, 무료 | fire/teleporter/air bubbles/blood, 512~1024 atlas | 후보. 혈흔은 게임 맥락에 맞지 않아 제외. 필요하면 teleporter 사용 |
 | [Kenney Particle Pack](https://kenney.nl/assets/particle-pack) | CC0, 무료 | 80개 512² 투명 스프라이트 | **파이프라인 실사용/화면 보류** glow·spark를 atlas로 묶음. 화면에서는 para 효과를 우선해 중복 글로우 방지 |
-| [Kenney Animal Pack](https://kenney.nl/assets/animal-pack), [preview](https://kenney.nl/media/pages/assets/animal-pack/3562615d13-1677669990/preview.png) | CC0, 무료 | 전문 제작 동물 얼굴 PNG | **실사용 임시 아바타** panda/parrot. 슬롯·명암·다운로드 검증용. 최종 한국풍 캐릭터가 완성됐다고 취급하지 않음 |
+| [Kenney Animal Pack](https://kenney.nl/assets/animal-pack), [preview](https://kenney.nl/media/pages/assets/animal-pack/3562615d13-1677669990/preview.png) | CC0, 무료 | 전문 제작 동물 얼굴 PNG | **제외 확정**. Commons 화투 월별 초상 12종으로 교체 |
 | [Kenney Board Game Icons](https://kenney.nl/assets/board-game-icons) | CC0, 무료 | 카드/주사위/행동 아이콘 세트 | 후보. 현재 필수 기능 라벨 유지, 읽기 검토 뒤 부분 도입 |
 | [Kenney Casino Audio](https://kenney.nl/assets/casino-audio) | CC0, 무료 | 50개 카드·칩 Foley | **실사용** card-slide-1, chips-collide-1 → 카드 조작/정산 |
 | [Kenney Impact Sounds](https://kenney.nl/assets/impact-sounds) | CC0, 무료 | 소재별 충격 녹음 | **실사용** impactWood_heavy_000 → 뻑/폭탄. 최종 믹스에서는 두 사건의 레이어 구분 필요 |
 | [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) | CC0, 무료 | UI 확인/열기/클릭 등 | **실사용** confirmation_002, open_001 → 쪽·스톱/고·흔들기. 샘플 대체 경로 검증이며 최종 9사건 사운드 디자인 완료를 뜻하지 않음 |
 | [pimen Explosion Effect](https://pimen.itch.io/explosion-effect) | 유료 후보, 정가 US$4 / 확인 시 할인 US$3.40. 개인·상업 사용/변경 허용, 원본 재판매·재배포 금지 | 30종, 16~64px pixel art, PNG/GIF/Aseprite | **구매하지 않음**. A의 재질 판과 픽셀 FX 이질감, 공개 저장소 원본 커밋 불가. 허용되는 제품 배포 범위 확인 후만 도입 |
 
-무료 CC-BY도 저자·작품·라이선스·변경 고지를 보존하면 후보가 될 수 있으나 이번 실제 파일은 CC0만이다. OFL Pretendard는 기존 고지 유지. 자산 페이지 미리보기는 조사 링크이며 앱이 가져오지 않는다.
+무료 CC-BY도 저자·작품·라이선스·변경 고지를 보존하면 후보가 될 수 있으나 이번 실제 파일은 CC0 및 기존 카드 파생 초상의 CC BY-SA 4.0이다. OFL Pretendard는 기존 고지 유지. 자산 페이지 미리보기는 조사 링크이며 앱이 가져오지 않는다.
 
 ## 3. 재현 파이프라인과 로딩 계약
 
@@ -46,8 +46,8 @@
 |---|---|
 | 입력 | `assets-src/manifest.json`, 선택 원본과 동봉 License.txt. 소스 해시 불일치면 변환 실패. 새 제공 이미지도 출처/권리/변경 허용 여부 등록 뒤 같은 파이프라인 사용 |
 | 실행 | `docker compose run --rm dev python3 packages/web/scripts/build-pro-assets.py`. Pillow 10.2.0, FFmpeg 6.1.1, libavif 1.0.4를 dev image4에만 설치. npm 런타임 의존성0 |
-| 이미지 | WebP quality88 + AVIF q20~30, 1x/2x/3x. texture 기준512px, UI128px, avatar64px. **원본보다 확대해 품질이 늘었다고 하지 않음**: 1K 원본은 3x도1K,128px FX cell은2x/3x 동일 상한 |
-| 재질 | Fabric albedo 재색상화·normal 방향광 베이크. roughness 원본은 보관하되 현재 런타임 미사용. 가죽/나무/금은 원본 색 유지. WebGL/Pixi 도입 없음 |
+| 이미지 | WebP quality88 + AVIF q20~30, 1x/2x/3x. texture 기준512px, art512px, avatar64px. **원본보다 확대해 품질이 늘었다고 하지 않음**: 1K 원본은 3x도1K,128px FX cell은2x/3x 동일 상한 |
+| 재질 | Fabric albedo 재색상화·normal 방향광 베이크. roughness 원본은 보관하되 현재 런타임 미사용. 가죽/나무/금도 먹/호두/무광 황동으로 재색상화. WebGL/Pixi 도입 없음 |
 | 스프라이트 | para 8×8,64프레임 유지하며 각 tier 리사이즈. Kenney 개별 광점은128px cell 가로 atlas+JSON으로 패킹. 투명 알파 보존 |
 | 오디오 | mono44.1kHz Ogg Vorbis q4 / AAC96kbps M4A faststart. 지원 검사 후 하나만 요청. 입력 녹음 소리를 쓰며 합성 도형 효과음으로 대체하지 않음 |
 | 고지 | manifest→`credits.ts`→License 화면, `/pro/NOTICE.md` 파일별 SHA/변경 고지 자동 생성. 외부 URL은 텍스트 고지뿐, NF-01 빌드 검사 정확 일치 허용 목록 |
@@ -59,53 +59,63 @@
 
 API 근거: [Pillow Image](https://pillow.readthedocs.io/en/stable/reference/Image.html), [FFmpeg](https://ffmpeg.org/ffmpeg.html), [libavif](https://github.com/AOMediaCodec/libavif), [Svelte effect](https://svelte.dev/docs/svelte/$effect), [Canvas drawImage](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage), [Web Audio decode](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/decodeAudioData). Context7 도구가 현재 세션에 노출되지 않아 공식 문서로 조회했다.
 
-## 4. 사용자 제공/생성·외주 필요 자산
+## 4. 확정 아트 디렉션과 일러스트
 
-무료 팩으로 한국 맞고의 고유 캐릭터와 일관된 고급 키아트까지 해결됐다고 할 수 없다. 아래는 **요청 목록**이며 현재 임시 아바타·실제 카드 조합을 최종 일러스트라고 부르지 않는다.
+[아트 디렉션](../design/art-direction.md)을 가공 전에 고정했다. 사용자 제공을 기다리는 목록은 폐기한다. 홈·정산은 같은 학/소나무 원화, 아바타는 같은 화투 도상 계열, 화면 구조물은 자체 CSS로 통일한다.
 
-| 요청 | 원본 규격 | 안전 영역 / 납품 조건 | 수용·화면 매핑 |
+| 대상 | 원본·권리 근거 | 가공/규격 | 적용 |
 |---|---|---|---|
-| 홈 키비주얼 1점 | 2048×1536, 4:3, sRGB PNG 또는 레이어 PSD+PNG | 중심70%에 주제, 외곽15% 크롭 가능. 글자/로고/카드 그림 굽기 금지. 먹빛 판·한지/금속 포인트 | 360~430 CSS폭 hero, 1/2/3x 변환. 현재 Commons 카드 조합과 교체 |
-| 좌석 캐릭터 2~4명 | 각1024² 투명 PNG, 정면/3/4 얼굴, 선택적 표정3종 | 얼굴·머리 중심72%, 원형 크롭 밖 장식 금지. 피부색/실루엣 구분, 특정 상용 캐릭터 복제 금지 | 원형40~64px 슬롯. Kenney 동물 임시 이미지 교체 |
-| 정산 승리 일러스트 1점 | 1600×900,16:9, 투명 PNG+배경 분리 | 가운데60% 주제, 금액/버튼 안전 영역은 별도. “승리” 글자·금액 굽지 않음 | 정산 상단, 확정 금액 위 장식. 카운트업 없음 |
-| 사건별 한글 레터링(선택) | 뻑/쪽/따닥/폭탄/흔들기/고/스톱, 각1024² 투명 PNG 또는 권리 확보 SVG | 외곽12% 여백, 120px에서도 구분. 화면 읽기용 텍스트 별도 유지 | 동일 서체 기반 전문 타이포 아트. 기본 폰트로도 기능은 유지 |
+| 홈·정산 | [Met JP660, Hokusai](https://www.metmuseum.org/art/collection/search/37107), Public Domain. [Met Open Access](https://www.metmuseum.org/hubs/open-access) CC0. [API](https://metmuseum.github.io/) isPublicDomain=true 원자료 보관 | 870×1932 원본, 별도 크롭·먹/한지 듀오톤, 원화 획과 종이 결 보존. 크롭 좌표 manifest 기록 | 같은 작품의 두 구도, 본문 글자는 이미지 밖/불투명 받침 |
+| 월별 초상 12종 | 기존 Commons Hwatu, Spenĉjo·Marcus Richert·Louie Mantia Jr. [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | 카드별 출처와 SHA 고정, SVG 도상 사각 추출→원형→듀오톤→64/128/192px. 원본 48장 무변경, 파생본 동일 라이선스 | 학·매조·벚꽃·두견·붓꽃·나비·멧돼지·기러기·국화·사슴·봉황·제비. 현재 좌석에는 학/사슴 |
+| 프레임·버튼·배지 | 자체 CSS(MIT 코드) | 먹색 읽기 면, 한지색 주요 버튼, 1px 무광 황동 경계, radius 12/10px | Kenney RPG 패널/버튼/초상 링 완전 제외 |
+| 사건 | para CC0 원본 alpha·64프레임 보존 | 공통 따뜻한 흰 심지 + 사건별 적갈/청록/황동/주황 | 원색 네온 혼용을 제거 |
 
-제공 시 저작자·상업 이용/수정/번들 재배포 허용 범위·원본 출처를 같이 받는다. 생성본이면 사용 도구와 이용권한을 기록한다. 유료 원본 재배포가 금지되면 공개 `assets-src`에 올리지 않고 별도 비공개 입력으로 CI 산출물만 제공하는 계약이 필요하다.
+새 그림을 직접 그린 것이 아니라 원화/기존 SVG를 크롭·재색상화했다. 원화의 서명/문구를 제품 카피로 쓰지 않는다. source/licenseUrl/changes를 License 화면과 NOTICE에 자동 생성하며, 월별 파생 초상에 CC0를 잘못 붙이지 않는다. Pillow·Playwright 공식 API로 오프라인 가공, 추가 런타임 라이브러리 없음.
+
+### 제작 도구 크기와 Ogg 결정성 (리뷰 5351703073)
+
+| 로컬 이미지 | 이미지 ID | docker image inspect `.Size` |
+|---|---|---:|
+| p2p-gostop-dev:3 | `sha256:25b9fb36f9345e33657ef2f8bfb30be2a75ce7ac9c636da246cbc80279f61a5d` | 1,166,425,769 bytes |
+| p2p-gostop-dev:4 | `sha256:a9faa530af5b7dcb82d2d93b7d11740825e32712ce6cdc30f08e1df18f76a6d6` | 1,168,473,579 bytes |
+| 증가 | 2026-09-29 작성자 재확인, 리뷰 관측과 동일 | **+2,047,810 bytes (약1.95MiB)** |
+
+압축 전 로컬 이미지 레이어 크기 기준이다. registry 전송 압축 크기/호스트 공유 레이어 실제 추가 점유량/앱 dist 증가와 다르다. Dockerfile은 주석만 갱신해 동일 이미지 태그를 유지한다.
+
+[FFmpeg format flags / Ogg](https://ffmpeg.org/ffmpeg-formats.html#ogg) 근거로 `-flags +bitexact -fflags +bitexact -serial_offset 0`, 입력 metadata 제거를 고정했다. `pro-audio.py`를 생성/검증이 공유한다. `docker compose run --rm dev python3 packages/web/scripts/check-pro-assets.py`는 5개 Ogg를 각각 두 번 독립 인코딩해 SHA-256 상호 일치, 커밋 산출물 일치, Ogg 헤더 serial=0을 검사한다. 동일 입력·고정 도구 재현성을 보장하며 다른 인코더 버전의 동일 바이트까지 주장하지 않는다.
 
 ## 5. 측정과 승인
 
 **예산 개정 승인 전. 현행 전체1.5MiB·게스트 첫 로딩≤2초 유지.** 초과분은 평가 빌드에만 있다. 스토어 MB, 디스크 원본 bytes, dist 전체 bytes, 한 화면 실제 요청 bytes, decode 메모리를 따로 보고한다. Chromium/WebKit Docker rAF 측정은 실기기 FPS가 아니다. iPhone p95·Galaxy 메모리/FPS는 [실기기 절차](../device-test/pro-assets.md)에 따라 사람이 기록하며 이 PR에서 합격을 만들어 쓰지 않는다.
 
 
-### 평가 빌드 실측 (2026-09-29, Docker 개발 이미지4)
+### 평가 빌드 실측 (2026-09-29, 아트 디렉션 갱신)
 
 | 산출물 | 실측 | 의미 |
 |---|---:|---|
-| 선택 원본 | 16,150,524bytes (15.40MiB) | 제작 입력, 앱 배포 제외 |
-| 기본 dist | 약1,213.4KiB | ≤1,536KiB 현행 gate 통과, 평가 팩 제외 |
-| 평가 dist | 12,946.6KiB (12.64MiB) | 모든tier/코덱 포함, 평가만 초과 허용 |
-| 단일 최대 WebP+M4A 팩 | 2,451,952bytes (2.34MiB) | 중복tier/코덱 제거한 비교치, 아직 본선 적용 불가 |
-| GitHub PNG | 8장, 각123,474~218,267bytes | 412×915,256색 문서용, 앱 dist와 무관 |
+| 선택 원본(중복 파일 경로 1회 산입) | 18,388,284 bytes | 제작 입력, 배포 제외 |
+| 기본 dist | 1,233.2 KiB | ≤1,536KiB 현행 gate 통과 |
+| 평가 dist | 13,373.6 KiB | 모든 tier/코덱, 평가만 초과 허용 |
+| 단일 최대 WebP+M4A 팩 | 2,618,279 bytes (2.50 MiB) | 미사용 후보/초상12종 포함, 동일 tier만 선택 |
+| 전체 선택 이미지 RGBA 계산 | 44,125,632 bytes (42.08 MiB) | Σw×h×4, 브라우저 실제 PSS 아님 |
+| GitHub PNG | 실제 앱8장 + 초상 contact sheet1장, 각 85,967~217,432 bytes | 모두412×915, ≤300KB |
 
-| 렌더러 / DPR | 3×5초 rAF Hz 범위 | p95 프레임 간격 범위 | 최대 간격 | 판정 |
+| 렌더러 / DPR | 3×5초 rAF Hz | p95 프레임 간격 | 최대 | 판정 |
 |---|---:|---:|---:|---|
-| chromium / 1 | 60.02–60.06 | 16.7–16.7ms | 16.8ms | 대역 계측; 기기 합격 아님 |
-| chromium / 3.5 | 60.02–60.21 | 16.7–16.7ms | 16.8ms | 대역 계측; 기기 합격 아님 |
-| webkit / 1 | 57.43–59.79 | 30.0–37.0ms | 57.0ms | 대역 계측; 기기 합격 아님 |
-| webkit / 3.5 | 51.91–52.31 | 46.0–49.0ms | 69.0ms | 고해상도 비용 개선 필요 |
+| chromium / 1 | 60.02–60.02 | 16.7–16.7ms | 16.8ms | 대역 계측; 실기기 합격 아님 |
+| chromium / 3.5 | 60.02–60.13 | 16.7–16.8ms | 16.8ms | 대역 계측; 실기기 합격 아님 |
+| webkit / 1 | 59.19–59.46 | 32.0–34.0ms | 44.0ms | 대역 계측; 실기기 합격 아님 |
+| webkit / 3.5 | 53.38–53.99 | 44.0–45.0ms | 58.0ms | 60fps 미달; 개선 필요 |
 
-측정은 atlas를 예열한 뒤0.5초마다 사건을 바꾸는 실제 Board다. rAF cadence는 GPU가 모든 프레임을 완성했다는 증거가 아니다. WebKit DPR3.5의약52Hz는60fps 목표 충족으로 표시하지 않는다. blur/backdrop-filter 없이도 고해상도 배경·nine-slice·배너 전환 repaint 비용이 후보이며, 병목 확정에는 DevTools/실기기 trace가 필요하다. 후속: 사건 영역의 크기/위치 고정, 정적 재질 합성 레이어 분리, atlas 해상도/동시 수 제한을 각각 비교한다. 현재 사건 영역은 바닥 패를 덮지 않도록 여백을 잡지만 #104의 고정6행 통합 전이다.
+이전 RPG 프레임 구성 WebKit DPR3.5 51.91–52.31Hz → 이번 약53–54Hz. 변경 전후 한 환경의 관측이며 원인 분리 실험이 아니므로 프레임 제거 효과로 단정하지 않는다. CSS blur/backdrop-filter는 없고, 고해상도 배경/그림자·전환 repaint가 비용 후보다. GPU trace 없이 원인을 확정하지 않는다. 다음 성능 작업에서 정적 배경 합성 레이어 분리, 그림자 제거, atlas 해상도 제한을 각각 A/B 측정한다. #104 고정6행 통합 후에도 재검증한다.
 
-| WebKit 공유 대역폭 시나리오 | cold 횟수 | 최초 진행 표시 p95 | 이름 입력 가능 p95 | 필수 재질 완료 p95 | 전송 bytes |
+| WebKit 공유 대역폭 | cold | 진행 표시 p95 | 이름 입력 p95 | 재질 완료 p95 | bytes |
 |---|---:|---:|---:|---:|---:|
-| 10Mbps +20ms | 20 | 513ms | 513ms | 598ms | 656,135 |
-| 30Mbps +20ms | 20 | 222ms | 222ms | 258ms | 656,135 |
-| 60Mbps +20ms | 20 | 169ms | 169ms | 198ms | 656,135 |
+| 10Mbps +20ms | 20 | 515ms | 515ms | 604ms | 665,518 |
+| 30Mbps +20ms | 20 | 218ms | 218ms | 254ms | 665,518 |
+| 60Mbps +20ms | 20 | 164ms | 165ms | 193ms | 665,518 |
 
-실제 `?role=guest&visual=pro`의 참가 화면이며 갤러리 대체 화면이 아니다. 압축 해제된 응답 body bytes를 하나의 전송 큐로 제한했다. 메뉴/재질 완료 관측치에는 브라우저 실행이 포함되지만 라디오 손실·연결 설정·모바일 CPU 스로틀은 없다. **실기기 미검증**. 이 값으로 기존1.5MiB를 폐지하거나 iPhone p95통과를 선언하지 않는다.
-
-원자료: [renderer/resources](../design/mockups/pro/measurements.json), [WebKit throttle60회](../design/mockups/pro/throttle.json). 모든 수집 화면에서 외부 요청0. `test-results/pro-assets/`는 후속 E2E가 지울 수 있으므로 문서용 결과도 커밋한다.
-
+실제 `?role=guest&visual=pro` 참가 화면의 공유 응답-byte 큐이며 갤러리 대체가 아니다. 라디오 손실·연결 설정·모바일 CPU/Safari 디코더는 재현하지 못한다. **실기기 미검증**. 이 값으로 iPhone ≤2초 합격을 선언하지 않는다. [renderer/resources](../design/mockups/pro/measurements.json), [throttle60회](../design/mockups/pro/throttle.json) 원자료와 외부 요청0을 기록한다.
 
 ## 6. NF-03 개정안 — 예산 개정 승인 전
 
@@ -129,9 +139,9 @@ API 근거: [Pillow Image](https://pillow.readthedocs.io/en/stable/reference/Ima
 | 범위 | 수치 후보의 도출 | 승인 조건 |
 |---|---|---|
 | 게스트 첫 필수 화면 | **1.5MiB 유지**. 위10Mbps 가정의1.79MiB 전송창보다 작게 둠 | WebKit 대체 시험에 더해 iPhone cold/warm30회 p95≤2초 확인. 앱/서체/이미지 모두 포함 |
-| 게스트 전체 세션 팩 | 기본 빌드 약1.19MiB + 선택 고해상도 WebP/M4A 한 세트2.34MiB = 약3.53MiB. 변환/고지 여유 약13%를 더한 **4MiB 후보** | 첫 화면으로4MiB 일괄 전송 금지. 미사용 atlas·AVIF 중복·같은 2x/3x 파일 제거 후 재측정. 현재4MiB를 규범으로 적용하지 않음 |
-| Android 로컬 고해상도 | 선택3x WebP/M4A 팩2.34MiB를 근거로 **추가2.5MiB 후보** | 로컬 전용 asset 경로·서버 allowlist 분리 필요. 현재 Kotlin 서버를 수정하지 않았고 별도 구현/리뷰 필요. 기기 메모리·열·FPS 통과 |
-| 변환 작업 디렉터리/평가 빌드 | 모든tier·코덱을 비교하려고 함께 담은 약12.7MiB는 제작/평가 비용 | 이것을 게스트 세션팩의 최소 필요량으로 주장하지 않음. 본선 전체1.5MiB gate는 승인 전 계속 적용 |
+| 게스트 전체 세션 팩 | 기본 1.20MiB + 단일 변형 2.50MiB = 3.70MiB. 10% 여유 후0.5MiB 단위 올림 **4.5MiB 후보** | 이전4MiB 후보에서 원화/12초상 추가를 반영. 첫 화면 일괄 전송 금지. 미사용 후보·중복코덱 제거 후 확정 |
+| Android 로컬 고해상도 | 단일 최대 변형 2.50MiB×1.1 후0.5MiB 단위 올림 **추가3MiB 후보** | 로컬팩 경로/서버 allowlist 분리, 메모리·열·FPS·배터리 통과 전 미승인 |
+| 변환/평가 빌드 | 13.06MiB는 모든 tier/코덱 비교 비용 | 이를 게스트 최소 필요 용량이라고 주장하지 않음. 본선 전체1.5MiB gate 유지 |
 
 ### 6.3 분할 로딩·프리로드·배터리 조건
 
@@ -157,31 +167,52 @@ API 근거: [Pillow Image](https://pillow.readthedocs.io/en/stable/reference/Ima
 
 ## 7. 예산 때문에 본선에 넣지 못하는 자산과 용량
 
-현재 기본 빌드 약1,213.4KiB, 현행1,536KiB 중 잔여약322.6KiB다(최종 빌드 실측 표 우선). **모든 전문 자산이 예산 때문에 불가능한 것은 아니다.** 재질/프레임/짧은 소리는 선별하면 들어간다. 문제는 4사건64프레임 atlas를 함께 유지하는 구성이다. 뻑·쪽·따닥·폭탄 WebP만 1x합계819,748bytes(800.5KiB), 고해상도합계1,992,646bytes(1,946.0KiB)다. 기존 앱을 유지한 채 이4개를 전부 넣을 수 없어 평가 빌드에만 포함했다. 프레임 수/해상도 축소 또는 일부 사건 제외는 품질 비교와 승인이 필요하다.
+현재 기본 1,233.2KiB, 잔여 302.8KiB. 작은 재질·짧은 소리는 선별 도입 여지가 있으나 전체 사건 atlas/원화를 동시에 넣는 구성은 예산을 넘는다. 다음은 이번 가공 후 실측이다. 모든 팩은 이 PR에서 평가 전용이다.
 
-| 자산 | 1x WebP bytes | 최대3x WebP bytes(원본 상한) | 판단 |
+| 자산 | 1x WebP bytes | 최대3x WebP bytes | 본선 제외 이유 |
 |---|---:|---:|---|
-| frame | 1,068 (1.0KiB) | 1,068 (1.0KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| button | 478 (0.5KiB) | 478 (0.5KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| avatar-ring | 6,416 (6.3KiB) | 6,744 (6.6KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| avatar-me | 1,556 (1.5KiB) | 4,636 (4.5KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| avatar-other | 2,238 (2.2KiB) | 7,242 (7.1KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| ppeok | 243,314 (237.6KiB) | 623,768 (609.1KiB) | 본선 제외: 4사건 합계가 잔여 예산 초과 |
-| jjok | 141,006 (137.7KiB) | 372,906 (364.2KiB) | 본선 제외: 4사건 합계가 잔여 예산 초과 |
-| ttadak | 215,614 (210.6KiB) | 468,748 (457.8KiB) | 본선 제외: 4사건 합계가 잔여 예산 초과 |
-| bomb | 219,814 (214.7KiB) | 527,224 (514.9KiB) | 본선 제외: 4사건 합계가 잔여 예산 초과 |
-| smoke | 101,044 (98.7KiB) | 222,546 (217.3KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| glow | 5,064 (4.9KiB) | 33,416 (32.6KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| spark | 6,578 (6.4KiB) | 38,986 (38.1KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| felt | 14,090 (13.8KiB) | 59,048 (57.7KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| leather | 1,246 (1.2KiB) | 5,816 (5.7KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| gold | 1,182 (1.2KiB) | 3,854 (3.8KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
-| wood | 11,032 (10.8KiB) | 46,782 (45.7KiB) | 평가 전용; 작은 항목은 예산 내 선별 도입 가능하나 이 PR에서 채택하지 않음 |
+| ppeok | 238,280 | 588,518 | 4사건 합계가 잔여 예산 초과 |
+| jjok | 139,540 | 350,754 | 4사건 합계가 잔여 예산 초과 |
+| ttadak | 198,290 | 425,680 | 4사건 합계가 잔여 예산 초과 |
+| bomb | 211,582 | 487,806 | 4사건 합계가 잔여 예산 초과 |
+| smoke | 107,228 | 216,190 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| glow | 5,064 | 33,416 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| spark | 6,578 | 38,986 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| felt | 14,090 | 59,048 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| leather | 1,428 | 6,406 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| gold | 874 | 3,002 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| wood | 11,032 | 46,782 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| key-art | 54,482 | 121,362 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| settlement-art | 39,144 | 87,656 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-01 | 2,238 | 8,476 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-02 | 2,544 | 9,946 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-03 | 3,160 | 14,146 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-04 | 3,014 | 13,046 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-05 | 2,586 | 9,032 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-06 | 2,754 | 11,234 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-07 | 2,786 | 11,506 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-08 | 2,144 | 8,594 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-09 | 2,550 | 9,530 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-10 | 2,658 | 10,292 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-11 | 1,978 | 6,996 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
+| avatar-12 | 2,644 | 11,234 | 평가용; 우선순위/해상도 선별 후 본선 검토 |
 
-오디오 5개는 Ogg합계31,472bytes(30.7KiB), M4A합계28,690bytes(28.0KiB), 양쪽 모두 보관하면60,162bytes(58.8KiB)다. 폰별 지원형식 하나만 전송하나 dist gate에는 둘 다 산입된다. 기존 소리48KiB 계획과 비교해 codec별 배포 분리 또는 파일 선별이 필요하다. 원본16,150,524bytes는 제작 입력이며 앱 번들에 넣지 않는다. AVIF/WebP와중복2x/3x를 모두 둔 평가 dist를 최종 최소 용량으로 오해하지 않는다.
+4사건 합계1x 787,692bytes / 최대 1,852,758bytes. Ogg5개 31,153bytes + M4A5개 28,641bytes = 59,794bytes; 소리48KiB 계획에는 codec 분리/선별 필요. 원본 18,388,284bytes는 제작 입력으로 배포하지 않는다. UI Adventure/Animal Pack은 예산이 아닌 방향 결정으로 제거됐다.
 
 ## 8. 검증·후속 경계
 
 개발 이미지에서 npm ci/lint/check 통과, Node491·브라우저278 통과. 기본 E2E96통과/16skip(기존4+평가전용12), 평가 전용 E2E14통과. Android assembleDebug/testDebugUnitTest/lint 통과. 기존 갤러리 기준샷은 고지 추가 때문에 License의2PNG·2ARIA만 갱신했고 다른 기준샷은 그대로다.
 
-#104의 고정6행/문턱칩/10장2행·12월 최악fixture는 이 main 기반 평가 브랜치에 아직 포함되지 않았다. 현재4viewport 기본fixture 검사 결과를 그 계약 완료로 바꾸어 보고하지 않는다. WebKit DPR3.5 약52Hz, 실기기 p95/메모리·200%확대·Safari 음향unlock은 채택 전 검증/개선 항목이다.
+#104의 고정6행/문턱칩/10장2행·12월 최악fixture는 이 main 기반 평가 브랜치에 아직 포함되지 않았다. 현재4viewport 기본fixture 검사 결과를 그 계약 완료로 바꾸어 보고하지 않는다. WebKit DPR3.5 약53~54Hz, 실기기 p95/메모리·200%확대·Safari 음향unlock은 채택 전 검증/개선 항목이다.
+
+### NF 성능 항목 개정 후보 (NF-03 부속 또는 별도 NF ID, 리뷰 전)
+
+| 항목 | 후보 상한/목표 | 도출과 승인 조건 |
+|---|---|---|
+| 프레임 | **60fps**, 60Hz에서 p95 간격 ≤20ms·50ms 초과 ≤1% | 기존60fps 의도에 프레임 분포 지표 추가. Docker rAF와 실제 GPU 완료는 다름. Galaxy 10분·사건별30회 trace, 현재 WebKit 대역 목표 미달 |
+| 자산 메모리 | decode RGBA 작업 집합 **48MiB 후보** | catalog의 단일 최대 변형 `Σw×h×4` 계산에 여유 부여. 전체 앱/브라우저 PSS와 다름; 실제 사용은 화면별 로딩으로 이보다 적어야 함 |
+| WebView 메모리 | 기본 대비 renderer PSS 증가 **64MiB 후보** | 48MiB 자산 + canvas/오디오/관리용16MiB 여유라는 설계 가정. 전체 PSS는 기본 실기기값 확보 후 고정. 50사건/숨김복귀10회 후 지속 증가 없음. **실기기 미검증** |
+| 배터리 | 기본 대비 추가 소비 **≤1%p/30분 후보**, 대기/숨김 추가 RAF 0 | 기내·오프라인·핫스팟·동일 밝기/60Hz/소리/진동 조건 3회 교차 시험. percent 계측 해상도/온도 기록 병행. 아직 관측 근거 없는 허용오차 제안이며 승인값 아님 |
+| 전송/입력 | 첫 필수1.5MiB·cold p95≤2초·입력≤100ms 유지 | 화면별 분할/진행 표시/취소 가능한 후순위 preload. 로컬 고해상도 팩은 게스트 HTTP 목록에서 분리 |
+
+[intend.md](../../intend.md)의 배터리·오프라인 의도 때문에 파일 크기를 늘리는 것만으로 성능을 달성했다고 판단하지 않는다. 메모리·FPS·배터리 목표를 함께 검토한 후 spec에 반영한다. 현재 이 표는 연구 제안이며 `spec.md`를 수정하지 않았다.

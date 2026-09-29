@@ -13,7 +13,9 @@ for (const viewport of [
   test(`PA-04 professional assets ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
     await page.setViewportSize(viewport);
     const external: string[] = [];
+    const assets: string[] = [];
     page.on('request', (r) => {
+      if (r.url().includes('/pro/')) assets.push(r.url());
       if (new URL(r.url()).hostname !== '127.0.0.1') external.push(r.url());
     });
     for (const screen of ['home', 'board', 'settlement']) {
@@ -38,6 +40,12 @@ for (const viewport of [
       });
     }
     expect(external).toEqual([]);
+    for (const id of ['key-art', 'settlement-art', 'avatar-01', 'avatar-10']) {
+      expect(assets.some((url) => url.includes(`/pro/${id}-`))).toBe(true);
+    }
+    expect(
+      assets.some((url) => /\/pro\/(frame|button|avatar-ring|avatar-me|avatar-other)-/.test(url)),
+    ).toBe(false);
   });
 }
 

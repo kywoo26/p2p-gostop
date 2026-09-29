@@ -1,4 +1,4 @@
-/* PA-04: professional pack textures and frames; opt-in prototype. */
+/* PA-04: coherent ink/paper materials and original CSS frames; opt-in prototype. */
 [data-pro-scene] {
   position: relative;
   isolation: isolate;
@@ -6,8 +6,8 @@
   --pro-wood: none;
   --pro-gold: none;
   --pro-leather: none;
-  --pro-frame: none;
-  --pro-button: none;
+  --pro-key-art: none;
+  --pro-settlement-art: none;
 }
 .pro-scene {
   position: absolute;
@@ -15,7 +15,7 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 48% 28%, #67af8628, #00110dcc 95%),
+    radial-gradient(ellipse at 30% 18%, #d7c49a18, #00110dcc 95%),
     var(--pro-felt) repeat center / 380px;
   border: 9px solid #39271e;
   border-image: var(--pro-wood) 90 / 9px stretch;
@@ -72,47 +72,46 @@ html.pro-assets .home h1 {
   display: grid;
   place-items: center;
   perspective: 600px;
-  background: var(--pro-leather) center / 250px;
-  border: 12px solid transparent;
-  border-image: var(--pro-frame) 30 / 12px stretch;
-  border-radius: 24px;
+  background:
+    var(--pro-key-art) center / cover no-repeat,
+    #243b31;
+  border: 1px solid #a18d65;
+  border-radius: 12px;
+  overflow: hidden;
   box-shadow: 0 16px 20px #0005;
 }
 .pro-home-art img {
   position: absolute;
-  width: 92px;
-  height: 149px;
+  width: 52px;
+  height: 84px;
+  bottom: 12px;
+  left: 40px;
   object-fit: contain;
   border-radius: 4px;
   box-shadow: 0 9px 10px #0008;
-  transform: rotate(-17deg) translateX(-67px);
+  transform: rotate(-17deg) translateX(-24px);
 }
 .pro-home-art img:nth-child(2) {
-  transform: translateY(-9px);
+  transform: translateY(-5px);
   z-index: 1;
 }
 .pro-home-art img:nth-child(3) {
-  transform: rotate(17deg) translateX(67px);
+  transform: rotate(17deg) translateX(24px);
 }
 html.pro-assets .home .menu-button {
-  border: 10px solid transparent;
-  border-image: var(--pro-frame) 24 / 10px stretch;
+  border: 1px solid #8e805e;
+  border-radius: 10px;
   background: #152b26;
   color: #fff2d5;
   font-weight: 700;
   min-height: 56px;
 }
 html.pro-assets .home .menu-button.primary {
-  background: #ccab65;
-  background-image: var(--pro-button);
-  background-size: 100% 100%;
-  border-image: none;
+  background: #e9d9b5;
   border: 0;
   color: #211e13;
-  border-radius: 8px;
-  box-shadow:
-    0 5px 0 #4c3420,
-    0 9px 12px #0004;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px #0005;
 }
 html.pro-assets .home footer {
   flex-wrap: wrap;
@@ -132,7 +131,7 @@ html.pro-assets .board .center {
 html.pro-assets .seat-bar {
   position: relative;
   padding: 7px 9px 7px 48px;
-  border-radius: 8px;
+  border-radius: 12px;
   background:
     linear-gradient(#101c19e8, #101c19e8),
     var(--pro-leather) center / 160px;
@@ -147,13 +146,13 @@ html.pro-assets .seat-bar::before {
   width: 38px;
   height: 38px;
   background:
-    var(--pro-avatar-ring) center / contain no-repeat,
-    var(--pro-avatar-other) center / 30px no-repeat,
+    var(--pro-avatar-10) center / cover no-repeat,
     #28281d;
   border-radius: 50%;
+  border: 1px solid #b7a077;
 }
 html.pro-assets .seat-bar.me::before {
-  background-image: var(--pro-avatar-ring), var(--pro-avatar-me);
+  background-image: var(--pro-avatar-01);
 }
 html.pro-assets .seat-bar .progress {
   margin-left: -39px;
@@ -184,9 +183,9 @@ html.pro-assets .banner {
   position: relative;
   isolation: isolate;
   background: #16261eea;
-  color: #fff0c4;
-  border: 9px solid transparent;
-  border-image: var(--pro-frame) 24 / 9px stretch;
+  color: #f2e4c7;
+  border: 1px solid #b7a077;
+  border-radius: 12px;
   font-size: 42px;
   text-shadow: 0 2px 3px #000;
 }
@@ -218,15 +217,20 @@ html.pro-assets .screen[data-pro-scene] .button.primary {
 html.pro-assets .screen[data-pro-scene='settlement'] .headline {
   position: relative;
   padding: 18px 12px;
-  min-height: 76px;
-  border: 9px solid transparent;
-  border-image: var(--pro-frame) 24 / 9px stretch;
-  background: #15261e;
+  min-height: 148px;
+  display: grid;
+  align-items: end;
+  text-shadow: 0 2px 3px #000;
+  border: 1px solid #b7a077;
+  border-radius: 12px;
+  background:
+    linear-gradient(0deg, #10271ff5, #10271f18 95%),
+    var(--pro-settlement-art) center / cover;
   color: #ffe8a5;
   font-size: 22px;
 }
 html.pro-assets .screen[data-pro-scene='settlement'] .amount {
-  color: #ffe3a0;
+  color: #f2e4c7;
 }
 html.pro-assets .screen[data-pro-scene] header {
   position: relative;
@@ -261,12 +265,6 @@ html.pro-assets :focus-visible {
   }
 }
 
-html.pro-assets .home .menu-button.primary {
-  background-image: none;
-  border: 8px solid transparent;
-  border-image: var(--pro-button) 16 fill / 8px stretch;
-  box-shadow: 0 4px 8px #0007;
-}
 .pro-sprite {
   width: 240px;
   height: 240px;

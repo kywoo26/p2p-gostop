@@ -51,6 +51,8 @@ RUN set -eux; \
     install -d -m 700 -o dev -g dev /home/dev/.claude; \
     git config --system --add safe.directory /work
 
+# PA-03 이미지 실측(docker image inspect .Size): :3 1,166,425,769 → :4 1,168,473,579 bytes.
+# 증가 +2,047,810 bytes (2026-09-29); 압축 전 로컬 이미지 크기, 앱 번들과 별개. 주석만 변경하므로 태그 유지.
 # PA-03: 자산 변환 전용 도구. 출력 미디어만 앱에 포함하고 실행 파일은 번들하지 않는다.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pil=10.2.0-1ubuntu1.3 ffmpeg=7:6.1.1-3ubuntu5 libavif-bin=1.0.4-1ubuntu3 \

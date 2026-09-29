@@ -1,275 +1,10 @@
 {
-  "frame": {
-    "group": "shared",
-    "variants": [
-      {
-        "url": "/pro/frame-1x.webp",
-        "bytes": 1068,
-        "format": "webp",
-        "scale": 1,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/frame-1x.avif",
-        "bytes": 1331,
-        "format": "avif",
-        "scale": 1,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/frame-2x.webp",
-        "bytes": 1068,
-        "format": "webp",
-        "scale": 2,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/frame-2x.avif",
-        "bytes": 1331,
-        "format": "avif",
-        "scale": 2,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/frame-3x.webp",
-        "bytes": 1068,
-        "format": "webp",
-        "scale": 3,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/frame-3x.avif",
-        "bytes": 1331,
-        "format": "avif",
-        "scale": 3,
-        "width": 128,
-        "height": 128
-      }
-    ]
-  },
-  "button": {
-    "group": "shared",
-    "variants": [
-      {
-        "url": "/pro/button-1x.webp",
-        "bytes": 478,
-        "format": "webp",
-        "scale": 1,
-        "width": 96,
-        "height": 48
-      },
-      {
-        "url": "/pro/button-1x.avif",
-        "bytes": 1083,
-        "format": "avif",
-        "scale": 1,
-        "width": 96,
-        "height": 48
-      },
-      {
-        "url": "/pro/button-2x.webp",
-        "bytes": 478,
-        "format": "webp",
-        "scale": 2,
-        "width": 96,
-        "height": 48
-      },
-      {
-        "url": "/pro/button-2x.avif",
-        "bytes": 1083,
-        "format": "avif",
-        "scale": 2,
-        "width": 96,
-        "height": 48
-      },
-      {
-        "url": "/pro/button-3x.webp",
-        "bytes": 478,
-        "format": "webp",
-        "scale": 3,
-        "width": 96,
-        "height": 48
-      },
-      {
-        "url": "/pro/button-3x.avif",
-        "bytes": 1083,
-        "format": "avif",
-        "scale": 3,
-        "width": 96,
-        "height": 48
-      }
-    ]
-  },
-  "avatar-ring": {
-    "group": "shared",
-    "variants": [
-      {
-        "url": "/pro/avatar-ring-1x.webp",
-        "bytes": 6416,
-        "format": "webp",
-        "scale": 1,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/avatar-ring-1x.avif",
-        "bytes": 8522,
-        "format": "avif",
-        "scale": 1,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/avatar-ring-2x.webp",
-        "bytes": 6744,
-        "format": "webp",
-        "scale": 2,
-        "width": 256,
-        "height": 256
-      },
-      {
-        "url": "/pro/avatar-ring-2x.avif",
-        "bytes": 10962,
-        "format": "avif",
-        "scale": 2,
-        "width": 256,
-        "height": 256
-      },
-      {
-        "url": "/pro/avatar-ring-3x.webp",
-        "bytes": 6744,
-        "format": "webp",
-        "scale": 3,
-        "width": 256,
-        "height": 256
-      },
-      {
-        "url": "/pro/avatar-ring-3x.avif",
-        "bytes": 10962,
-        "format": "avif",
-        "scale": 3,
-        "width": 256,
-        "height": 256
-      }
-    ]
-  },
-  "avatar-me": {
-    "group": "table",
-    "variants": [
-      {
-        "url": "/pro/avatar-me-1x.webp",
-        "bytes": 1556,
-        "format": "webp",
-        "scale": 1,
-        "width": 64,
-        "height": 54
-      },
-      {
-        "url": "/pro/avatar-me-1x.avif",
-        "bytes": 2209,
-        "format": "avif",
-        "scale": 1,
-        "width": 64,
-        "height": 54
-      },
-      {
-        "url": "/pro/avatar-me-2x.webp",
-        "bytes": 3020,
-        "format": "webp",
-        "scale": 2,
-        "width": 128,
-        "height": 108
-      },
-      {
-        "url": "/pro/avatar-me-2x.avif",
-        "bytes": 3833,
-        "format": "avif",
-        "scale": 2,
-        "width": 128,
-        "height": 108
-      },
-      {
-        "url": "/pro/avatar-me-3x.webp",
-        "bytes": 4636,
-        "format": "webp",
-        "scale": 3,
-        "width": 192,
-        "height": 162
-      },
-      {
-        "url": "/pro/avatar-me-3x.avif",
-        "bytes": 5940,
-        "format": "avif",
-        "scale": 3,
-        "width": 192,
-        "height": 162
-      }
-    ]
-  },
-  "avatar-other": {
-    "group": "table",
-    "variants": [
-      {
-        "url": "/pro/avatar-other-1x.webp",
-        "bytes": 2238,
-        "format": "webp",
-        "scale": 1,
-        "width": 64,
-        "height": 64
-      },
-      {
-        "url": "/pro/avatar-other-1x.avif",
-        "bytes": 2998,
-        "format": "avif",
-        "scale": 1,
-        "width": 64,
-        "height": 64
-      },
-      {
-        "url": "/pro/avatar-other-2x.webp",
-        "bytes": 4712,
-        "format": "webp",
-        "scale": 2,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/avatar-other-2x.avif",
-        "bytes": 5740,
-        "format": "avif",
-        "scale": 2,
-        "width": 128,
-        "height": 128
-      },
-      {
-        "url": "/pro/avatar-other-3x.webp",
-        "bytes": 7242,
-        "format": "webp",
-        "scale": 3,
-        "width": 191,
-        "height": 192
-      },
-      {
-        "url": "/pro/avatar-other-3x.avif",
-        "bytes": 7973,
-        "format": "avif",
-        "scale": 3,
-        "width": 191,
-        "height": 192
-      }
-    ]
-  },
   "ppeok": {
     "group": "effects",
     "variants": [
       {
         "url": "/pro/ppeok-1x.webp",
-        "bytes": 243314,
+        "bytes": 238280,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -277,7 +12,7 @@
       },
       {
         "url": "/pro/ppeok-1x.avif",
-        "bytes": 277566,
+        "bytes": 266225,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -285,7 +20,7 @@
       },
       {
         "url": "/pro/ppeok-2x.webp",
-        "bytes": 623768,
+        "bytes": 588518,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -293,7 +28,7 @@
       },
       {
         "url": "/pro/ppeok-2x.avif",
-        "bytes": 627900,
+        "bytes": 574009,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -301,7 +36,7 @@
       },
       {
         "url": "/pro/ppeok-3x.webp",
-        "bytes": 623768,
+        "bytes": 588518,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -309,7 +44,7 @@
       },
       {
         "url": "/pro/ppeok-3x.avif",
-        "bytes": 627900,
+        "bytes": 574009,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -324,7 +59,7 @@
     "variants": [
       {
         "url": "/pro/jjok-1x.webp",
-        "bytes": 141006,
+        "bytes": 139540,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -332,7 +67,7 @@
       },
       {
         "url": "/pro/jjok-1x.avif",
-        "bytes": 161219,
+        "bytes": 177577,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -340,7 +75,7 @@
       },
       {
         "url": "/pro/jjok-2x.webp",
-        "bytes": 372906,
+        "bytes": 350754,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -348,7 +83,7 @@
       },
       {
         "url": "/pro/jjok-2x.avif",
-        "bytes": 401611,
+        "bytes": 372170,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -356,7 +91,7 @@
       },
       {
         "url": "/pro/jjok-3x.webp",
-        "bytes": 372906,
+        "bytes": 350754,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -364,7 +99,7 @@
       },
       {
         "url": "/pro/jjok-3x.avif",
-        "bytes": 401611,
+        "bytes": 372170,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -379,7 +114,7 @@
     "variants": [
       {
         "url": "/pro/ttadak-1x.webp",
-        "bytes": 215614,
+        "bytes": 198290,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -387,7 +122,7 @@
       },
       {
         "url": "/pro/ttadak-1x.avif",
-        "bytes": 259575,
+        "bytes": 253894,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -395,7 +130,7 @@
       },
       {
         "url": "/pro/ttadak-2x.webp",
-        "bytes": 468748,
+        "bytes": 425680,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -403,7 +138,7 @@
       },
       {
         "url": "/pro/ttadak-2x.avif",
-        "bytes": 579966,
+        "bytes": 498064,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -411,7 +146,7 @@
       },
       {
         "url": "/pro/ttadak-3x.webp",
-        "bytes": 468748,
+        "bytes": 425680,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -419,7 +154,7 @@
       },
       {
         "url": "/pro/ttadak-3x.avif",
-        "bytes": 579966,
+        "bytes": 498064,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -434,7 +169,7 @@
     "variants": [
       {
         "url": "/pro/bomb-1x.webp",
-        "bytes": 219814,
+        "bytes": 211582,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -442,7 +177,7 @@
       },
       {
         "url": "/pro/bomb-1x.avif",
-        "bytes": 257886,
+        "bytes": 263102,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -450,7 +185,7 @@
       },
       {
         "url": "/pro/bomb-2x.webp",
-        "bytes": 527224,
+        "bytes": 487806,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -458,7 +193,7 @@
       },
       {
         "url": "/pro/bomb-2x.avif",
-        "bytes": 559457,
+        "bytes": 512843,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -466,7 +201,7 @@
       },
       {
         "url": "/pro/bomb-3x.webp",
-        "bytes": 527224,
+        "bytes": 487806,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -474,7 +209,7 @@
       },
       {
         "url": "/pro/bomb-3x.avif",
-        "bytes": 559457,
+        "bytes": 512843,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -489,7 +224,7 @@
     "variants": [
       {
         "url": "/pro/smoke-1x.webp",
-        "bytes": 101044,
+        "bytes": 107228,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -497,7 +232,7 @@
       },
       {
         "url": "/pro/smoke-1x.avif",
-        "bytes": 107764,
+        "bytes": 122338,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -505,7 +240,7 @@
       },
       {
         "url": "/pro/smoke-2x.webp",
-        "bytes": 222546,
+        "bytes": 216190,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -513,7 +248,7 @@
       },
       {
         "url": "/pro/smoke-2x.avif",
-        "bytes": 252734,
+        "bytes": 248140,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -521,7 +256,7 @@
       },
       {
         "url": "/pro/smoke-3x.webp",
-        "bytes": 222546,
+        "bytes": 216190,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -529,7 +264,7 @@
       },
       {
         "url": "/pro/smoke-3x.avif",
-        "bytes": 252734,
+        "bytes": 248140,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -650,7 +385,7 @@
     "variants": [
       {
         "url": "/pro/card.ogg",
-        "bytes": 8346,
+        "bytes": 8260,
         "format": "ogg",
         "scale": 1,
         "width": 0,
@@ -658,7 +393,7 @@
       },
       {
         "url": "/pro/card.m4a",
-        "bytes": 8586,
+        "bytes": 8545,
         "format": "m4a",
         "scale": 1,
         "width": 0,
@@ -671,7 +406,7 @@
     "variants": [
       {
         "url": "/pro/chips.ogg",
-        "bytes": 5954,
+        "bytes": 5861,
         "format": "ogg",
         "scale": 1,
         "width": 0,
@@ -679,7 +414,7 @@
       },
       {
         "url": "/pro/chips.m4a",
-        "bytes": 4298,
+        "bytes": 4259,
         "format": "m4a",
         "scale": 1,
         "width": 0,
@@ -692,7 +427,7 @@
     "variants": [
       {
         "url": "/pro/hit.ogg",
-        "bytes": 4548,
+        "bytes": 4440,
         "format": "ogg",
         "scale": 1,
         "width": 0,
@@ -700,7 +435,7 @@
       },
       {
         "url": "/pro/hit.m4a",
-        "bytes": 4784,
+        "bytes": 4822,
         "format": "m4a",
         "scale": 1,
         "width": 0,
@@ -713,7 +448,7 @@
     "variants": [
       {
         "url": "/pro/success.ogg",
-        "bytes": 7159,
+        "bytes": 7143,
         "format": "ogg",
         "scale": 1,
         "width": 0,
@@ -721,7 +456,7 @@
       },
       {
         "url": "/pro/success.m4a",
-        "bytes": 8050,
+        "bytes": 8000,
         "format": "m4a",
         "scale": 1,
         "width": 0,
@@ -734,7 +469,7 @@
     "variants": [
       {
         "url": "/pro/go.ogg",
-        "bytes": 5465,
+        "bytes": 5449,
         "format": "ogg",
         "scale": 1,
         "width": 0,
@@ -742,7 +477,7 @@
       },
       {
         "url": "/pro/go.m4a",
-        "bytes": 2972,
+        "bytes": 3015,
         "format": "m4a",
         "scale": 1,
         "width": 0,
@@ -808,7 +543,7 @@
     "variants": [
       {
         "url": "/pro/leather-1x.webp",
-        "bytes": 1246,
+        "bytes": 1428,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -816,7 +551,7 @@
       },
       {
         "url": "/pro/leather-1x.avif",
-        "bytes": 371,
+        "bytes": 377,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -824,7 +559,7 @@
       },
       {
         "url": "/pro/leather-2x.webp",
-        "bytes": 5816,
+        "bytes": 6406,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -832,7 +567,7 @@
       },
       {
         "url": "/pro/leather-2x.avif",
-        "bytes": 389,
+        "bytes": 378,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -840,7 +575,7 @@
       },
       {
         "url": "/pro/leather-3x.webp",
-        "bytes": 5816,
+        "bytes": 6406,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -848,7 +583,7 @@
       },
       {
         "url": "/pro/leather-3x.avif",
-        "bytes": 389,
+        "bytes": 378,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -861,7 +596,7 @@
     "variants": [
       {
         "url": "/pro/gold-1x.webp",
-        "bytes": 1182,
+        "bytes": 874,
         "format": "webp",
         "scale": 1,
         "width": 512,
@@ -869,7 +604,7 @@
       },
       {
         "url": "/pro/gold-1x.avif",
-        "bytes": 489,
+        "bytes": 485,
         "format": "avif",
         "scale": 1,
         "width": 512,
@@ -877,7 +612,7 @@
       },
       {
         "url": "/pro/gold-2x.webp",
-        "bytes": 3854,
+        "bytes": 3002,
         "format": "webp",
         "scale": 2,
         "width": 1024,
@@ -885,7 +620,7 @@
       },
       {
         "url": "/pro/gold-2x.avif",
-        "bytes": 799,
+        "bytes": 796,
         "format": "avif",
         "scale": 2,
         "width": 1024,
@@ -893,7 +628,7 @@
       },
       {
         "url": "/pro/gold-3x.webp",
-        "bytes": 3854,
+        "bytes": 3002,
         "format": "webp",
         "scale": 3,
         "width": 1024,
@@ -901,7 +636,7 @@
       },
       {
         "url": "/pro/gold-3x.avif",
-        "bytes": 799,
+        "bytes": 796,
         "format": "avif",
         "scale": 3,
         "width": 1024,
@@ -959,6 +694,748 @@
         "scale": 3,
         "width": 1024,
         "height": 1024
+      }
+    ]
+  },
+  "key-art": {
+    "group": "home",
+    "variants": [
+      {
+        "url": "/pro/key-art-1x.webp",
+        "bytes": 54482,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 400
+      },
+      {
+        "url": "/pro/key-art-1x.avif",
+        "bytes": 29725,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 400
+      },
+      {
+        "url": "/pro/key-art-2x.webp",
+        "bytes": 121362,
+        "format": "webp",
+        "scale": 2,
+        "width": 792,
+        "height": 618
+      },
+      {
+        "url": "/pro/key-art-2x.avif",
+        "bytes": 61644,
+        "format": "avif",
+        "scale": 2,
+        "width": 792,
+        "height": 618
+      },
+      {
+        "url": "/pro/key-art-3x.webp",
+        "bytes": 121362,
+        "format": "webp",
+        "scale": 3,
+        "width": 792,
+        "height": 618
+      },
+      {
+        "url": "/pro/key-art-3x.avif",
+        "bytes": 61644,
+        "format": "avif",
+        "scale": 3,
+        "width": 792,
+        "height": 618
+      }
+    ]
+  },
+  "settlement-art": {
+    "group": "settlement",
+    "variants": [
+      {
+        "url": "/pro/settlement-art-1x.webp",
+        "bytes": 39144,
+        "format": "webp",
+        "scale": 1,
+        "width": 512,
+        "height": 300
+      },
+      {
+        "url": "/pro/settlement-art-1x.avif",
+        "bytes": 21226,
+        "format": "avif",
+        "scale": 1,
+        "width": 512,
+        "height": 300
+      },
+      {
+        "url": "/pro/settlement-art-2x.webp",
+        "bytes": 87656,
+        "format": "webp",
+        "scale": 2,
+        "width": 792,
+        "height": 464
+      },
+      {
+        "url": "/pro/settlement-art-2x.avif",
+        "bytes": 44078,
+        "format": "avif",
+        "scale": 2,
+        "width": 792,
+        "height": 464
+      },
+      {
+        "url": "/pro/settlement-art-3x.webp",
+        "bytes": 87656,
+        "format": "webp",
+        "scale": 3,
+        "width": 792,
+        "height": 464
+      },
+      {
+        "url": "/pro/settlement-art-3x.avif",
+        "bytes": 44078,
+        "format": "avif",
+        "scale": 3,
+        "width": 792,
+        "height": 464
+      }
+    ]
+  },
+  "avatar-01": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-01-1x.webp",
+        "bytes": 2238,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-01-1x.avif",
+        "bytes": 2923,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-01-2x.webp",
+        "bytes": 5312,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-01-2x.avif",
+        "bytes": 5879,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-01-3x.webp",
+        "bytes": 8476,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-01-3x.avif",
+        "bytes": 8886,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-02": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-02-1x.webp",
+        "bytes": 2544,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-02-1x.avif",
+        "bytes": 3244,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-02-2x.webp",
+        "bytes": 6102,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-02-2x.avif",
+        "bytes": 6593,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-02-3x.webp",
+        "bytes": 9946,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-02-3x.avif",
+        "bytes": 9906,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-03": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-03-1x.webp",
+        "bytes": 3160,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-03-1x.avif",
+        "bytes": 3625,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-03-2x.webp",
+        "bytes": 8542,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-03-2x.avif",
+        "bytes": 8603,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-03-3x.webp",
+        "bytes": 14146,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-03-3x.avif",
+        "bytes": 13427,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-04": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-04-1x.webp",
+        "bytes": 3014,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-04-1x.avif",
+        "bytes": 3542,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-04-2x.webp",
+        "bytes": 7606,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-04-2x.avif",
+        "bytes": 7580,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-04-3x.webp",
+        "bytes": 13046,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-04-3x.avif",
+        "bytes": 11894,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-05": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-05-1x.webp",
+        "bytes": 2586,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-05-1x.avif",
+        "bytes": 3189,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-05-2x.webp",
+        "bytes": 5682,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-05-2x.avif",
+        "bytes": 6262,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-05-3x.webp",
+        "bytes": 9032,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-05-3x.avif",
+        "bytes": 9197,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-06": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-06-1x.webp",
+        "bytes": 2754,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-06-1x.avif",
+        "bytes": 3264,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-06-2x.webp",
+        "bytes": 6934,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-06-2x.avif",
+        "bytes": 7049,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-06-3x.webp",
+        "bytes": 11234,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-06-3x.avif",
+        "bytes": 10814,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-07": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-07-1x.webp",
+        "bytes": 2786,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-07-1x.avif",
+        "bytes": 3394,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-07-2x.webp",
+        "bytes": 7068,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-07-2x.avif",
+        "bytes": 7412,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-07-3x.webp",
+        "bytes": 11506,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-07-3x.avif",
+        "bytes": 11518,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-08": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-08-1x.webp",
+        "bytes": 2144,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-08-1x.avif",
+        "bytes": 2933,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-08-2x.webp",
+        "bytes": 5232,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-08-2x.avif",
+        "bytes": 5981,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-08-3x.webp",
+        "bytes": 8594,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-08-3x.avif",
+        "bytes": 9189,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-09": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-09-1x.webp",
+        "bytes": 2550,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-09-1x.avif",
+        "bytes": 3131,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-09-2x.webp",
+        "bytes": 5988,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-09-2x.avif",
+        "bytes": 6440,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-09-3x.webp",
+        "bytes": 9530,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-09-3x.avif",
+        "bytes": 9699,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-10": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-10-1x.webp",
+        "bytes": 2658,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-10-1x.avif",
+        "bytes": 3231,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-10-2x.webp",
+        "bytes": 6330,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-10-2x.avif",
+        "bytes": 6648,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-10-3x.webp",
+        "bytes": 10292,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-10-3x.avif",
+        "bytes": 10162,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-11": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-11-1x.webp",
+        "bytes": 1978,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-11-1x.avif",
+        "bytes": 2762,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-11-2x.webp",
+        "bytes": 4394,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-11-2x.avif",
+        "bytes": 5236,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-11-3x.webp",
+        "bytes": 6996,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-11-3x.avif",
+        "bytes": 7786,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      }
+    ]
+  },
+  "avatar-12": {
+    "group": "table",
+    "variants": [
+      {
+        "url": "/pro/avatar-12-1x.webp",
+        "bytes": 2644,
+        "format": "webp",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-12-1x.avif",
+        "bytes": 3275,
+        "format": "avif",
+        "scale": 1,
+        "width": 64,
+        "height": 64
+      },
+      {
+        "url": "/pro/avatar-12-2x.webp",
+        "bytes": 6792,
+        "format": "webp",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-12-2x.avif",
+        "bytes": 6988,
+        "format": "avif",
+        "scale": 2,
+        "width": 128,
+        "height": 128
+      },
+      {
+        "url": "/pro/avatar-12-3x.webp",
+        "bytes": 11234,
+        "format": "webp",
+        "scale": 3,
+        "width": 192,
+        "height": 192
+      },
+      {
+        "url": "/pro/avatar-12-3x.avif",
+        "bytes": 11032,
+        "format": "avif",
+        "scale": 3,
+        "width": 192,
+        "height": 192
       }
     ]
   }

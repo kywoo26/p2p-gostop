@@ -77,7 +77,8 @@
   <section aria-labelledby="lic-pro">
     <h2 id="lic-pro">게임 자산</h2>
     {#each PRO_CREDITS as item (item.source)}<p>{item.author} · {item.license}</p>
-      <code>{item.source}</code>{/each}
+      <code>{item.source}</code><code>{item.licenseUrl}</code>
+      <p>{item.changes}</p>{/each}
     <a class="button" href="/pro/NOTICE.md">파일별 출처 목록</a>
   </section>
 </Screen>

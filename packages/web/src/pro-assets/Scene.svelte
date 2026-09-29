@@ -10,8 +10,10 @@
     if (!proEnabled || !anchor) return;
     void retry;
     const parent = anchor.parentElement!;
-    const ids: AssetId[] = ['felt', 'wood', 'gold', 'leather', 'frame', 'button'];
-    if (scene === 'table') ids.push('avatar-me', 'avatar-other', 'avatar-ring');
+    const ids: AssetId[] = ['felt', 'wood', 'gold', 'leather'];
+    if (scene === 'table') ids.push('avatar-01', 'avatar-10');
+    if (scene === 'home') ids.push('key-art');
+    if (scene === 'settlement') ids.push('settlement-art');
     let alive = true;
     completed = 0;
     failed = false;
