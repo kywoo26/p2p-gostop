@@ -217,9 +217,16 @@ test('선택 연쇄와 선택 후 busy: 초점은 다음 창, 이후 유효 판 
   expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).toBeNull();
 });
 
-function pointer(node: Element, type: string, id = 7, x = 1) {
+function pointer(node: Element, type: string, id = 7, x = 0) {
+  const box = node.getBoundingClientRect();
   node.dispatchEvent(
-    new PointerEvent(type, { bubbles: true, pointerId: id, button: 0, clientX: x, clientY: 1 }),
+    new PointerEvent(type, {
+      bubbles: true,
+      pointerId: id,
+      button: 0,
+      clientX: box.x + box.width / 2 + x,
+      clientY: box.y + box.height / 2,
+    }),
   );
 }
 

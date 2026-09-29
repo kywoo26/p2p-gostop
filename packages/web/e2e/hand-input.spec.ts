@@ -80,23 +80,74 @@ test('흔들기: 카드 탭 뒤 두 수동 선택, 거절 전 자동 선언 없�
     .toHaveLength(1);
 });
 
-test('UX-06: 겹친 손패는 누름 중 옆 카드로 바꾸고 놓을 때 한 번 실행', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 780 });
-  await open(
-    page,
-    createScenario({ hands: [[0, 4, 8, 12, 16, 20, 24, 28, 32, 36], [40]], floor: [44] }),
-  );
-  const first = (await page.locator('[data-slot="0"]').boundingBox())!;
-  const third = (await page.locator('[data-slot="8"]').boundingBox())!;
-  await page.mouse.move(first.x + 8, first.y + 40);
-  await page.mouse.down();
-  await expect(page.locator('[data-slot="0"]')).toHaveClass(/selected/);
-  expect(await mine(page)).toHaveLength(0);
-  await page.mouse.move(third.x + 8, third.y + 40, { steps: 4 });
-  await expect(page.locator('[data-slot="8"]')).toHaveClass(/selected/);
-  expect(await mine(page)).toHaveLength(0);
-  await page.mouse.up();
-  await expect
-    .poll(async () => (await mine(page)).filter((a) => a.type === 'play'))
-    .toEqual([{ type: 'play', seat: 0, card: 8 }]);
-});
+const reviewGame = () =>
+  createScenario({ hands: [[0, 4, 8, 12, 16, 20, 24, 28, 32, 36], [40]], floor: [44] });
+
+for (const button of ['right', 'middle'] as const) {
+  test(`리뷰 회귀: ${button} 보조 버튼은 패를 내지 않는다`, async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await open(page, reviewGame());
+    const box = (await page.locator('[data-slot="0"]').boundingBox())!;
+    await page.mouse.move(box.x + 12, box.y + 40);
+    await page.mouse.down({ button });
+    await page.mouse.up({ button });
+    expect(await mine(page)).toHaveLength(0);
+    await expect(page.locator('.hand .selected')).toHaveCount(0);
+  });
+}
+for (const destination of [
+  'right-edge',
+  'left-edge',
+  'above',
+  'other-card',
+  'gap',
+  'cancel',
+] as const) {
+  test(`리뷰 회귀: ${destination} 놓기는 취소, 새 탭은 정확히 한 번`, async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await open(page, reviewGame());
+    const card = page.locator('[data-slot="0"]');
+    const first = (await card.boundingBox())!;
+    const next = (await page.locator('[data-slot="4"]').boundingBox())!;
+    const third = (await page.locator('[data-slot="8"]').boundingBox())!;
+    await page.mouse.move(first.x + 12, first.y + 40);
+    await page.mouse.down();
+    await expect(card).toHaveClass(/selected/);
+    if (destination === 'cancel') {
+      await card.evaluate((el) =>
+        el.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 })),
+      );
+    } else {
+      const x =
+        destination === 'right-edge'
+          ? 411
+          : destination === 'left-edge'
+            ? 1
+            : destination === 'other-card'
+              ? third.x + 12
+              : destination === 'gap'
+                ? (first.x + first.width + next.x) / 2
+                : first.x + 12;
+      const y = destination === 'above' ? first.y - 30 : first.y + 40;
+      await page.mouse.move(x, y, { steps: 4 });
+    }
+    await page.mouse.up();
+    expect(await mine(page)).toHaveLength(0);
+    await expect(page.locator('.hand .selected')).toHaveCount(0);
+    await card.click();
+    await expect
+      .poll(async () => (await mine(page)).filter((a) => a.type === 'play'))
+      .toEqual([{ type: 'play', seat: 0, card: 0 }]);
+  });
+}
+
+for (const key of ['Enter', 'Space']) {
+  test(`리뷰 fixture: ${key} 키보드 입력은 한 번 유지`, async ({ page }) => {
+    await open(page, reviewGame());
+    await page.locator('[data-slot="0"]').focus();
+    await page.keyboard.press(key);
+    await expect
+      .poll(async () => (await mine(page)).filter((a) => a.type === 'play'))
+      .toEqual([{ type: 'play', seat: 0, card: 0 }]);
+  });
+}

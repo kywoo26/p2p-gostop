@@ -1,7 +1,7 @@
 <script lang="ts">
   // 내 손패 (spec 6.2: 최대 10장, 겹침 스크롤 없음 / 6.3: 탭 한 번으로 내기, 내 차례가 아니면 흐리게,
   // 누르고 있으면 먹게 될 바닥 카드 강조 / FR-12: 낼 수 있는 카드와 먹을 수 있는 카드 예고).
-  // 6장까지 한 줄, 7~10장은 비겹침 두 줄. 누름·스크럽·놓음으로 한 번 실행한다(UX-06).
+  // 6장까지 한 줄, 7~10장은 비겹침 두 줄. 주 버튼으로 같은 카드를 누르고 놓을 때 한 번 실행한다(UX-06).
   // 일반 카드의 길게 누르기(400ms 이상)는 미리보기만 닫는다. 폭탄 가능 카드는 한 장 내기다.
   // 탭 한 번 = 누르기 시작할 때 이미 낼 수 있던 카드만 낸다(M3 리뷰 I-3): 재생 중에 판을 눌러 애니메이션을 건너뛰면
   // 손가락을 떼기 전에 재생이 끝나 버튼이 풀릴 수 있다. 그 click은 건너뛰기용이었으므로 카드를 내지 않는다.
@@ -61,7 +61,6 @@
     pointerId: number;
     at: number;
     armed: boolean;
-    scrubbed: boolean;
   } | null = null;
   let previousRevision: object | undefined;
   let handRoot: HTMLElement;
@@ -108,6 +107,11 @@
    * 건너뛸 수 있으므로 버튼이 아니라 손패 영역에서 누른 카드를 기록한다.
    */
   function press(event: PointerEvent) {
+    if (event.button !== 0) {
+      event.preventDefault();
+      abandon();
+      return;
+    }
     if (moving()) {
       pressed = null;
       return;
@@ -122,7 +126,7 @@
       return;
     }
     const armed = playable.includes(id);
-    pressed = { id, pointerId: event.pointerId, at: performance.now(), armed, scrubbed: false };
+    pressed = { id, pointerId: event.pointerId, at: performance.now(), armed };
     if (armed) {
       selectedCard = id;
       if (event.isTrusted) handRoot.setPointerCapture(event.pointerId);
@@ -134,39 +138,23 @@
     onpreview?.(null);
   }
 
-  function scrub(event: PointerEvent) {
+  function insidePressedCard(event: PointerEvent, id: CardId): boolean {
+    const slot = handRoot.querySelector<HTMLElement>(`[data-slot="${id}"]`);
+    if (!slot) return false;
+    const r = slot.getBoundingClientRect();
+    const hand = handRoot.getBoundingClientRect();
+    return (
+      event.clientX >= Math.max(r.left, hand.left) &&
+      event.clientX < Math.min(r.right, hand.right) &&
+      event.clientY >= Math.max(r.top, hand.top) &&
+      event.clientY < Math.min(r.bottom, hand.bottom)
+    );
+  }
+
+  function move(event: PointerEvent) {
     if (!pressed?.armed || pressed.pointerId !== event.pointerId) return;
-    // 선택 카드의 z-index에 영향을 받지 않게 정렬된 슬롯의 시작점을 사용한다.
-    const slots = [...handRoot.querySelectorAll<HTMLButtonElement>('[data-slot]')];
-    const bounds = handRoot.getBoundingClientRect();
-    if (event.clientY < bounds.top - 32 || event.clientY > bounds.bottom + 32) {
-      selectedCard = null;
-      onpreview?.(null);
-      return;
-    }
-    const candidate = slots.reduce<HTMLButtonElement | undefined>((best, slot) => {
-      const r = slot.getBoundingClientRect();
-      const distance = Math.hypot(
-        event.clientX - (r.left + r.width / 2),
-        event.clientY - (r.top + r.height / 2),
-      );
-      if (!best) return slot;
-      const previous = best.getBoundingClientRect();
-      return distance <
-        Math.hypot(
-          event.clientX - (previous.left + previous.width / 2),
-          event.clientY - (previous.top + previous.height / 2),
-        )
-        ? slot
-        : best;
-    }, undefined);
-    const id = Number(candidate?.dataset['slot']);
-    if (playable.includes(id)) {
-      pressed.scrubbed ||= id !== pressed.id;
-      pressed.id = id;
-      selectedCard = id;
-      onpreview?.(id);
-    }
+    selectedCard = insidePressedCard(event, pressed.id) ? pressed.id : null;
+    onpreview?.(selectedCard);
   }
 
   function lift(event: PointerEvent) {
@@ -178,21 +166,32 @@
     release();
     if (handRoot.hasPointerCapture(event.pointerId))
       handRoot.releasePointerCapture(event.pointerId);
-    if (!current.armed || id === null || !playable.includes(id) || moving()) return;
-    const held = !current.scrubbed && performance.now() - current.at >= LONG_PRESS_MS;
+    if (
+      event.button !== 0 ||
+      !current.armed ||
+      id !== current.id ||
+      !insidePressedCard(event, current.id) ||
+      !playable.includes(current.id) ||
+      moving()
+    )
+      return;
+    const held = performance.now() - current.at >= LONG_PRESS_MS;
     if (held && !bombCards.includes(id)) return;
     onplay?.(id, current.at, held);
   }
 
   function abandon() {
+    const pointerId = pressed?.pointerId;
     pressed = null;
+    if (pointerId !== undefined && handRoot.hasPointerCapture(pointerId))
+      handRoot.releasePointerCapture(pointerId);
     selectedCard = null;
     release();
   }
 
   function activate(id: CardId, event: MouseEvent) {
     // pointerup에서 이미 실행한다. 키보드·보조기기의 detail 0 click만 별도로 실행한다.
-    if (event.detail !== 0 || moving()) return;
+    if (event.button !== 0 || event.detail !== 0 || moving()) return;
     if (playable.includes(id)) onplay?.(id, performance.now(), false);
   }
 
@@ -209,7 +208,7 @@
   role="group"
   aria-label="내 손패"
   onpointerdowncapture={press}
-  onpointermove={scrub}
+  onpointermove={move}
   onpointerup={lift}
   onpointercancel={abandon}
   data-count={cards.length}
