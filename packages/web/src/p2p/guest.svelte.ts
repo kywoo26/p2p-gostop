@@ -22,6 +22,8 @@ import {
   type RoundCheck,
   type SessionStage,
   type Transport,
+  type DecisionClock,
+  type TimerSettings,
 } from '@p2p-gostop/protocol';
 import {
   AutoChoice,
@@ -39,7 +41,7 @@ import { saveGuestState, writeTicket, type GuestTicket } from './ticket.ts';
 
 const ME: Seat = 1;
 /** NP-03·NF-05: 5초 응답 기한을 1초 해상도로 확인한다. */
-const CLOCK_MS = 1_000;
+const CLOCK_MS = 500;
 
 export type GuestPhase = 'lobby' | 'playing' | 'ended' | 'rejected';
 
@@ -47,6 +49,7 @@ export interface LobbyInfo {
   readonly names: readonly [string, string];
   readonly rules: RuleOptions;
   readonly ledger: LedgerSummary;
+  readonly timerSettings: TimerSettings;
 }
 
 export interface GuestOptions {
@@ -114,6 +117,11 @@ export class GuestGame implements GameController {
   private roundInstant: EngineEvent[] = [];
   private disposed = false;
   private autoHeld = true;
+  private timerVersion = $state(0);
+  private clockReceivedAt = 0;
+  private lastClockRevision = -1;
+  private lastClockHostNow = -1;
+  private suspectedDecision: string | null = null;
   private readonly autoChoice = new AutoChoice(
     () => ({ view: this.view, ready: !this.autoHeld && this.canAct && this.hostPresent !== false }),
     (action) => this.submit(action),
@@ -126,7 +134,7 @@ export class GuestGame implements GameController {
     this.name = options.name;
     this.onTicket = options.onTicket ?? writeTicket;
     this.persist = options.persist ?? true;
-    this.now = options.now ?? Date.now;
+    this.now = options.now ?? (() => performance.now());
     let inner: Transport;
     if (options.transport) {
       this.ws = null;
@@ -177,18 +185,73 @@ export class GuestGame implements GameController {
   }
 
   private readonly onVisible = () => {
-    if (document.visibilityState === 'visible') this.tick();
+    if (document.visibilityState === 'visible') {
+      this.tick();
+      this.decisionRendered();
+    } else this.session.decisionUnavailable('background');
   };
 
   /** 응답이 없는 요청과 hello 재시도 기한을 진행한다. */
   tick(): void {
-    if (!this.disposed) this.session.advanceTime(this.now());
+    if (this.disposed) return;
+    this.session.advanceTime(this.now());
+    const clock = this.session.decision;
+    if (
+      clock?.state === 'running' &&
+      this.now() - this.clockReceivedAt >= clock.remainingMs + 2_000
+    ) {
+      const key = `${clock.key.epoch}:${clock.key.decisionId}:${clock.attempt}`;
+      if (this.suspectedDecision !== key) {
+        this.suspectedDecision = key;
+        this.session.decisionUnavailable('resync');
+        this.session.join();
+      }
+    }
+    this.timerVersion++;
   }
 
   // ---- 표시 값 ----
 
   get names(): readonly [string, string] {
     return this.lobby?.names ?? ['호스트', this.name];
+  }
+  get decisionClock(): DecisionClock | null {
+    void this.timerVersion;
+    return this.session.decision;
+  }
+  get timeoutResult() {
+    void this.timerVersion;
+    return this.session.timeoutHistory.at(-1) ?? null;
+  }
+  get timerDecisionMs(): number | null {
+    void this.timerVersion;
+    return this.session.timerSettings?.decisionMs ?? null;
+  }
+  get timerRemainingMs(): number | null {
+    const clock = this.decisionClock;
+    if (clock === null) return null;
+    if (clock.state !== 'running') return clock.remainingMs;
+    return Math.max(0, clock.remainingMs - Math.max(0, this.now() - this.clockReceivedAt));
+  }
+  get timerUncertain(): boolean {
+    void this.timerVersion;
+    const clock = this.session.decision;
+    return (
+      clock !== null &&
+      this.suspectedDecision === `${clock.key.epoch}:${clock.key.decisionId}:${clock.attempt}`
+    );
+  }
+  decisionRendered(): void {
+    if (
+      this.link !== 'open' ||
+      this.hostPresent === false ||
+      !this.playback.idle ||
+      document.visibilityState !== 'visible'
+    )
+      return;
+    const seq = this.playback.board.eventSeq;
+    this.session.decisionReady(seq);
+    this.session.ackExpiry(seq, true);
   }
 
   get phase(): GuestPhase {
@@ -226,6 +289,7 @@ export class GuestGame implements GameController {
   }
 
   get canAct(): boolean {
+    void this.timerVersion;
     const view = this.view;
     return (
       this.phase === 'playing' &&
@@ -234,7 +298,9 @@ export class GuestGame implements GameController {
       this.awaiting === null &&
       this.playback.idle &&
       view !== null &&
-      view.legal.length > 0
+      view.legal.length > 0 &&
+      this.session.decisionInputReady &&
+      !this.timerUncertain
     );
   }
 
@@ -257,6 +323,13 @@ export class GuestGame implements GameController {
     if (this.link === 'replaced') return '다른 창에서 이 게임을 열었습니다';
     if (this.link !== 'open') return '호스트에 다시 연결하는 중…';
     if (this.hostPresent === false) return '호스트 앱이 연결되어 있지 않습니다';
+    if (this.timerUncertain) return '호스트 응답 대기 · 시간 확인 중';
+    const clock = this.decisionClock;
+    if (clock?.state === 'paused')
+      return clock.pauseReason === 'clockUnknown'
+        ? '호스트 대기 · 시간 확인 필요'
+        : '호스트 대기 · 남은 시간 보존';
+    if (clock?.state === 'checking') return '시간 종료 · 연결 확인 중';
     if (this.stage === 'handshake' && this.playback.idle) return '판을 나누는 중…';
     if (this.stage === 'settled' && this.ready && this.playback.idle)
       return '호스트가 다음 판을 시작하기를 기다리는 중';
@@ -319,12 +392,28 @@ export class GuestGame implements GameController {
       this.balances = s.ledger.balances;
       this.refilled = s.ledger.recharged;
     }
-    if (s.names !== null && s.rules !== null && s.ledger !== null)
-      this.lobby = { names: s.names, rules: s.rules, ledger: s.ledger };
+    if (s.names !== null && s.rules !== null && s.ledger !== null && s.timerSettings !== null)
+      this.lobby = {
+        names: s.names,
+        rules: s.rules,
+        ledger: s.ledger,
+        timerSettings: s.timerSettings,
+      };
     if (this.stage !== 'settled') this.ready = false;
     if (s.settlement !== null || this.stage !== 'settled') this.pushPending = false;
     if (this.persist) saveGuestState(this.name, s.toJSON());
     this.seq = s.seq;
+    if (
+      s.decision !== null &&
+      (s.decision.timerRev !== this.lastClockRevision ||
+        s.decision.hostNowMs !== this.lastClockHostNow)
+    ) {
+      this.lastClockRevision = s.decision.timerRev;
+      this.lastClockHostNow = s.decision.hostNowMs;
+      this.clockReceivedAt = this.now();
+      this.suspectedDecision = null;
+    }
+    this.timerVersion++;
   }
 
   private after(raw: string): void {
@@ -353,6 +442,10 @@ export class GuestGame implements GameController {
         this.started = true;
         this.playback.enqueue([], m.view);
         this.maybeSettled(m.view);
+        break;
+      case 'expiryCheck':
+        // 확인 프레임에는 새 뷰가 없으므로 이미 재생을 마친 최신 뷰로 바로 답한다.
+        this.decisionRendered();
         break;
       case 'reject':
         this.awaiting = null;
@@ -430,7 +523,10 @@ export class GuestGame implements GameController {
   private onLinkState(state: LinkState): void {
     this.link = state;
     if (state === 'replaced') log.warn('다른 창이 게스트 연결을 가져갔습니다 (4001)');
-    if (state !== 'open') this.awaiting = null;
+    if (state !== 'open') {
+      this.awaiting = null;
+      this.session.decisionUnavailable('resync');
+    }
   }
 
   // ---- 입력 ----

@@ -23,6 +23,7 @@ const CONFIG: HostConfig = {
   perPoint: 100,
   startBalance: 1_000_000_000,
   hostName: '호스트',
+  timerDecisionMs: null,
 };
 
 function lcg(seed: number) {

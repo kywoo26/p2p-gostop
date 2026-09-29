@@ -20,6 +20,8 @@ import {
 } from '@p2p-gostop/engine';
 import { combineSeed, commit, fromHex, sha256, toHex, utf8 } from './crypto.ts';
 import { toBoardView } from './view.ts';
+import { timeoutAction } from './timer-policy.ts';
+import type { TimeoutResult } from './messages.ts';
 import type { BoardView, SettlementView } from './view-types.ts';
 
 export interface Commitments {
@@ -157,6 +159,7 @@ export interface RoundCheckInput {
   readonly observed?: ObservedRound;
   /** 관찰한 좌석 (기본 1 = 게스트) */
   readonly viewer?: Seat;
+  readonly timeoutResults?: readonly TimeoutResult[];
 }
 
 /** commit-reveal·시드·리플레이·관찰 대조를 모두 검사하고 실패 이유를 돌려준다. 예외를 던지지 않는다 */
@@ -197,16 +200,50 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
       layouts.set(seq, set);
     };
     record();
-    for (const action of input.actions) {
+    const timeouts = input.timeoutResults ?? [];
+    const timeoutByIndex = new Map<number, TimeoutResult>();
+    for (const entry of timeouts) {
+      if (
+        timeoutByIndex.has(entry.actionIndex) ||
+        entry.reason !== 'timeout' ||
+        entry.policy !== 'fixed-v1' ||
+        entry.key.round !== input.round ||
+        entry.key.baseSeq !== entry.baseSeq ||
+        entry.confirmedAtMs < entry.deadlineMs
+      )
+        return fail('actions');
+      timeoutByIndex.set(entry.actionIndex, entry);
+    }
+    if (timeouts.length > input.actions.length) return fail('actions');
+    for (const [index, action] of input.actions.entries()) {
+      const timed = timeoutByIndex.get(index);
+      const beforeSeq = firstSeq + events.length - 1;
+      if (timed !== undefined) {
+        const view = toBoardView(playerView(state, action.seat), {
+          names: ['', ''],
+          balances: [0, 0],
+        });
+        const expected = timeoutAction(view);
+        if (
+          timed.seat !== action.seat ||
+          timed.baseSeq !== beforeSeq ||
+          expected === null ||
+          !sameAction(expected, action) ||
+          !sameAction(timed.action, action)
+        )
+          return fail('actions');
+      }
       const result = reduce(state, action);
       if (!result.ok) return fail('replay');
       state = result.state;
       events.push(...result.events);
+      if (timed !== undefined && timed.toSeq !== firstSeq + events.length - 1)
+        return fail('actions');
       record();
     }
     if (state.phase !== 'end') return fail('replay');
     // 게스트 좌석의 수는 게스트가 실제로 보낸 것이어야 한다(호스트가 게스트 수를 지어낼 수 없다).
-    const guestMoves = input.actions.filter((a) => a.seat === viewer);
+    const guestMoves = input.actions.filter((a, i) => a.seat === viewer && !timeoutByIndex.has(i));
     if (!isSubsequence(guestMoves, observed.sent)) return fail('actions');
     for (const [key, digest] of Object.entries(observed.events)) {
       const event = events[Number(key) - firstSeq];

@@ -4,7 +4,7 @@
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
   // 재생 중(busy)에는 입력을 받지 않고, 빈 바닥을 누르고 떼면 남은 애니메이션을 건너뛴다(spec 6.3, onskip).
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
-  import { getCard, type Action, type CardId, type Month } from '@p2p-gostop/engine';
+  import { getCard, type Action, type CardId, type Month, type Seat } from '@p2p-gostop/engine';
   import type { BoardExtras } from '../game/adapter.ts';
   import { boardNotices } from '../game/display.ts';
   import { formatMoney } from '../lib/format.ts';
@@ -46,6 +46,9 @@
     thinking?: boolean;
     /** 마지막 탭→턴 종료 시간 ms (spec AC-06 계측, E2E가 읽는다) */
     turnMs?: number | null;
+    timerText?: string | null;
+    timerSeat?: Seat | null;
+    timeoutText?: string | null;
     onaction?: ((action: Action, at: number) => void) | undefined;
     onskip?: (() => void) | undefined;
     /** 판 정보 대화상자의 열림 상태를 게임 화면에 알린다 (U14). */
@@ -69,6 +72,9 @@
     busy = false,
     thinking = false,
     turnMs = null,
+    timerText = null,
+    timerSeat = null,
+    timeoutText = null,
     onaction,
     onskip,
     oninfochange,
@@ -267,6 +273,7 @@
     <div class="scoreboard" class:expanded={expandedHud} aria-label="양쪽 점수판">
       <SeatBar
         who="상대"
+        timerText={timerSeat !== null && timerSeat !== seat ? timerText : null}
         name={opponent.name}
         score={opponent.score}
         goCount={opponent.goCount}
@@ -276,6 +283,7 @@
       />
       <SeatBar
         who="나"
+        timerText={timerSeat === seat ? timerText : null}
         name={me.name}
         score={me.score}
         goCount={me.goCount}
@@ -313,6 +321,7 @@
 
   <div class="decision-area" class:idle-slot={!selecting && !extras?.canFlipOnly} inert={landscape}>
     <div class="decision-content">
+      {#if timeoutText && timerText}<p class="timer-prompt">{timerText} · {timeoutText}</p>{/if}
       <EventRail
         {banner}
         {toast}
@@ -447,6 +456,10 @@
       <h2>판 정보</h2>
       <button type="button" onclick={() => infoDialog.close()}>닫기</button>
     </header>
+    {#if timerText}
+      <p>{timerText}{timeoutText ? ` · ${timeoutText}` : ''}</p>
+      <p>판 정보를 보는 동안에도 시간은 흐릅니다.</p>
+    {/if}
     {#if pending?.kind === 'target'}<p>
         {pending.source === 'play' ? '낸 패' : '뒤집은 패'}: {cardLabel(pending.card)}
       </p>{/if}

@@ -13,6 +13,7 @@
   // 오른쪽 위 메뉴(이슈 #10)에서 계속·설정·홈·세션 종료(확인). Android Back은 메뉴를 연다/닫는다.
   // data-* 속성은 E2E 자동 플레이·원장 검사·턴 시간 계측(spec AC-04·AC-06)이 읽는다.
   import { tick, untrack } from 'svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import { automaticAction, type GameController } from '../game/controller.ts';
   import { formatMoney } from '../lib/format.ts';
   import { settings } from '../settings/settings.svelte.ts';
@@ -89,6 +90,84 @@
       .join(','),
   );
   const stats = $derived(controller.stats);
+  const decision = $derived(controller.decisionClock ?? null);
+  const timerText = $derived.by(() => {
+    if (controller.mode === 'solo') return null;
+    if (controller.timerDecisionMs === null) return '시간 제한 없음';
+    if (controller.timerUncertain) return '호스트 응답 대기 · 시간 확인 중';
+    if (decision === null) return null;
+    const who = decision.seat === pb.board.viewer ? '나' : '상대';
+    const seconds = Math.ceil((controller.timerRemainingMs ?? decision.remainingMs) / 1000);
+    if (decision.state === 'paused')
+      return decision.pauseReason === 'clockUnknown'
+        ? '호스트 대기 · 시간 확인 필요'
+        : `호스트 대기 · 남은 ${seconds}초 보존`;
+    if (decision.state === 'preparing') return `${who} ${seconds}초 · 화면 준비 중`;
+    if (decision.state === 'checking') return '시간 종료 · 연결 확인 중';
+    return `${who} ${seconds}초`;
+  });
+  const timeoutText = $derived.by(() => {
+    if (decision?.seat !== pb.board.viewer) return null;
+    switch (pb.board.pending?.kind) {
+      case 'play':
+        return '시간 초과 시 정해진 순서로 한 장 내요';
+      case 'target':
+        return '시간 초과 시 정해진 순서의 패를 골라요';
+      case 'goStop':
+        return '시간 초과 시 스톱';
+      case 'shake':
+        return '시간 초과 시 흔들지 않고 내요';
+      case 'gukjin':
+        return '시간 초과 시 국진 위치를 유지해요';
+      case 'chongtong':
+        return '시간 초과 시 총통으로 끝내요';
+      default:
+        return null;
+    }
+  });
+  let timerAnnouncement = $state('');
+  const spoken = new SvelteSet<string>();
+  $effect(() => {
+    const clock = decision;
+    if (clock?.state !== 'running') return;
+    const key = `${clock.key.epoch}:${clock.key.round}:${clock.key.decisionId}:${clock.attempt}`;
+    const seconds = Math.ceil((controller.timerRemainingMs ?? clock.remainingMs) / 1000);
+    const who = clock.seat === pb.board.viewer ? '내' : '상대';
+    if (!spoken.has(`${key}:start`)) {
+      spoken.add(`${key}:start`);
+      timerAnnouncement = `${who} 생각 시간 시작`;
+    } else if (seconds > 0 && seconds <= 3 && !spoken.has(`${key}:3`)) {
+      spoken.add(`${key}:3`);
+      timerAnnouncement = `${who} 생각 시간 3초 남음`;
+    }
+  });
+  let lastTimeoutShown = '';
+  $effect(() => {
+    const result = controller.timeoutResult;
+    if (result === null || result === undefined) return;
+    const key = `${result.key.epoch}:${result.key.round}:${result.key.decisionId}`;
+    if (key === lastTimeoutShown) return;
+    lastTimeoutShown = key;
+    const actor = result.seat === pb.board.viewer ? '내' : '상대';
+    const action = result.action;
+    const outcome =
+      action.type === 'play'
+        ? '패를 냈어요'
+        : action.type === 'flipOnly'
+          ? '더미를 뒤집었어요'
+          : action.type === 'chooseTarget'
+            ? '먹을 패를 선택했어요'
+            : action.type === 'stop'
+              ? '스톱했어요'
+              : action.type === 'shake'
+                ? '흔들지 않기로 했어요'
+                : action.type === 'gukjin'
+                  ? '국진 위치를 유지했어요'
+                  : action.type === 'chongtong'
+                    ? '총통으로 끝냈어요'
+                    : '행동했어요';
+    untrack(() => pb.showToast(`${actor} 시간 초과: ${outcome}`));
+  });
 
   // ---- 메뉴 (이슈 #10) ----
   let menuDialog = $state<HTMLDialogElement | null>(null);
@@ -123,6 +202,13 @@
     const held = autoHeld;
     untrack(() => c.autoAdvance(held));
     return () => untrack(() => c.autoAdvance(true));
+  });
+
+  $effect(() => {
+    const c = controller;
+    void pb.board.eventSeq;
+    void decision;
+    if (pb.idle && visible) untrack(() => c.decisionRendered?.());
   });
 
   function openMenu() {
@@ -218,6 +304,7 @@
   data-play-timings={playTimings}
   data-play-plans={playPlans}
 >
+  <p class="timer-announcement" role="status">{timerAnnouncement}</p>
   <div
     class="board-wrap"
     inert={pb.settlement !== null || controller.pushDecision != null || menuOpen || ended}
@@ -231,6 +318,9 @@
       busy={pb.busy || !controller.canAct}
       thinking={controller.thinking}
       turnMs={pb.lastTiming?.ms ?? null}
+      {timerText}
+      timerSeat={decision?.seat ?? null}
+      {timeoutText}
       onaction={(action, at) => controller.submit(action, at)}
       onskip={() => controller.skipAnimations()}
       oninfochange={(open) => (boardInfoOpen = open)}
@@ -308,6 +398,10 @@
     }}
   >
     <h2 id="game-menu-title">메뉴</h2>
+    {#if timerText}
+      <p class="timer-menu">{timerText}{timeoutText ? ` · ${timeoutText}` : ''}</p>
+      <p class="timer-menu">메뉴를 열어도 시간은 흐릅니다</p>
+    {/if}
     {#if autoCandidate !== null && controller.canAct}
       <p role="status">자동 진행 보류 · 메뉴를 닫으면 최신 판에서 다시 확인합니다</p>
     {/if}
@@ -334,8 +428,16 @@
   </dialog>
 
   <dialog class="sheet" bind:this={waitDialog} aria-labelledby="game-wait-title">
-    <h2 id="game-wait-title">상대가 돌아오지 않습니다</h2>
-    <p>3분 넘게 연결이 끊겨 있습니다. 판은 그대로 멈춰 있습니다.</p>
+    <h2 id="game-wait-title">
+      {decision?.pauseReason === 'clockUnknown'
+        ? '시간을 확인할 수 없습니다'
+        : '상대가 돌아오지 않습니다'}
+    </h2>
+    <p>
+      {decision?.pauseReason === 'clockUnknown'
+        ? '호스트가 다시 시작되어 남은 시간을 확인할 수 없습니다. 판은 멈춰 있습니다.'
+        : '3분 넘게 연결이 끊겨 있습니다. 판은 그대로 멈춰 있습니다.'}
+    </p>
     <div class="items">
       <button type="button" class="item primary" data-menu="wait" onclick={() => onwait?.()}
         >계속 기다리기</button
@@ -348,12 +450,31 @@
           onclick={() => controller.acceptAbsentWinner?.()}>부재한 승자 대신 받기</button
         >
       {/if}
+      {#if controller.abortRound}
+        <button
+          type="button"
+          class="item"
+          data-menu="abort-round"
+          onclick={() => controller.abortRound?.()}>현재 판 무효</button
+        >
+      {/if}
       <button type="button" class="item" data-menu="end" onclick={endFromWait}>세션 종료</button>
     </div>
   </dialog>
 </div>
 
 <style>
+  .timer-announcement {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .game {
     position: relative;
   }

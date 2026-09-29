@@ -1,7 +1,7 @@
 // 실제 ws 중계(relay-dev) 위에서 호스트·게스트 세션 20판 (M4 AC-04 성격, 리뷰 T-1·T-2·T-6).
 // 게스트는 자기 BoardView.legal에서만 수를 고르고, 판 사이 대기(settled → ready → nextRound)를 거친다.
 // 도중에: 판 중간 끊김, 판 사이 핸드셰이크 중 끊김, 게스트 탭 교체(4001, 저장본 복원), 호스트 재시작(저장본 복원).
-import { PRESETS } from '@p2p-gostop/engine';
+import { PRESETS, legalActions } from '@p2p-gostop/engine';
 import {
   GuestSession,
   HostSession,
@@ -16,6 +16,7 @@ import {
   type RelayNotice,
   type Role,
   type Transport,
+  timeoutAction,
 } from '@p2p-gostop/protocol';
 import { isDeepStrictEqual } from 'node:util';
 import { expect, it } from 'vitest';
@@ -133,6 +134,95 @@ async function until(
     await new Promise((resolve) => setTimeout(resolve, 1));
   }
 }
+
+it('실제 relay-dev: 초과 행동·재접속 잔여·호스트 실행 공백을 같은 결정 시계로 처리한다 (FR-53, NP-10)', async () => {
+  const relay = await startRelay({ port: 0 });
+  const url = (role: Role) => `ws://127.0.0.1:${relay.port}${RELAY_PATH}?role=${role}`;
+  const hostWire = new RelayTransport(url('host'));
+  const guestWire = new RelayTransport(url('guest'));
+  try {
+    const host = new HostSession(hostWire, {
+      rules: PRESETS.standard,
+      names: ['호스트', '게스트'],
+      random32: secret(31),
+      timerSettings: { decisionMs: 5_000, policy: 'fixed-v1' },
+    });
+    const guest = new GuestSession(guestWire, { name: '게스트', random32: secret(41) });
+    await until(() => host.stage === 'playing' && guest.view !== null, '첫 판 분배');
+    for (let i = 0; i < 3 && host.state?.phase === 'chooseFirst'; i++) {
+      await until(() => isDeepStrictEqual(guest.view, host.guestView()), '선 고르기 동기화');
+      const mine = legalActions(host.state, 0)[0];
+      if (mine) {
+        if (!host.apply(mine)) throw new Error('호스트 선 고르기 실패');
+      } else {
+        await until(() => (guest.view?.legal.length ?? 0) > 0, '선 고르기 뷰');
+        const before = host.state;
+        guest.sendAction(guest.view!.legal[0]!);
+        await until(
+          () => host.state !== before,
+          () =>
+            `게스트 선 고르기 errors=${guest.errors.join(',')} diagnostics=${host.diagnostics.slice(-3).join('|')}`,
+        );
+      }
+    }
+    await until(
+      () => guest.decision?.key.decisionId === host.decisionClock?.key.decisionId,
+      '타이머 offer',
+    );
+    const first = host.decisionClock!;
+    const offeredView = first.seat === 0 ? host.hostView()! : host.guestView()!;
+    const expected = timeoutAction(offeredView)!;
+    expect(host.decisionReady(0, first.key, first.attempt, host.seq)).toBe(true);
+    expect(guest.decisionReady(guest.seq)).toBe(true);
+    await until(() => host.decisionClock?.state === 'running', '양쪽 준비 확인');
+    for (let t = 500; t <= 5_000; t += 500) host.advanceTime(t);
+    await until(() => guest.decision?.state === 'checking', '마감 확인 통지');
+    expect(guest.ackExpiry(guest.seq, true)).toBe(true);
+    await until(
+      () => host.timeoutHistory.length === 1 && guest.timeoutHistory.length === 1,
+      '초과 결과',
+    );
+    expect(host.timeoutHistory[0]?.action).toEqual(expected);
+    expect(host.timeoutHistory[0]?.key).toEqual(first.key);
+
+    await until(
+      () => host.decisionClock?.state === 'preparing' && guest.decision?.state === 'preparing',
+      '다음 결정',
+    );
+    const second = host.decisionClock!;
+    expect(host.decisionReady(0, second.key, second.attempt, host.seq)).toBe(true);
+    expect(guest.decisionReady(guest.seq)).toBe(true);
+    await until(() => host.decisionClock?.state === 'running', '두 번째 결정 시작');
+    for (let t = 5_500; t <= 8_000; t += 500) host.advanceTime(t);
+    await guestWire.drop();
+    await until(() => host.decisionClock?.state === 'paused', '게스트 이탈 중단');
+    expect(host.decisionClock?.remainingMs).toBe(2_000);
+    guestWire.reconnect();
+    await until(
+      () =>
+        host.decisionClock?.state === 'preparing' &&
+        guest.decision?.attempt === host.decisionClock?.attempt,
+      '복귀 offer',
+    );
+    expect(host.decisionClock?.key).toEqual(second.key);
+    expect(host.decisionClock?.remainingMs).toBe(3_000);
+    expect(host.decisionClock?.resumeFloorUsed).toBe(true);
+    const resumed = host.decisionClock!;
+    expect(host.decisionReady(0, resumed.key, resumed.attempt, host.seq)).toBe(true);
+    expect(guest.decisionReady(guest.seq)).toBe(true);
+    await until(() => host.decisionClock?.state === 'running', '복귀 결정 시작');
+    host.advanceTime(8_500);
+    host.advanceTime(10_500);
+    await until(() => guest.decision?.state === 'paused', '호스트 실행 공백 통지');
+    expect(host.decisionClock?.pauseReason).toBe('hostGap');
+    expect(host.decisionClock?.remainingMs).toBe(2_500);
+    expect(host.timeoutHistory).toHaveLength(1);
+  } finally {
+    hostWire.kill();
+    guestWire.kill();
+    await relay.close();
+  }
+}, 30_000);
 
 it('실제 ws 중계로 20판: 게스트 자기 화면만으로 진행, 판 사이 대기, 끊김·핸드셰이크 끊김·탭 교체·호스트 재시작 복구, 원장 제로섬', async () => {
   const relay = await startRelay({ port: 0 });

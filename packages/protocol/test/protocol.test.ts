@@ -13,7 +13,7 @@ import {
 
 describe('protocol', () => {
   it('메시지를 JSON으로 인코딩한다', () => {
-    expect(PROTOCOL_VERSION).toBe(2);
+    expect(PROTOCOL_VERSION).toBe(3);
     expect(JSON.parse(encode({ t: 'ping' }))).toEqual({ t: 'ping' });
   });
 

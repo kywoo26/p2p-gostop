@@ -173,6 +173,7 @@
       perPoint: fixtures.hostRoom.rules.pointValue,
       startBalance: 150_000,
       hostName: '호스트',
+      timerDecisionMs: 10_000,
       unit: fixtures.hostRoom.rules.unit,
     }}
   />
@@ -188,6 +189,7 @@
           preset: 'standard',
           pointValue: 100,
           startBalance: 150_000,
+          timerSettings: { decisionMs: 10_000, policy: 'fixed-v1' },
           unit: '냥',
         }
       : null}

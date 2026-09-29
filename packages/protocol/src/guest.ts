@@ -9,7 +9,17 @@ import type { Action, RuleOptions, Seat } from '@p2p-gostop/engine';
 import { PROTOCOL_VERSION, byteLength, decode, tryEncode } from './codec.ts';
 import { commit, toHex } from './crypto.ts';
 import type { LedgerSummary, SessionLedgerEntry } from './ledger.ts';
-import type { ErrorCode, GuestMessage, HostMessage, RoundStatus } from './messages.ts';
+import type {
+  DecisionClock,
+  DecisionKey,
+  ErrorCode,
+  GuestMessage,
+  HostMessage,
+  RoundStatus,
+  TimerSettings,
+  TimeoutResult,
+} from './messages.ts';
+import { sameDecision, timeoutDigest } from './timer-policy.ts';
 import { isRelayFrame, type RelayNotice } from './relay.ts';
 import type { Transport } from './transport.ts';
 import {
@@ -45,7 +55,7 @@ interface MutableObservation {
 
 /** GuestSession.toJSON()의 모양. 탭 수명 저장소(sessionStorage)에 두고 restore로 넘긴다 */
 export interface GuestSessionState {
-  readonly v: 1;
+  readonly v: 1 | 2;
   readonly token: string | null;
   readonly seq: number;
   readonly epoch: string | null;
@@ -59,6 +69,10 @@ export interface GuestSessionState {
   }[];
   readonly observations: readonly ObservedRound[];
   readonly checks: readonly RoundCheck[];
+  readonly timerSettings?: TimerSettings;
+  readonly decision?: DecisionClock | null;
+  readonly timeoutHistory?: readonly TimeoutResult[];
+  readonly nextRequestId?: number;
 }
 
 export interface GuestSessionOptions {
@@ -105,6 +119,12 @@ export class GuestSession {
   /** 정산 화면. 다음 판 첫 이벤트가 올 때까지 유지된다 */
   settlement: SettlementView | null = null;
   status: RoundStatus | null = null;
+  timerSettings: TimerSettings | null = null;
+  decision: DecisionClock | null = null;
+  readonly timeoutHistory: TimeoutResult[] = [];
+  private renderedAttempt: string | null = null;
+  private expiryPending: Extract<HostMessage, { t: 'expiryCheck' }> | null = null;
+  private pendingReveal: Extract<HostMessage, { t: 'revealHost' }> | null = null;
   /** 파산 선택 요청 (seats에 1이 있으면 게스트가 고른다) */
   bankruptcy: {
     readonly round: number;
@@ -152,7 +172,19 @@ export class GuestSession {
     this.token = options.sessionToken;
     this.seq = options.lastSeq ?? 0;
     const saved = options.restore;
-    if (saved && saved.v === 1) {
+    if (saved && (saved.v === 1 || saved.v === 2)) {
+      if (
+        saved.v === 2 &&
+        (saved.timerSettings === undefined ||
+          saved.decision === undefined ||
+          saved.timeoutHistory === undefined ||
+          saved.nextRequestId === undefined)
+      )
+        throw new Error('게스트 타이머 저장 필드가 빠졌습니다');
+      this.nextRequestId = saved.nextRequestId ?? 1;
+      this.timerSettings = saved.timerSettings ?? { decisionMs: null, policy: 'fixed-v1' };
+      this.decision = saved.decision ?? null;
+      this.timeoutHistory.push(...(saved.timeoutHistory ?? []));
       this.token = saved.token ?? this.token;
       this.seq = saved.seq;
       this.epoch = saved.epoch;
@@ -237,6 +269,10 @@ export class GuestSession {
     this.commitments = [];
     this.observations = [];
     this.view = null;
+    this.timerSettings = null;
+    this.decision = null;
+    this.timeoutHistory.length = 0;
+    this.nextRequestId = 1;
     this.settlement = null;
     this.status = null;
     this.bankruptcy = null;
@@ -257,7 +293,120 @@ export class GuestSession {
       // 보내기 전에 저장 기회를 준다: 저장본의 sent가 실제로 보낸 것보다 적으면 검증이 거짓 실패한다.
       this.changed();
     }
-    this.sendGame({ t: 'action', seq: this.seq, payload, requestId: this.nextRequestId++ });
+    const clock = this.decision;
+    this.sendGame({
+      t: 'action',
+      seq: this.seq,
+      payload,
+      requestId: this.nextRequestId++,
+      ...(clock !== null && clock.seat === payload.seat
+        ? { decisionKey: clock.key, decisionAttempt: clock.attempt }
+        : {}),
+    });
+    this.changed();
+  }
+  /** 뷰가 DOM에 반영되고 입력을 활성화한 같은 전이에서 호출한다. */
+  decisionReady(renderedSeq: number): boolean {
+    const clock = this.decision;
+    if (
+      clock === null ||
+      clock.state !== 'preparing' ||
+      renderedSeq < clock.key.baseSeq ||
+      this.connection !== 'joined' ||
+      !this.linked
+    )
+      return false;
+    const mark = `${clock.key.epoch}:${clock.key.decisionId}:${clock.attempt}`;
+    if (this.renderedAttempt === mark) return true;
+    this.renderedAttempt = mark;
+    this.send({ t: 'decisionReady', key: clock.key, attempt: clock.attempt, renderedSeq });
+    this.changed();
+    return true;
+  }
+  get decisionInputReady(): boolean {
+    const clock = this.decision;
+    if (clock === null) return true;
+    return (
+      clock.seat === 1 &&
+      clock.remainingMs > 0 &&
+      (clock.state === 'preparing' || clock.state === 'running') &&
+      this.renderedAttempt === `${clock.key.epoch}:${clock.key.decisionId}:${clock.attempt}`
+    );
+  }
+  decisionUnavailable(reason: 'background' | 'resync'): void {
+    if (this.decision !== null)
+      this.send({ t: 'decisionUnavailable', key: this.decision.key, reason });
+    this.renderedAttempt = null;
+  }
+  /** expiryCheck는 뷰와 foreground를 확인한 뒤에만 답한다. */
+  ackExpiry(renderedSeq: number, foreground: boolean): boolean {
+    const check = this.expiryPending;
+    const clock = this.decision;
+    if (
+      !foreground ||
+      check === null ||
+      clock === null ||
+      clock.state !== 'checking' ||
+      !sameDecision(clock.key, check.key) ||
+      clock.attempt !== check.attempt ||
+      renderedSeq < check.key.baseSeq ||
+      !this.linked
+    )
+      return false;
+    this.send({ t: 'expiryAck', key: check.key, attempt: check.attempt, renderedSeq });
+    this.expiryPending = null;
+    return true;
+  }
+  private acceptDecision(clock: DecisionClock | null): void {
+    if (clock === null) {
+      this.decision = null;
+      this.renderedAttempt = null;
+      return;
+    }
+    const before = this.decision;
+    if (before !== null && sameDecision(before.key, clock.key) && clock.timerRev < before.timerRev)
+      return;
+    if (
+      before === null ||
+      !sameDecision(before.key, clock.key) ||
+      before.attempt !== clock.attempt ||
+      clock.state === 'paused'
+    )
+      this.renderedAttempt = null;
+    this.decision = clock;
+  }
+  private cancelTimedRequest(key: DecisionKey, requestId?: number): void {
+    for (const [slot, message] of this.outbox) {
+      if (
+        message.t === 'action' &&
+        message.decisionKey &&
+        sameDecision(message.decisionKey, key) &&
+        (requestId === undefined || message.requestId === requestId)
+      )
+        this.outbox.delete(slot);
+    }
+    for (const [slot, pending] of this.inflight) {
+      const message = pending.message;
+      if (
+        message.t === 'action' &&
+        message.decisionKey &&
+        sameDecision(message.decisionKey, key) &&
+        (requestId === undefined || message.requestId === requestId)
+      )
+        this.inflight.delete(slot);
+    }
+  }
+  private acceptTimeout(result: TimeoutResult): void {
+    if (
+      !this.timeoutHistory.some(
+        (entry) => sameDecision(entry.key, result.key) && entry.actionIndex === result.actionIndex,
+      )
+    )
+      this.timeoutHistory.push(result);
+    this.cancelTimedRequest(result.key);
+  }
+  requestTimeoutPage(round: number, from = 0): void {
+    this.sendGame({ t: 'timeoutGet', round, from });
   }
   /** settled에서 승자가 게스트이면 밀기를 요청한다 */
   push(): void {
@@ -267,6 +416,7 @@ export class GuestSession {
       this.changed();
     }
     this.sendGame({ t: 'push', seq: this.seq, requestId: this.nextRequestId++ });
+    this.changed();
   }
   /** settled 단계에서 다음 판을 요청한다. 시작은 호스트가 한다 */
   requestNextRound(): void {
@@ -321,6 +471,7 @@ export class GuestSession {
           directResponse &&
           ((request.requestId !== undefined && m.requestId === request.requestId) ||
             (m.requestId === undefined &&
+              (m.t !== 'events' || m.timeoutResult === undefined) &&
               ((m.t === 'events' && m.to > request.seq) ||
                 (m.t === 'snapshot' && m.seq > request.seq))));
       } else if (request.t === 'ready') {
@@ -336,6 +487,8 @@ export class GuestSession {
           (m.t === 'reject' && m.reason === 'BANKRUPT' && m.seq === this.seq);
       } else if (request.t === 'ledgerGet') {
         answered = m.t === 'ledgerPage' && m.from === request.from;
+      } else if (request.t === 'timeoutGet') {
+        answered = m.t === 'timeoutPage' && m.from === request.from && m.round === request.round;
       }
       if (m.t === 'sessionEnd') answered = true;
       if (answered) this.inflight.delete(key);
@@ -392,7 +545,7 @@ export class GuestSession {
 
   toJSON(): GuestSessionState {
     return {
-      v: 1,
+      v: 2,
       token: this.token ?? null,
       seq: this.seq,
       epoch: this.epoch,
@@ -405,6 +558,10 @@ export class GuestSession {
         settlement: o.settlement,
       })),
       checks: this.checks.slice(-CHECK_LIMIT),
+      timerSettings: this.timerSettings ?? { decisionMs: null, policy: 'fixed-v1' },
+      decision: this.decision,
+      timeoutHistory: this.timeoutHistory.slice(-800),
+      nextRequestId: this.nextRequestId,
     };
   }
 
@@ -449,6 +606,8 @@ export class GuestSession {
     this.ledger = m.ledger;
     this.settlement = m.settlement ?? null;
     this.applyStatus(m.status);
+    this.acceptDecision(m.decision);
+    if (m.timeoutResult) this.acceptTimeout(m.timeoutResult);
     this.observe(m.view, m.settlement);
     const observed = this.observation(m.view.round);
     if (m.t === 'events' && observed)
@@ -459,9 +618,14 @@ export class GuestSession {
     this.rules = m.rules;
     this.ledger = m.ledger;
     this.names = m.names;
+    this.timerSettings = m.timerSettings;
     this.connection = 'joined';
     const restarted = this.epoch !== null && this.epoch !== m.epoch;
     this.epoch = m.epoch;
+    if (restarted) {
+      this.decision = null;
+      this.renderedAttempt = null;
+    }
     if (restarted && m.seq < this.seq) {
       // 호스트가 저장본에서 복원돼 순번이 되감겼다(#25). 호스트 순번을 따르고, 되감긴 구간의 관찰은 버린다.
       this.logLine(`호스트 복원 감지: 순번 ${this.seq} → ${m.seq}`);
@@ -554,6 +718,12 @@ export class GuestSession {
     this.send({ t: 'revealGuest', round: c.round, secret: c.guestSecret });
   }
   private revealHost(m: Extract<HostMessage, { t: 'revealHost' }>): void {
+    const entries = this.timeoutHistory.filter((entry) => entry.key.round === m.round);
+    if (entries.length < m.timeoutCount) {
+      this.pendingReveal = m;
+      this.requestTimeoutPage(m.round, entries.length);
+      return;
+    }
     // 중복, 또는 이미 missingReveal로 판정한 판(뒤늦은 공개로 되돌리지 않는다). roundSkip은 위조된 커밋 메시지에 대한
     // 기록이라 그 번호의 판이 나중에 정상으로 진행되면 따로 검증한다.
     if (this.decided(m.round)) return;
@@ -567,6 +737,8 @@ export class GuestSession {
       m.guestSecret !== c.guestSecret
     ) {
       check = { round: m.round, result: 'failed', reason: 'commitment' };
+    } else if (entries.length !== m.timeoutCount || timeoutDigest(entries) !== m.timeoutDigest) {
+      check = { round: m.round, result: 'failed', reason: 'actions' };
     } else {
       // 공개한 판을 하나도 보지 못했다면 "본 것 없음·보낸 것 없음"으로 대조한다(리뷰 R3: 아무 수열이나 통과 금지).
       const observed = this.observation(m.round) ?? {
@@ -586,6 +758,7 @@ export class GuestSession {
         round: m.round,
         firstSeq: m.firstSeq,
         observed,
+        timeoutResults: entries,
       });
       check = result.ok
         ? { round: m.round, result: 'verified' }
@@ -612,6 +785,12 @@ export class GuestSession {
       this.logLine(`welcome 전 ${m.t} 무시`);
       return;
     }
+    if (
+      m.t === 'reject' &&
+      (m.reason === 'DECISION_EXPIRED' || m.reason === 'DECISION_PAUSED') &&
+      m.decisionKey
+    )
+      this.cancelTimedRequest(m.decisionKey, m.requestId);
     // 오래된 프레임을 현재 요청의 응답으로 간주하지 않는다.
     this.settle(m);
     switch (m.t) {
@@ -645,6 +824,37 @@ export class GuestSession {
         break;
       case 'status':
         this.applyStatus(m.status);
+        break;
+      case 'decisionDeadline':
+        this.acceptDecision(m.clock);
+        break;
+      case 'expiryCheck':
+        if (
+          this.decision !== null &&
+          sameDecision(this.decision.key, m.key) &&
+          this.decision.attempt === m.attempt
+        )
+          this.expiryPending = m;
+        break;
+      case 'timeoutPage':
+        if (
+          m.entries.length > 0 &&
+          m.from === this.timeoutHistory.filter((entry) => entry.key.round === m.round).length &&
+          m.entries.every((entry) => entry.key.round === m.round)
+        )
+          for (const entry of m.entries) this.acceptTimeout(entry);
+        if (this.pendingReveal?.round === m.round) {
+          const reveal = this.pendingReveal;
+          if (this.timeoutHistory.filter((entry) => entry.key.round === m.round).length < m.total)
+            this.requestTimeoutPage(
+              m.round,
+              this.timeoutHistory.filter((entry) => entry.key.round === m.round).length,
+            );
+          else {
+            this.pendingReveal = null;
+            this.revealHost(reveal);
+          }
+        }
         break;
       case 'reject':
         this.error(m.reason);
