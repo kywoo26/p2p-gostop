@@ -17,6 +17,10 @@ export interface ReplayHost {
   commit(board: DisplayBoard): Promise<void>;
   /** 이벤트의 부수 효과(배너·토스트·효과음). 기다리지 않는다 */
   onEvent(event: EngineEvent): void;
+  /** reset/dispose가 소유권을 회수하면 다음 단계·DOM 측정을 중단한다. */
+  isCurrent?(): boolean;
+  /** 단계당 두 번의 단조 시각만 읽는다. 프레임별 수집은 하지 않는다. */
+  onStep?(kind: StepKind, ms: number): void;
 }
 
 type StepKind = 'play' | 'draw' | 'flip' | 'match' | 'collect' | 'none';
@@ -201,8 +205,10 @@ async function runStep(
   plannedMs: number,
   holdMs: number,
 ): Promise<DisplayBoard> {
+  if (host.isCurrent?.() === false) return board;
   let next = board;
   for (const event of step.events) {
+    if (host.isCurrent?.() === false) return board;
     next = applyEvent(next, event);
     host.onEvent(event);
   }
@@ -212,6 +218,7 @@ async function runStep(
   }
   const before = measure(host.root);
   await host.commit(next);
+  if (host.isCurrent?.() === false) return next;
   const after = measure(host.root);
   const ms = (base: number) => base * factor;
   const animations: Animation[] = [];
@@ -260,10 +267,12 @@ async function runStep(
   if (animations.length === 0) {
     // 움직일 카드가 없어도 매칭 강조 등은 계획 시간만큼 보인다
     await waitHold(host.root, plannedMs);
+    if (host.isCurrent?.() === false) return next;
     await waitHold(host.root, holdMs);
     return next;
   }
   await sequence(() => animations);
+  if (host.isCurrent?.() === false) return next;
   await waitHold(host.root, holdMs);
   return next;
 }
@@ -283,14 +292,19 @@ export async function replay(
   );
   let board = from;
   for (const [i, step] of plan.steps.entries()) {
+    if (host.isCurrent?.() === false) break;
+    const startedAt = host.onStep === undefined ? 0 : performance.now();
     board = await runStep(host, board, step, plan.factor, plan.stepMs[i] ?? 0, plan.holdMs[i] ?? 0);
+    if (host.isCurrent?.() !== false) host.onStep?.(step.kind, performance.now() - startedAt);
   }
   return board;
 }
 
 /** 분배 애니메이션 (spec 6.4 "분배 총 1.2s 이내"): 판을 커밋하고 보이는 카드가 더미에서 차례로 날아온다 */
 export async function deal(host: ReplayHost, board: DisplayBoard): Promise<void> {
+  if (host.isCurrent?.() === false) return;
   await host.commit(board);
+  if (host.isCurrent?.() === false) return;
   if (durScale(host.root) === 0) return;
   const deck = host.root.querySelector<HTMLElement>('[data-anchor="deck"]');
   if (deck === null) return;

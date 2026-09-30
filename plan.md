@@ -321,6 +321,15 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 3-2. 진행 매트릭스 (기본 2026-09-29 main `daa5e7d`; RP-07 2026-09-30 `e33f044` 기반 갱신)
 
+### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
+
+- 사용자 실측 v0.3.1 `4e536e1` 빠름 6표본은 [PDR-01](docs/device-test/results.md#pdr-01--사용자-제공-v031-부분-관측)에 최소 익명 증거만 기록했다. full play618/619/683/702ms 네 경로와 prompt223/choose462를 섞어 수용 통과로 판정하지 않는다. NF-03 미검증·AC-06 부분 상태 유지.
+- `game/playback.recovery.test.ts`: 합성 도착50/150/300ms에서 reset 뒤 stale snapshot/선택창·효과, dispose 뒤 읽기 대기, reset→burst를 수정 전 Chromium/WebKit10실패로 재현했다. generation 소유권으로 커밋·이벤트·계측·정산을 보호하고 대기를 스킵해 회수한다. 정상 FIFO와 #185 milestone 큐는 보존한다. 복구 없는 빈 이벤트 snapshot/정산 표식은 기존 FIFO 순서를 유지한다. #191~195의 저장/호스트 metadata·timer audit와 다른 renderer 재생 수명 결함이다.
+- 기존 100개 TurnTiming·400줄/줄2000자 진단 버퍼를 재사용한다. enqueue/queue/replay/snap/첫 DOM commit과 단계12개 이하를 묶음당 한 줄로 기록한다. 상대 턴은 수신 이후로 표시하며 내 AC-06 표본에 넣지 않는다. 프레임별 수집·상시 폴링·외부 분석·wire 확장 없음. 취소 묶음은 기록하지 않는다.
+- `e2e/playback-delay.spec.ts`: 고정 match-capture에서 합성 main-thread100ms 정지·메뉴·홈 복귀 뒤 카드 중복 없음/권위 바닥과 일치/입력 unlock을 Chromium/WebKit에서 검증한다. 합성 지연은 Singapore RTT가 아니며 자동 결과는 실기기 성공이 아니다.
+- 사용자 착지/바닥 이동의 읽기·계산 재현: CardPlayed는 독립 바닥 셀을 커밋하고 tick 뒤 새 셀로 FLIP한다. Matched는 강조이며 대상 위 겹침을 만들지 않는다. 현행 동일 월 인접 독립 셀·48px·5×3 규범과 관련된 설계 경계다. 순수 floorLayout 합성 월4=[14],월8=[28,29],월10=[37]에13 추가(360×300,48px)에서 기존28:5→8,29:6→9,14:8→6 이동을 재현했다. 고정 match-capture 초기 바닥에서는 기존 이동0,낸13의 셀5/대상14의 셀6이다. 실제 사용자 장면 동일 원인 판정은 보류. 안정 슬롯/겹침 설계는 Floor 소유자·연구 담당 조율 후이며 이 PR은 Floor/Board를 수정하지 않는다.
+- 밀기 읽기 근거: Game의 settlement 또는 controller.pushDecision 표시와 solo/host/guest getter는 playback 완료를 조건으로 삼지 않는다. 정산은 playback 큐로 늦추지만 밀기 pending은 권위 상태에서 즉시 노출될 수 있다. 고/스톱과 다른 경계이며 UI 소유자에게 넘긴다. 이 PR은 임의 delay·deadline/타이머 정책을 바꾸지 않는다. main #188 `75b4df1`의 Board inert는 통합 시 보존해야 한다.
+
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |
