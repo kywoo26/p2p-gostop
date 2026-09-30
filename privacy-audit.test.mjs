@@ -244,3 +244,26 @@ for (const [name, markup] of [
     assert.equal(scanText(valid, 'drawing.svg').findings.length, 0);
   });
 }
+
+await test('같은 회귀표에서 전체 속성 이름·정상 d·기존 SVG 6반례를 구분한다', () => {
+  const cases = [
+    ...['data.d', 'data.part.d', 'data:d', 'data-d', 'dd', 'd.extra'].map((name) => [
+      `<svg><path ${name}="M ${ip} 1z"/></svg>`,
+      false,
+    ]),
+    [`<svg><![CDATA[<path d="M ${ip} 1z"/>]]></svg>`, false],
+    [`<svg><path-note d="M ${ip} 1z"/></svg>`, false],
+    [`<svg><path:note d="M ${ip} 1z"/></svg>`, false],
+    [`<svg><path d="M,, ${ip} 1z"/></svg>`, false],
+    [`<svg><path d="M ${ip},,1z"/></svg>`, false],
+    [`<svg><path d="M ${ip} 1z,"/></svg>`, false],
+    [`<svg><path d="M ${ip} 1z"/></svg>`, true],
+    [`<svg><path d = 'M ${ip},1z'/></svg>`, true],
+    [`<svg><path data.d="label" d="M ${ip} 1z"/></svg>`, true],
+  ];
+  for (const [markup, valid] of cases) {
+    const result = scanText(markup, 'drawing.svg');
+    assert.equal(result.findings.length, valid ? 0 : 1);
+    assert.equal(result.allowed, valid ? 1 : 0);
+  }
+});

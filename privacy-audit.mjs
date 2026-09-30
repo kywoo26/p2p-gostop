@@ -121,21 +121,36 @@ function svgCoordinateRanges(text, path) {
   let end = 0;
   let rootSeen = false;
   // 인용된 속성을 포함한 완전한 태그만 소비한다. 속성 안 가짜 태그는 요소가 아니다.
-  const tags =
-    /<\/?([A-Za-z_][\w.-]*)(?:\s+[A-Za-z_][\w:.-]*\s*=\s*(?:"[^"<]*"|'[^'<]*'))*\s*\/?>/g;
+  const name = '[A-Za-z_][\\w:.-]*';
+  const attribute = new RegExp(
+    `[ \\t\\r\\n]+(${name})[ \\t\\r\\n]*=[ \\t\\r\\n]*("[^"<]*"|'[^'<]*')`,
+    'y',
+  );
+  const tags = new RegExp(`<\\/?(${name})((?:${attribute.source})*)[ \\t\\r\\n]*\\/?>`, 'g');
+  const closeTag = new RegExp(`^<\\/${name}[ \\t\\r\\n]*>$`);
   for (const element of markup.matchAll(tags)) {
     if (markup.slice(end, element.index).includes('<')) return [];
     end = element.index + element[0].length;
+    if (element[1].includes(':')) return [];
     const closing = element[0].startsWith('</');
     if (closing) {
-      if (!/^<\/[\w.-]+\s*>$/.test(element[0]) || stack.pop() !== element[1]) return [];
+      if (!closeTag.test(element[0]) || stack.pop() !== element[1]) return [];
       continue;
     }
     if (stack.length === 0) {
       if (rootSeen || element[1] !== 'svg') return [];
       rootSeen = true;
     }
-    const attrs = [...element[0].matchAll(/([:\w-]+)\s*=\s*("[^"]*"|'[^']*')/g)];
+    const attrs = [];
+    let consumed = 0;
+    // 태그 검증과 같은 문법을 시작 위치에 고정해 속성 부분 전체를 소비한다.
+    while (consumed < element[2].length) {
+      attribute.lastIndex = consumed;
+      const attr = attribute.exec(element[2]);
+      if (!attr) return [];
+      attrs.push(attr);
+      consumed = attribute.lastIndex;
+    }
     if (new Set(attrs.map((attr) => attr[1])).size !== attrs.length) return [];
     if (attrs.some((attr) => attr[1].includes(':'))) return [];
     if (
@@ -155,7 +170,8 @@ function svgCoordinateRanges(text, path) {
     if (element[1] !== 'path') continue;
     for (const attr of attrs) {
       if (attr[1] !== 'd' || !validPathData(attr[2].slice(1, -1))) continue;
-      const start = element.index + attr.index + attr[0].indexOf(attr[2]) + 1;
+      const start =
+        element.index + 1 + element[1].length + attr.index + attr[0].indexOf(attr[2]) + 1;
       ranges.push([start, start + attr[2].length - 2]);
     }
   }
