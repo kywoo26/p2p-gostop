@@ -329,6 +329,13 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 - `e2e/playback-delay.spec.ts`: 고정 match-capture에서 합성 main-thread100ms 정지·메뉴·홈 복귀 뒤 카드 중복 없음/권위 바닥과 일치/입력 unlock을 Chromium/WebKit에서 검증한다. 합성 지연은 Singapore RTT가 아니며 자동 결과는 실기기 성공이 아니다.
 - 사용자 착지/바닥 이동의 읽기·계산 재현: CardPlayed는 독립 바닥 셀을 커밋하고 tick 뒤 새 셀로 FLIP한다. Matched는 강조이며 대상 위 겹침을 만들지 않는다. 현행 동일 월 인접 독립 셀·48px·5×3 규범과 관련된 설계 경계다. 순수 floorLayout 합성 월4=[14],월8=[28,29],월10=[37]에13 추가(360×300,48px)에서 기존28:5→8,29:6→9,14:8→6 이동을 재현했다. 고정 match-capture 초기 바닥에서는 기존 이동0,낸13의 셀5/대상14의 셀6이다. 실제 사용자 장면 동일 원인 판정은 보류. 안정 슬롯/겹침 설계는 Floor 소유자·연구 담당 조율 후이며 이 PR은 Floor/Board를 수정하지 않는다.
 - 밀기 읽기 근거: Game의 settlement 또는 controller.pushDecision 표시와 solo/host/guest getter는 playback 완료를 조건으로 삼지 않는다. 정산은 playback 큐로 늦추지만 밀기 pending은 권위 상태에서 즉시 노출될 수 있다. 고/스톱과 다른 경계이며 UI 소유자에게 넘긴다. 이 PR은 임의 delay·deadline/타이머 정책을 바꾸지 않는다. main #188 `75b4df1`의 Board inert는 통합 시 보존해야 한다.
+동일 fixture 자동 비교(실기기 아님): Chromium 빠름3경로, 경로마다 워밍업1+7표본, 직렬/포트4227. 기준 `fc02b1c`의 playback/choreo만 임시 복원한 실행 p50 no-match379/match-capture530/banner387ms, 수정본380/530/380ms. 계획340/500/340ms 동일. 21표본 전체 p50 387→380ms, 두 번째 최대533→530ms. 순서는 수정본→기준본이며 미세 차이는 스케줄링 잡음과 분리하지 못한다. 유의미한 성능 향상·계측 overhead0을 주장하지 않는다. 추가 계측의 두 clock 읽기/단계·bounded 배열과 로그 한 줄만 추가했으며 프레임/longtask 감시·read/write 최적화는 도입하지 않았다. 기준에서 새 회귀10실패→수정 뒤14통과, 기존 playback/anim 포함96통과. 필수 검사 lint/check·Node563·browser742·web build·smoke378·Android3작업 통과(통합 전 기준). browser 첫 실행은 공유63315포트 점유로 시작 실패했고 다음 실행 정상 완료했다. 통합 main 검사는 별도 최종 결과로 갱신한다.
+
+### 선택창 회전 잠금 (#155, UX-07·UX-24)
+
+| ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
+|---|---|---|---|
+| UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 독립 리뷰 P1은 퇴장 중 재활성 창의 복원값을 false로 정정하여 수정하며, 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 입력 회귀 검증을 추가한다. | 같은 리뷰어의 재등장 경계 재검토 대기. Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
 
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 

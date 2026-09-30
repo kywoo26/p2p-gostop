@@ -129,6 +129,53 @@ test('가로 방향 입력 잠금·세로 복귀 @layout', async ({ page }) => {
   expect(await page.locator('.hand button:enabled').count()).toBe(10);
 });
 
+for (const state of ['target', 'gostop', 'shake']) {
+  test(`${state} 선택 중 회전해도 배경 잠금·초점·입력0 @layout`, async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 915 });
+    await page.goto(`./#/dev/gallery/layout-${state}`);
+    const dialog = page.locator('.table.choosing, .prompt');
+    const background = page.locator('.hud, .hand-zone');
+    await expect(dialog).toBeVisible();
+    await expect
+      .poll(() => dialog.evaluate((node) => node.contains(document.activeElement)))
+      .toBe(true);
+    await page.evaluate(() => {
+      (window as typeof window & { __backgroundClicks?: number }).__backgroundClicks = 0;
+      document.querySelector('.hand-zone')?.addEventListener('click', () => {
+        (window as typeof window & { __backgroundClicks: number }).__backgroundClicks++;
+      });
+    });
+    for (const [width, height] of [
+      [412, 915],
+      [915, 412],
+      [412, 915],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      await expect
+        .poll(() =>
+          background.evaluateAll((nodes) => nodes.every((node) => node.hasAttribute('inert'))),
+        )
+        .toBe(true);
+      await page.locator('.hand-zone').evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        if (hit && node.contains(hit)) throw new Error('잠긴 손패가 hit-test에 잡힘');
+      });
+      const hand = page.locator('.hand-zone');
+      const box = await hand.boundingBox();
+      if (box) await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      expect(
+        await page.evaluate(
+          () => (window as typeof window & { __backgroundClicks: number }).__backgroundClicks,
+        ),
+      ).toBe(0);
+    }
+    await expect
+      .poll(() => dialog.evaluate((node) => node.contains(document.activeElement)))
+      .toBe(true);
+  });
+}
+
 for (const state of ['play', 'target', 'gostop']) {
   test(`412×840 시스템 inset ${state}: 카드·입력 안전영역 @layout`, async ({ page }) => {
     await page.setViewportSize({ width: 412, height: 840 });
