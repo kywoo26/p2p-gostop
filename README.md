@@ -81,7 +81,8 @@ npm run sim -- 42 --workers 4        # 셀프플레이 시뮬레이션 CLI (공�
 - [규칙 벡터](docs/rules-vectors.md): 규칙 ID와 테스트의 대응.
 - [AI 튜닝](docs/ai-tuning.md): 강도·응답 벤치마크와 미달 근거.
 - [머니 모델](docs/money-model.md): 표준 3,000판 산정·프리셋 미완 상태.
-- [실기기 절차](docs/device-test/procedure.md) / [결과 로그](docs/device-test/results.md): M0·MVP·M4·U1·UI 절차 통합, 사용자 결과 원문 보존.
+- [PC 중계 운영자 가이드](tools/relay/README.md): 원격 대전 중계의 준비·시작·종료 정본(FR-RP-07·NF-RP-06, spec 원격 대전·plan §1.9).
+- [실기기 절차](docs/device-test/procedure.md) / [결과 로그](docs/device-test/results.md): M0·MVP·M4·U1·UI 절차 통합, 사용자 결과의 판정·수치 보존(개인 환경 식별자는 익명화).
 - [상용 규칙 조사](docs/research/rules-commercial.md): §12가 게임 규칙의 유일한 규범.
 - [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.
 - [플랫폼 조사](docs/research/tech-stack.md) / [도구 비교](docs/research/agent-era-stack.md): 제약·호환성·선택 근거, 설치 버전은 AGENTS.md.
