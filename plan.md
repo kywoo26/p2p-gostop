@@ -338,6 +338,8 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 경로 약어: E=`packages/engine`, A=`packages/ai`, P=`packages/protocol`, W=`packages/web`, S=`tools/sim`, K=`android/app/src/main/kotlin/com/kywoo26/p2pgostop`, KT=`android/app/src/test/kotlin/com/kywoo26/p2pgostop`. `src/`·`test/`·`e2e/` 경로는 각 접두사의 실제 파일이다. 실기기 열의 `—`는 순수 로직/자동 검증 범위, `미`는 현재 정식 UI·기기의 사람 검증 없음, `M0`는 [사람 제공 스모크 기록](docs/device-test/results.md)만 확인됨을 뜻한다. `M0`도 현재 게임 전체 통과는 아니다.
 
+**2026-10-01 좁은 시인성 실행 / FR-41·46~48·NF-08 / UX-H05·UX-A01:** spec 수치·공개 판정 변경 없이 `skin-marks.css`의 일반 황동 3px 단선/확정 청록 4px 이중선·정적 받침과 대응 바닥 외곽을 강화한다. 두 줄 전체 앞면·터치 크기를 위해 상태 들림은 선 두께 차이로 정정한다. 선택/초점·행동 그림·FLIP 회수/복귀를 보존하고 Board는 승인된 `floorHighlight` preview 조건 1줄만 수정한다(힌트 끔의 기존 보조 예고 잔존 결함, pending options/view.highlight 보존). 같은 실제 공개 scenario와 갤러리를 Chromium/WebKit 360/390/412에서 전후 캡처하고 색 대비·가림·입력·힌트/효과 독립성을 검사한다. #80/#115 전체 수용과 기존 부분·실기기 미검증 상태는 유지한다. 실행 결과는 [스킨 검증](docs/design/pro-skin-validation.md)의 해당 개선 절에만 추가한다.
+
 ### 기능 (FR)
 
 | ID    | 상태   | 코드·검증 근거                                                                                                                                                                                                            | 남은 항목·추적                                                                                                                   | 실기기 |
