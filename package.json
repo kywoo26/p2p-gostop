@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:browser": "npm run test:browser -w packages/web",
-    "lint": "npm run lint:oxc && npm run lint -w packages/web",
+    "lint": "npm run privacy:test && npm run privacy:check && npm run lint:oxc && npm run lint -w packages/web",
     "lint:oxc": "oxlint --type-aware --deny-warnings && oxfmt --check",
     "lint:fix": "oxlint --type-aware --fix && oxfmt && npm run lint:fix -w packages/web",
     "format": "oxfmt && npm run format -w packages/web",
@@ -23,7 +23,9 @@
     "sim": "npm run sim -w tools/sim --",
     "android": "android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=4",
     "verify": "npm run lint && npm run check && npm test && npm run test:browser && npm run build && npm run e2e && npm run android",
-    "e2e:smoke": "npm run e2e:smoke -w packages/web"
+    "e2e:smoke": "npm run e2e:smoke -w packages/web",
+    "privacy:test": "node --test privacy-audit.test.mjs",
+    "privacy:check": "node privacy-audit.mjs"
   },
   "devDependencies": {
     "knip": "6.38.0",
