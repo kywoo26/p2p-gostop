@@ -334,7 +334,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 | 범위 | 상태 | 코드·검증 근거 | 남은 검증 |
 |---|---|---|---|
-| FR-16·FR-53·UX-T05·U15·NF-08의 솔로 결과/밀기 순서 | 좁은 구현·로컬 자동 검사 통과 ([#225](https://github.com/kywoo26/p2p-gostop/pull/225)) | 수정 전 실제 자동/수동 스톱·저장 CPU Chromium/WebKit6실패 → 기본 수정6통과, 보강 결과 경계26통과. `solo-result.test.ts`는 재생·최종 스냅 키/큐·stale 확인/응답·이전 포인터/Enter·원장/기록 1회, `solo-result.spec.ts`는 4모드 실제 앱16검사. 기존 host/guest 회귀 포함 전체 browser802·Node563·lint/check·개인정보16·PR smoke400·web build·Android3작업 통과. raw1535.2KiB/1536KiB, 외부 요청0. | 독립 리뷰·최종 head CI, 실기기/OS 스크린리더, #214/#218 통합 조합. 전체 이슈 완료나 관련 NF/UX 전체 수용을 뜻하지 않는다. |
+| FR-16·FR-53·UX-T05·U15·NF-08의 솔로 결과/밀기 순서 | 좁은 구현·로컬 자동 검사 통과 ([#225](https://github.com/kywoo26/p2p-gostop/pull/225)) | 수정 전 실제 자동/수동 스톱·저장 CPU Chromium/WebKit6실패 → 기본 수정6통과, 보강 결과 경계26통과. 후속 받기 버튼 초점→확정 정산 경계는 수정 전 Chromium/WebKit4실패(body 초점), 이전 결과 보류 여부를 기억하는 좁은 수정 뒤 결과 경계26통과. `solo-result.test.ts`는 재생·최종 스냅 키/큐·stale 확인/응답·이전 포인터/Enter·원장/기록 1회, `solo-result.spec.ts`는 4모드 실제 앱16검사. 기존 host/guest 회귀 포함 전체 browser802·Node563·lint/check·개인정보16·PR smoke400·web build·Android3작업 통과. raw1,572,023B/1,572,864B(여유841B), 외부 요청0. | 독립 리뷰·최종 head CI, 실기기/OS 스크린리더, #214/#218 통합 조합. 전체 이슈 완료나 관련 NF/UX 전체 수용을 뜻하지 않는다. |
 
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
 

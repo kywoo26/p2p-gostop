@@ -94,8 +94,17 @@ for (const mode of ['normal', 'fast', 'reduced', 'skip'] as const) {
         oldButton.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
         oldButton.click();
         expect(solo.state.records).toHaveLength(0);
-        (screen.container.querySelector('[data-choice="accept"]') as HTMLButtonElement).click();
+        const acceptButton = screen.container.querySelector(
+          '[data-choice="accept"]',
+        ) as HTMLButtonElement;
+        acceptButton.focus();
+        acceptButton.click();
         await vi.waitFor(() => expect(solo.playback.settlement).not.toBeNull());
+        await vi.waitFor(() =>
+          expect(document.activeElement).toBe(
+            screen.container.querySelector('[data-testid="settlement-headline"]'),
+          ),
+        );
         expect(solo.state.records).toHaveLength(1);
         expect(solo.state.ledger.entries).toHaveLength(1);
         expect(solo.state.roundNumber).toBe(1);
@@ -143,6 +152,11 @@ test.each([false, true])('저장 CPU 승자: 즉시 결정 %s 확인 전 요청0
     // 응답과 최종 재생 사이에도 결과 화면을 유지한다.
     expect(solo.pendingRoundResult?.summary.view.finalPoints).toBe(7);
     await vi.waitFor(() => expect(solo.playback.settlement).not.toBeNull());
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.container.querySelector('[data-testid="settlement-headline"]'),
+      ),
+    );
     expect(screen.container.querySelector('[data-choice="next"]')).not.toBeNull();
     expect(solo.state.records).toHaveLength(1);
     expect(solo.state.records[0]?.settlement.pushed).toBe(push);

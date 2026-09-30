@@ -59,11 +59,14 @@
   }: Props = $props();
 
   let heading = $state<HTMLParagraphElement | null>(null);
+  let hadPendingResult = false;
   const stage = $derived(pending ? (pending.acknowledged ? 'decision' : 'result') : 'settled');
   $effect(() => {
     void stage;
     const target = heading;
-    if (pending === null || target === null) return;
+    const focusResult = pending !== null || hadPendingResult;
+    hadPendingResult = pending !== null;
+    if (!focusResult || target === null) return;
     void tick().then(() => {
       if (target.isConnected && !target.closest('[inert]')) target.focus();
     });

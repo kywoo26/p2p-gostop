@@ -80,6 +80,8 @@ for (const mode of ['normal', 'fast', 'reduced', 'skip'] as const) {
       await expect(game).toHaveAttribute('data-phase', 'pushDecision');
       await page.locator('[data-choice="accept"]').click();
       await expect(page.locator('[data-choice="next"]')).toBeVisible();
+      await expect(page.getByTestId('settlement-headline')).toBeFocused();
+      await page.keyboard.press('Enter');
       await expect(game).toHaveAttribute('data-round', '1');
       const after = await page.evaluate(
         () => JSON.parse(localStorage.getItem('gostop.solo.v1')!).session,
