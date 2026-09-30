@@ -70,6 +70,16 @@ test('중계 present로 첫 hello를 한 번 보내고 프리셋 welcome도 한 
   link.flush();
   expect(welcomes).toHaveLength(3);
   expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
+
+  // 호스트 부재 중 수동 재접속은 hello를 쌓지 않고, 복귀 알림에서 한 번 보낸다.
+  guestWire.disconnect();
+  link.notify(1, 'absent');
+  guest.reconnect();
+  expect(link.queue).toHaveLength(0);
+  link.notify(1, 'joined');
+  link.flush();
+  expect(welcomes).toHaveLength(4);
+  expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
 });
 
 function lcg(seed: number) {
