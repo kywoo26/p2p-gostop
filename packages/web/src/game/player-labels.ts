@@ -19,9 +19,14 @@ export function conciseSoloNotice(text: string, names: readonly [string, string]
   )
     return text;
   const prefix = `${names[1]} `;
-  if (text.startsWith(prefix)) return `컴퓨터 ${text.slice(prefix.length)}`;
-  const pick = `선 고르기: ${names[0]} `;
-  if (text.startsWith(pick))
-    return pick + text.slice(pick.length).replace(` · ${names[1]} `, ' · 컴퓨터 ');
-  return text;
+  // FirstPicked의 제목·사람 이름·두 필드를 먼저 확인한다. 모호한 형식은 그대로 둔다.
+  if (text.startsWith('선 고르기: ')) {
+    const pick = `선 고르기: ${names[0]} `;
+    if (!text.startsWith(pick)) return text;
+    const fields = text.slice(pick.length).split(` · ${prefix}`);
+    if (fields.length !== 2 || fields.some((field) => !field || field.includes(' · '))) return text;
+    return `${pick}${fields[0]} · 컴퓨터 ${fields[1]}`;
+  }
+  // 이름 선두의 일반 사건·정산 제목만 축약한다.
+  return text.startsWith(prefix) ? `컴퓨터 ${text.slice(prefix.length)}` : text;
 }
