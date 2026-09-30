@@ -7,6 +7,7 @@ import { fixtures } from '../lib/fixtures.ts';
 import Board from './Board.svelte';
 import EventRail from './EventRail.svelte';
 import Settlement from '../routes/Settlement.svelte';
+import { INSTANT_LABEL, REASON_LABEL } from './settle-labels.ts';
 
 for (const [difficulty, label] of [
   ['easy', '쉬움'],
@@ -182,5 +183,214 @@ test('선 고르기 형식이 모호하면 원문을 보존하고 일반 알림�
       `컴퓨터 ${event}`,
     );
     expect(conciseSoloNotice(`나 ${event}`, ['나', '컴퓨터 · 상용급'])).toBe(`나 ${event}`);
+  }
+});
+
+for (const [name, text] of [
+  ['같은', '같은 월: 다시 고릅니다'],
+  ['바닥', '바닥 총통: 다시 나눕니다'],
+] as const) {
+  test(`주체 없는 사건은 AI 이름 '${name}'과 겹쳐도 원문 보존`, async () => {
+    const base = fixtures.board.states.play;
+    const view = { ...base, seats: [base.seats[0], { ...base.seats[1], name }] as const };
+    const original = JSON.stringify(view);
+    const screen = await render(Board, {
+      view,
+      soloDifficulty: 'commercial',
+      toast: { id: 1, text },
+    });
+    const status = screen.container.querySelector('[data-testid="event-rail"] [role="status"]')!;
+    expect(status.textContent).toBe(text);
+    expect(status.getAttribute('aria-label')).toBe(text);
+    expect(JSON.stringify(view)).toBe(original);
+  });
+}
+
+test('무승자 나가리 정산은 AI 이름과 겹쳐도 결과와 원문을 보존', async () => {
+  const view = { ...fixtures.settlement, winner: null, names: ['나', '나가리'] as const };
+  const original = JSON.stringify(view);
+  const screen = await render(Settlement, { view, nextCarry: 2, soloDifficulty: 'commercial' });
+  const headline = screen.container.querySelector('[data-testid="settlement-headline"]')!;
+  expect(headline.querySelector('[aria-hidden="true"]')?.textContent).toBe('나가리 · 다음 판 ×2');
+  expect(headline.querySelector('.sr-only')?.textContent).toBe('나가리 · 다음 판 ×2');
+  expect(JSON.stringify(view)).toBe(original);
+});
+
+// review5370762362 경계군별 합성35개. 리뷰의 개별 입력 전문이 아닌 같은 경계군의 명시적 회귀다.
+const noticeBoundaryCases = [
+  [
+    'FirstPicked 순서 선',
+    ['나', '선'],
+    '선 고르기: 나 1월 광 · 선 2월 열끗',
+    '선 고르기: 나 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    'FirstPicked 순서 선 고르기:',
+    ['나', '선 고르기:'],
+    '선 고르기: 나 1월 광 · 선 고르기: 2월 열끗',
+    '선 고르기: 나 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    'FirstPicked 순서 컴퓨터 · 상용급',
+    ['나', '컴퓨터 · 상용급'],
+    '선 고르기: 나 1월 광 · 컴퓨터 · 상용급 2월 열끗',
+    '선 고르기: 나 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    '이름 내부 구분자 합성 · 컴퓨터 · 상용급 사용자',
+    ['합성 · 컴퓨터 · 상용급 사용자', '컴퓨터 · 상용급'],
+    '선 고르기: 합성 · 컴퓨터 · 상용급 사용자 1월 광 · 컴퓨터 · 상용급 2월 열끗',
+    '선 고르기: 합성 · 컴퓨터 · 상용급 사용자 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    '이름 내부 구분자 합성 · 컴퓨터 · 상용급 사용자 · 컴퓨터 · 상용급 친구',
+    ['합성 · 컴퓨터 · 상용급 사용자 · 컴퓨터 · 상용급 친구', '컴퓨터 · 상용급'],
+    '선 고르기: 합성 · 컴퓨터 · 상용급 사용자 · 컴퓨터 · 상용급 친구 1월 광 · 컴퓨터 · 상용급 2월 열끗',
+    '선 고르기: 합성 · 컴퓨터 · 상용급 사용자 · 컴퓨터 · 상용급 친구 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    '이름 내부 구분자 합성 참가자',
+    ['합성 참가자', '합성 · AI'],
+    '선 고르기: 합성 참가자 1월 광 · 합성 · AI 2월 열끗',
+    '선 고르기: 합성 참가자 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    '이름 내부 구분자 빈 사람 이름',
+    ['', '컴퓨터 · 상용급'],
+    '선 고르기:  1월 광 · 컴퓨터 · 상용급 2월 열끗',
+    '선 고르기:  1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    '동명/선두 중첩 0',
+    ['합성', '합성'],
+    '선 고르기: 합성 1월 광 · 합성 2월 열끗',
+    '선 고르기: 합성 1월 광 · 합성 2월 열끗',
+  ],
+  [
+    '동명/선두 중첩 1',
+    ['', ''],
+    '선 고르기:  1월 광 ·  2월 열끗',
+    '선 고르기:  1월 광 ·  2월 열끗',
+  ],
+  [
+    '동명/선두 중첩 2',
+    ['컴퓨터', '컴퓨터 · 상용급'],
+    '선 고르기: 컴퓨터 1월 광 · 컴퓨터 · 상용급 2월 열끗',
+    '선 고르기: 컴퓨터 1월 광 · 컴퓨터 · 상용급 2월 열끗',
+  ],
+  [
+    '동명/선두 중첩 3',
+    ['컴퓨터 · 상용급', '컴퓨터'],
+    '선 고르기: 컴퓨터 · 상용급 1월 광 · 컴퓨터 2월 열끗',
+    '선 고르기: 컴퓨터 · 상용급 1월 광 · 컴퓨터 2월 열끗',
+  ],
+  [
+    '동명/선두 중첩 4',
+    ['선', '선 고르기:'],
+    '선 고르기: 선 1월 광 · 선 고르기: 2월 열끗',
+    '선 고르기: 선 1월 광 · 선 고르기: 2월 열끗',
+  ],
+  [
+    '동명/선두 중첩 5',
+    ['선 고르기:', '선'],
+    '선 고르기: 선 고르기: 1월 광 · 선 2월 열끗',
+    '선 고르기: 선 고르기: 1월 광 · 선 2월 열끗',
+  ],
+  ['prefix/suffix 부분 이름', ['나', '선'], '선수 선', '선수 선'],
+  ['prefix/suffix 공백 없음', ['나', '선'], '선고르기', '선고르기'],
+  ['prefix/suffix 접미 겹침', ['나', '합성'], '다른합성 선', '다른합성 선'],
+  ['prefix/suffix 경계 뒤 추가', ['나', '합성'], '합성인 선', '합성인 선'],
+  ['prefix/suffix AI 사건', ['나', '선'], '선 자뻑', '컴퓨터 자뻑'],
+  ['prefix/suffix 사람 사건', ['합성 사람', '합성'], '합성 사람 선', '합성 사람 선'],
+  [
+    '모호한 FirstPicked 다른 사람',
+    ['나', '선'],
+    '선 고르기: 다른 이름 1월 광 · 선 2월 열끗',
+    '선 고르기: 다른 이름 1월 광 · 선 2월 열끗',
+  ],
+  ['모호한 FirstPicked 누락', ['나', '선'], '선 고르기: 나 1월 광', '선 고르기: 나 1월 광'],
+  [
+    '모호한 FirstPicked 빈 첫 필드',
+    ['나', '선'],
+    '선 고르기: 나  · 선 2월 열끗',
+    '선 고르기: 나  · 선 2월 열끗',
+  ],
+  [
+    '모호한 FirstPicked 빈 둘째 필드',
+    ['나', '선'],
+    '선 고르기: 나 1월 광 · 선 ',
+    '선 고르기: 나 1월 광 · 선 ',
+  ],
+  [
+    '모호한 FirstPicked 추가',
+    ['나', '선'],
+    '선 고르기: 나 1월 광 · 선 2월 열끗 · 추가',
+    '선 고르기: 나 1월 광 · 선 2월 열끗 · 추가',
+  ],
+  [
+    '모호한 FirstPicked 중복',
+    ['나', '선'],
+    '선 고르기: 나 1월 광 · 선 2월 열끗 · 선 3월 광',
+    '선 고르기: 나 1월 광 · 선 2월 열끗 · 선 3월 광',
+  ],
+  ['일반 사건/승리 선', ['나', '컴퓨터 · 상용급'], '컴퓨터 · 상용급 선', '컴퓨터 선'],
+  [
+    '일반 사건/승리 뻑 먹기',
+    ['나', '컴퓨터 · 상용급'],
+    '컴퓨터 · 상용급 뻑 먹기',
+    '컴퓨터 뻑 먹기',
+  ],
+  ['일반 사건/승리 자뻑', ['나', '컴퓨터 · 상용급'], '컴퓨터 · 상용급 자뻑', '컴퓨터 자뻑'],
+  [
+    '일반 사건/승리 폭탄 (1월)',
+    ['나', '컴퓨터 · 상용급'],
+    '컴퓨터 · 상용급 폭탄 (1월)',
+    '컴퓨터 폭탄 (1월)',
+  ],
+  [
+    '일반 사건/승리 국진: 쌍피',
+    ['나', '컴퓨터 · 상용급'],
+    '컴퓨터 · 상용급 국진: 쌍피',
+    '컴퓨터 국진: 쌍피',
+  ],
+  [
+    '일반 사건/승리 흔들기: 1월 광',
+    ['나', '컴퓨터 · 상용급'],
+    '컴퓨터 · 상용급 흔들기: 1월 광',
+    '컴퓨터 흔들기: 1월 광',
+  ],
+  [
+    '일반 사건/승리 승리 · 스톱',
+    ['나', '컴퓨터 · 상용급'],
+    '컴퓨터 · 상용급 승리 · 스톱',
+    '컴퓨터 승리 · 스톱',
+  ],
+  ['중립 문맥 같은', ['나', '같은'], '같은 월: 다시 고릅니다', '같은 월: 다시 고릅니다'],
+  ['중립 문맥 바닥', ['나', '바닥'], '바닥 총통: 다시 나눕니다', '바닥 총통: 다시 나눕니다'],
+  ['중립 문맥 나가리', ['나', '나가리'], '나가리 · 다음 판 ×2', '나가리 · 다음 판 ×2'],
+] as const;
+
+for (const [label, names, text, expected] of noticeBoundaryCases) {
+  test(`문구 경계35: ${label}`, () => {
+    expect(conciseSoloNotice(text, names)).toBe(expected);
+  });
+}
+
+test('생산부의 즉시 정산·승리·밀기 형식을 보존하고 미확인 형식은 줄이지 않는다', () => {
+  const names = ['나', '컴퓨터 · 상용급'] as const;
+  const notices = [
+    ...Object.values(INSTANT_LABEL).map((label) => `${label} 즉시 정산 +10점`),
+    ...Object.values(REASON_LABEL).map((label) => `승리 · ${label}`),
+    '밀기 · 다음 판 ×2',
+    '국진: 열끗',
+  ];
+  for (const notice of notices) {
+    expect(conciseSoloNotice(`${names[1]} ${notice}`, names)).toBe(`컴퓨터 ${notice}`);
+    expect(conciseSoloNotice(`${names[0]} ${notice}`, names)).toBe(`${names[0]} ${notice}`);
+  }
+  const unknown = `${names[1]} 미확인 안내`;
+  expect(conciseSoloNotice(unknown, names)).toBe(unknown);
+  for (const name of ['같은', '바닥', '나가리']) {
+    expect(conciseSoloNotice(`${name} 자뻑`, ['나', name])).toBe('컴퓨터 자뻑');
   }
 });
