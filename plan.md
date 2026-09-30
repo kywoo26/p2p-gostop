@@ -321,6 +321,12 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 3-2. 진행 매트릭스 (기본 2026-09-29 main `daa5e7d`; RP-07 2026-09-30 `e33f044` 기반 갱신)
 
+### 선택창 회전 잠금 (#155, UX-07·UX-24)
+
+| ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
+|---|---|---|---|
+| UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 독립 리뷰 P1은 퇴장 중 재활성 창의 복원값을 false로 정정하여 수정하며, 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 입력 회귀 검증을 추가한다. | 같은 리뷰어의 재등장 경계 재검토 대기. Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
+
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |
