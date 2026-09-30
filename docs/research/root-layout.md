@@ -37,4 +37,4 @@
 
 2026-10-01 root 조율 반영: #224 생성 후 이슈 제목·본문·labels·milestone·state는 이슈 정제 담당의 단독 소유다. 이 작업은 해당 필드를 더 이상 편집하지 않으며 PR·최종 SHA·이동경로·승인 범위·검증을 지정 리뷰/오케스트레이션 담당에게 인계한다. 운영 wrapper·release clone·secret에는 접근하지 않는다.
 
-통합 기록: clean 작업 브랜치에서 `origin/main`의 `2fc850f`(#222·#214 포함)를 merge한 commit은 `6ee9396`이다. Git이 `plan.md`의 upstream 수정 4행을 `intent/plan.md`로 자동 통합했고 제품 UI·테스트·기준샷 변경도 보존했다. #219는 아직 선행 PR이며 root가 병합 순서를 조율한다. 추가 main 통합은 인계 담당이 같은 merge 규약으로 진행한다. 이동 전후 비교 기준을 이 main으로 갱신하고 새 head의 필수 검증을 PR에 기록한다.
+통합 기록: clean 작업 브랜치에서 `origin/main`의 `2fc850f`(#222·#214 포함)를 merge한 commit은 `6ee9396`이다. Git이 `plan.md`의 upstream 수정 4행을 `intent/plan.md`로 자동 통합했고 제품 UI·테스트·기준샷 변경도 보존했다. 이후 root가 #219 병합을 알린 뒤 clean `e5be294`에서 main `0d8c18cd235fd47ccdacfcaec03e3bbb3ea35ae7`을 merge했다. implementer 시작 계약과 plan 현재 트랙의 충돌은 #219의 최신 계약을 채택하고 새 `intent/` 경로로 갱신했다. #219가 제거한 옛 소유권 문단을 복원하지 않으며 plan·docs/refactor-plan·에이전트/리뷰 지침 5파일의 최신 계약을 보존한다. 이 main 기준으로 이동 전후 비교·검증을 갱신하고 실제 merge commit SHA·동일 head CI·리뷰는 PR에서 연결한다. 추가 통합과 경로 공지는 root가 조율한다.

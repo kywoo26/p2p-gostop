@@ -289,47 +289,63 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ### 현재 트랙
 
-- 최신 상태·릴리스 우선순위는 §3-2를 정본으로 삼고, PR별 계획·공유 파일 소유권은 아래 #152 이관 내용을 따른다.
-- 병합된 #56·#60·#38·#73은 진행 중으로 세지 않는다. PR #151(선택 자동화·국진 설정)과 #94/#95(의존성)는 병합됐고, PR #104(화면)는 미완이며, §3-2의 릴리스 분류·코드 기준을 따른다.
+상태 확인: 2026-10-01, main `17c8d29`(#213 병합). 작업별 기준 SHA는 각 실행계획에 고정한다. 요구 상태는 §3-2, 현재 배정·공유 파일 인계는 이 절이 정본이다. AGENTS.md는 단일 작업 규범이며 이슈·PR은 정본과 commit SHA를 연결한다. 이 문서 정비는 #211 출하 후 후속이며 v0.3.2 출시 gate를 추가하지 않는다.
 
-<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 Galaxy 계획의 경로·절 앵커는 [이관표](../docs/plan-galaxy-solo.md)에서 이 절과 해당 정본으로 연결한다.
+<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 Galaxy 경로·앵커는 [이관표](../docs/plan-galaxy-solo.md)를 유지한다.
 
-Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone 확보 후 #75에서 재개한다. 아래는 #152에서 이관한 PR 단위 ID와 파일 소유권이다. 단위 ID의 버전 접두사는 기존 인계 순서를 보존한 이름이며, 현재 릴리스 배정·완료 상태는 §3-2가 우선한다. 각 선행 작업의 병합본을 인계받아 충돌 파일을 직렬로 수정한다.
+#### 변경별 실행계획 계약
 
-| 트랙·PR 단위 | 남은 범위 / 이슈                                                       | 파일 소유권·인계                                                                                                                                                     |
-| ------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| v0.2.2 .2-A  | 밀기/받기·배수·AI 연결은 #100 완료; #30의 이탈 환급 정책만 v0.2.3 검토 | Sol: `game/session.ts`, `solo.svelte.ts`, `controller.ts`, `p2p/{host,guest}.svelte.ts`, `Settlement.svelte`, AI worker, `e2e/push.spec.ts`; 메뉴/guest 계약 인계 뒤 |
-| v0.2.2 .2-B  | FR-21 설정 24항목·규칙/금액 UI #62                                     | Sol: `settings/**`, `Settings.svelte`, `RuleSettings.svelte`, `current.svelte.ts`, `p2p/common.ts` preset 판별, `HostRoom.svelte`; .2-A 뒤                           |
-| v0.2.2 .2-C  | 원장 기록·재충전·실지급·판 무효 #44(옛 #63 이관)                       | Sol: `records.ts`, `Records.svelte`, 기록 타입·E2E; .2-A의 session/solo/host/Settlement와 `App.svelte`·`routes/Game.svelte` 라우팅 소유권 인계                       |
-| v0.2.2 .2-D  | 정산·은닉·설정·P2P 시간 통합 E2E #75(옛 #58 이관)                      | Sol: `e2e/p2p.spec.ts`, `solo.spec.ts`, `settings.spec.ts`; .2-A~C 뒤                                                                                                |
-| v0.2.3 .3-A  | 효과음·진동·효과 강도·중복 억제 #117/#49(옛 #128 이관, 현재 v0.2.2)    | Sol: `sound.ts`, `playback.svelte.ts`, `banner.ts`, `p2p/common.ts` 진동, 피드백 설정/테스트; anim 계약 인계                                                         |
-| v0.2.3 .3-B  | AI 기본값·생각 시간·오류 대체 UX #66(옛 #65 이관, 현재 v0.2.2)         | Sol: `ai-client.ts`, `ai-core.ts`, `solo.svelte.ts`, worker, SoloSetup/E2E; .2-A/C 뒤                                                                                |
-| v0.2.3 .3-C  | Galaxy 안내·화면 유지·복구 #75(옛 #68/#69 이관; #64는 #88/#150 완료)   | Sol: Android Activity/Service/Diagnostics와 웹 session/solo/current/local/Diagnostics; .2-B·.3-B 저장 소유권 인계                                                    |
-| v0.2.3 .3-D  | 카드·Galaxy 예산·강도 보고 #66/#75(옛 #70 이관)                        | Sol 통합: 갤러리/E2E 기준샷, device-test 절차, `ai-tuning.md`; 카드·AI 담당 산출물 인계                                                                              |
+[AI-native SDLC playbook의 Build](https://claude.com/blog/the-ai-native-sdlc-playbook)는 파일·순서·위험·증명, 수락된 계획 commit, 구현 이탈의 같은 commit 동기화, 단계 산출물의 다음 단계 연결과 정본 지정을 권고한다. 아래는 이 프로젝트의 적용이며 원문의 서비스·hooks·자동화 도입을 뜻하지 않는다. 기존 `intent/intent.md → intent/spec.md → intent/plan.md → 코드`를 유지한다.
 
-`settings/**`는 .2-B→.3-A→.3-B, `solo.svelte.ts`는 .2-A→.2-C→.3-B→.3-C, `session.ts`는 .2-A→.2-C→.3-C 순으로 소유한다. 공용 갤러리 기준샷은 각 기능 병합 뒤 .3-D가 갱신한다. 규칙 항목의 정본은 [rules-commercial §12.7](../docs/research/rules-commercial.md#127-사용자-설정으로-노출할-토글)과 [spec FR-21](spec.md)이다.
+- 착수할 변경은 이슈/요구 ID, 기준 SHA, 사용자 결과, 소유 파일, 구현 순서, 위험, 증명, 선행 소유권, 수락 기록을 적는다. 미착수 backlog는 다음 준비 조건만 두고 세부 계획을 확정한 것으로 표시하지 않는다.
+- 기존 사용자 승인 아래 통상 구현은 root가 범위·인계를 수락하면 구현 브랜치에 계획 commit을 만들고 바로 재현·구현·검증한다. 별도 문서 PR 병합을 기다리지 않는다. 실질 spec 변경은 근거 리뷰와 사용자 승인을 유지한다. 승인된 작업에 별도 승인 질문을 반복하지 않는다.
+- 계획 commit은 자기 SHA를 같은 파일에 적을 수 없으므로 PR 본문에 실제 full SHA와 수락 기록 참조를 남긴다. 이슈에는 PR/계획 commit 링크를 연결한다. 구현 이탈은 이유·승인 범위와 함께 코드와 같은 commit에서 계획을 갱신한다. #213/#214/#206에는 소급 승인·가짜 최초 계획 SHA를 만들지 않고 현재부터 보완한다.
+
+| 단계 | 산출물·다음 단계 trigger |
+|---|---|
+| 의도·요구 | `intent/intent.md`의 목적과 `intent/spec.md` ID/수락 범위를 확인 → 실행계획 작성. 실질 요구 변경은 사용자 승인 뒤 진행 |
+| 계획·구현 | root 수락 기록 + 계획 commit → 소유 파일의 재현·코드·검증; 이탈은 같은 commit에 동기화 |
+| 검토·출하 | PR의 계획 SHA·실제 diff·검증/한계 → 독립 reviewer 판정 + 병합 대상 동일 head 필수 CI → 사람 또는 지시받은 root의 병합·출하 |
+| 후속 | 사람 관측·결함은 기존 이슈/§3-2에 결과와 미완 범위를 연결 → 다음 필요한 변경 준비; 실기기 결과를 추정하지 않음 |
+
+#### 활성·다음 준비 작업
+
+| 작업·요구 ID | 상태·사용자 결과 | 파일·구현 순서·선행 소유권 | 위험·증명·수락/계획 참조 |
+|---|---|---|---|
+| SDLC 정비 / Refs #211 · NF-09 · plan §3/§3-2 | 실행 중. 현재 배정과 구현·리뷰 인계를 재현 가능하게 읽는다. 기준 `95595bd93561afad7531aceb4f1ea863f5b4a28a` | `intent/plan.md` → `docs/refactor-plan.md` 현 소유권 문단 → `.claude/agents/{implementer,reviewer}.md`·`.claude/skills/review-pr/SKILL.md`. root가 이 5파일 범위 수락; #206은 해당 코드·matrix행만 소유 | medium. 역사/미완 요구 유실·오래된 CI 전용을 방지. gh 상태·링크/앵커·diff/익명화·lint 확인. 수락: 2026-10-01 사용자 즉시 배정 요청에 따른 root 실행 지시; 실제 계획 commit SHA는 이 변경 PR 본문에 기록 |
+| #208 / PR #213 · NF-01 · NF-RP-06 | v0.3.2 필수 수정 병합. 추적 텍스트 검사·재유입 방지; 전체 개인정보 감사 완료 아님 | 최종 head `a2ff262`, 병합 `17c8d29`. 기존 PR 계약 유지, 현행 코드 소유권 해제 | [리뷰](https://github.com/kywoo26/p2p-gostop/pull/213#pullrequestreview-5370057309)·[동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36754773576). 과거 이력·binary/첨부·private 내용은 미검증 |
+| #206 / PR #218 · FR-40 · FR-23 · NF-08 | v0.4.0 구현 진행. AI 이름·난이도를 분리하고 사건 문구를 짧게 읽는다 | 기존 UI 담당: `game/player-labels.ts`·`App.svelte`·`routes/{Game,Settlement}.svelte`·`ui/{Board,SeatBar,EventBanner,EventRail}.svelte`·표적 테스트. 실제 소유 파일·기준 SHA·계획/수락 기록은 [PR #218](https://github.com/kywoo26/p2p-gostop/pull/218)에서 현재부터 보완 → CI/독립 리뷰 → #214 검토 | medium, 라이브 뷰 경합은 high. 양좌석·긴 합성 이름·ARIA·난이도 정보 보존 증명. AI 성능 인증/정책 변경 없음; 기존 사용자 구현 승인 유지 |
+| PR #214 · FR-41 · FR-46 · NF-08 · UX-H05 | v0.4.0 코드·CI 완료, 독립 리뷰 미착수. 매칭 강조를 식별한다 | 기존 UI 담당 `ui/Board.svelte`·`styles/skin-marks.css`·표적 테스트/기준샷 및 PR 실제 diff. head `463d686`; #206 인계 확인 → 동일 head 독립 리뷰 | [CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36743118271)만으로 수용 확정하지 않음. 현행부터 계획·승인 참조 보완, 소급 최초 계획 없음 |
+| #193 · MN-05 · NP-03 | v0.3.3 다음 준비, 코드 미착수. 다음 판 복원 후 양좌석 입력/정산을 회복한다 | 기준 main `95595bd`, [재현·기준](https://github.com/kywoo26/p2p-gostop/issues/193). `p2p/host.svelte.ts`와 복원/handshake 테스트: #191/#195 공용 파일 인계 확인 → 재현 → 판ID/정산 잠금 분리 → 2판 정산/기록/원장각1회 | high. 이중 지급·이전 summary 재잠금 위험. Board/playback 소비 계약 보존. 담당·실행계획 수락/commit은 착수 시 확정; 권고 선행을 모든 정책 해결 gate로 확대하지 않음 |
+| #212 · FR-10 · FR-15 · FR-40 · S4/S5/B3 | v0.3.3 다음 준비, 재현 완료·코드 미착수. 국진 선택 중 피해자 확정 점수 갱신 | 기준 main `95595bd`, [재현·기준](https://github.com/kywoo26/p2p-gostop/issues/212). `engine/src/{turn,round-end,view}.ts`·표적 engine/browser 테스트: 합법 분배 재현 → 미확정 actor/확정 피해자 분리 → ScoreChanged 검증. #193과 파일 독립 가능 | high. 중복/누락 이벤트·정산 오판 위험. rules §12 정상/경계/반례와 두 브라우저 HUD 증명. #205 설명 UI 별도. 담당·수락/계획 commit은 착수 시 확정 |
 
 #### 공유 파일 인계
 
-| 공유 경계                                             | 남은 소유권·순서                                                                                                                                                      |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `p2p/common.ts`                                       | .2-B가 preset 판별을 완료해 .3-A 진동 담당에게 인계한다. #44 로비 준비는 별도 protocol 계약 뒤 반영한다.                                                              |
-| `App.svelte`·`routes/Game.svelte`·`SoloSetup.svelte`  | 메뉴/Back 작업→.2-A Game 밀기→.2-C App/Game 라우팅→.3-B SoloSetup AI UX. 같은 파일을 동시에 수정하지 않는다.                                                          |
-| `bridge/bridge.ts`·Android Back/셸                    | 메뉴/Back 계약을 .3-C가 이어받아 저장 오류·복귀를 처리한다. 릴레이 서버/벡터는 #75로 이관된 #61 담당 이력에 따른다.                                                   |
-| `styles/tokens.css`·`anim/*`·카드                     | HUD 층위 토큰과 anim `--dur-*` 예약을 .1-A가 소비한 뒤 .3-D가 의미 색을 맡는다. 카드 토큰·비율/props는 카드 담당 산출물과 먼저 맞추고 전체 파일 포맷을 겹치지 않는다. |
-| `p2p/{guest,link}`·`GuestApp`·`protocol/src/guest.ts` | 재접속/시계 계약 뒤 .2-A guest 밀기→.2-C 정산. #44 ready는 별도 protocol 계약을 선행한다.                                                                             |
-| `settings/**`·`Settings.svelte`·저장소                | anim 속도 기본값→.2-B 규칙→.3-A 피드백→.3-B AI 기본값. `current.svelte.ts`는 .2-B→.3-C, `storage/local.ts`는 .3-C 전용이다.                                           |
-| `packages/ai/**`·`tools/sim/**`·관련 문서             | 확정된 #56 기준→#66 강도→#67 머니. `ai-tuning.md`·`money-model.md`와 결과 표를 함께 인계하고 공개 API만 사용한다.                                                     |
-| 공용 E2E·갤러리                                       | 기능 담당이 전용 테스트를 소유하고 .2-D/.3-D가 선행 병합 뒤 공용 기준샷·통합 검증을 맡는다.                                                                           |
+| 공유 경계 | 현재 소유권·다음 순서 |
+|---|---|
+| `intent/plan.md` | 현재 트랙 전체 정비는 SDLC 담당, #206 UI 담당은 해당 matrix행만. 충돌은 root에게 범위 알림 후 merge로 통합 |
+| `Board.svelte`·이름/난이도 소비 UI | #206 기존 담당 → #214 독립 리뷰/필요 수정 → #204 전체보기 인계. 병합 전 실제 PR diff로 파일 경계 확인 |
+| `Floor.svelte`·바닥 배치/착지 | #214 소유권 인계 → #201 안정 슬롯(high) → 같은 담당 #200 착지. #204 현재 32px 유지 전체보기는 Floor와 독립 가능하나 Board 인계 필요 |
+| `p2p/host.svelte.ts`·저장/복원 | #191/#195 공용 파일 인계 확인 → #193 복원 정산 잠금 → #192/#194 저장 실패/시계 후속. 재현 완료는 수정 완료 아님 |
+| engine 점수·표시 전달 | #212 좁은 확정 점수 갱신 → #205 현재 점수 구성/카드 근거 UI. 규칙 정본 §12·공개정보 경계 유지 |
+| 공용 E2E·갤러리·실기기 | 기능 담당 전용 검증 뒤 공용 기준샷 인계. Galaxy/iPhone 결과는 #75/#186 사람 회차만 기록; WebKit 자동 검사는 실기기 대체 아님 |
 
-- 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 끝난 리뷰·통합·수정 트랙은 위 상태 표와 리뷰 이력으로 대체한다.
-- 작업은 워크트리·브랜치·PR로 격리한다. 위임 시 Codex(Paseo)를 기본으로 판단·리뷰는 Astra, 구현은 Sol, 저위험 정리는 Luna를 배분하며 Claude 서브에이전트는 사용자 명시 때만 쓴다. 병합은 CI 녹색 + reviewer 판정 뒤 사람 또는 사람이 지시한 오케스트레이터만 수행한다.
+미착수 backlog: #191~195 복구, #30 이탈 환급, #44 로비/기록/판무효, #62 미지원 규칙·설정, #66 AI 강도·#67 머니·#75 실기기·#117 음향은 미완 요구를 유지한다. 옛 .2-A~D/.3-A~D의 상세 인계·검증 이력은 [#152 당시 계획](https://github.com/kywoo26/p2p-gostop/pull/152)에 보존하며 현재 배정으로 재사용하지 않는다. #131 결과 인지·밀기와 #49 연출은 시안 수용 후 구현, 현재 미착수다. #202 동월 겹침·#204 32px 미만 축소·#207 예산·#49 음향의 spec 변경은 근거 리뷰/사용자 승인 gate이며 그 밖의 가능한 UI까지 막지 않는다.
+
+카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 작업은 워크트리·브랜치·PR로 격리하며 현재 사용자 배정 정책은 subagent `gpt-6.1-sol`만, effort low(기계적)/medium(일반 구현·리뷰)/high(경합·보안·설계)이다. 위임은 사용자 지시에 따른다. `.claude` frontmatter는 Claude 전용 도구 설정이며 이 운영 모델 정책의 정본이 아니다.
 
 ---
 
-## 3-2. 진행 매트릭스 (기본 2026-09-29 main `daa5e7d`; RP-07 2026-09-30 `e33f044` 기반 갱신)
+## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
-### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
+### 재생 지연 복구 근거 (NF-03·AC-06·NP-03)
+
+| 현재 상태 | 대표 구현·검증 근거 | 미완 범위 |
+|---|---|---|
+| #203 병합(2026-09-30); #209 좁은 재생 취소/재진입 결함 닫힘 | 최종 head `8d2564458da1f5b4ed187afa9b46b5e80f9cbf32`, 병합 `95595bd`. [PR·최종 독립 재검토](https://github.com/kywoo26/p2p-gostop/pull/203), [동일 head CI 3/3](https://github.com/kywoo26/p2p-gostop/actions/runs/36746645776); `game/playback.recovery.test.ts`·`e2e/playback-delay.spec.ts` | NF-03 미검증·AC-06 부분을 유지. 속도 향상·계측 비용0·RTT/실기기 성공은 미입증. #200/#201 착지/슬롯, #131 밀기, #191~195 복구는 별도 |
+
+<details>
+<summary>2026-09-30 #203 구현·리뷰 수정 시점의 재현/측정 근거(아래 대기 문구는 당시 기록)</summary>
 
 - 사용자 실측 v0.3.1 `4e536e1` 빠름 6표본은 [PDR-01](../docs/device-test/results.md#pdr-01--사용자-제공-v031-부분-관측)에 최소 익명 증거만 기록했다. full play618/619/683/702ms 네 경로와 prompt223/choose462를 섞어 수용 통과로 판정하지 않는다. NF-03 미검증·AC-06 부분 상태 유지.
 - `game/playback.recovery.test.ts`: 합성 도착50/150/300ms에서 reset 뒤 stale snapshot/선택창·효과, dispose 뒤 읽기 대기, reset→burst를 수정 전 Chromium/WebKit10실패로 재현했다. generation 소유권으로 커밋·이벤트·계측·정산을 보호하고 대기를 스킵해 회수한다. 정상 FIFO와 #185 milestone 큐는 보존한다. 복구 없는 빈 이벤트 snapshot/정산 표식은 기존 FIFO 순서를 유지한다. #191~195의 저장/호스트 metadata·timer audit와 다른 renderer 재생 수명 결함이다.
@@ -344,18 +360,20 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 독립 리뷰 [PR203 review5369028450](https://github.com/kywoo26/p2p-gostop/pull/203#pullrequestreview-5369028450)의 P2는 이전 head `9548dd9` CI3/3과 별개인 공개 callback 합성 반례다. `onBanner` reset→새 flip FIFO→throw의 옛 catch 큐 초기화와 미부착/분배 Jjok→옛 InstantPayout/ScoreChanged 잔여 실행을 기본20검사 중14실패·6통과로 재현했다. 실제 제품 vibrateFor/사용자 이상 장면에서 reset/throw가 발생했다는 근거는 아니다. catch를 묶음 세대에 묶어 stale 예외 후 새 FIFO를 계속 drain하고, 이벤트·onBanner/names callback 앞뒤 및 choreo callback 뒤에 세대 검사를 적용한다. 직렬 pump가 새 FIFO/선택/정산까지 처리한 뒤 잠금을 한 번 풀며 옛 finally가 새 스킵을 해제하지 않도록 보호한다(추가 합성2실패 재현). 새 세대 flip/족보 한 번·최신 pending/board·취소 timing 없음과 같은 세대 enqueue의 정상 잔여 이벤트 보존을 검사한다. 보강 callback22검사와 전체 browser776·Node563·lint/check 및 표적 E2E2 통과. PR203/#209는 리뷰 수정 새 head CI·좁은 재검토 전 완료 확정을 철회했으며 UI/슬롯/밀기·실기기·RTT는 별도 범위로 유지한다. main `664a181`과의 병합 조합/full CI는 아직 검사하지 않았으며 이 수정 때문에 강제 통합하지 않는다.
 리뷰 수정본의 로컬 PR 필수 smoke384검사 모두 통과(포트4227, workers2, timing 직렬), web build/번들 gate 및 Android assembleDebug/testDebugUnitTest/lint(--max-workers=4) 통과. 직렬 Chromium 빠름 워밍업1+경로별7표본은 p50 380/530/380ms, 전체21표본 p50=380ms/두 번째 최대530ms/최대531ms였다. 앞의 A/B나 실제 Galaxy 관측에 합치지 않고 이 실행의 회귀 근거로만 남긴다. 속도 향상·실기기 성공·NF-03 최초 paint 수용을 뜻하지 않는다.
 
+</details>
+
 ### 선택창 회전 잠금 (#155, UX-07·UX-24)
 
 | ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
 |---|---|---|---|
-| UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 독립 리뷰 P1은 퇴장 중 재활성 창의 복원값을 false로 정정하여 수정하며, 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 입력 회귀 검증을 추가한다. | 같은 리뷰어의 재등장 경계 재검토 대기. Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
+| UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 P1 수정은 최종 head `6c9d3ff`에서 독립 재검토 완료 후 병합됐다. 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 회귀를 보존한다. [PR #188](https://github.com/kywoo26/p2p-gostop/pull/188)·[동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36729441463). | 재등장 경계 재검토 완료(자동 검사 범위). Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
 
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |
 | ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. Docker 컨텍스트 허용 목록과 `docker/relay/check-context.sh` canary export를 CI에 추가. `feat/relay-public` 임시 병합 이미지에서 비root/읽기 전용/루프백 기동, 로컬 `/health`·`/version`·정적 release 경로·Compose healthy 확인 | RP-02가 main에 병합된 뒤 재검사. Galaxy APK 동시 release·사람 PC 검증 대기                |
-| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | PR #190 / Refs #210: PS7/5.1 UTF-8·stderr/exitcode·runtime 정체·잠금/소유 프로세스·nonce Compose 실패 격리 합성 회귀(`tools/relay/validation.md`). 기존 wrapper live 검증과 현재 소유권 수정본 live 미검증을 분리. 수동 재부팅·게임 실기기 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
+| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | [#190](https://github.com/kywoo26/p2p-gostop/pull/190) 병합·#210 좁은 운영 결함 닫힘; 최종 head `4a4384d` [동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36745578111)·독립 재검토 완료. PS7/5.1 UTF-8·stderr/exitcode·runtime 정체·잠금/소유 프로세스·nonce Compose 실패 격리 합성 회귀(`tools/relay/validation.md`). 기존 wrapper live 검증과 현재 소유권 수정본 live 미검증을 분리. 수동 재부팅·게임 실기기 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
 
 위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](../docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
 
@@ -518,7 +536,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 
 ### 요약·의도별 달성도
 
-고유 ID **86개 중 완료 49·부분 26·미구현 5·미검증 6**. 완료율은 **49/86 = 57.0%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
+2026-09-29 집계(이번 좁은 상태 갱신에서 전수 재산정하지 않음): 고유 ID **86개 중 완료 49·부분 26·미구현 5·미검증 6**. 완료율은 **49/86 = 57.0%**(타이머 신규4개 포함), 타이머 신규 ID 제외한 기존82개는 **45/82 = 54.9%**. 이는 기능·검증 항목의 단순 비율이며 제품 품질 점수가 아니다. P0 AI 강도·성능과 현재 실기기 수용이 남아 v1.0 완료로 볼 수 없다.
 
 - **기내 오프라인 1:1:** 아키텍처·M0 기내 모드 연결·자동20판 경로 확보, 현재 정식 UI 실기기 AC-08/09 미검증(#75).
 - **iPhone 무설치:** Safari HTTP 진입·QR 스모크 달성, 현재 게임/잠금복귀를 실기기로 다시 확인해야 함(#75).
@@ -532,9 +550,9 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 
 리뷰 반영 병합 트리(`daa5e7d` 포함)에서도 같은 Docker 진입점으로 `npm ci`, lint/check, Node519개, 브라우저56파일·366개, E2E117통과·19 skip, 웹 빌드1247.5/1536KiB·외부 요청0, Android assembleDebug/testDebugUnitTest/lint를 다시 통과했다. ENGINE_FULL의10,000판+첫 판1,000판도2/2 통과(44.96초). 매트릭스86 ID·닫힘33개·§3-3 진단5줄을 별도 검사했다. 실기기 판정은 바꾸지 않는다.
 
-### 이슈 정리 결과 (초기 정리와 리뷰 반영 시점 구분)
+### 이슈 정리 결과 (2026-09-29의 역사 기록)
 
-초기 head `e0a0bd8`에서 58→25개(17/8/33)로 정리했다. 리뷰 반영 시점 main `daa5e7d`에서는 #151 구현으로 #113이 닫히고 #30이 환급 정책 범위로 재개되어 원래 정리 대상58개 중 열린25개를 유지하되 구성은 **v0.2.2 16개 / v0.2.3 9개 / 닫힘33개**다. #110·#140은 기존 통합 종료 뒤 #151 구현까지 확인됐으며 닫힘을 유지한다. 아래 목록은 원래58개 범위의 현재 구성이다. 2026-09-29 21:55 KST 추가 조회에서 신규 #155(회전 후 선택창 inert 충돌)가 별도로 열려 저장소 전체 OPEN은26개다. 신규 이슈는 이 정리의 종료/재개 수에 섞지 않는다.
+초기 head `e0a0bd8`에서 58→25개(17/8/33)로 정리했다. 리뷰 반영 시점 main `daa5e7d`에서는 #151 구현으로 #113이 닫히고 #30이 환급 정책 범위로 재개되어 원래 정리 대상58개 중 열린25개를 유지하되 구성은 **v0.2.2 16개 / v0.2.3 9개 / 닫힘33개**다. #110·#140은 기존 통합 종료 뒤 #151 구현까지 확인됐으며 닫힘을 유지한다. 아래 목록은 당시 원래58개 범위의 구성이다. 현재 배정은 §3 현재 트랙을 따른다. 2026-09-29 21:55 KST 추가 조회에서 신규 #155(회전 후 선택창 inert 충돌)가 별도로 열려 저장소 전체 OPEN은26개다. 신규 이슈는 이 정리의 종료/재개 수에 섞지 않는다.
 
 - **(a) v0.2.2 필수 16개:** [#46](https://github.com/kywoo26/p2p-gostop/issues/46)·[#47](https://github.com/kywoo26/p2p-gostop/issues/47)·[#49](https://github.com/kywoo26/p2p-gostop/issues/49)·[#51](https://github.com/kywoo26/p2p-gostop/issues/51)·[#62](https://github.com/kywoo26/p2p-gostop/issues/62)·[#66](https://github.com/kywoo26/p2p-gostop/issues/66)·[#74](https://github.com/kywoo26/p2p-gostop/issues/74)·[#79](https://github.com/kywoo26/p2p-gostop/issues/79)·[#80](https://github.com/kywoo26/p2p-gostop/issues/80)·[#111](https://github.com/kywoo26/p2p-gostop/issues/111)·[#112](https://github.com/kywoo26/p2p-gostop/issues/112)·[#114](https://github.com/kywoo26/p2p-gostop/issues/114)·[#115](https://github.com/kywoo26/p2p-gostop/issues/115)·[#117](https://github.com/kywoo26/p2p-gostop/issues/117)·[#123](https://github.com/kywoo26/p2p-gostop/issues/123)·[#136](https://github.com/kywoo26/p2p-gostop/issues/136). 직접 지적과 기본 플레이/고지 우선.
 - **(b) v0.2.3 9개:** [#30](https://github.com/kywoo26/p2p-gostop/issues/30)· [#44](https://github.com/kywoo26/p2p-gostop/issues/44)·[#67](https://github.com/kywoo26/p2p-gostop/issues/67)·[#75](https://github.com/kywoo26/p2p-gostop/issues/75)·[#81](https://github.com/kywoo26/p2p-gostop/issues/81)·[#82](https://github.com/kywoo26/p2p-gostop/issues/82)·[#87](https://github.com/kywoo26/p2p-gostop/issues/87)·[#90](https://github.com/kywoo26/p2p-gostop/issues/90)·[#143](https://github.com/kywoo26/p2p-gostop/issues/143). 상세 힌트·머니 재산정·연결/기록·실기기 통합. #75의 iPhone 회차는 기기 확보 조건부이며 Galaxy 회차는 먼저 진행.
@@ -569,7 +587,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | #125      | #47로 원문 수용 기준 통합                                                                                                                                                                 |
 | #127      | #51로 원문 수용 기준 통합                                                                                                                                                                 |
 | #128      | #49로 원문 수용 기준 통합                                                                                                                                                                 |
-| #131      | #44로 원문 수용 기준 통합                                                                                                                                                                 |
+| #131      | 당시 #44로 통합 종료했으나 현재 OPEN(v0.4.0), 결과 인지·밀기 순서의 시안 수용/구현 대기. #44 로비·기록 미완 범위도 유지                                                                                                                                                                 |
 | #132      | #62로 원문 수용 기준 통합                                                                                                                                                                 |
 | #133      | #44로 원문 수용 기준 통합                                                                                                                                                                 |
 | #134      | #44로 원문 수용 기준 통합                                                                                                                                                                 |
