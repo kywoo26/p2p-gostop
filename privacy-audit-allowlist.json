@@ -1025,38 +1025,6 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
-      "type": "personal-path",
-      "line": 25,
-      "field": "personal-path",
-      "sha256": "b55acfbe34ab2490e8413329fb9384e9ab0b5679656203e2a1905c213eb9a6dc",
-      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
-    },
-    {
-      "path": "privacy-audit.test.mjs",
-      "type": "tailnet-host",
-      "line": 14,
-      "field": "tailnet-host",
-      "sha256": "7c094f785bf38ed0e436f29a76b97c2174c87c385e50b389e8cfb07144706da2",
-      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
-    },
-    {
-      "path": "privacy-audit.test.mjs",
-      "type": "literal-credential",
-      "line": 16,
-      "field": "secret",
-      "sha256": "190dd5217f67f9e41042f7f277e62a69cbfd2cd43b68cc883f86f655e26aa724",
-      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
-    },
-    {
-      "path": "privacy-audit.test.mjs",
-      "type": "literal-credential",
-      "line": 80,
-      "field": "secret",
-      "sha256": "0ff6289462a47efb1b4eb8071a8f6df2772ec9d195601ac6171d1131d981c657",
-      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
-    },
-    {
       "path": "tools/relay/check-native.ps1",
       "type": "tailnet-host",
       "line": 26,
@@ -1135,6 +1103,62 @@
       "field": "tailnet-host",
       "sha256": "c2c67c4e9d5e2a557f131cbc86f13967dabdf14316069c53f9ef8b25f213a645",
       "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "privacy-audit.mjs",
+      "type": "personal-path",
+      "line": 39,
+      "field": "personal-path",
+      "sha256": "8e403c1b8c6d3c6f5180ef9374bf4db5782cf65d56fd847fe4097e91094cf56b",
+      "reason": "정상 fontconfig glob의 정확 비교 리터럴; 개인 식별자 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "personal-path",
+      "line": 25,
+      "field": "personal-path",
+      "sha256": "b55acfbe34ab2490e8413329fb9384e9ab0b5679656203e2a1905c213eb9a6dc",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "personal-path",
+      "line": 57,
+      "field": "personal-path",
+      "sha256": "8e403c1b8c6d3c6f5180ef9374bf4db5782cf65d56fd847fe4097e91094cf56b",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "personal-path",
+      "line": 65,
+      "field": "personal-path",
+      "sha256": "49fa243eaf463c509f9449591fed8e42a1da04266eb664b20be0e7b9a33bda6a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "tailnet-host",
+      "line": 14,
+      "field": "tailnet-host",
+      "sha256": "7c094f785bf38ed0e436f29a76b97c2174c87c385e50b389e8cfb07144706da2",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "literal-credential",
+      "line": 16,
+      "field": "secret",
+      "sha256": "190dd5217f67f9e41042f7f277e62a69cbfd2cd43b68cc883f86f655e26aa724",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "literal-credential",
+      "line": 103,
+      "field": "secret",
+      "sha256": "0ff6289462a47efb1b4eb8071a8f6df2772ec9d195601ac6171d1131d981c657",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     }
   ],
   "pending": [

@@ -43,8 +43,6 @@ await test('placeholder·공식 링크·패키지 ID·정상 fontconfig glob은 
     '$HOME/project',
     '/home/<developer>/project',
     'C:\\Users\\<developer>\\project',
-    '/home/*',
-    '/Users/*',
     'https://nodejs.org/docs/latest-v24.x/api/test.html',
     'https://github.com/kywoo26/p2p-gostop/issues/208',
     'com.kywoo26.p2pgostop',
@@ -55,13 +53,38 @@ await test('placeholder·공식 링크·패키지 ID·정상 fontconfig glob은 
     assert.equal(scanText(text, 'synthetic.md').findings.length, 0);
 });
 
-await test('SVG d 좌표를 주소로 오인하지 않으며 URL 속성의 주소는 검출한다', () => {
-  assert.equal(scanText(`<path d="M${ip}z"/>`, 'drawing.svg').findings.length, 0);
+await test('fontconfig 홈 glob만 허용하고 개인 식별자 wildcard는 검출한다', () => {
+  const glob = '<fontconfig>\n  <glob>/home/*</glob>\n</fontconfig>';
+  assert.equal(scanText(glob, 'packages/web/e2e/fonts.conf').findings.length, 0);
+  assert.ok(scanText(glob, 'notes.md').findings.length > 0);
+  for (const text of [
+    home + '/*',
+    windows + '\\*',
+    ['.paseo/', 'worktrees/synthetic-audit/project/*'].join(''),
+    ['.orca/', 'worktrees/synthetic-audit/*'].join(''),
+    '\\\\wsl$\\Synthetic\\home\\synthetic-audit\\*',
+  ]) {
+    assert.ok(scanText(text, 'notes.md').findings.length > 0);
+  }
   assert.ok(
-    scanText(`<image href="https://${ip}/"/>`, 'drawing.svg').findings.some(
-      (f) => f.type === 'network-address',
-    ),
+    scanText('<glob>' + home + '/*</glob>', 'packages/web/e2e/fonts.conf').findings.length > 0,
   );
+});
+
+await test('실제 SVG path의 좌표 문법만 면제하고 텍스트/URL/다른 속성은 검출한다', () => {
+  const coords = `<svg><path d="M ${ip} 1z"/></svg>`;
+  assert.equal(scanText(coords, 'drawing.svg').findings.length, 0);
+  for (const [text, path] of [
+    [`d="${ip}"`, 'notes.md'],
+    [coords, 'notes.md'],
+    [`<svg><path d="https://${ip}/"/></svg>`, 'drawing.svg'],
+    [`<svg><path d="M0 0 https://${ip}/"/></svg>`, 'drawing.svg'],
+    [`<svg><path d="${ip}"/></svg>`, 'drawing.svg'],
+    [`<svg><image d="${ip}"/></svg>`, 'drawing.svg'],
+    [`<svg><image href="https://${ip}/"/></svg>`, 'drawing.svg'],
+    [`<svg><!-- <path d="M ${ip} 1z"/> --></svg>`, 'drawing.svg'],
+  ])
+    assert.ok(scanText(text, path).findings.some((f) => f.type === 'network-address'));
 });
 
 await test('합성 허용은 경로·행·필드 포함 정확 지문에 묶고 이동/변경은 검출한다', () => {
@@ -118,6 +141,8 @@ await test('비밀 경로는 경로 유형만 판단한다', () => {
     'private/data.txt',
     'keys/test.key',
     'android/release.keystore',
+    'creation-secret',
+    'runtime/creation-secret.txt',
   ])
     assert.ok(restrictedPath(path));
   assert.equal(restrictedPath('packages/web/src/p2p/host-save.ts'), false);
@@ -137,6 +162,7 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
     writeFileSync(join(dir, 'ignored.md'), credential);
     mkdirSync(join(dir, 'private'));
     writeFileSync(join(dir, 'private', 'missing.md'), credential);
+    writeFileSync(join(dir, 'creation-secret'), credential);
     symlinkSync('private/missing.md', join(dir, 'link.md'));
     git(
       'add',
@@ -145,6 +171,7 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
       'private/missing.md',
       'link.md',
       'public.md',
+      'creation-secret',
     );
     git(
       '-c',
@@ -175,6 +202,7 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
       'test: pending content changed',
     );
     rmSync(join(dir, 'private', 'missing.md'));
+    rmSync(join(dir, 'creation-secret'));
     const child = spawnSync(
       process.execPath,
       [fileURLToPath(new URL('./privacy-audit.mjs', import.meta.url)), '--base', 'HEAD'],
@@ -190,9 +218,9 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
     assert.equal(
       reports.filter((report) => report.findings?.[0]?.type === 'restricted-path-not-opened')
         .length,
-      2,
+      3,
     );
-    assert.ok(reports.some((report) => report.restricted === 2 && report.findings === 1));
+    assert.ok(reports.some((report) => report.restricted === 3 && report.findings === 1));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

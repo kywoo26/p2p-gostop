@@ -38,3 +38,9 @@ main의 `tools/relay/README.md:3,43`·`tools/relay/relay.ps1:5,6` personal-path 
 CI의 첫 검사기 HEAD는 합성 임시 저장소가 `GITHUB_BASE_REF=main`을 상속하여 존재하지 않는 origin/main 비교에서 실패했다. 같은 환경변수로 로컬 재현 후 임시 저장소에만 `--base HEAD`를 명시했다. 실제 PR origin/main 비교 및 기준 blob pending 계약은 변경하지 않았다. 자동 rerun 대신 표적 환경 재검증과 새 SHA CI로 확인한다.
 
 #190 최종 게시 `4a4384d75b629a948cecd3d949307ff2d9630755`의 변경 텍스트를 읽기 전용으로 재검사했다. README/relay의 main 잔존 4곳 해소를 재확인했고, check-native 합성 tailnet 4곳과 새 check-ownership 합성 6곳은 담당자 주석·고정 JSON/로컬 소유권 반례 근거로 정확 경로·행·일치 지문만 추가 허용했다. PR 본문/댓글 재검사와 #190 통합 후 pending 4곳 제거는 별도 확인한다. 소유 파일 직접 편집·운영 접근은 없다.
+
+독립 리뷰 P2 후속 (#208 범위):wildcard 자체로 개인/worktree 경로를 면제하지 않는다. 기존 fonts.conf의 정확한 홈 glob 태그만 보존한다. SVG 좌표 면제는 .svg 문서의 실제 path d 속성·명령/인수/숫자 문법에 한정하고 일반 설명·URL·다른 속성·주석을 면제하지 않는다. creation-secret 표준 파일명은 내용/metadata 파일 접근 전에 제한한다. 합성 반례 선행 실패를 확인한 뒤 표적 테스트 9개로 검증했다. 정확 지문 허용의 변경은 검사기 정상 glob 비교 리터럴과 새 합성 반례·행 이동에 필요한 위치 정합뿐이다.
+
+상대 home/Users 경로 형식은 현재 자동검사 미지원이며 수동 검토 대상이다. 미검출을 안전 판정으로 간주하지 않는다. 여러 줄 SVG의 개별 추가 행처럼 전체 문서 문맥을 입증할 수 없는 입력은 좌표로 자동 면제하지 않는다. 지원 범위를 확대하거나 실제 secret 파일을 열어 테스트하지 않는다.
+
+SVG 좌표 구분 근거: [W3C SVG2 path 문법](https://www.w3.org/TR/SVG2/paths.html#PathDataBNF). 면제는 보수적인 명령·수치·인수 검증이며 전체 SVG 파서/일반 XML 면제가 아니다. 이 문법으로 입증하지 못한 입력은 새 후보로 검토한다. 기존 SVG 자산은 수정하지 않았다.

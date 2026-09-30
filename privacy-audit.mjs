@@ -27,14 +27,19 @@ const rules = [
 ];
 
 export function restrictedPath(path) {
-  return /(?:^|\/)(?:secrets?|private|passwords?|keys?|\.git-credentials|\.env(?:\..*)?|id_rsa|id_ed25519|credentials)(?:[./]|$)|\.(?:pem|key|p12|pfx|jks|keystore)$/i.test(
+  return /(?:^|\/)(?:secrets?|private|passwords?|keys?|creation-secret|\.git-credentials|\.env(?:\..*)?|id_rsa|id_ed25519|credentials)(?:[./]|$)|\.(?:pem|key|p12|pfx|jks|keystore)$/i.test(
     path,
   );
 }
 
-function isGeneralized(type, value, line) {
-  if (['personal-path', 'worktree-path'].includes(type))
-    return value.endsWith('/*') || /\/(?:\*|~)$/.test(value);
+function isGeneralized(type, value, line, path) {
+  if (type === 'personal-path')
+    return (
+      path === 'packages/web/e2e/fonts.conf' &&
+      value === '/home/*' &&
+      /^\s*<glob>\/home\/\*<\/glob>\s*$/.test(line)
+    );
+  if (type === 'worktree-path') return false;
   if (type === 'network-address') {
     const parts = value.split('.').map(Number);
     if (parts.some((part) => part > 255)) return true; // SVG 소수 좌표·버전은 IP가 아니다.
@@ -62,9 +67,63 @@ function isGeneralized(type, value, line) {
   return false;
 }
 
+// IPv4처럼 보이는 compact 소수 좌표는 실제 .svg의 path d 문법 안에서만 구별한다.
+function validPathData(data) {
+  const tokens = [
+    ...data.matchAll(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g),
+  ];
+  if (!tokens.length || !/^[Mm]$/.test(tokens[0][0])) return false;
+  let end = 0;
+  for (const token of tokens) {
+    if (!/^[\s,]*$/.test(data.slice(end, token.index))) return false;
+    end = token.index + token[0].length;
+  }
+  if (!/^[\s,]*$/.test(data.slice(end))) return false;
+  const arities = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 };
+  for (let index = 0; index < tokens.length;) {
+    const command = tokens[index++][0].toUpperCase();
+    const arity = arities[command];
+    if (arity === undefined) return false;
+    const values = [];
+    while (index < tokens.length && !/^[A-Za-z]$/.test(tokens[index][0]))
+      values.push(Number(tokens[index++][0]));
+    if (!values.every(Number.isFinite)) return false;
+    if (arity === 0 ? values.length !== 0 : values.length < arity || values.length % arity !== 0)
+      return false;
+    if (command === 'A')
+      for (let i = 0; i < values.length; i += 7) {
+        if (
+          values[i] < 0 ||
+          values[i + 1] < 0 ||
+          ![0, 1].includes(values[i + 3]) ||
+          ![0, 1].includes(values[i + 4])
+        )
+          return false;
+      }
+  }
+  return true;
+}
+
+function svgCoordinateRanges(text, path) {
+  if (!path.endsWith('.svg')) return [];
+  // 주석을 공백으로 바꿔 위치를 유지하고 주석의 가짜 요소는 면제하지 않는다.
+  const markup = text.replace(/<!--[\s\S]*?-->/g, (comment) => comment.replace(/[^\n]/g, ' '));
+  if (!/^\s*(?:<\?xml[^>]*>\s*)?<svg\b[\s\S]*<\/svg>\s*$/i.test(markup)) return [];
+  const ranges = [];
+  for (const element of markup.matchAll(/<path\b(?:[^>"']|"[^"]*"|'[^']*')*>/g)) {
+    for (const attr of element[0].matchAll(/([:\w-]+)\s*=\s*("[^"]*"|'[^']*')/g)) {
+      if (attr[1] !== 'd' || !validPathData(attr[2].slice(1, -1))) continue;
+      const start = element.index + attr.index + attr[0].indexOf(attr[2]) + 1;
+      ranges.push([start, start + attr[2].length - 2]);
+    }
+  }
+  return ranges;
+}
+
 // 허용은 파일·유형·합성 문자열 전체의 정확한 일치만. 테스트 파일 전체를 면제하지 않는다.
 export function scanText(text, path, allowances = [], lineOffset = 0) {
   const findings = [];
+  const coordinateRanges = svgCoordinateRanges(text, path);
   let allowed = 0;
   for (const [type, pattern] of rules) {
     for (const match of text.matchAll(new RegExp(pattern, 'gi'))) {
@@ -72,9 +131,12 @@ export function scanText(text, path, allowances = [], lineOffset = 0) {
       const line = localLine + lineOffset;
       const sourceLine = text.split('\n')[localLine - 1] ?? '';
       if (
-        (type === 'network-address' && /\bd="[^"]*$/.test(text.slice(0, match.index))) ||
+        (type === 'network-address' &&
+          coordinateRanges.some(
+            ([start, end]) => match.index >= start && match.index + match[0].length <= end,
+          )) ||
         (type === 'ssh-account' && /(?:return|this)@/.test(match[0])) ||
-        isGeneralized(type, match[0], sourceLine) ||
+        isGeneralized(type, match[0], sourceLine, path) ||
         allowances.some(
           (entry) =>
             entry.path === path &&
