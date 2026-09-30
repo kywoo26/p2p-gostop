@@ -1,29 +1,25 @@
-# RP-03B / FR-RP-07. Windows 11 + Docker Desktop WSL2 + Windows Tailscale.
-# This file deliberately uses ASCII so Windows PowerShell 5.1 reads it without a BOM.
+# FR-RP-07 / NF-RP-06 / RP-03B. ASCII source for Windows PowerShell 5.1.
 param([Parameter(Mandatory = $true)][ValidateSet('start', 'stop')][string]$Action)
 $ErrorActionPreference = 'Stop'
-$Repo = if ($env:RELAY_WSL_REPO) { $env:RELAY_WSL_REPO } else { '/home/k/github/p2p-gostop' }
-$Docker = '/home/k/.local/bin/docker'
+. (Join-Path $PSScriptRoot 'native.ps1')
+. (Join-Path $PSScriptRoot 'ownership.ps1')
+Write-Host ("Runtime: {0} {1}" -f $PSVersionTable.PSEdition, $PSVersionTable.PSVersion)
+$Repo = $env:RELAY_WSL_REPO
+$Docker = $null
 $Target = 'http://127.0.0.1:17777'
 $SecretDirectory = '$HOME/.local/share/p2p-gostop/relay'
-$Origin = 'http://127.0.0.1:17777'
 $Release = 'v0.0.0'
 $Marker = Join-Path $PSScriptRoot '.funnel-owned'
-$Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { 'C:\Program Files\Tailscale\tailscale.exe' }
+$Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe' }
 
 function Fail([string]$Message) { throw $Message }
+
 function Wsl([string]$Command) {
-  $output = & wsl.exe --cd $Repo --exec /bin/bash -lc $Command 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail "WSL command failed: $Command`n$output" }
-  return $output
+  $result = InvokeRelayNative 'wsl.exe' @('--cd', $Repo, '--exec', '/bin/bash', '-lc', $Command)
+  if ($result.ExitCode -ne 0) { Fail "WSL command failed (exit $($result.ExitCode)): $($result.Stderr.Trim())" }
+  return $result.Stdout
 }
-function Compose([string]$Arguments) {
-  $command = 'RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret" ' +
-    'RELAY_ALLOWED_ORIGINS=' + $Origin + ' RELAY_RELEASE=' + $Release +
-    ' RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) ' + $Docker +
-    ' compose -f compose.relay.yaml ' + $Arguments
-  Wsl $command
-}
+
 function EnsureSecret {
   $null = Wsl ('mkdir -p -m 700 "' + $SecretDirectory + '" && chmod 700 "' + $SecretDirectory + '"')
   $exists = (Wsl ('if test -f "' + $SecretDirectory + '/creation-secret"; then printf yes; else printf no; fi') | Out-String).Trim()
@@ -32,6 +28,7 @@ function EnsureSecret {
   $null = Wsl $command
   Write-Host 'A new creation secret was saved under the WSL user home directory.'
 }
+
 function LocalHealth {
   for ($i = 0; $i -lt 15; $i++) {
     try {
@@ -39,37 +36,27 @@ function LocalHealth {
       if ($r.relay -eq 'p2p-gostop' -and $r.ready -eq $true) { return $r }
     } catch { Start-Sleep -Seconds 1 }
   }
-  Fail 'Local /health is not ready. Check: docker compose -f compose.relay.yaml logs --tail=30 relay. Verify RELAY_PUBLIC, RELAY_RELEASE and the creation secret file.'
+  Fail 'Local /health is not ready. Check release/image, WSL forwarding, the fixed relay port and secret file. Use this wrapper stop before retrying.'
 }
+
 function FunnelStatus {
-  $output = & $Tailscale funnel status 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail "Tailscale Funnel status failed. Start/sign in to the Windows Tailscale app. $output" }
-  return ($output | Out-String)
+  $result = InvokeRelayNative $Tailscale @('funnel', 'status', '--json')
+  if ($result.ExitCode -ne 0) { Fail 'Tailscale Funnel status failed. Start/sign in to the Windows Tailscale app.' }
+  try { return ($result.Stdout | ConvertFrom-Json) }
+  catch { Fail 'Tailscale returned invalid Funnel status JSON; raw status is withheld.' }
 }
-function OwnedFunnelProcessIds {
-  # A missing marker can follow a failed marker write. Match this exact target.
-  try {
-    @(Get-CimInstance Win32_Process -Filter "Name = 'tailscale.exe'" -ErrorAction Stop |
-      Where-Object { $_.ExecutablePath -eq $Tailscale -and $_.CommandLine -match 'funnel\s+--https=443\s+' -and $_.CommandLine.Contains($Target) } |
-      ForEach-Object { $_.ProcessId })
-  } catch {
-    [Console]::Error.WriteLine("Could not inspect Tailscale process arguments: $_")
-    @()
-  }
-}
-function FunnelOff {
-  $output = & $Tailscale funnel --https=443 $Target off 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail "Tailscale rejected Funnel off: $output" }
-}
+
 function DnsName {
-  $raw = & $Tailscale status --json 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail 'Windows Tailscale is stopped or not signed in. Start the app and connect.' }
-  $state = ($raw | Out-String) | ConvertFrom-Json
+  $result = InvokeRelayNative $Tailscale @('status', '--json')
+  if ($result.ExitCode -ne 0) { Fail 'Windows Tailscale is stopped or not signed in. Start the app and connect.' }
+  try { $state = $result.Stdout | ConvertFrom-Json }
+  catch { Fail 'Windows Tailscale returned invalid UTF-8 JSON. Update/check the Windows app; raw status is withheld.' }
   if ($state.BackendState -ne 'Running' -or -not $state.Self.DNSName) { Fail 'Windows Tailscale is not connected or MagicDNS is unavailable.' }
   $name = $state.Self.DNSName.TrimEnd('.').ToLowerInvariant()
   if ($name -notmatch '^[a-z0-9-]+\.[a-z0-9-]+\.ts\.net$') { Fail 'Unexpected Tailscale DNS name. Check MagicDNS and the selected node.' }
   return $name
 }
+
 function PublicHealth([string]$Url) {
   for ($i = 0; $i -lt 12; $i++) {
     try {
@@ -79,133 +66,189 @@ function PublicHealth([string]$Url) {
   }
   Fail 'Public /health did not respond. Check Funnel approval, DNS/TLS, Windows localhost forwarding, and port 443. The cause is not yet identified.'
 }
-
-try {
-  if ($Action -eq 'start' -and -not (Test-Path $Tailscale)) { Fail "Tailscale is missing: $Tailscale. Install/start the Windows app." }
-  if ($Action -eq 'start') {
-    try { $null = Wsl 'test -f compose.relay.yaml' }
-    catch { Fail "WSL repo was not found: $Repo. Set RELAY_WSL_REPO to its absolute WSL path." }
-    try { $null = Wsl "$Docker info --format '{{.ServerVersion}}'" }
-    catch { Fail 'Docker Desktop is not responding in WSL. Start Docker Desktop and enable WSL2 integration.' }
+function ResolveRelayDocker {
+  if ($Docker) { return }
+  $path = if ($env:RELAY_WSL_DOCKER) { $env:RELAY_WSL_DOCKER } else {
+    (Wsl 'command -v docker || { test -x "$HOME/.local/bin/docker" && printf "%s" "$HOME/.local/bin/docker"; }' | Out-String).Trim()
   }
-} catch {
-  [Console]::Error.WriteLine("Prerequisite check failed: $_. Check WSL path ($Repo), Docker Desktop/WSL integration, built web artifact, and the credentials file.")
-  exit 2
+  if (-not $path) { Fail 'Docker CLI was not found in WSL. Set RELAY_WSL_DOCKER to its executable path.' }
+  $script:Docker = "'" + $path.Replace("'", "'\''") + "'"
 }
-
-if ($Action -eq 'stop') {
-  $failed = $false
-  try {
-    $hasMarker = Test-Path $Marker
-    $ownedProcesses = @(OwnedFunnelProcessIds)
-    $status = ''
-    $dns = ''
-    try { $status = FunnelStatus; $dns = DnsName }
-    catch {
-      if ($ownedProcesses.Count -eq 0) { throw }
-      [Console]::Error.WriteLine("Funnel status is unavailable; stopping this script's relay process: $_")
-    }
-    if ($hasMarker) {
-      $ownerDns = (Get-Content $Marker -Raw).Trim()
-      if ($dns -and $dns -ne $ownerDns) { Fail 'The active Tailscale node differs from the node saved by start. Inspect the Funnel status before stopping it.' }
-    }
-    $targetOnThisNode = $dns -and $status.Contains($Target) -and $status.ToLowerInvariant().Contains($dns)
-    if ($targetOnThisNode -or $ownedProcesses.Count -gt 0) {
-      try { FunnelOff }
-      finally { foreach ($id in $ownedProcesses) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue } }
-      Write-Host 'Relay Funnel endpoint disabled.'
-    } elseif ($status.Contains($Target)) {
-      Fail 'The relay target appears on a different Tailscale node; inspect funnel status before stopping it.'
-    } else { Write-Host 'No relay Funnel endpoint is active.' }
-    if ($hasMarker) { Remove-Item $Marker -Force }
-  } catch { [Console]::Error.WriteLine("Funnel may still be public: $_. Run tailscale funnel --https=443 $Target off manually."); $failed = $true }
-  try { $null = Compose 'down'; Write-Host 'Relay container stopped.' }
-  catch { [Console]::Error.WriteLine("Relay container may still be running: $_"); $failed = $true }
-  if ($failed) { exit 3 } else { exit 0 }
+function Compose($Lease, [string]$Arguments) {
+  AssertRelayLease $Lease
+  ResolveRelayDocker
+  $command = 'RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret" ' +
+    'RELAY_ALLOWED_ORIGINS=http://127.0.0.1:17777,https://' + $Lease.Node + ' RELAY_RELEASE=' + $Lease.Release +
+    ' RELAY_IMAGE_TAG=' + $Lease.ImageTag + ' ' + $Docker +
+    ' compose -p ' + $Lease.Project + ' -f compose.relay.yaml ' + $Arguments
+  Wsl $command
 }
-
-$startedFunnelThisRun = $false
-$startedProcess = $null
-$ownedBeforeStart = $false
-$startSucceeded = $false
-try {
-  try { $null = Wsl 'test -d packages/web/dist' }
-  catch { Fail 'Web dist is missing. Build the same release as the Galaxy APK on the WSL host.' }
-  $releaseInput = if ($env:RELAY_RELEASE) { $env:RELAY_RELEASE } else {
-    try { (Wsl 'git describe --tags --exact-match' | Out-String).Trim() }
-    catch { Fail 'This checkout is not a release tag. Check out the matching APK release tag or set RELAY_RELEASE explicitly.' }
+function RelayImageId([string]$Tag) {
+  if ($Tag -cnotmatch '^[a-f0-9]{12}$') { Fail 'Invalid release image tag.' }
+  ResolveRelayDocker
+  $id = (Wsl ($Docker + ' image inspect p2p-gostop-relay:' + $Tag + " --format '{{.Id}}'") | Out-String).Trim()
+  if ($id -cnotmatch '^sha256:[a-f0-9]{64}$') { Fail 'Matching release image is not prepared; build it once in WSL.' }
+  return $id
+}
+function AssertRelayCompose($Lease, [bool]$RequireContainer = $false) {
+  $ids = @(((Compose $Lease 'ps -a -q' | Out-String).Trim() -split '\s+') | Where-Object { $_ })
+  if ($RequireContainer -and $ids.Count -eq 0) { Fail 'Owned relay container is missing; retry stop before starting again.' }
+  foreach ($id in $ids) {
+    if ($id -cnotmatch '^[a-f0-9]{64}$') { Fail 'Unexpected container identifier; no cleanup is permitted.' }
+    $fields = (Wsl ($Docker + ' inspect --format ' + "'{{.Image}}|{{index .Config.Labels ""com.docker.compose.project""}}|{{index .Config.Labels ""com.docker.compose.service""}}' " + $id) | Out-String).Trim().Split('|')
+    if ($fields.Count -ne 3 -or $fields[0] -cne $Lease.ImageId -or $fields[1] -cne $Lease.Project -or $fields[2] -cne 'relay') {
+      Fail 'Container image/project/service differs from its ownership marker; no cleanup is permitted.'
+    }
   }
-  if ($releaseInput -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { Fail 'RELAY_RELEASE must be vMAJOR.MINOR.PATCH.' }
-  $Release = $releaseInput
-  EnsureSecret
-  $dns = DnsName
-  $url = "https://$dns"
-  $Origin = "http://127.0.0.1:17777,$url"
-  $before = FunnelStatus
-  $ours = $before.Contains($Target)
-  if ($ours -and -not $before.ToLowerInvariant().Contains($dns)) {
-    Fail 'Funnel target is active on a different hostname. Inspect tailscale status --json and tailscale funnel status; no relay was started.'
-  }
-  if ($ours -and -not (Test-Path $Marker)) { Fail 'Port 443 already points to this target but this script does not own it. Inspect tailscale funnel status before changing it.' }
-  $ownedBeforeStart = $ours
-  if (-not $ours -and $before -match 'https://') { Fail 'Another HTTPS Serve/Funnel endpoint is active. Inspect tailscale funnel status; this script will not replace it.' }
-  $null = Compose 'up -d --no-build'
+}
+function RelayVersion($Lease) {
   $null = LocalHealth
   $version = Invoke-RestMethod -Uri "$Target/version" -TimeoutSec 3 -MaximumRedirection 0
-  if ($version.current.release -ne $Release -or $version.current.path -notmatch '^/r/v[0-9]+\.[0-9]+\.[0-9]+/[a-f0-9]{64}/$') {
-    Fail 'The relay web artifact does not match RELAY_RELEASE. Rebuild the matching APK/web release.'
-  }
-  if (-not $ours) {
-    # No --bg: Tailscale documents that --bg resumes sharing after reboot.
-    $startedProcess = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru
-    $startedFunnelThisRun = $true
-    Start-Sleep -Seconds 2
-    if ($startedProcess.HasExited) { Fail 'Funnel did not stay running. Check node approval in the Tailscale admin console and tailscale funnel status.' }
-    $after = FunnelStatus
-    if (-not $after.Contains($Target) -or -not $after.ToLowerInvariant().Contains($dns)) {
-      Fail 'Funnel target or hostname does not match this Tailscale node. Check node approval and tailscale funnel status.'
-    }
-    Set-Content -Path $Marker -Value $dns -NoNewline
-  }
-  PublicHealth $url
-  $null = Wsl ('source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && node tools/relay/write-qr.ts ' + $url + '/ tools/relay/relay-url.svg')
-  try {
-    $qrWindows = (Wsl 'wslpath -w "$PWD/tools/relay/relay-url.svg"' | Out-String).Trim()
-    if ($qrWindows) { Start-Process -FilePath $qrWindows }
-  } catch { Write-Host 'QR viewer could not open; use the WSL file path below.' }
-  Write-Host "Relay ready: $url/"
-  Write-Host "Health: $url/health"
-  Write-Host "Web: $url$($version.current.path)"
-  Write-Host "QR file in WSL: $Repo/tools/relay/relay-url.svg"
-  Write-Host 'Health confirms the relay response only; host/guest game connection is a separate check.'
-  $startSucceeded = $true
-} catch {
-  $reason = "$_"
-  if ($reason -match 'port is already allocated|address already in use|bind:') {
-    $reason = 'Port 17777 is occupied. Inspect docker compose -f compose.relay.yaml ps and ss -ltn; stop the conflicting service manually.'
-  }
-  [Console]::Error.WriteLine("Start failed: $reason")
-} finally {
-  if (-not $startSucceeded) {
-    # Cleanup is based on this invocation, even if status/marker writing failed.
-    if ($startedFunnelThisRun -or $ownedBeforeStart) {
-      $offSucceeded = $false
-      try {
-        FunnelOff
-        $offSucceeded = $true
-        if (Test-Path $Marker) { Remove-Item $Marker -Force }
-      } catch { [Console]::Error.WriteLine("Funnel may still be public: $_") }
-    }
-    if ($null -ne $startedProcess) {
-      try { Stop-Process -Id $startedProcess.Id -Force -ErrorAction Stop }
-      catch { if (-not $startedProcess.HasExited) { [Console]::Error.WriteLine("Funnel process may still be running: $_") } }
-    }
-    if (($startedFunnelThisRun -or $ownedBeforeStart) -and -not $offSucceeded) {
-      try { FunnelOff; if (Test-Path $Marker) { Remove-Item $Marker -Force } }
-      catch { [Console]::Error.WriteLine("Funnel may still be public after retry: $_") }
-    }
-    try { $null = Compose 'down' } catch { [Console]::Error.WriteLine("Relay may still be running: $_") }
+  if ($version.current.release -cne $Lease.Release -or $version.current.path -cnotmatch '^/r/v[0-9]+\.[0-9]+\.[0-9]+/[a-f0-9]{64}/$' -or
+      ($Lease.WebPath -and $version.current.path -cne $Lease.WebPath)) { Fail 'Relay web release/path differs from the ownership marker.' }
+  return $version.current.path
+}
+function StartRelayFunnel($Lease) {
+  # Retain this invocation's original process handle independently of the persisted identity.
+  $out = Join-Path $env:TEMP ('p2p-gostop-relay-' + $Lease.RunId + '.stdout')
+  $err = Join-Path $env:TEMP ('p2p-gostop-relay-' + $Lease.RunId + '.stderr')
+  $process = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+  $null = $process.Handle
+  return $process
+}
+function RemoveRelayLogs($Lease) {
+  foreach ($suffix in @('.stdout', '.stderr')) {
+    Remove-Item (Join-Path $env:TEMP ('p2p-gostop-relay-' + $Lease.RunId + $suffix)) -Force -ErrorAction SilentlyContinue
   }
 }
-if ($startSucceeded) { exit 0 }
-exit 4
+function ShowRelayReady($Lease) {
+  $url = 'https://' + $Lease.Node
+  $qrWindows = Join-Path $PSScriptRoot 'relay-url.svg'
+  $quotedQr = "'" + $qrWindows.Replace("'", "'\''") + "'"
+  $qrWsl = (Wsl ('wslpath -u ' + $quotedQr) | Out-String).Trim()
+  $quotedQrWsl = "'" + $qrWsl.Replace("'", "'\''") + "'"
+  $null = Wsl ('source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && node tools/relay/write-qr.ts ' + $url + '/ ' + $quotedQrWsl)
+  Write-Host "Relay ready: $url/"
+  Write-Host "Health: $url/health"
+  Write-Host "Web: $url$($Lease.WebPath)"
+  Write-Host "QR file in WSL: $qrWsl"
+  Write-Host 'Health confirms the relay response only; game connection is a separate check.'
+}
+function CleanupRelayInvocation($Run) {
+  if (-not $Run.Lease) { return }
+  $clean = $true
+  if ($Run.Process) {
+    # Only the object returned by OUR Start-Process call is used here. Never enumerate/kill by a matching PID.
+    try {
+      if (-not $Run.Process.HasExited) {
+        AssertRelayLease $Run.Lease
+        AssertRelayNodeAndSession $Run.Lease (FunnelStatus)
+        if (-not $Run.Lease.Process -or $Run.Process.Id -ne $Run.Lease.Process.Id -or
+            $Run.Process.StartTime.ToUniversalTime().Ticks -ne $Run.Lease.Process.StartTicks) { Fail 'Incomplete original process identity; automatic termination is unsafe.' }
+        AssertRelayProcessRecord (GetRelayProcessRecord $Run.Process.Id) $Run.Lease
+        $Run.Process.Kill(); if (-not $Run.Process.WaitForExit(3000)) { Fail 'Owned process did not exit.' }
+      }
+    }
+    catch { [Console]::Error.WriteLine('This invocation could not stop its Funnel process; preserve the marker and retry stop.'); $clean = $false }
+    if ($clean -and $Run.Lease.SessionId -and (GetRelaySession (FunnelStatus) $Run.Lease.SessionId)) { $clean = $false }
+  }
+  if ($Run.ComposeAttempted) {
+    try { AssertRelayCompose $Run.Lease; $null = Compose $Run.Lease 'down' }
+    catch { [Console]::Error.WriteLine('This invocation could not clean up its Compose project; preserve the marker and retry stop.'); $clean = $false }
+  }
+  if ($clean) { RemoveRelayLogs $Run.Lease; RemoveRelayLease $Run.Lease }
+}
+function InvokeRelayStart {
+  $run = [pscustomobject]@{ Lease = $null; Process = $null; ComposeAttempted = $false }
+  $succeeded = $false
+  try {
+    $existing = ReadRelayLease
+    $dns = DnsName
+    $status = FunnelStatus
+    $state = FunnelState $status $dns
+    if ($existing) {
+      if ($existing.Phase -ne 'running') { Fail 'An interrupted invocation owns resources; run this wrapper stop before retrying start.' }
+      AssertRelayNodeAndSession $existing $status
+      if (-not (GetRelaySession $status $existing.SessionId)) { Fail 'Owned Funnel session is missing; run stop before retrying start.' }
+      $process = OpenVerifiedRelayProcess $existing
+      if (-not $process) { Fail 'Owned Funnel process is missing; run stop before retrying start.' }
+      $process.Dispose()
+      $tag = (Wsl 'git rev-parse --short=12 HEAD' | Out-String).Trim()
+      if ($tag -cne $existing.ImageTag -or (RelayImageId $tag) -cne $existing.ImageId) { Fail 'Current release image differs from the ownership marker.' }
+      AssertRelayCompose $existing $true
+      $null = RelayVersion $existing
+      PublicHealth ('https://' + $existing.Node)
+      ShowRelayReady $existing
+      $succeeded = $true
+      return 0
+    }
+    if ($state.HasEndpoint) { Fail 'A Serve/Funnel endpoint exists without this wrapper ownership; no resources were changed.' }
+    $null = Wsl 'test -f compose.relay.yaml && test -d packages/web/dist'
+    $releaseInput = if ($env:RELAY_RELEASE) { $env:RELAY_RELEASE } else { (Wsl 'git describe --tags --exact-match' | Out-String).Trim() }
+    if ($releaseInput -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { Fail 'Use the matching release tag or set RELAY_RELEASE to vMAJOR.MINOR.PATCH.' }
+    $script:Release = $releaseInput
+    $tag = (Wsl 'git rev-parse --short=12 HEAD' | Out-String).Trim()
+    $lease = NewRelayLease $dns $tag (RelayImageId $tag)
+    EnsureSecret
+    WriteRelayLease $lease
+    $run.Lease = $lease
+    if ((Compose $lease 'ps -a -q' | Out-String).Trim()) { Fail 'New project unexpectedly exists; ownership cannot be established.' }
+    $lease.Phase = 'compose'; $lease.ComposeAttempted = $true
+    WriteRelayLease $lease # Persist intent before up, so a fresh stop can recover a crash.
+    $run.ComposeAttempted = $true
+    $null = Compose $lease 'up -d --no-build --no-recreate --pull never'
+    AssertRelayCompose $lease $true
+    $lease.WebPath = RelayVersion $lease
+    $lease.Phase = 'launching'
+    WriteRelayLease $lease
+    $run.Process = StartRelayFunnel $lease
+    CaptureRelayProcess $run.Process $lease
+    WriteRelayLease $lease
+    Start-Sleep -Seconds 2
+    if ($run.Process.HasExited) { Fail 'Funnel exited before readiness; check this node approval.' }
+    $after = FunnelStatus
+    $sessions = @($after.Foreground.PSObject.Properties | Where-Object { TestRelaySession $_.Value $dns })
+    if ($sessions.Count -ne 1) { Fail 'A unique owned foreground session was not established.' }
+    $lease.SessionId = $sessions[0].Name
+    WriteRelayLease $lease
+    PublicHealth ('https://' + $dns)
+    $lease.Phase = 'running'
+    WriteRelayLease $lease
+    ShowRelayReady $lease
+    $succeeded = $true
+    return 0
+  } catch {
+    [Console]::Error.WriteLine("Start failed: $_")
+    return 4
+  } finally {
+    if (-not $succeeded) { CleanupRelayInvocation $run }
+    if ($run.Process) { $run.Process.Dispose() }
+  }
+}
+function InvokeRelayStop {
+  $lease = ReadRelayLease
+  if (-not $lease) { Write-Host 'No resources are owned by this wrapper; nothing was changed.'; return 0 }
+  $failed = $false
+  try { StopOwnedRelayFunnel $lease; Write-Host 'Relay Funnel endpoint disabled.' }
+  catch { [Console]::Error.WriteLine("Owned Funnel cleanup refused or incomplete: $_"); $failed = $true }
+  if ($lease.ComposeAttempted) {
+    try { AssertRelayCompose $lease; $null = Compose $lease 'down'; Write-Host 'Relay container stopped.' }
+    catch { [Console]::Error.WriteLine("Owned Compose cleanup refused or incomplete: $_"); $failed = $true }
+  }
+  if ($failed) { return 3 }
+  RemoveRelayLogs $lease
+  RemoveRelayLease $lease
+  return 0
+}
+function InvokeRelayAction([string]$RequestedAction) {
+  $lock = $null
+  try {
+    if (-not $Repo -or -not $Repo.StartsWith('/')) { Fail 'Set RELAY_WSL_REPO to the absolute WSL release repository path.' }
+    $lock = EnterRelayLock # Held through checks/up/marker updates/rollback/stop; second invocation changes nothing.
+    if ($RequestedAction -eq 'start') { return (InvokeRelayStart) }
+    if ($RequestedAction -eq 'stop') { return (InvokeRelayStop) }
+    Fail 'Unsupported relay action.'
+  } catch { [Console]::Error.WriteLine("Relay operation refused: $_"); return 2 }
+  finally { if ($lock) { $lock.Dispose() } }
+}
+exit (InvokeRelayAction $Action)
