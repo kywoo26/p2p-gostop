@@ -5,10 +5,14 @@
   import Card from './Card.svelte';
   import { cardLabel } from './cards.ts';
   import { promptFocus } from './prompt-focus.ts';
-  import { floorLayout } from './floor-layout.ts';
+  import { floorLayout, projectFloor } from './floor-layout.ts';
+  import type { FloorCell } from './floor-layout.ts';
+  import { untrack } from 'svelte';
 
   interface Props {
     compact?: boolean;
+    round?: number;
+    playbackBusy?: boolean;
     options?: readonly CardId[];
     onchoose?: (id: CardId) => void;
     groups: readonly FloorGroupView[];
@@ -23,6 +27,8 @@
 
   let {
     compact = false,
+    round = 0,
+    playbackBusy = false,
     options = [],
     onchoose,
     groups,
@@ -33,6 +39,56 @@
   }: Props = $props();
   let table: HTMLElement;
   let bounds = $state({ width: 0, height: 0, cardWidth: 48 });
+  let placed = $state.raw<FloorCell[]>([]);
+  let reserved: FloorCell[] = [];
+  let lastRound: number | undefined;
+  let lastDeck = 0;
+  let lastCards = '';
+  let lastOptions = '';
+  // 재생 중 제거된 셀을 예약하고, 최종 스냅 뒤 큐 해제에서 재사용한다.
+  $effect.pre(() => {
+    const input = groups,
+      candidates = options,
+      playing = playbackBusy,
+      nextRound = round,
+      deck = deckCount;
+    untrack(() => {
+      if (nextRound !== lastRound || deck > lastDeck) {
+        placed = [];
+        reserved = [];
+        lastCards = '';
+      }
+      const ids = new Set(input.flatMap((group) => group.cards));
+      reserved = reserved.filter((cell) => cell.cards.every((id) => !ids.has(id)));
+      if (playing)
+        reserved.push(...placed.filter((cell) => cell.cards.every((id) => !ids.has(id))));
+      else reserved = [];
+      const cardsKey = [...input]
+        .sort((a, b) => a.month - b.month)
+        .map((group) => `${group.month}:${[...group.cards].sort((a, b) => a - b).join(',')}`)
+        .join(';');
+      const optionsKey = [...candidates].sort((a, b) => a - b).join(',');
+      if (cardsKey !== lastCards || (ids.size > 14 && optionsKey !== lastOptions))
+        placed = floorLayout(
+          input,
+          candidates,
+          336,
+          304,
+          48,
+          placed,
+          reserved.map((cell) => cell.slot),
+        ).cells;
+      else
+        placed = placed.map((cell) => {
+          const group = input.find((group) => group.month === cell.month)!;
+          return { ...cell, kind: group.kind, owner: group.owner };
+        });
+      lastCards = cardsKey;
+      lastOptions = optionsKey;
+      lastRound = nextRound;
+      lastDeck = deck;
+    });
+  });
   $effect(() => {
     const update = () => {
       const rect = table.getBoundingClientRect();
@@ -53,7 +109,7 @@
     return () => focus.destroy();
   });
   const layout = $derived(
-    floorLayout(groups, options, bounds.width, bounds.height, bounds.cardWidth),
+    projectFloor(placed, options, bounds.width, bounds.height, bounds.cardWidth),
   );
   const cells = $derived(
     compact
@@ -93,7 +149,7 @@
     </div>
   </div>
   <ul class="floor" aria-label="바닥">
-    {#each cells as group (group.cards[0])}
+    {#each cells as group (compact ? group.slot : group.month)}
       <li
         class={['group', `kind-${group.kind}`]}
         style:left={`${group.x}px`}

@@ -328,10 +328,11 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 ### 바닥 슬롯 안정화 (#201, UX-06·UX-16·UX-17, NF-03·NF-08·AC-06)
 
 - 계획 기준 `17c8d29`: 공개 합성 월1 `[0]`, 월2 `[4]`, 월3 `[8]`에5를 추가하면 무관 카드0의 슬롯6→8, x66→186(내부300×243.76, 카드48px)이 재현된다. 실제 사용자 릴리스 장면의 원인 확정은 아니다.
-- 소유: `ui/floor-layout.ts`, `Floor.svelte`, 바닥 전용 helper·회귀·합성 캡처. root 승인 예외는 `Board.svelte`의 기존 Floor 호출에 `round={view.round}`·`{busy}` 두 prop 전달뿐이다. 획득 재생 완료/최종 snapshot과 판 경계를 전달하기 위한 예외이며 #214/#218 인계에도 이 두 줄을 알린다. display/choreo는 #200 설계 읽기만, 엔진·wire·저장 schema 변경 없음.
-- 설계: 뷰 로컬 슬롯 수명과 좌표 투영을 분리한다. 기존 공개 카드/월의 앵커를 유지하고 완료 전 소멸 슬롯을 예약하며 완료 뒤 새 월이 빈칸을 사용한다. 판 변경/새 게임·재접속·skip·reduced·resize/회전의 최종 공개 카드와 선택 ID를 검증한다. 5×3·중앙7번·48px·독립 앞면과 기존 과밀 예외를 보존한다. 꽉 찬 바닥에서 인접성과 고정성이 충돌하면 빈셀·필요셀·최소 이동 수를 보고하고 정책 승인을 받는다. 전체 재정렬 예외는 미승인이다.
+- 소유: `ui/floor-layout.ts`, `Floor.svelte`, 바닥 전용 helper·회귀·합성 캡처. root 승인 예외는 `Game.svelte`의 기존 Board 호출에 `playbackBusy={pb.busy}` 한 줄, Board의 호환 기본false prop 선언/수신과 Floor에 `round={view.round}`·`playbackBusy` 전달이다. 기존 입력 잠금 `busy={pb.busy || !controller.canAct}`는 보존한다. 실제 pump는 replay 완료→최종 snapshot commit/tick→busy=false 순서이며 reset은 세대 무효화·진행 모션 skip 후 snapshot을 교체한다. #131/#214/#218 통합 시 이 경계를 보존한다. display/choreo/Playback은 읽기만, 엔진·wire·저장 schema 변경 없음.
+- 설계: 뷰 로컬 슬롯 수명과 좌표 투영을 분리한다. 기존 공개 카드/월의 앵커를 유지하고 완료 전 소멸 슬롯을 예약하며 완료 뒤 새 월이 빈칸을 사용한다. 5×3·중앙7번·48px·독립 앞면과 기존 과밀 예외는 유지한다. root 승인 A는 strict 고정 해가 불가능할 때만 무관 카드 이동 수→월 앵커 이동 수→격자 거리 합→고정 동률 순의 최소 재배치다. 도달 가능한 seed2/dealer0의 play18→shake(false)→상대 play34는12셀 뻑 확장에서 빈0/4/10/14+월9의1로 연결3셀을 만들 수 없어0이동이 불가능하다. 카드15의6→10 이동으로 무관1이동·월앵커0인 해가 존재한다(초기 제안 카드12의5→10보다 앵커 비용이 작다). 이 사례만 최소1이며 모든 경계의1장 상한을 뜻하지 않는다. 회귀는 기본 슬롯/예약과 최소 예외를 분리한다.
 - 검증: 수정 전 실패→성공 회귀, 정상 변경/소멸/뻑/폭탄/선택·취소/동시 입력·최종 snapshot, 두 엔진의360/390/412 최소 높이 합성 전후 좌표/연속 프레임 캡처. AGENTS §5 PR 필수 검사(포트4241, E2E≤4 workers, Gradle≤4), AC-06 시간표·상태 순서와 raw1.5MiB gate를 유지한다. base/head raw 바이트 증분을 기록한다. 실기기는 사람이 검증하며 NF-03·NF-08·AC-06의 미검증/부분 상태는 유지한다.
 - #200 후속: 실제 공개 매칭 대상 CardId의 이동 전 rect를 착지 앵커로 예약하고 착지→강조→획득을 연결한다. `display.ts`의 CardPlayed/Matched/landFromStaging와 `choreo.ts`의 measure/runStep 경계를 후속 소유로 인계한다. 대상 선택 전후1/2/3장, 덱 매칭·폭탄, 무매칭 빈슬롯, 취소/skip/reduced/새 판 및 최종 획득 ID 회귀를 독립 PR로 검증한다. 이번 PR은 착지 동작·시간표·겹침 규범을 변경하지 않는다.
+- 구현 체크포인트: 정상/예약/앵커 제거·뻑/폭탄/선택 stale click·실제 Playback 완료/skip/reset/즉시 경로30검사와360×780/390×780/412×840의 두 엔진 연속6프레임6검사 통과. 무관 카드의 슬롯/rect 불변과 독립 카드 경계 가림0을 검사했다. check·native build 통과, raw1,571,770B(기준1,569,249B 대비+2,521B, 여유1,094B). 카테고리 JS578,226/CSS90,624/폰트144,248/카드632,380/skin87,893/metadata38,399B. 타 PR 조합 실측·전체 PR 필수 검사·baseline 실패 캡처·최악 탐색비용·실기기는 아직 남아 있다.
 
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
 

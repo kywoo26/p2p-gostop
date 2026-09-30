@@ -109,3 +109,38 @@ test('월별 연결·카드 보존·회전한 경계의 셀 내부 포함을 다
     { numRuns: 200 },
   );
 });
+
+// 시간에 따른 계약은 같은 입력 결정성 검사와 분리한다.
+test('한 월 확장·첫 카드 제거·뻑·폭탄에도 무관 카드와 월 앵커를 유지한다', () => {
+  const input = groups([1, 1, 1]);
+  let previous = floorLayout(input, [], 300, 243.76, 48).cells;
+  for (const cards of [[4, 5], [5], [5, 6, 7]]) {
+    const next = input.map((g) =>
+      g.month === 2
+        ? { ...g, cards, kind: cards.length === 3 ? ('ppeok' as const) : ('loose' as const) }
+        : g,
+    );
+    const result = floorLayout(next, [], 300, 243.76, 48, previous);
+    expect(result.conflict).toBe(false);
+    for (const id of [0, 8])
+      expect(result.cells.find((c) => c.cards.includes(id))?.slot).toBe(
+        previous.find((c) => c.cards.includes(id))?.slot,
+      );
+    expect(result.cells.find((c) => c.month === 2)?.anchor).toBe(8);
+    previous = result.cells;
+  }
+});
+
+test('제거된 셀은 예약 중 사용하지 않고 해제 뒤 새 월의 빈자리로 쓴다', () => {
+  const input = groups([1, 1, 1]);
+  const old = floorLayout(input, [], 300, 243.76, 48).cells;
+  const kept = old.filter((c) => c.month !== 1);
+  const next = [
+    ...input.filter((g) => g.month !== 1),
+    { month: 4 as const, cards: [12], kind: 'loose' as const, owner: null },
+  ];
+  const reserved = floorLayout(next, [], 300, 243.76, 48, kept, [6]);
+  expect(reserved.cells.find((c) => c.month === 4)?.slot).not.toBe(6);
+  const released = floorLayout(next, [], 300, 243.76, 48, kept);
+  expect(released.cells.find((c) => c.month === 4)?.slot).toBe(6);
+});
