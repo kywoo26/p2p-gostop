@@ -29,6 +29,14 @@ export interface TurnTiming {
   /** 이벤트 단계의 이동·정지 계획 합(ms). 실측 시간과 분리한다. */
   readonly plannedMs: number;
   readonly ms: number;
+  /** 같은 기기 단조 시계. enqueue는 수락/수신 이후 경계이며 wire ACK가 아니다. */
+  readonly inputToEnqueueMs: number;
+  readonly queueMs: number;
+  readonly replayMs: number;
+  readonly snapMs: number;
+  /** 첫 재생 DOM commit 완료. 눌림 피드백·paint·NF-03 최초 응답과는 별개다. */
+  readonly firstCommitMs: number;
+  readonly steps: readonly { readonly kind: string; readonly ms: number }[];
   /** 재생 뒤 내 프롬프트(대상·고/스톱 등)가 떴는지: 이 경우 턴 종료가 아니라 프롬프트 표시까지 */
   readonly promptAfter: boolean;
 }
@@ -43,6 +51,7 @@ export interface EnqueueOptions {
 }
 
 interface Batch {
+  readonly enqueuedAt: number;
   readonly events: readonly EngineEvent[];
   readonly board: DisplayBoard;
   readonly action: Action | null;
@@ -122,9 +131,11 @@ export class Playback {
   private readonly onIdle: ((skipped: boolean) => void) | undefined;
   private readonly onBanner: ((kind: Banner['kind']) => void) | undefined;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
-  private host: ReplayHost | null = null;
+  private host: { readonly root: HTMLElement } | null = null;
   private queue: Batch[] = [];
   private pumping = false;
+  private generation = 0;
+  private activeRoot: HTMLElement | null = null;
   /** 현재 재생 묶음에서 탭 스킵을 요청했는지, 다음 AI 생각 간격에 전달한다 */
   private skipped = false;
   private disposed = false;
@@ -158,17 +169,12 @@ export class Playback {
   /** 게임판이 마운트되면 보드 루트를 붙인다. null이면 떼어 낸다(재생은 스냅으로 대체) */
   attach(root: HTMLElement | null): void {
     if (root === null) {
+      // 마운트가 사라져도 수락된 정상 이벤트는 한 번씩 끝내고 최신 뷰로 스냅한다.
+      if (this.activeRoot !== null) skip(this.activeRoot);
       this.host = null;
       return;
     }
-    this.host = {
-      root,
-      commit: async (board) => {
-        this.board = board;
-        await tick();
-      },
-      onEvent: (event) => this.onEvent(event),
-    };
+    this.host = { root };
     void this.pump();
   }
 
@@ -176,6 +182,7 @@ export class Playback {
   enqueue(events: readonly EngineEvent[], board: BoardView, options: EnqueueOptions = {}): void {
     if (this.disposed) return;
     this.queue.push({
+      enqueuedAt: performance.now(),
       events,
       board: snap(board, board.inFlight),
       action: options.action ?? null,
@@ -195,6 +202,8 @@ export class Playback {
 
   /** 큐를 비우고 곧바로 이 뷰로 바꾼다 (판 무효·이어하기 등 재생할 이벤트가 없는 전환) */
   reset(board: BoardView, settlement: RoundSummary | null = null): void {
+    if (this.disposed) return;
+    this.invalidate();
     this.queue = [];
     this.pending = 0;
     this.board = snap(board, board.inFlight);
@@ -215,11 +224,19 @@ export class Playback {
 
   dispose(): void {
     this.disposed = true;
+    this.invalidate();
     this.host = null;
     this.queue = [];
     this.pending = 0;
+  }
+
+  private invalidate(): void {
+    this.generation += 1;
+    if (this.activeRoot !== null) skip(this.activeRoot);
     if (this.bannerTimer !== null) clearTimeout(this.bannerTimer);
-    if (this.toastTimer !== null) clearTimeout(this.toastTimer);
+    this.bannerTimer = null;
+    this.banner = null;
+    this.clearToast();
   }
 
   private async pump(): Promise<void> {
@@ -232,74 +249,177 @@ export class Playback {
         const batch = this.queue.shift();
         if (batch === undefined) break;
         this.pending = this.queue.length;
-        await this.play(batch);
-        // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
-        if (batch.tapAt !== null && batch.action !== null) this.recordTiming(batch);
-        if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
-          await waitHold(this.host.root, baseMs('banner', this.host.root) * 2);
+        const generation = this.generation;
+        const current = () => !this.disposed && generation === this.generation;
+        const startedAt = performance.now();
+        try {
+          const measured = await this.play(batch, current);
+          if (!current()) continue;
+          // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
+          this.recordTiming(batch, startedAt, measured);
+          if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
+            const root = this.host.root;
+            this.activeRoot = root;
+            try {
+              await waitHold(root, baseMs('banner', root) * 2);
+            } finally {
+              if ((!current() && !this.skipped) || this.host?.root !== root) unskip(root);
+              this.activeRoot = null;
+            }
+          }
+          if (!current()) continue;
+          if (batch.settlement !== null) this.settlement = batch.settlement;
+        } catch (error) {
+          log.error(`재생 오류: ${String(error)}`);
+          // callback이 reset→enqueue→throw하면 옛 예외가 새 FIFO를 비워서는 안 된다.
+          // 이 pump만 큐를 drain하므로 옛 play의 finally가 끝난 뒤 새 세대를 이어 간다.
+          if (!current()) continue;
+          const last = this.queue.at(-1);
+          if (last !== undefined) this.board = last.board;
+          this.queue = [];
+          this.pending = 0;
         }
-        if (batch.settlement !== null) this.settlement = batch.settlement;
       }
-    } catch (error) {
-      log.error(`재생 오류: ${String(error)}`);
-      const last = this.queue.at(-1);
-      if (last !== undefined) this.board = last.board;
-      this.queue = [];
-      this.pending = 0;
     } finally {
+      // batch가 아니라 직렬 pump의 소유권: 새 세대 FIFO까지 drain한 뒤 한 번만 잠금을 푼다.
       wasSkipped = this.skipped;
       this.skipped = false;
       this.pumping = false;
       this.busy = false;
       if (this.host !== null) unskip(this.host.root);
     }
-    if (this.idle) this.onIdle?.(wasSkipped);
+    if (!this.disposed && this.idle) this.onIdle?.(wasSkipped);
   }
 
   /** 묶음 하나 재생 → 최신 뷰로 스냅 (spec 6.4) */
-  private async play(batch: Batch): Promise<void> {
+  private async play(batch: Batch, current: () => boolean) {
+    const steps: { kind: string; ms: number }[] = [];
+    let firstCommitAt: number | null = null;
+    const commit = async (board: DisplayBoard) => {
+      if (!current()) return;
+      this.board = board;
+      await tick();
+      firstCommitAt ??= performance.now();
+    };
     const events = batch.events;
     if (this.scoreRound !== batch.board.round) {
       this.scoreRound = batch.board.round;
       this.previousScores = this.initialScores(batch.board);
       this.milestones = [];
     }
-    const host = this.host;
-    if (host === null || this.disposed) {
-      for (const e of events) this.onEvent(e);
-    } else if (isDealBatch(events)) {
-      this.clearToast();
-      for (const e of events) this.onEvent(e);
-      if (events.some((e) => e.type === 'FirstPicked')) {
-        // 선 고르기 결과를 읽을 시간
-        await waitHold(host.root, baseMs('banner', host.root) * 2);
+    const attached = this.host;
+    const host: ReplayHost | null =
+      attached === null
+        ? null
+        : {
+            root: attached.root,
+            isCurrent: current,
+            commit,
+            onStep: (kind, ms) => {
+              if (steps.length < 12) steps.push({ kind, ms: Math.round(ms) });
+            },
+            onEvent: (event) => this.onEvent(event, current),
+          };
+    this.activeRoot = host?.root ?? null;
+    try {
+      if (host === null || this.disposed) {
+        for (const e of events) {
+          if (!current()) break;
+          this.onEvent(e, current);
+          if (!current()) break;
+        }
+      } else if (isDealBatch(events)) {
+        this.clearToast();
+        for (const e of events) {
+          if (!current()) break;
+          this.onEvent(e, current);
+          if (!current()) break;
+        }
+        if (!current())
+          return {
+            firstCommitAt,
+            replayEndedAt: performance.now(),
+            completedAt: performance.now(),
+            steps,
+          };
+        if (events.some((e) => e.type === 'FirstPicked')) {
+          // 선 고르기 결과를 읽을 시간
+          await waitHold(host.root, baseMs('banner', host.root) * 2);
+        }
+        if (!current())
+          return {
+            firstCommitAt,
+            replayEndedAt: performance.now(),
+            completedAt: performance.now(),
+            steps,
+          };
+        await deal(host, batch.board);
+      } else {
+        await replay(host, this.board, events);
       }
-      await deal(host, batch.board);
-    } else {
-      await replay(host, this.board, events);
+      const replayEndedAt = performance.now();
+      if (current()) await commit(batch.board);
+      return { firstCommitAt, replayEndedAt, completedAt: performance.now(), steps };
+    } finally {
+      if (host !== null && ((!current() && !this.skipped) || this.host?.root !== host.root))
+        unskip(host.root);
+      this.activeRoot = null;
     }
-    this.board = batch.board;
-    await tick();
   }
 
-  private recordTiming(batch: Batch): void {
-    if (batch.tapAt === null || batch.action === null) return;
-    const ms = Math.round(performance.now() - batch.tapAt);
+  private recordTiming(
+    batch: Batch,
+    startedAt: number,
+    measured: {
+      firstCommitAt: number | null;
+      replayEndedAt: number;
+      completedAt: number;
+      steps: readonly { kind: string; ms: number }[];
+    },
+  ): void {
+    const detail = `대기=${Math.round(startedAt - batch.enqueuedAt)} 재생=${Math.round(measured.replayEndedAt - startedAt)} 스냅=${Math.round(measured.completedAt - measured.replayEndedAt)} 단계=${measured.steps.map((s) => `${s.kind}:${s.ms}`).join('/') || 'none'}`;
+    if (batch.tapAt === null || batch.action === null) {
+      // 상대 입력 시각·ACK가 없으므로 상대 탭 시간이나 네트워크 지연으로 표기하지 않는다.
+      const played = batch.events.find(
+        (e) => e.type === 'CardPlayed' || e.type === 'Bomb' || e.type === 'CardFlipped',
+      );
+      if (played !== undefined)
+        log.info(
+          `재생 시간 관측=${played.seat === this.viewer ? '내좌석' : '상대'} 수신이후=${Math.round(measured.completedAt - batch.enqueuedAt)}ms ${detail}`,
+        );
+      return;
+    }
+    const ms = Math.round(measured.completedAt - batch.tapAt);
     const plannedMs = planTurn(
       batch.events,
       document.documentElement.dataset['speed'] === 'normal',
     ).plannedMs;
     const pending = batch.board.pending;
     const promptAfter = pending !== null && pending.seat === this.viewer && pending.kind !== 'play';
-    const timing: TurnTiming = { action: batch.action.type, plannedMs, ms, promptAfter };
+    const timing: TurnTiming = {
+      action: batch.action.type,
+      plannedMs,
+      ms,
+      promptAfter,
+      inputToEnqueueMs: Math.round(batch.enqueuedAt - batch.tapAt),
+      queueMs: Math.round(startedAt - batch.enqueuedAt),
+      replayMs: Math.round(measured.replayEndedAt - startedAt),
+      snapMs: Math.round(measured.completedAt - measured.replayEndedAt),
+      firstCommitMs: Math.round((measured.firstCommitAt ?? measured.completedAt) - batch.tapAt),
+      steps: measured.steps,
+    };
     this.timings = [...this.timings.slice(-99), timing];
-    log.info(`턴 시간 ${timing.action} ${ms}ms${promptAfter ? ' (프롬프트까지)' : ''}`);
+    log.info(
+      `턴 시간 ${timing.action} ${ms}ms${promptAfter ? ' (프롬프트까지)' : ''} 입력→큐=${timing.inputToEnqueueMs} ${detail} 첫commit=${timing.firstCommitMs} 계획=${plannedMs} 속도=${document.documentElement.dataset['speed'] ?? 'fast'}`,
+    );
   }
 
   // ---- 이벤트 부수 효과: 배너·토스트·효과음 (spec 6.5, FR-18) ----
 
-  private nameOf(seat: Seat | null): string {
-    return seat === null ? '' : this.names()[seat];
+  private nameOf(seat: Seat | null, current: () => boolean): string {
+    if (seat === null || !current()) return '';
+    const names = this.names();
+    return current() ? names[seat] : '';
   }
 
   private showBanner(banner: Banner): void {
@@ -328,7 +448,8 @@ export class Playback {
     this.toast = null;
   }
 
-  private onEvent(event: EngineEvent): void {
+  private onEvent(event: EngineEvent, current: () => boolean): void {
+    if (!current()) return;
     if (event.type === 'ScoreChanged' && event.seat !== null) {
       const before = this.previousScores[event.seat];
       const after = event.breakdown;
@@ -346,8 +467,11 @@ export class Playback {
     if (banner !== null) {
       this.showBanner(banner);
       sounds.play(BANNER_SOUND[banner.kind]);
+      if (!current()) return;
       this.onBanner?.(banner.kind);
+      if (!current()) return;
     }
+    let toast: string | null = null;
     switch (event.type) {
       case 'CardPlayed':
         sounds.play('play');
@@ -367,43 +491,38 @@ export class Playback {
         break;
       case 'InstantPayout':
         sounds.play('payout');
-        this.showToast(
-          `${this.nameOf(event.seat)} ${INSTANT_LABEL[event.kind] ?? event.kind} 즉시 정산 +${event.points}점`,
-        );
+        if (!current()) return;
+        toast = `${this.nameOf(event.seat, current)} ${INSTANT_LABEL[event.kind] ?? event.kind} 즉시 정산 +${event.points}점`;
         break;
       case 'PpeokTaken':
-        this.showToast(`${this.nameOf(event.seat)} 뻑 먹기`);
+        toast = `${this.nameOf(event.seat, current)} 뻑 먹기`;
         break;
       case 'SelfPpeok':
-        this.showToast(`${this.nameOf(event.seat)} 자뻑`);
+        toast = `${this.nameOf(event.seat, current)} 자뻑`;
         break;
       case 'FirstPicked': {
         const [a, b] = event.picks;
-        this.showToast(
-          `선 고르기: ${this.nameOf(0)} ${cardLabel(a)} · ${this.nameOf(1)} ${cardLabel(b)}`,
-        );
+        toast = `선 고르기: ${this.nameOf(0, current)} ${cardLabel(a)} · ${this.nameOf(1, current)} ${cardLabel(b)}`;
         break;
       }
       case 'FirstPickTie':
-        this.showToast('같은 월: 다시 고릅니다');
+        toast = '같은 월: 다시 고릅니다';
         break;
       case 'FirstPickerChosen':
-        this.showToast(`${this.nameOf(event.seat)} 선`);
+        toast = `${this.nameOf(event.seat, current)} 선`;
         break;
       case 'Redealt':
-        this.showToast('바닥 총통: 다시 나눕니다');
+        toast = '바닥 총통: 다시 나눕니다';
         break;
       case 'GukjinPlaced':
-        this.showToast(`${this.nameOf(event.seat)} 국진: ${event.asPi ? '쌍피' : '열끗'}`);
+        toast = `${this.nameOf(event.seat, current)} 국진: ${event.asPi ? '쌍피' : '열끗'}`;
         break;
       case 'RoundEnded':
         sounds.play('end');
         break;
       case 'Shake':
         if (event.seat !== this.viewer) {
-          this.showToast(
-            `${this.nameOf(event.seat)} 흔들기: ${event.cards.map((id) => cardLabel(id)).join(', ')}`,
-          );
+          toast = `${this.nameOf(event.seat, current)} 흔들기: ${event.cards.map((id) => cardLabel(id)).join(', ')}`;
         }
         break;
       default:
@@ -411,8 +530,9 @@ export class Playback {
     }
     if (event.type === 'Bomb' && event.seat !== null) {
       const month = getCard(event.cards[0] ?? 0).month;
-      this.showToast(`${this.nameOf(event.seat)} 폭탄 (${month ?? ''}월)`);
+      toast = `${this.nameOf(event.seat, current)} 폭탄 (${month ?? ''}월)`;
     }
+    if (current() && toast !== null) this.showToast(toast);
   }
 
   private initialScores(board: BoardView): [ScoreBreakdown | null, ScoreBreakdown | null] {
