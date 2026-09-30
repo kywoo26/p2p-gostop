@@ -41,6 +41,13 @@ test('14장은 독립 셀, 15장부터만 같은 월 스택을 허용하고 후�
   expect(result.folded).toBe(true);
   for (const id of [0, 1])
     expect(result.cells.find((c) => c.cards.includes(id))?.cards).toEqual([id]);
+  const maximum = groups(Array(12).fill(3));
+  const crowded = floorLayout(maximum, [0, 1], 336, 244, 48);
+  expect(crowded.conflict).toBe(false);
+  expect(floorLayout([...maximum].reverse(), [0, 1], 336, 244, 48)).toEqual(crowded);
+  expect(crowded.cells.flatMap((c) => c.cards).sort((a, b) => a - b)).toEqual(
+    maximum.flatMap((g) => g.cards),
+  );
 });
 
 test('월별 연결·카드 보존·회전한 경계의 셀 내부 포함을 다양한 바닥에서 보장한다', () => {

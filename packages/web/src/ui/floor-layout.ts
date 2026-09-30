@@ -57,26 +57,29 @@ export function floorLayout(
   reserved: readonly number[] = [],
 ): { cells: FloorCell[]; fits: boolean; folded: boolean; conflict: boolean; searches: number } {
   const folded = groups.reduce((n, group) => n + group.cards.length, 0) > 14;
-  const blocks = groups.map((group) => {
-    const chunks: CardId[][] = [];
-    for (const id of [...group.cards].sort((a, b) => a - b)) {
-      const previous = chunks.at(-1);
-      if (
-        folded &&
-        previous?.length === 1 &&
-        !options.includes(id) &&
-        !options.includes(previous[0]!)
-      )
-        previous.push(id);
-      else chunks.push([id]);
-    }
-    const old = previous.find((cell) => cell.month === group.month);
-    const anchorCards =
-      previous.find((cell) => cell.month === group.month && cell.slot === old?.anchor)?.cards ?? [];
-    const at = chunks.findIndex((cards) => cards.some((id) => anchorCards.includes(id)));
-    if (at > 0) chunks.unshift(chunks.splice(at, 1)[0]!);
-    return { group, chunks };
-  });
+  const blocks = [...groups]
+    .sort((a, b) => a.month - b.month)
+    .map((group) => {
+      const chunks: CardId[][] = [];
+      for (const id of [...group.cards].sort((a, b) => a - b)) {
+        const previous = chunks.at(-1);
+        if (
+          folded &&
+          previous?.length === 1 &&
+          !options.includes(id) &&
+          !options.includes(previous[0]!)
+        )
+          previous.push(id);
+        else chunks.push([id]);
+      }
+      const old = previous.find((cell) => cell.month === group.month);
+      const anchorCards =
+        previous.find((cell) => cell.month === group.month && cell.slot === old?.anchor)?.cards ??
+        [];
+      const at = chunks.findIndex((cards) => cards.some((id) => anchorCards.includes(id)));
+      if (at > 0) chunks.unshift(chunks.splice(at, 1)[0]!);
+      return { group, chunks };
+    });
   // 과밀 바닥패도 버리지 않는다. 2장 묶음으로 14칸을 넘으면 같은 월 3장까지 접는다.
   while (blocks.reduce((n, block) => n + block.chunks.length, 0) > 14) {
     const block = blocks.find(
