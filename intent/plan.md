@@ -338,6 +338,22 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
+### #207 누적 번들 실측·손실 없는 최적화 (NF-03·AC-07·NF-RP-06)
+
+실행 단위 **B207-1**: main `2e90fedb2bca04c6157ea594cf743d52032abcc1`, #218 `ad1afc818af1506aad710439de508bccf50adda2`, #223 임시 head `12a2950ec92aba28e61e85da41fbc48cd6571dd9`, #225 `a3acbb8df4b969046c6a4bd9cf97fe16db47b905`를 고정한다. 별도 임시 합성 tree에서 개별·실제 누적 artifact를 같은 버전/명령으로 세 번 빌드하고 파일 SHA-256·raw 카테고리 manifest를 남긴다. 단순 증분 합은 실제 누적 측정으로 쓰지 않는다. #223은 최종 제품 전이므로 새 head 누적 gate는 별도다.
+
+소유 범위는 이 계획 단위, `tools/bundle/` 계측, `docs/research/ui-bundle-budget.md` 근거, 기능·시각·라이선스를 보존하는 비중복 빌드/자산 최적화다. 다른 UI PR의 Floor/Board/Game/Settlement/player-labels·원 브랜치는 편집하지 않는다. 첫 후보는 반복 SVG 도형의 공유와 배포 metadata JSON 공백 제거이며, 실제 A/B 절감과 전체 parsed metadata/브라우저 픽셀 동등성을 확인한 후보만 반영한다. 효과가 없거나 품질이 달라지면 기각한다. 새 의존성·규칙/wire/저장 변경과 상한 완화는 없다.
+
+전체 raw 배포 1,572,864 B gate와 첫 필수 encoded 응답·후속 요청·JS 실행/이미지 decode/프레임을 분리한다. 로컬 Content-Encoding/encodedBodySize는 serving 경로와 조건을 함께 기록하며 오프라인 gzip 합계를 실제 serving이라고 쓰지 않는다. Galaxy/iPhone/Funnel 실기기·사용자 예산 승인·최종 UI 누적 통합은 미검증을 유지한다. NF-03/AC-07/NF-RP-06 규범·상태를 자동 승격하지 않는다. 안전 절감이 부족하면 근거를 포함한 개정 제안만 작성한다.
+
+B207-1 실측 결과: 각 조건3회 동일 raw로 main1,570,705 B, #218 1,572,844 B, 임시 #223 1,573,352 B, #225 1,573,043 B를 확인했다. 별도 실제 누적 합성은1,577,832 B(상한4,968 B 초과), skin provenance JSON 공백만 제거한 A/B는−410 B로1,577,422 B(4,558 B 초과)다. 카드52/이미지/글꼴/CSS/고지 blob 동일 및 전체 parsed metadata 동등성을 보존했다. 원 UI 소스 편집0, 규범/gate 변경0. [파일 manifest·3회·실제 serving·미적용 개정 제안](../docs/research/ui-bundle-budget.md)에 근거를 남긴다.
+
+| 실행 단위 | 상태 | 근거 | 미완 gate |
+|---|---|---|---|
+| B207-1 / NF-03·AC-07·NF-RP-06 | 고정 checkpoint 누적 실측·안전410 B 절감 구현, 실제 누적 raw 실패 | 계획357a349; raw accounting/metadata 직접 검사2, main 단독 build 통과. desktop 현행 static guest 입력 cold body747,451 B/identity; 최초 게임·전체 세션·실기기와 구분 | 최종 #223/#225 main 조합, hosted 새head CI·독립 리뷰, 전송/기기 baseline·사용자 예산 개정 승인. 기존 NF/AC 완료 상태 자동 승격0 |
+
+B207-1 고정 checkpoint 갱신: #223 `8ccc9b9ee69e57c6ad89199a27269d7bc1c77a8f`의 승인 제품을 임시 실제 합성 tree에만 반영해 필요한 A/B1회 측정했다. 이전12a3회 근거는 보존한다. 새 전체 raw A1,577,487 B→B1,577,077 B(−410 B/현 상한4,213 B 초과), 이전 실제 조합 대비345 B 감소다. 개별 #223의334 B 절감을 합산 값으로 쓰지 않는다. 제품 head e9145e14의 hosted CI36776437869는3/3 성공했으나 CI main218+207 artifact raw1,572,434 B/여유430 B와 전체223/225 누적 실패는 별도다. 후속 문서 head CI·최종 기능 통합/기기/예산 승인은 미완이다.
+
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03)
 
 | 현재 상태 | 대표 구현·검증 근거 | 미완 범위 |

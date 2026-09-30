@@ -1,0 +1,13 @@
+{
+  "beforeManifest": "823457cfefe7fdba77267d9b4eacbb3f48a789d719c3187f035d8d7641230c15",
+  "afterManifest": "4c3b574a494ed61de72891ef027e88ebd6cdcd62bc685ab001fa7676f6bbf611",
+  "savedBytes": 410,
+  "identicalFileCount": 69,
+  "identicalCards": 52,
+  "identicalImagesFontsCssAndNotices": true,
+  "changedSharedStaticFiles": [
+    "skin/manifest.json"
+  ],
+  "runtimeSourceEdits": 0,
+  "note": "JS filename/content and index/version hashes include the per-build timestamp; CSS/font/card/skin image/license blobs are exact; skin/manifest JSON parsed equality is tested."
+}
