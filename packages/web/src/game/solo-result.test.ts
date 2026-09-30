@@ -3,7 +3,8 @@ import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import Game from '../routes/Game.svelte';
-import { sessionAct, parseSession } from './session.ts';
+import { acceptRound, sessionAct, parseSession } from './session.ts';
+import { pendingSoloSummary, soloSummary } from './records.ts';
 import { resultScenario } from './solo-result.test-helper.ts';
 import { SoloSession } from './solo.svelte.ts';
 import type { AiResult } from './ai-core.ts';
@@ -235,3 +236,30 @@ test.each(['end', 'dispose'] as const)('CPU 보류 응답·확인은 %s 뒤 무�
     solo.dispose();
   }
 });
+
+// 정산 입력 공유는 실제 받기의 뷰·올인 상한·금액 단위를 그대로 보존해야 한다.
+for (const winner of [0, 1] as const) {
+  test.each([200, 1_000_000])(
+    `좌석 ${winner} 예상 정산은 잔액 %s의 실제 받기와 같고 저장 상태를 바꾸지 않는다`,
+    (balance) => {
+      const initial = resultScenario(false, winner);
+      const balances =
+        winner === 0 ? ([1_000_000, balance] as const) : ([balance, 1_000_000] as const);
+      const step = sessionAct(
+        { ...initial, ledger: { ...initial.ledger, balances }, roundStart: balances },
+        { type: 'play', seat: winner, card: 16 },
+      );
+      if (!step.ok) throw new Error(step.message);
+      expect(step.session.phase).toBe('pushDecision');
+      const saved = JSON.stringify(step.session);
+      const preview = pendingSoloSummary(step.session, '원');
+      expect(JSON.stringify(step.session)).toBe(saved);
+      const accepted = acceptRound(step.session);
+      const record = accepted.records.at(-1);
+      if (!record) throw new Error('받기 기록 없음');
+      expect(preview).toEqual(soloSummary(record, accepted.config, '원'));
+      expect(step.session.records).toHaveLength(0);
+      expect(step.session.ledger.entries).toHaveLength(0);
+    },
+  );
+}

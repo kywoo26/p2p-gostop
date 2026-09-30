@@ -3,7 +3,6 @@
   // 잔액 0이면 재충전(시작 잔액으로)·세션 종료를 묻는다(MN-02).
   import type { SettlementDisplay } from '../game/adapter.ts';
   import type { PendingRoundResult } from '../game/controller.ts';
-  import { tick } from 'svelte';
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
   import Screen from '../ui/Screen.svelte';
   import { REASON_LABEL, SCORE_LABEL, stepLabel } from '../ui/settle-labels.ts';
@@ -60,16 +59,15 @@
 
   let heading = $state<HTMLParagraphElement | null>(null);
   let hadPendingResult = false;
-  const stage = $derived(pending ? (pending.acknowledged ? 'decision' : 'result') : 'settled');
+  const stage = $derived(pending ? (pending.acknowledged ? '받기·밀기 선택' : '판 결과') : '정산');
   $effect(() => {
     void stage;
     const target = heading;
     const focusResult = pending !== null || hadPendingResult;
     hadPendingResult = pending !== null;
     if (!focusResult || target === null) return;
-    void tick().then(() => {
-      if (target.isConnected && !target.closest('[inert]')) target.focus();
-    });
+    // $effect는 DOM 갱신 뒤 실행된다. 추가 tick 없이 같은 전이에서 초점을 옮긴다.
+    if (target.isConnected && !target.closest('[inert]')) target.focus();
   });
 
   const headline = $derived(
@@ -94,11 +92,7 @@
   );
 </script>
 
-<Screen
-  title={pending ? (pending.acknowledged ? '받기·밀기 선택' : '판 결과') : '정산'}
-  back={null}
-  scrollBody
->
+<Screen title={stage} back={null} scrollBody>
   <p class="headline" data-testid="settlement-headline" tabindex="-1" bind:this={heading}>
     {headline}
   </p>

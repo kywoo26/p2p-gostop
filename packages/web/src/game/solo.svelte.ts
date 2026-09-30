@@ -95,8 +95,7 @@ export class SoloSession implements GameController {
   private roundResult = $state.raw<PendingRoundResult | null>(null);
 
   private resultKey(session = this.state): string {
-    const board = this.boardOf(session);
-    return `${board.round}:${board.eventSeq}`;
+    return `${session.game.round.number}:${session.game.eventSeq}`;
   }
 
   private cacheResult(session: SessionState): void {
@@ -120,8 +119,7 @@ export class SoloSession implements GameController {
     if (result.acknowledged) return result;
     const board = this.playback.board;
     return this.state.phase === 'pushDecision' &&
-      !this.playback.busy &&
-      this.playback.pending === 0 &&
+      this.playback.idle &&
       `${board.round}:${board.eventSeq}` === result.key &&
       this.resultKey() === result.key
       ? result
@@ -211,12 +209,7 @@ export class SoloSession implements GameController {
   private summary(session: SessionState): RoundSummary | null {
     const record = session.records.at(-1);
     if (record === undefined) return null;
-    return soloSummary({
-      record,
-      names: session.config.names,
-      unit: settings.value.unit,
-      perPoint: session.config.perPoint,
-    });
+    return soloSummary(record, session.config, settings.value.unit);
   }
 
   get names(): readonly [string, string] {

@@ -60,7 +60,7 @@
   const summary = $derived(pb.settlement ?? pendingResult?.summary ?? null);
   const pushDecision = $derived(
     controller.mode === 'solo'
-      ? pendingResult?.acknowledged && !pb.busy && pb.pending === 0
+      ? pendingResult?.acknowledged && pb.idle
         ? controller.pushDecision
         : null
       : controller.pushDecision,
@@ -314,13 +314,7 @@
   data-play-plans={playPlans}
 >
   <p class="timer-announcement" role="status">{timerAnnouncement}</p>
-  <div
-    class="board-wrap"
-    inert={summary !== null ||
-      (controller.mode !== 'solo' && controller.pushDecision != null) ||
-      menuOpen ||
-      ended}
-  >
+  <div class="board-wrap" inert={summary !== null || pushDecision != null || menuOpen || ended}>
     <Board
       view={pb.board}
       soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
