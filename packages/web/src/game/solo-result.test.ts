@@ -45,6 +45,10 @@ for (const mode of ['normal', 'fast', 'reduced', 'skip'] as const) {
         if (mode !== 'reduced') {
           await vi.waitFor(() => expect(solo.playback.busy).toBe(true));
           expect(screen.container.querySelector('.overlay')).toBeNull();
+          solo.acknowledgeRoundResult(`${solo.state.roundNumber}:${solo.state.game.eventSeq}`);
+          solo.choosePush(true);
+          expect(solo.pendingRoundResult).toBeNull();
+          expect(solo.state.records).toHaveLength(0);
         }
         if (mode === 'skip') solo.skipAnimations();
         await vi.waitFor(
@@ -72,9 +76,10 @@ for (const mode of ['normal', 'fast', 'reduced', 'skip'] as const) {
         expect(solo.state.ledger).toBe(ledger);
         solo.acknowledgeRoundResult('stale');
         expect(solo.pendingRoundResult?.acknowledged).toBe(false);
-        (
-          screen.container.querySelector('[data-choice="acknowledge"]') as HTMLButtonElement
-        ).click();
+        const oldButton = screen.container.querySelector(
+          '[data-choice="acknowledge"]',
+        ) as HTMLButtonElement;
+        oldButton.click();
         await vi.waitFor(() =>
           expect(screen.container.querySelector('[data-choice="accept"]')).not.toBeNull(),
         );
@@ -85,6 +90,9 @@ for (const mode of ['normal', 'fast', 'reduced', 'skip'] as const) {
         );
         // 이전 버튼의 Enter 반복은 새 받기 버튼을 실행하지 않는다.
         await userEvent.keyboard('{Enter}');
+        // 제거된 이전 포인터 대상에도 재입력이 도착해 새 선택을 실행하지 않는다.
+        oldButton.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+        oldButton.click();
         expect(solo.state.records).toHaveLength(0);
         (screen.container.querySelector('[data-choice="accept"]') as HTMLButtonElement).click();
         await vi.waitFor(() => expect(solo.playback.settlement).not.toBeNull());
@@ -141,6 +149,42 @@ test.each([false, true])('저장 CPU 승자: 즉시 결정 %s 확인 전 요청0
     expect(solo.state.ledger.entries).toHaveLength(push ? 0 : 1);
     expect(decide).toHaveBeenCalledTimes(1);
     expect(solo.state.roundNumber).toBe(1);
+  } finally {
+    solo.dispose();
+  }
+});
+
+test('최종 스냅 순번·남은 큐가 다르면 결과 공개와 확인을 보류한다', () => {
+  const step = sessionAct(resultScenario(), { type: 'play', seat: 0, card: 16 });
+  if (!step.ok) throw new Error(step.message);
+  const solo = new SoloSession(step.session, {
+    difficulty: 'easy',
+    timeBudgetMs: 100,
+    persist: false,
+    ai: {
+      mode: 'inline',
+      async decide() {
+        throw new Error('CPU 요청 없음');
+      },
+      dispose() {},
+    },
+  });
+  try {
+    const final = solo.playback.board;
+    const key = solo.pendingRoundResult!.key;
+    solo.playback.board = { ...final, eventSeq: final.eventSeq - 1 };
+    expect(solo.pendingRoundResult).toBeNull();
+    solo.acknowledgeRoundResult(key);
+    solo.playback.board = final;
+    expect(solo.pendingRoundResult?.acknowledged).toBe(false);
+    solo.playback.pending = 1;
+    expect(solo.pendingRoundResult).toBeNull();
+    solo.acknowledgeRoundResult(key);
+    solo.playback.pending = 0;
+    expect(solo.pendingRoundResult?.acknowledged).toBe(false);
+    solo.acknowledgeRoundResult(key);
+    solo.choosePush(true);
+    expect(solo.state.records).toHaveLength(1);
   } finally {
     solo.dispose();
   }

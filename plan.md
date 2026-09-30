@@ -332,6 +332,10 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 - 위험: 권위 `pushDecision`의 선노출, CPU 즉시 응답, stale 확인/응답, 저장 복원, 이전 포인터/Enter 및 초점 전이. 결과 캐시는 판/최종 eventSeq에 묶고 재생 완료 전 공개하지 않으며 확인 전 결정 요청과 선택을 막는다. 임의 시간 지연은 추가하지 않는다.
 - 검증 계획: G1 마지막 패 자동 스톱과 수동 스톱의 실제 종료를 Chromium/WebKit에서 재현하고 수정 전 실패를 기록한다. 보통/빠름/동작 줄이기/스킵의 상태 순서, CPU 즉시 받기·밀기와 저장 복원, 확정 원장/기록 1회·명시 다음 판, host/guest 회귀를 검사한다. AGENTS §5 PR 필수 검사·개인정보16검사·raw 번들1.5MiB gate를 실행한다. 실기기/OS 스크린리더와 후속 #214/#218 통합은 별도 미검증이다.
 
+| 범위 | 상태 | 코드·검증 근거 | 남은 검증 |
+|---|---|---|---|
+| FR-16·FR-53·UX-T05·U15·NF-08의 솔로 결과/밀기 순서 | 좁은 구현·로컬 자동 검사 통과 ([#225](https://github.com/kywoo26/p2p-gostop/pull/225)) | 수정 전 실제 자동/수동 스톱·저장 CPU Chromium/WebKit6실패 → 기본 수정6통과, 보강 결과 경계26통과. `solo-result.test.ts`는 재생·최종 스냅 키/큐·stale 확인/응답·이전 포인터/Enter·원장/기록 1회, `solo-result.spec.ts`는 4모드 실제 앱16검사. 기존 host/guest 회귀 포함 전체 browser802·Node563·lint/check·개인정보16·PR smoke400·web build·Android3작업 통과. raw1535.2KiB/1536KiB, 외부 요청0. | 독립 리뷰·최종 head CI, 실기기/OS 스크린리더, #214/#218 통합 조합. 전체 이슈 완료나 관련 NF/UX 전체 수용을 뜻하지 않는다. |
+
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
 
 - 사용자 실측 v0.3.1 `4e536e1` 빠름 6표본은 [PDR-01](docs/device-test/results.md#pdr-01--사용자-제공-v031-부분-관측)에 최소 익명 증거만 기록했다. full play618/619/683/702ms 네 경로와 prompt223/choose462를 섞어 수용 통과로 판정하지 않는다. NF-03 미검증·AC-06 부분 상태 유지.
