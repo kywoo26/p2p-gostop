@@ -1,4 +1,4 @@
-// 카드 애니메이션 헬퍼: Web Animations API + FLIP (plan.md 1.6, agent-era-stack.md 3.3·3.4).
+// 카드 애니메이션 헬퍼: Web Animations API + FLIP (intent/plan.md 1.6, agent-era-stack.md 3.3·3.4).
 // - transform·opacity만 움직인다. top/left/width, 그림자, filter는 애니메이션하지 않는다.
 // - will-change는 움직이는 동안만 걸고 끝나면(취소 포함) 지운다(iOS WebKit 메모리).
 // - 기본 이동은 선택한 시간표의 ms를 쓰고 요소의 --dur-scale을 곱한다. 0이면 즉시 끝난다.

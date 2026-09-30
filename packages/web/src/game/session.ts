@@ -31,7 +31,7 @@ export interface SessionConfig {
   readonly perPoint: number;
   readonly startBalance: number;
   readonly names: readonly [string, string];
-  /** 세션 시드 (판별 셔플 시드는 여기서 파생, plan.md 원칙 6) */
+  /** 세션 시드 (판별 셔플 시드는 여기서 파생, intent/plan.md 원칙 6) */
   readonly seed: number;
 }
 

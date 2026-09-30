@@ -287,7 +287,7 @@ export function scanDiff(diff, allowances = []) {
 }
 
 function main() {
-  const policy = JSON.parse(readFileSync('privacy-audit-allowlist.json', 'utf8'));
+  const policy = JSON.parse(readFileSync('tools/privacy/privacy-audit-allowlist.json', 'utf8'));
   let errors = scanTracked(policy);
   const base =
     process.argv[2] === '--base'

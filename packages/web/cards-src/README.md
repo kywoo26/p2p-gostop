@@ -3,7 +3,7 @@
 보너스 카드 3장과 카드 뒷면의 사람이 읽는 원본이다. `scripts/build-cards.mjs`가 svgo로 최적화해
 `public/cards/{48,49,50,back}.svg`로 내보낸다(Commons 원본 캐시 없이 이 4장만 다시 만들 때는 `--originals-only`).
 이 디렉터리의 파일과 그 산출물은 p2p-gostop 기여자가 직접 그린 것이며
-[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)으로 공개한다(spec 6.6·NF-07, plan.md D1).
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)으로 공개한다(spec 6.6·NF-07, intent/plan.md D1).
 
 ## 화풍 (Commons "SVG Hwatu" 세트에 맞춤)
 

@@ -1,4 +1,4 @@
-// 중계 계약 (plan.md 1.1, spec FR-07·NF-05·NF-06, PR #1 결정). Android Ktor 중계와 relay-dev가 같은 규칙을 따른다.
+// 중계 계약 (intent/plan.md 1.1, spec FR-07·NF-05·NF-06, PR #1 결정). Android Ktor 중계와 relay-dev가 같은 규칙을 따른다.
 // - 역할(host·guest)마다 최신 연결 하나. 같은 역할이 다시 붙으면 이전 소켓을 4001 "replaced"로 닫는다(최신 우선).
 //   좌석 판단(진짜 게스트인지)은 중계가 아니라 세션 토큰으로 한다.
 // - 중계가 보내는 알림은 {"t":"relay","peer":"present|absent|joined|left"} 한 줄. 옛 {"type":"relay"} 형식도 알림으로 인식한다.

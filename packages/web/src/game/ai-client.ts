@@ -1,4 +1,4 @@
-// CPU 결정 클라이언트 (spec AI-05, plan.md 1.5 "Web Worker에서 실행").
+// CPU 결정 클라이언트 (spec AI-05, intent/plan.md 1.5 "Web Worker에서 실행").
 // 기본은 Web Worker. Worker를 만들 수 없거나 오류·무응답이면 메인 스레드 인라인 경로로 넘어간다(시간 제한을 줄여 UI 정지를 짧게).
 import type { Difficulty } from '@p2p-gostop/ai';
 import type { AiWorkerRequest, AiWorkerResponse } from '../workers/ai.worker.ts';

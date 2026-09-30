@@ -1,6 +1,6 @@
 # Windows 운영·격리 회귀 근거 (FR-RP-07 · NF-RP-06 · RP-03B)
 
-**이전 wrapper 운영 검증(2026-09-30):** 대상: spec.md FR-RP-07·NF-RP-06, plan.md RP-03B. 사용자 위임으로 실제 Windows 11 + Docker Desktop WSL2 + Windows Tailscale에서 순차 실행했다. 원본 `<WSL저장소절대경로>`는 v0.3.1 태그/추적 파일 clean이며, 준비된 동일 이미지에 `up -d --no-build`했다. wrapper는 별도 worktree, QR/소유 marker도 wrapper에 둔다. secret 내용을 읽거나 공유하지 않았으며 기존 파일을 덮어쓰지 않았다.
+**이전 wrapper 운영 검증(2026-09-30):** 대상: intent/spec.md FR-RP-07·NF-RP-06, intent/plan.md RP-03B. 사용자 위임으로 실제 Windows 11 + Docker Desktop WSL2 + Windows Tailscale에서 순차 실행했다. 원본 `<WSL저장소절대경로>`는 v0.3.1 태그/추적 파일 clean이며, 준비된 동일 이미지에 `up -d --no-build`했다. wrapper는 별도 worktree, QR/소유 marker도 wrapper에 둔다. secret 내용을 읽거나 공유하지 않았으며 기존 파일을 덮어쓰지 않았다.
 
 | 표적 | 실제 결과 |
 |---|---|

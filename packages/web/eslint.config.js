@@ -1,12 +1,12 @@
-// packages/web 전용 ESLint 10 flat config (plan.md 1.8: .svelte 템플릿 린트는 Oxc 미지원 → web만 ESLint).
-// 순수 TS 패키지는 루트 .oxlintrc.json(oxlint)을 쓴다. 규칙은 문서가 아니라 린트로 강제한다 (plan.md 원칙 9).
+// packages/web 전용 ESLint 10 flat config (intent/plan.md 1.8: .svelte 템플릿 린트는 Oxc 미지원 → web만 ESLint).
+// 순수 TS 패키지는 루트 .oxlintrc.json(oxlint)을 쓴다. 규칙은 문서가 아니라 린트로 강제한다 (intent/plan.md 원칙 9).
 import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 import svelteConfig from './svelte.config.js';
-import workspace from '../../lint-imports.mjs';
+import workspace from '../../tools/lint/lint-imports.mjs';
 
 // 게스트 페이지는 비보안 컨텍스트(http://192.168.x.y)에서 돈다. Secure Context 전용 API 금지 (spec NF-02, AGENTS.md 3장).
 const insecureContextMessage =
@@ -100,6 +100,21 @@ export default defineConfig(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
+  {
+    // #224: 설정 파일의 공유 린트 모듈 한 경로만 허용한다. 앱·테스트에는 예외가 없다.
+    files: ['eslint.config.js'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: boundaryPatterns.map((regex) => ({
+            regex: `^(?!\\.\\./\\.\\./tools/lint/lint-imports\\.mjs$)${regex.slice(1)}`,
+            message: boundaryMessage,
+          })),
+        },
+      ],
     },
   },
   {

@@ -1,4 +1,4 @@
-// 엔진 상태·액션·이벤트 타입 (plan.md 1.4, spec 4.3·4.5).
+// 엔진 상태·액션·이벤트 타입 (intent/plan.md 1.4, spec 4.3·4.5).
 // 상태에는 카드 ID(0~50)만 두고 JSON 직렬화할 수 있게 한다. 좌석은 인덱스 0/1.
 import type { CardId, Month } from './cards.ts';
 import type { RngState } from './rng.ts';

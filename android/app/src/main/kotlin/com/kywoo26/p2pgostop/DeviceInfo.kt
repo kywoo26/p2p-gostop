@@ -2,7 +2,7 @@ package com.kywoo26.p2pgostop
 
 import android.os.Build
 
-/** 로그·페이지에 자동으로 싣는 기기·빌드 정보 (plan.md 6장 원격 피드백 루프). */
+/** 로그·페이지에 자동으로 싣는 기기·빌드 정보 (intent/plan.md 6장 원격 피드백 루프). */
 object DeviceInfo {
     /** 삼성 기기면 SEM_PLATFORM_INT로 One UI 버전을 추정한다. 없으면 null. */
     fun oneUiHint(): String? = try {

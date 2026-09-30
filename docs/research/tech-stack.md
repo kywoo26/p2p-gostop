@@ -1,6 +1,6 @@
 # 기술 스택 검증 결론
 
-2026-09-28 조사. Android LOHS 호스트, iPhone Safari 게스트, 인터넷 없는 LAN을 기준으로 했다. 구성 정본은 [plan §1](../../plan.md), 버전 정본은 [AGENTS §2](../../AGENTS.md)다.
+2026-09-28 조사. Android LOHS 호스트, iPhone Safari 게스트, 인터넷 없는 LAN을 기준으로 했다. 구성 정본은 [plan §1](../../intent/plan.md), 버전 정본은 [AGENTS §2](../../AGENTS.md)다.
 
 ## 채택 근거
 
@@ -20,4 +20,4 @@ AOSP에서 LOHS + 비행기 모드가 가능하고 S25 Ultra [M0 실기기 결�
 - iPhone 잠금·탭 복귀로 WebSocket이 끊길 수 있다: visible 시 재접속·스냅샷 재동기화한다.
 - 실제 배포 키·서명 지문·오픈소스 고지는 릴리스 게이트에서 확인한다.
 
-상세 결정의 현재 상태는 [plan](../../plan.md), [protocol](../protocol.md), [실기기 절차](../device-test/procedure.md)를 따른다.
+상세 결정의 현재 상태는 [plan](../../intent/plan.md), [protocol](../protocol.md), [실기기 절차](../device-test/procedure.md)를 따른다.

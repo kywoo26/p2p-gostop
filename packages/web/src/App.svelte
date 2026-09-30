@@ -391,7 +391,7 @@
   {:else if mode === 'guest' && galleryPage === null}
     <GuestApp />
   {:else if galleryPage !== null}
-    <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, plan.md 1.2) -->
+    <!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, intent/plan.md 1.2) -->
     {#await import('./routes/dev/gallery/Gallery.svelte') then { default: Gallery }}
       <Gallery page={galleryPage} />
     {/await}

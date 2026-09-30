@@ -1,4 +1,4 @@
-// CPU 상대 (plan.md 1.5, spec 7장 AI-01~AI-09).
+// CPU 상대 (intent/plan.md 1.5, spec 7장 AI-01~AI-09).
 // 정책은 playerView 결과와 합법 수만 본다(정보 은닉). 난수는 시드 xoshiro128**(Rng)만 쓴다(AI-08).
 export { DIFFICULTIES, type DecisionContext, type Difficulty, type Policy } from './types.ts';
 export { Rng, mixSeed } from './rng.ts';

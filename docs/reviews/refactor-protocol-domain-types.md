@@ -2,7 +2,7 @@
 
 2026-09-29 · base `bb389e5` · 브랜치 `refactor/protocol-domain-types`.
 선행 [감사·계획 PR #91](https://github.com/kywoo26/p2p-gostop/pull/91)의 R1, RF-01/02.
-요구사항: spec.md NP-02·FR-18·NF-09. 설계: plan.md §1.3·§1.4·§1.6·§1.8, D3/D4.
+요구사항: intent/spec.md NP-02·FR-18·NF-09. 설계: intent/plan.md §1.3·§1.4·§1.6·§1.8, D3/D4.
 
 ## 1. 변경과 경계
 
