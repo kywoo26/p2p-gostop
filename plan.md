@@ -336,7 +336,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |
 | ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. Docker 컨텍스트 허용 목록과 `docker/relay/check-context.sh` canary export를 CI에 추가. `feat/relay-public` 임시 병합 이미지에서 비root/읽기 전용/루프백 기동, 로컬 `/health`·`/version`·정적 release 경로·Compose healthy 확인 | RP-02가 main에 병합된 뒤 재검사. Galaxy APK 동시 release·사람 PC 검증 대기                |
-| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | Windows 수동 시작·종료·Funnel·재부팅과 공개 health 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
+| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | PR #190 / Refs #210: PS7/5.1 UTF-8·stderr/exitcode·runtime 정체·잠금/소유 프로세스·nonce Compose 실패 격리 합성 회귀(`tools/relay/validation.md`). 기존 wrapper live 검증과 현재 소유권 수정본 live 미검증을 분리. 수동 재부팅·게임 실기기 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
 
 위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
 
@@ -420,7 +420,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-RP-04 | 자동 검증 완료·실기기 미검증 | reload/resume·snapshot·4001·재시작 뒤 새 방, AC-RP-01/02/03 E2E. 실제 망 이동은 사람 절차 |
 | FR-RP-05 | 자동 검증 완료·실기기 미검증 | 호스트 부재·방 소실·만료 안내, AC-RP-02/03 E2E와 relay TTL 테스트. 10분 실시간 대기는 사람 절차 |
 | FR-RP-06 | 구현·자동 검증 완료(실기기 미검증) | RP-06 단일 BoardView/액션, 넓은 화면·키보드·200% Mac Chromium/WebKit E2E와 모바일 레이아웃 회귀; RP-07 동일 정적 웹·게임·정산 AC-RP-01 E2E. Mac Safari/Chrome·iPhone 실기기 조작은 사람 절차 |
-| FR-RP-07 | 자동 검증 완료·실기기 미검증 | health→방→공유, AC-RP-01 E2E와 기존 안내 테스트. Windows start/stop·Funnel은 사람 절차 |
+| FR-RP-07 | 자동 검증 완료·실기기 미검증 | health→방→공유, AC-RP-01 E2E와 기존 안내 테스트. Windows start/stop·Funnel 운영 검증은 `tools/relay/validation.md`; 게임 실기기·재부팅 미검증 |
 | FR-RP-08 | 자동 검증 범위 완료·실기기 미검증 | RP-04A/B Android JVM gate와 AC-RP-04 웹 회귀. Galaxy LOHS/FGS/LAN 수신은 사람 절차 |
 | NP-RP-01/02 | 자동 검증 완료·실기기 미검증 | 공개 역할 인증·실제 브라우저 방 생성/접속, AC-RP-01/02 E2E와 `public-auth.test.ts`; 실제 Funnel TLS는 사람 절차 |
 | NP-RP-03/04 | 자동 검증 완료·실기기 미검증 | 링크 claim/재사용·코드 승인/거절·위조 토큰, AC-RP-02 E2E와 `public-net.test.ts`; 실제 QR 전달은 사람 절차 |

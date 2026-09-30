@@ -1,61 +1,63 @@
-# PC 공개 중계 수동 운영 (RP-03A/B)
+# PC 공개 중계 수동 운영 (FR-RP-07 · NF-RP-06 · RP-03B)
 
-정본: [spec §13](../../spec.md) FR-RP-07·NF-RP-06, [plan §1.9](../../plan.md) RP-03A/B. Windows 11 Docker Desktop WSL2 통합, Windows Tailscale 앱, WSL 저장소 `/home/k/github/p2p-gostop` 기준이다. 게임할 때만 실행한다. 로그인·부팅 자동 시작과 Docker 재시작 정책은 사용하지 않는다.
+Windows의 Docker Desktop WSL2 통합과 Windows Tailscale 앱을 사용한다. 게임할 때만 켜고 끝나면 끈다. 정본은 [spec §13](../../spec.md)·[plan §1.9](../../plan.md)이다.
 
-## 최초 설치·release 변경
+## 간단 기동 가이드 (Windows PowerShell)
 
-1. Windows Tailscale 앱에서 로그인·연결, MagicDNS와 **이 PC의** Funnel 노드 속성 승인을 확인한다. 다른 PC/노드에 넓게 승인하지 않는다. 공개 대상은 `https://<이 PC>.ts.net` 하나다. 사용자 PC에서 기본 WebSocket 경로는 2026-09-29 통과했지만, 인증 방과 실제 게임은 별도 검증이 필요하다.
-2. 배포할 정확한 release를 WSL 저장소에 체크아웃하고 APK와 **같은 commit의 웹 번들**을 준비한다. 저장소 루트에서 다음을 실행한다.
-
-   ```sh
-   source "$HOME/.nvm/nvm.sh" && nvm use
-   npm ci
-   npm run build -w packages/web
-   mkdir -p -m 700 "$HOME/.local/share/p2p-gostop/relay"
-   node tools/relay/create-credentials.ts "$HOME/.local/share/p2p-gostop/relay/creation-secret"
-   export RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret"
-   export RELAY_ALLOWED_ORIGINS="http://127.0.0.1:17777,https://<이 PC>.ts.net"
-   export RELAY_RELEASE="$(git describe --tags --exact-match)" # APK와 같은 release 태그
-   RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) docker compose -f compose.relay.yaml build
-   ```
-
-   생성 파일은 저장소 밖 `$HOME/.local/share/p2p-gostop/relay/creation-secret`(32바이트 base64url 43자 한 줄, 0600)다. 이미 있으면 생성기는 실패하며 덮어쓰지 않는다. `start.cmd`는 이 파일이 없으면 같은 위치에 자동 생성한다. 파일 내용은 운영자 Galaxy 개인 설정에만 1회 등록한다. 공용 웹/APK, Git, 이슈, 로그에 넣지 않는다. PC 이전은 파일을 안전하게 이전하거나 새 키를 만들고 Galaxy 설정을 다시 등록한다.
-3. Docker 이미지는 웹 `dist`, Node 중계와 실행에 필요한 protocol/engine 소스 및 운영 의존성만 포함한다. 중계는 게임 규칙을 실행하거나 상태를 저장하지 않는다. 이미지는 Git SHA 12자리로 태그하고 시작 스크립트가 현재 체크아웃의 같은 태그를 선택한다. 공개 계약은 `RELAY_PUBLIC=1`, `RELAY_CREATION_SECRET_FILE=/run/secrets/creation-secret`, `RELAY_ALLOWED_ORIGINS`, `RELAY_RELEASE`, `RELAY_DIST_DIR`, `GET /health`다. health는 `relay=p2p-gostop`·`ready=true`를 검사하고 `/version`의 release 경로도 확인한다. `packages/web/dist`의 content hash·APK commit/release·이미지 ID를 아래 기록 칸에 남긴다. 현재 release와 직전 **wire 호환이 검증된** release만 제공한다. 호환되지 않으면 URL만 재사용하지 말고 APK/웹/PC 이미지를 함께 갱신한다.
-
-## 게임 시작과 종료
-
-- Windows 탐색기에서 `tools/relay/start.cmd`를 더블클릭한다. 저장소 위치가 다르면 현재 사용자 환경변수 `RELAY_WSL_REPO`에 WSL 절대 경로를 설정한다. Tailscale 설치 경로가 다르면 `RELAY_TAILSCALE_EXE`를 설정한다. 체크아웃은 APK와 같은 정확한 release 태그여야 한다. 별도 빌드 체크아웃이면 Windows 사용자 환경변수 `RELAY_RELEASE`에 `vN.N.N`을 지정한다. 스크립트는 `tailscale status --json`의 이 노드 MagicDNS와 `tailscale funnel status`의 공개 호스트를 대조해 `RELAY_ALLOWED_ORIGINS=http://127.0.0.1:17777,https://<funnel-host>`를 자동 구성한다. 이름/상태가 다르면 시작을 멈추고 두 상태를 확인하도록 안내한다. 시작은 Docker 상태 → 로컬 health·`/version` → Funnel → 공개 health 순으로 검사한다. 공개 URL·호환 웹 경로와 기본 URL의 QR SVG(`tools/relay/relay-url.svg`)를 출력한다. 이 QR은 **중계 기본 주소**이며 방 초대 QR은 앱에서 별도로 만든다. 출력된 URL을 Galaxy 원격 설정에 등록한다.
-- 앱에서는 **① PC 중계 켜기 → ② 저장된 URL health 확인 → ③ 방 만들기·초대 공유** 순서로 진행한다. health 성공은 중계 응답만 뜻한다. 상대 접속이나 게임 시작 성공을 뜻하지 않는다.
-- 게임 후 `tools/relay/stop.cmd`를 더블클릭한다. 이 스크립트가 시작한 Funnel 443과 전용 Compose 프로젝트만 끈다. Tailscale 자체나 다른 컨테이너는 끄지 않는다. 중복 실행은 안전해야 한다. 시작 스크립트는 Tailscale `--bg`를 쓰지 않는다. 공식 문서상 `--bg`는 재부팅 뒤 Funnel 공개를 재개하기 때문이다.
-- 시작 중 오류가 나면 이번 실행에서 띄운 Funnel 프로세스와 정확한 17777 대상의 공개 설정을 정리한다. stop은 소유 marker가 없어도 이 노드의 17777 대상 또는 해당 Tailscale 프로세스 명령행을 확인해 종료를 시도한다. 다른 Funnel 대상은 건드리지 않는다.
-
-PowerShell 대안(Windows PowerShell에서 저장소의 `tools/relay` 디렉터리로 이동):
+최초 준비가 끝난 release 저장소와 수정된 `tools/relay` 폴더를 사용한다. 아래 **두 placeholder만 자신의 경로로 바꾼다**. `<Windows도구폴더>`는 `start.cmd`가 있는 Windows 절대 경로이며, WSL 파일이면 `\\wsl.localhost\<WSL배포판>\...\tools\relay` 형식이다. bare UNC를 명령으로 입력하지 않는다.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\relay.ps1 start
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\relay.ps1 stop
+$env:RELAY_WSL_REPO = '<WSL저장소절대경로>'
+$RelayTools = '<Windows도구폴더>'
+& "$RelayTools\start.cmd"
 ```
 
-## 실패 진단·복구
+1. Docker Desktop과 Windows Tailscale을 켜고 위 명령을 **Windows PowerShell**에서 실행한다. start/stop은 절대 경로 PATH의 `pwsh.exe` → 기본 PowerShell 7 설치 → Windows PowerShell 5.1 순서로 탐색하며, 현재 폴더를 암묵적으로 검색하지 않는다. 선택한 실행 파일의 제품 정보와 Core 7 정체를 확인한다. **7이 없을 때만** 5.1 fallback이며, 7 실패 후 자동 재기동하지 않는다. `Runtime: Core 7...` 또는 `Runtime: Desktop 5.1...`로 실제 버전을 표시한다. 준비된 이미지로 별도 소유 프로젝트에 `up -d --no-build --no-recreate --pull never`하므로 재빌드는 필요 없다.
+2. **`Relay ready:`가 나온 뒤** 출력된 `Health:` 주소를 열어 `relay=p2p-gostop`, `ready=true`를 확인한다. 승인 URL은 관리 콘솔에서 이 노드의 공개 권한을 허용하는 주소다. `Relay ready`의 공개 서비스 URL이 앱에 저장할 중계 기본 주소다.
+3. 같은 release의 Galaxy 앱 원격 설정에 기본 주소와 생성 자격을 본인 화면에서만 등록한다. 앱에서 health 확인 → 방 생성 → **앱이 만든 초대 링크**를 iPhone Safari로 공유한다. wrapper QR은 중계 기본 주소이며 방 초대가 아니다. health 성공과 실제 게임 연결 성공은 구분한다.
+4. 게임이 끝나면 **같은 PowerShell 창·같은 wrapper**에서 종료한다.
 
-| 확인된 상태 | 조치 |
+```powershell
+& "$RelayTools\stop.cmd"
+```
+
+소유 자원이 있으면 성공 출력은 `Relay Funnel endpoint disabled.`, 이어서 `Relay container stopped.`다. marker가 없으면 `No resources are owned by this wrapper; nothing was changed.`로 끝나며 기존 서비스를 정리하지 않는다. Ctrl+C로 foreground Funnel이 이미 꺼져 설정이 없으면 추가 off가 필요 없다. 이 상태에서 수동 off의 `handler does not exist`는 해제할 대상이 없다는 뜻이다. wrapper는 off/reset을 호출하지 않는다. 다른 endpoint, Tailscale 앱 자체, 로그인/부팅 설정은 변경하지 않는다. `--bg`는 사용하지 않는다.
+
+탐색기는 `explorer.exe $RelayTools`로 열어 start/stop을 더블클릭할 수 있다. 이 방식은 먼저 Windows 사용자 환경변수에 `RELAY_WSL_REPO`를 설정한다. 5.1을 직접 지정하는 진단은 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$RelayTools\relay.ps1" start`이며, 종료는 마지막 인수만 `stop`으로 바꾼다. 스크립트 자체도 UTF-8 stdout/stderr와 exitcode를 명시적으로 처리하므로 콘솔 인코딩을 수동 변경할 필요가 없다.
+
+## 최초 준비·release 변경 (WSL 셸)
+
+현재 준비된 이미지에는 이 빌드를 반복하지 않는다. APK와 같은 정확한 release 태그·commit의 웹 번들을 준비할 때만 실행한다. Docker CLI는 WSL PATH에서 찾고, 없으면 `$HOME/.local/bin/docker`를 확인한다. 특수 설치는 Windows 환경변수 `RELAY_WSL_DOCKER`에 WSL 실행 파일 경로를 지정한다.
+
+```sh
+cd '<WSL저장소절대경로>'
+source "$HOME/.nvm/nvm.sh"
+nvm use
+npm ci
+npm run build -w packages/web
+mkdir -p -m 700 "$HOME/.local/share/p2p-gostop/relay"
+if ! test -f "$HOME/.local/share/p2p-gostop/relay/creation-secret"; then
+  node tools/relay/create-credentials.ts "$HOME/.local/share/p2p-gostop/relay/creation-secret"
+fi
+export RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret"
+export RELAY_ALLOWED_ORIGINS="http://127.0.0.1:17777,https://<Funnel공개호스트>"
+export RELAY_RELEASE="$(git describe --tags --exact-match)"
+# 설치된 Docker CLI로 실행한다.
+RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) docker compose -f compose.relay.yaml build
+```
+
+자격 파일은 저장소 밖에 생성되며 기존 파일을 덮어쓰지 않는다. **생성 자격, 실제 status JSON/peer 정보, 초대값, 개인 경로/호스트는 채팅·Git·PR·공유 로그에 출력하지 않는다.** 자격 내용은 Galaxy 개인 설정에만 등록한다. start는 파일이 없으면 같은 외부 위치에 생성한다. 회전/폐기는 먼저 stop하고 방 종료를 확인한 뒤 별도 작업으로 한다. 재시작하면 메모리 방이 사라진다.
+
+v0.3.1 운영 수정은 별도 wrapper 폴더에서 제공한다. 원본 release 태그·추적 파일·dist·이미지 SHA 태그는 유지한다. wrapper의 폴더 위치를 운영 중 이동하지 않는다. marker/잠금/QR은 wrapper 옆에 생성하며 QR는 파일로 직접 연다. 시작부터 종료 정리까지 잠금으로 동시 호출을 막고, marker의 소유 프로젝트·정확한 프로세스·노드/대상을 확인한다. 이전 wrapper의 marker는 승계하지 않는다. 운영 중에는 기존 wrapper를 보존하고 종료에도 그 wrapper를 사용한다. `/version` release와 정적 경로를 확인한 뒤에만 공개한다. 다음 정식 release에서 수정 wrapper를 함께 배포한다.
+
+## 실패 진단·검증
+
+| 실패 | 확인할 것 |
 |---|---|
-| `docker info` 실패 | Docker Desktop 실행, WSL2 통합과 WSL의 `/home/k/.local/bin/docker` 확인 |
-| 외부 생성 자격 파일 또는 `packages/web/dist` 없음 | start는 비밀만 자동 생성한다. 웹 번들은 위 설치 단계 실행 |
-| 로컬 health 실패 | `docker compose -f compose.relay.yaml logs --tail=30 relay` 확인. 포트 17777 점유는 `docker compose -f compose.relay.yaml ps`와 `ss -ltn`으로 확인. 다른 프로세스를 자동 종료하지 않음 |
-| Windows Tailscale 미연결 | 앱 로그인/연결·MagicDNS 확인 |
-| Funnel 명령 거절 | 관리 콘솔에서 이 노드의 Funnel 속성 승인·443 설정 확인. 정책을 우회하지 않음 |
-| 공개 health 불통 | PC 전원 → Docker/로컬 health → Windows Tailscale/Funnel → Windows localhost 전달 → DNS/TLS 순으로 확인. 원인 미확인 상태에서 PC·Docker·Funnel 하나를 단정하지 않음 |
-| 중단 실패 | `tailscale funnel status`와 `docker compose -f compose.relay.yaml ps`로 남은 상태 확인. 이 노드의 `http://127.0.0.1:17777` 대상이 남아 있으면 `tailscale funnel --https=443 http://127.0.0.1:17777 off` 실행. 다른 대상은 보존 |
+| Docker/WSL prerequisite | Docker Desktop·WSL2 통합, `RELAY_WSL_REPO` 절대 경로, Docker CLI 탐색 |
+| 로컬 health/version | 같은 release의 dist/이미지·자격 파일·고정 중계 포트 점유. 고정 기본 Compose 프로젝트를 수동 down하지 말고 같은 wrapper stop 후 재시도 |
+| Tailscale/Funnel | Windows 앱 연결·MagicDNS·이 노드 승인·443. 다른 endpoint를 대체하지 않음 |
+| 공개 health | 로컬 health → Funnel 승인/설정 → Windows localhost 전달 → DNS/TLS 순서. 원인을 추측해 단정하지 않음 |
+| stop 불완전 | marker를 지우거나 폴더를 옮기지 말고 같은 wrapper stop 재실행. 새 PowerShell 창에서도 marker로 소유 프로젝트를 복원한다. legacy/부분 marker 또는 바뀐 프로세스·노드는 자동 종료를 거부한다. 알려진 원래 wrapper로 종료하거나 남은 foreground 호출이 끝난 뒤 재시도. reset/down 금지 |
 
-배포 컨텍스트 확인: 이미지 빌드 전에 `bash docker/relay/check-context.sh`를 실행한다. Docker가 `FROM scratch`와 `COPY . /`로 가짜 민감 파일을 내보내는 검사이며 CI에서도 실행된다. 실제 비밀 파일을 만들거나 읽지 않는다.
-
-비밀 폐기: 실행 중이면 먼저 stop, 해당 방 종료를 확인하고 WSL 사용자 홈의 생성 자격 파일을 안전하게 제거한다. 다음 start에서 새 파일 생성·Galaxy 개인 설정 재등록 후 방을 다시 만든다. 비밀이 유출되었다면 옛 키를 다시 사용하지 않는다. 이전 이미지로 롤백할 때도 같은 release의 웹·APK wire 호환을 확인하고 새 방으로 시작한다. 중계 재시작으로 메모리 방은 사라진다.
-
-## 운영 기록 (사람 작성)
-
-| 날짜 | PC 이미지 ID / 웹 SHA-256 / APK release | 로컬 health / 공개 health | start·stop·재부팅 결과 | 비고(비밀 제외) |
-|---|---|---|---|---|
-| 미실시 |  |  |  | Windows 실측 대기 |
-
-실기기 항목은 [원격 대전 절차](../../docs/device-test/remote-play.md)에 기록한다.
+텍스트 Funnel status는 foreground 설정을 누락할 수 있어 스크립트는 JSON의 `Foreground`도 검사한다. 서비스 기동 없는 회귀검사는 각 PowerShell에서 `check-native.ps1`·`check-runtime.ps1`·`check-ownership.ps1`을 `-File`로 실행한다. Node 정적 검사는 `node tools/relay/check-static.ts`. [운영 검증 근거](validation.md)와 [게임 실기기 절차](../../docs/device-test/remote-play.md)는 구분한다.
