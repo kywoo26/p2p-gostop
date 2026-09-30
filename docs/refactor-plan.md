@@ -178,7 +178,7 @@ Kotlin 표본은 `HotspotService.kt`의 `startLegacy`(199~209, 11줄)·`startHot
 
 ## 5. 에이전트용 변경 위치 지도와 소유권
 
-2026-09-29 최신 사용자 인계(#148·#150 병합 뒤): **#151 상호작용**이 `web/src/game/{controller.ts,solo.svelte.ts}`·`p2p/*`·`routes/Game.svelte`를, **#104 디자인**이 `ui/*`·`routes/{Home,Settings,Settlement}.svelte`·`tokens.css`를 소유한다. 이 영역은 수정하지 않는다. 현재 자유 영역은 engine/protocol/ai/relay-dev/sim, `web/src/{net,lib,cards,storage}`, android다. 아래 표의 과거 선행 조건보다 이 사용자 인계가 우선한다.
+현재 소유권 정본은 [plan §3 현재 트랙·공유 파일 인계](../plan.md#현재-트랙)다. 착수 시 기준 SHA·실제 PR diff·선행 소유권을 확인하며 이 지도의 “자유 영역”을 현재 편집 허가로 해석하지 않는다. 아래 #151/#104 및 R1~R6 조건은 2026-09-29 리팩토링 당시 인계 기록이고, 현재 배정을 고정하지 않는다.
 
 R1 #93, R2 #98, R3a #99, R4 웹 호스트 #148, R5 솔로 저장 #150이 병합됐다. R4의 protocol HostSession 추가 분해는 별도 후속이며 완료로 간주하지 않는다. 다음은 R6 sim 계산/표시 분리([검증·변경 위치](research/refactor-sim-reporting.md)); #56은 병합, #66·#67은 열린 후속 이슈이나 현재 sim 수정 PR은 없음을 착수 시 확인했다. AI 정책·가중치·머니 기본값을 변경하지 않는다. R6 검증 도중 #151이 main `dd4e9e1`에 병합되어 반영했지만, 이번 PR에서는 위 소유 경계를 그대로 유지했다.
 
