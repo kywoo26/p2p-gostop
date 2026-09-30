@@ -338,6 +338,14 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
+### #207 누적 번들 실측·손실 없는 최적화 (NF-03·AC-07·NF-RP-06)
+
+실행 단위 **B207-1**: main `2e90fedb2bca04c6157ea594cf743d52032abcc1`, #218 `ad1afc818af1506aad710439de508bccf50adda2`, #223 임시 head `12a2950ec92aba28e61e85da41fbc48cd6571dd9`, #225 `a3acbb8df4b969046c6a4bd9cf97fe16db47b905`를 고정한다. 별도 임시 합성 tree에서 개별·실제 누적 artifact를 같은 버전/명령으로 세 번 빌드하고 파일 SHA-256·raw 카테고리 manifest를 남긴다. 단순 증분 합은 실제 누적 측정으로 쓰지 않는다. #223은 최종 제품 전이므로 새 head 누적 gate는 별도다.
+
+소유 범위는 이 계획 단위, `tools/bundle/` 계측, `docs/research/ui-bundle-budget.md` 근거, 기능·시각·라이선스를 보존하는 비중복 빌드/자산 최적화다. 다른 UI PR의 Floor/Board/Game/Settlement/player-labels·원 브랜치는 편집하지 않는다. 첫 후보는 반복 SVG 도형의 공유와 배포 metadata JSON 공백 제거이며, 실제 A/B 절감과 전체 parsed metadata/브라우저 픽셀 동등성을 확인한 후보만 반영한다. 효과가 없거나 품질이 달라지면 기각한다. 새 의존성·규칙/wire/저장 변경과 상한 완화는 없다.
+
+전체 raw 배포 1,572,864 B gate와 첫 필수 encoded 응답·후속 요청·JS 실행/이미지 decode/프레임을 분리한다. 로컬 Content-Encoding/encodedBodySize는 serving 경로와 조건을 함께 기록하며 오프라인 gzip 합계를 실제 serving이라고 쓰지 않는다. Galaxy/iPhone/Funnel 실기기·사용자 예산 승인·최종 UI 누적 통합은 미검증을 유지한다. NF-03/AC-07/NF-RP-06 규범·상태를 자동 승격하지 않는다. 안전 절감이 부족하면 근거를 포함한 개정 제안만 작성한다.
+
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03)
 
 | 현재 상태 | 대표 구현·검증 근거 | 미완 범위 |
