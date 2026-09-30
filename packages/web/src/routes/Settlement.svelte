@@ -2,6 +2,8 @@
   // 정산 (spec 6.2, FR-18): 점수 분해 표, 배수 체인, 금액, 잔액 변화, 다음 판/종료.
   // 잔액 0이면 재충전(시작 잔액으로)·세션 종료를 묻는다(MN-02).
   import type { SettlementDisplay } from '../game/adapter.ts';
+  import type { PendingRoundResult } from '../game/controller.ts';
+  import { tick } from 'svelte';
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
   import Screen from '../ui/Screen.svelte';
   import { REASON_LABEL, SCORE_LABEL, stepLabel } from '../ui/settle-labels.ts';
@@ -9,6 +11,8 @@
   interface Props {
     /** 국진 위치(gukjin)는 솔로 어댑터만 넣는다(프로토콜 뷰에는 아직 없다) */
     view: SettlementDisplay | null;
+    pending?: PendingRoundResult | null;
+    onacknowledge?: ((key: string) => void) | undefined;
     decision?: {
       readonly winner: boolean;
       readonly canPush: boolean;
@@ -37,6 +41,8 @@
 
   let {
     view,
+    pending = null,
+    onacknowledge,
     decision = null,
     guest = false,
     onpush,
@@ -51,6 +57,17 @@
     onrefill,
     onfresh,
   }: Props = $props();
+
+  let heading = $state<HTMLParagraphElement | null>(null);
+  const stage = $derived(pending ? (pending.acknowledged ? 'decision' : 'result') : 'settled');
+  $effect(() => {
+    void stage;
+    const target = heading;
+    if (pending === null || target === null) return;
+    void tick().then(() => {
+      if (target.isConnected && !target.closest('[inert]')) target.focus();
+    });
+  });
 
   const headline = $derived(
     view === null
@@ -74,8 +91,23 @@
   );
 </script>
 
-<Screen title="정산" back={null} scrollBody>
-  <p class="headline" data-testid="settlement-headline">{headline}</p>
+<Screen
+  title={pending ? (pending.acknowledged ? '받기·밀기 선택' : '판 결과') : '정산'}
+  back={null}
+  scrollBody
+>
+  <p class="headline" data-testid="settlement-headline" tabindex="-1" bind:this={heading}>
+    {headline}
+  </p>
+
+  {#if pending}
+    <p role="status" data-testid="pending-result-note">
+      {pending.acknowledged
+        ? '결과 확인 완료 · 받기·밀기 결정 대기'
+        : '결과를 확인한 뒤 받기·밀기를 진행합니다.'}
+      아직 정산되지 않았습니다.
+    </p>
+  {/if}
 
   {#if view?.pushed}
     <p class="push-result" data-testid="push-forfeit">
@@ -134,7 +166,7 @@
 
   {#if view && view.winner !== null}
     <section class="settlement-section amount-section" aria-labelledby="settle-amount">
-      <h2 id="settle-amount">금액</h2>
+      <h2 id="settle-amount">{pending ? '받을 경우 예상 금액' : '금액'}</h2>
       <p class="amount">
         {view.finalPoints}점 × {formatMoney(view.pointValue, view.unit)} =
         <strong>{formatMoney(view.amount, view.unit)}</strong>
@@ -156,7 +188,7 @@
     </section>
   {/if}
 
-  {#if view}
+  {#if view && !pending}
     <section class="settlement-section balance-section" aria-labelledby="settle-balance">
       <h2 id="settle-balance">잔액</h2>
       <table>
@@ -196,7 +228,14 @@
   {/if}
 
   {#snippet actions()}
-    {#if decision}
+    {#if pending && !pending.acknowledged}
+      <button
+        type="button"
+        class="button primary"
+        data-choice="acknowledge"
+        onclick={() => onacknowledge?.(pending!.key)}>결과 확인</button
+      >
+    {:else if decision}
       {#if decision.winner}
         <button
           type="button"
@@ -211,6 +250,8 @@
             onclick={() => onpush?.(true)}>밀기 · 다음 판 ×{decision.nextMultiplier}</button
           >{/if}
       {/if}
+    {:else if pending}
+      <p role="status">결정을 기다리는 중</p>
     {:else if ended}
       <button type="button" class="button primary" data-choice="fresh" onclick={() => onfresh?.()}
         >새로 참가</button
@@ -218,11 +259,11 @@
     {:else}
       <button type="button" class="button" data-choice="end" onclick={() => onend?.()}>종료</button>
     {/if}
-    {#if !decision && !ended && bankrupt}
+    {#if !pending && !decision && !ended && bankrupt}
       <button type="button" class="button primary" data-choice="refill" onclick={() => onrefill?.()}
         >재충전</button
       >
-    {:else if !decision && !ended}
+    {:else if !pending && !decision && !ended}
       <button
         type="button"
         class="button primary"

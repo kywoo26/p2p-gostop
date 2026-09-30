@@ -141,6 +141,8 @@ test.each([false, true])(
     });
     try {
       solo.attach(root);
+      expect(requests).toHaveLength(0);
+      solo.acknowledgeRoundResult(solo.pendingRoundResult!.key);
       expect(requests).toHaveLength(1);
       expect(requests[0]?.decision).toBe('push');
       solo.skipAnimations();
@@ -183,6 +185,8 @@ test('CPU의 오래된 밀기 Worker 응답은 세션 종료 후 적용되지 �
   });
   try {
     solo.attach(root);
+    expect(solo.thinking).toBe(false);
+    solo.acknowledgeRoundResult(solo.pendingRoundResult!.key);
     expect(solo.thinking).toBe(true);
     solo.end();
     const ended = solo.state;

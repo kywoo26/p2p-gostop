@@ -10,7 +10,14 @@ import {
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
 import type { DecisionClock, TimeoutResult } from '@p2p-gostop/protocol';
-import type { Playback } from './playback.svelte.ts';
+import type { Playback, RoundSummary } from './playback.svelte.ts';
+
+/** 솔로의 미확정 판 결과. 확인은 받기/밀기 동의와 별개다. */
+export interface PendingRoundResult {
+  readonly key: string;
+  readonly summary: RoundSummary;
+  readonly acknowledged: boolean;
+}
 
 export type GameMode = 'solo' | 'host' | 'guest';
 
@@ -37,6 +44,8 @@ export interface PushDecision {
 }
 
 export interface GameController {
+  readonly pendingRoundResult?: PendingRoundResult | null;
+  acknowledgeRoundResult?(key: string): void;
   /** 이 세션에 실제로 적용되는 점당 금액. */
   readonly perPoint?: number | undefined;
   readonly balanceChanges?: readonly [number, number];

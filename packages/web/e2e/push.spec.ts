@@ -88,6 +88,9 @@ async function openSaved(page: Page, session: SessionState) {
   );
   await page.goto('./?speed=instant#/game');
   await expect(page.getByTestId('solo')).toBeVisible();
+  await expect(page.locator('[data-choice="acknowledge"]')).toBeVisible();
+  await expect(page.locator('[data-choice="accept"]')).toHaveCount(0);
+  await page.locator('[data-choice="acknowledge"]').click();
 }
 
 test('사람 승자: 보류 판 새로고침, 밀기 0냥, 다음 판 ×2, 중복 입력 차단', async ({ page }) => {
@@ -99,6 +102,7 @@ test('사람 승자: 보류 판 새로고침, 밀기 0냥, 다음 판 ×2, 중�
     String(session.records.length),
   );
   await page.reload();
+  await page.locator('[data-choice="acknowledge"]').click();
   await expect(page.locator('[data-choice="push"]')).toBeVisible();
   await page.locator('[data-choice="push"]').click();
   await expect(page.getByTestId('push-forfeit')).toContainText('정산 0냥');

@@ -29,10 +29,11 @@ import {
   type GameController,
   type GameStats,
   type PushDecision,
+  type PendingRoundResult,
 } from './controller.ts';
 import { log } from './log.svelte.ts';
 import { Playback, type RoundSummary } from './playback.svelte.ts';
-import { soloSummary } from './records.ts';
+import { pendingSoloSummary, soloSummary } from './records.ts';
 import {
   actingSeats,
   createSession,
@@ -91,6 +92,48 @@ export class SoloSession implements GameController {
   /** 상태가 바뀔 때마다 증가: CPU 결정이 오래된 상태에 적용되지 않게 한다 */
   private generation = 0;
   private autoHeld = true;
+  private roundResult = $state.raw<PendingRoundResult | null>(null);
+
+  private resultKey(session = this.state): string {
+    const board = this.boardOf(session);
+    return `${board.round}:${board.eventSeq}`;
+  }
+
+  private cacheResult(session: SessionState): void {
+    if (session.phase === 'pushDecision') {
+      const key = this.resultKey(session);
+      if (this.roundResult?.key !== key)
+        this.roundResult = {
+          key,
+          summary: pendingSoloSummary(session, settings.value.unit),
+          acknowledged: false,
+        };
+    } else if (session.phase === 'playing' || session.phase === 'ended') {
+      this.roundResult = null;
+    }
+  }
+
+  get pendingRoundResult(): PendingRoundResult | null {
+    const result = this.roundResult;
+    if (this.disposed || result === null || this.playback.settlement !== null) return null;
+    // 확인 후에도 최종 정산 재생이 끝날 때까지 같은 결과를 유지한다.
+    if (result.acknowledged) return result;
+    const board = this.playback.board;
+    return this.state.phase === 'pushDecision' &&
+      !this.playback.busy &&
+      this.playback.pending === 0 &&
+      `${board.round}:${board.eventSeq}` === result.key &&
+      this.resultKey() === result.key
+      ? result
+      : null;
+  }
+
+  acknowledgeRoundResult(key: string): void {
+    const result = this.pendingRoundResult;
+    if (result === null || result.acknowledged || result.key !== key) return;
+    this.roundResult = { ...result, acknowledged: true };
+    this.kick();
+  }
 
   recordHintUsage(level: HintLevel): void {
     if (this.state.phase !== 'playing') return;
@@ -125,6 +168,7 @@ export class SoloSession implements GameController {
       onIdle: (skipped) => this.kick(skipped),
       settlement: over ? this.summary(session) : null,
     });
+    this.cacheResult(session);
     this.save();
   }
 
@@ -263,7 +307,14 @@ export class SoloSession implements GameController {
 
   /** 결정 프롬프트에는 자동 기본값이나 시간 제한을 두지 않는다. */
   choosePush(push: boolean): void {
-    if (this.state.phase !== 'pushDecision' || this.state.game.result?.winner !== ME) return;
+    if (
+      this.disposed ||
+      !this.roundResult?.acknowledged ||
+      !this.playback.idle ||
+      this.state.phase !== 'pushDecision' ||
+      this.state.game.result?.winner !== ME
+    )
+      return;
     this.finishPush(push, ME);
   }
 
@@ -295,6 +346,7 @@ export class SoloSession implements GameController {
 
   dispose(): void {
     this.disposed = true;
+    this.roundResult = null;
     this.autoChoice.dispose();
     this.cancelThink?.();
     this.playback.dispose();
@@ -304,6 +356,7 @@ export class SoloSession implements GameController {
 
   private commitState(session: SessionState): void {
     this.state = session;
+    this.cacheResult(session);
     this.generation += 1;
     this.save();
   }
@@ -335,6 +388,7 @@ export class SoloSession implements GameController {
     if (this.disposed || this.thinking || !this.playback.idle) return;
     const s = this.state;
     if (s.phase === 'pushDecision' && s.game.result?.winner === CPU) {
+      if (!this.roundResult?.acknowledged) return;
       void this.runCpuPush();
       return;
     }
