@@ -27,7 +27,7 @@ assert.match(compose, /RELAY_DIST_DIR:/);
 assert.match(compose, /127\.0\.0\.1:17777\/health/);
 assert.match(start, /relay\.ps1" start/i);
 assert.match(stop, /relay\.ps1" stop/i);
-assert.match(helper, /funnel --https=443 \$Target off/);
+assert.match(helper, /@\('funnel', '--https=443', \$Target, 'off'\)/);
 assert.match(helper, /Compose 'down'/);
 assert.match(helper, /\/health/);
 assert.match(helper, /http:\/\/127\.0\.0\.1:17777,\$url/);
@@ -40,3 +40,12 @@ assert.doesNotMatch(helper, /^\s*[^#\r\n]*funnel\s+--bg\b/im);
 assert.doesNotMatch(helper, /funnel reset|tailscale down/i);
 
 console.log('RP-03A/B 정적 배포 경계 확인 완료');
+
+const runtime = await readFile('tools/relay/runtime.cmd', 'utf8');
+assert.match(start, /call "%~dp0runtime\.cmd"/);
+assert.match(stop, /call "%~dp0runtime\.cmd"/);
+assert.match(runtime, /where\.exe pwsh\.exe/);
+assert.match(runtime, /PowerShell\\7\\pwsh\.exe/);
+assert.match(runtime, /WindowsPowerShell\\v1\.0\\powershell\.exe/);
+assert.match(helper, /FunnelState \$after \$dns/);
+assert.doesNotMatch(helper, /2>&1|\$LASTEXITCODE/);

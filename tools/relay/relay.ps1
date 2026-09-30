@@ -2,6 +2,8 @@
 # This file deliberately uses ASCII so Windows PowerShell 5.1 reads it without a BOM.
 param([Parameter(Mandatory = $true)][ValidateSet('start', 'stop')][string]$Action)
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'native.ps1')
+Write-Host ("Runtime: {0} {1}" -f $PSVersionTable.PSEdition, $PSVersionTable.PSVersion)
 $Repo = if ($env:RELAY_WSL_REPO) { $env:RELAY_WSL_REPO } else { '/home/k/github/p2p-gostop' }
 $Docker = '/home/k/.local/bin/docker'
 $Target = 'http://127.0.0.1:17777'
@@ -9,13 +11,15 @@ $SecretDirectory = '$HOME/.local/share/p2p-gostop/relay'
 $Origin = 'http://127.0.0.1:17777'
 $Release = 'v0.0.0'
 $Marker = Join-Path $PSScriptRoot '.funnel-owned'
+$FunnelStdout = Join-Path $env:TEMP 'p2p-gostop-relay-funnel.stdout'
+$FunnelStderr = Join-Path $env:TEMP 'p2p-gostop-relay-funnel.stderr'
 $Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { 'C:\Program Files\Tailscale\tailscale.exe' }
 
 function Fail([string]$Message) { throw $Message }
 function Wsl([string]$Command) {
-  $output = & wsl.exe --cd $Repo --exec /bin/bash -lc $Command 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail "WSL command failed: $Command`n$output" }
-  return $output
+  $result = InvokeRelayNative 'wsl.exe' @('--cd', $Repo, '--exec', '/bin/bash', '-lc', $Command)
+  if ($result.ExitCode -ne 0) { Fail "WSL command failed (exit $($result.ExitCode)): $($result.Stderr.Trim())" }
+  return $result.Stdout
 }
 function Compose([string]$Arguments) {
   $command = 'RELAY_CREATION_SECRET_PATH="$HOME/.local/share/p2p-gostop/relay/creation-secret" ' +
@@ -42,9 +46,32 @@ function LocalHealth {
   Fail 'Local /health is not ready. Check: docker compose -f compose.relay.yaml logs --tail=30 relay. Verify RELAY_PUBLIC, RELAY_RELEASE and the creation secret file.'
 }
 function FunnelStatus {
-  $output = & $Tailscale funnel status 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail "Tailscale Funnel status failed. Start/sign in to the Windows Tailscale app. $output" }
-  return ($output | Out-String)
+  $result = InvokeRelayNative $Tailscale @('funnel', 'status', '--json')
+  if ($result.ExitCode -ne 0) { Fail 'Tailscale Funnel status failed. Start/sign in to the Windows Tailscale app.' }
+  try { return ($result.Stdout | ConvertFrom-Json) }
+  catch { Fail 'Tailscale returned invalid Funnel status JSON; raw status is withheld.' }
+}
+function FunnelState($Status, [string]$Dns) {
+  # Text status can omit foreground sessions. Inspect background and Foreground.
+  $configs = @($Status)
+  if ($Status.Foreground) { $configs += @($Status.Foreground.PSObject.Properties | ForEach-Object { $_.Value }) }
+  $hasEndpoint = $false
+  $ours = $false
+  $foreignTarget = $false
+  foreach ($config in $configs) {
+    if ($config.TCP -and @($config.TCP.PSObject.Properties).Count -gt 0) { $hasEndpoint = $true }
+    if ($config.Web) {
+      foreach ($web in $config.Web.PSObject.Properties) {
+        foreach ($handler in $web.Value.Handlers.PSObject.Properties) {
+          if ($handler.Value.Proxy -eq $Target) {
+            if ($web.Name.ToLowerInvariant() -eq ($Dns + ':443') -and $handler.Name -eq '/') { $ours = $true }
+            else { $foreignTarget = $true }
+          }
+        }
+      }
+    }
+  }
+  return [pscustomobject]@{ HasEndpoint = $hasEndpoint; Ours = $ours; ForeignTarget = $foreignTarget }
 }
 function OwnedFunnelProcessIds {
   # A missing marker can follow a failed marker write. Match this exact target.
@@ -58,13 +85,23 @@ function OwnedFunnelProcessIds {
   }
 }
 function FunnelOff {
-  $output = & $Tailscale funnel --https=443 $Target off 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail "Tailscale rejected Funnel off: $output" }
+  # Foreground sessions disappear when their owning process exits; off addresses
+  # background handlers and fails with "handler does not exist" after Ctrl+C.
+  foreach ($id in @(OwnedFunnelProcessIds)) { Stop-Process -Id $id -Force -ErrorAction Stop }
+  $dns = DnsName
+  $state = FunnelState (FunnelStatus) $dns
+  if ($state.ForeignTarget) { Fail 'The relay target is configured on another hostname/path; inspect it before stopping.' }
+  Remove-Item $FunnelStdout, $FunnelStderr -Force -ErrorAction SilentlyContinue
+  if (-not $state.Ours) { return }
+  $result = InvokeRelayNative $Tailscale @('funnel', '--https=443', $Target, 'off')
+  if ($result.ExitCode -ne 0) { Fail 'Tailscale rejected Funnel off. Inspect the owned endpoint before retrying.' }
+  if ((FunnelState (FunnelStatus) $dns).Ours) { Fail 'The relay Funnel endpoint is still configured.' }
 }
 function DnsName {
-  $raw = & $Tailscale status --json 2>&1
-  if ($LASTEXITCODE -ne 0) { Fail 'Windows Tailscale is stopped or not signed in. Start the app and connect.' }
-  $state = ($raw | Out-String) | ConvertFrom-Json
+  $result = InvokeRelayNative $Tailscale @('status', '--json')
+  if ($result.ExitCode -ne 0) { Fail 'Windows Tailscale is stopped or not signed in. Start the app and connect.' }
+  try { $state = $result.Stdout | ConvertFrom-Json }
+  catch { Fail 'Windows Tailscale returned invalid UTF-8 JSON. Update/check the Windows app; raw status is withheld.' }
   if ($state.BackendState -ne 'Running' -or -not $state.Self.DNSName) { Fail 'Windows Tailscale is not connected or MagicDNS is unavailable.' }
   $name = $state.Self.DNSName.TrimEnd('.').ToLowerInvariant()
   if ($name -notmatch '^[a-z0-9-]+\.[a-z0-9-]+\.ts\.net$') { Fail 'Unexpected Tailscale DNS name. Check MagicDNS and the selected node.' }
@@ -98,7 +135,7 @@ if ($Action -eq 'stop') {
   try {
     $hasMarker = Test-Path $Marker
     $ownedProcesses = @(OwnedFunnelProcessIds)
-    $status = ''
+    $status = $null
     $dns = ''
     try { $status = FunnelStatus; $dns = DnsName }
     catch {
@@ -109,12 +146,13 @@ if ($Action -eq 'stop') {
       $ownerDns = (Get-Content $Marker -Raw).Trim()
       if ($dns -and $dns -ne $ownerDns) { Fail 'The active Tailscale node differs from the node saved by start. Inspect the Funnel status before stopping it.' }
     }
-    $targetOnThisNode = $dns -and $status.Contains($Target) -and $status.ToLowerInvariant().Contains($dns)
+    $state = if ($status -and $dns) { FunnelState $status $dns } else { $null }
+    $targetOnThisNode = $state -and $state.Ours
     if ($targetOnThisNode -or $ownedProcesses.Count -gt 0) {
       try { FunnelOff }
       finally { foreach ($id in $ownedProcesses) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue } }
       Write-Host 'Relay Funnel endpoint disabled.'
-    } elseif ($status.Contains($Target)) {
+    } elseif ($state -and $state.ForeignTarget) {
       Fail 'The relay target appears on a different Tailscale node; inspect funnel status before stopping it.'
     } else { Write-Host 'No relay Funnel endpoint is active.' }
     if ($hasMarker) { Remove-Item $Marker -Force }
@@ -142,13 +180,14 @@ try {
   $url = "https://$dns"
   $Origin = "http://127.0.0.1:17777,$url"
   $before = FunnelStatus
-  $ours = $before.Contains($Target)
-  if ($ours -and -not $before.ToLowerInvariant().Contains($dns)) {
+  $beforeState = FunnelState $before $dns
+  $ours = $beforeState.Ours
+  if ($beforeState.ForeignTarget) {
     Fail 'Funnel target is active on a different hostname. Inspect tailscale status --json and tailscale funnel status; no relay was started.'
   }
   if ($ours -and -not (Test-Path $Marker)) { Fail 'Port 443 already points to this target but this script does not own it. Inspect tailscale funnel status before changing it.' }
   $ownedBeforeStart = $ours
-  if (-not $ours -and $before -match 'https://') { Fail 'Another HTTPS Serve/Funnel endpoint is active. Inspect tailscale funnel status; this script will not replace it.' }
+  if (-not $ours -and $beforeState.HasEndpoint) { Fail 'Another HTTPS Serve/Funnel endpoint is active. Inspect tailscale funnel status; this script will not replace it.' }
   $null = Compose 'up -d --no-build'
   $null = LocalHealth
   $version = Invoke-RestMethod -Uri "$Target/version" -TimeoutSec 3 -MaximumRedirection 0
@@ -157,26 +196,27 @@ try {
   }
   if (-not $ours) {
     # No --bg: Tailscale documents that --bg resumes sharing after reboot.
-    $startedProcess = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru
+    $startedProcess = Start-Process -FilePath $Tailscale -ArgumentList @('funnel', '--https=443', $Target) -WindowStyle Hidden -PassThru -RedirectStandardOutput $FunnelStdout -RedirectStandardError $FunnelStderr
     $startedFunnelThisRun = $true
     Start-Sleep -Seconds 2
     if ($startedProcess.HasExited) { Fail 'Funnel did not stay running. Check node approval in the Tailscale admin console and tailscale funnel status.' }
     $after = FunnelStatus
-    if (-not $after.Contains($Target) -or -not $after.ToLowerInvariant().Contains($dns)) {
+    if (-not (FunnelState $after $dns).Ours) {
       Fail 'Funnel target or hostname does not match this Tailscale node. Check node approval and tailscale funnel status.'
     }
     Set-Content -Path $Marker -Value $dns -NoNewline
   }
   PublicHealth $url
-  $null = Wsl ('source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && node tools/relay/write-qr.ts ' + $url + '/ tools/relay/relay-url.svg')
-  try {
-    $qrWindows = (Wsl 'wslpath -w "$PWD/tools/relay/relay-url.svg"' | Out-String).Trim()
-    if ($qrWindows) { Start-Process -FilePath $qrWindows }
-  } catch { Write-Host 'QR viewer could not open; use the WSL file path below.' }
+  # Put generated files beside this wrapper, even when the release repo is separate.
+  $qrWindows = Join-Path $PSScriptRoot 'relay-url.svg'
+  $quotedQr = "'" + $qrWindows.Replace("'", "'\''") + "'"
+  $qrWsl = (Wsl ('wslpath -u ' + $quotedQr) | Out-String).Trim()
+  $quotedQrWsl = "'" + $qrWsl.Replace("'", "'\''") + "'"
+  $null = Wsl ('source "$HOME/.nvm/nvm.sh" && nvm use >/dev/null && node tools/relay/write-qr.ts ' + $url + '/ ' + $quotedQrWsl)
   Write-Host "Relay ready: $url/"
   Write-Host "Health: $url/health"
   Write-Host "Web: $url$($version.current.path)"
-  Write-Host "QR file in WSL: $Repo/tools/relay/relay-url.svg"
+  Write-Host "QR file in WSL: $qrWsl"
   Write-Host 'Health confirms the relay response only; host/guest game connection is a separate check.'
   $startSucceeded = $true
 } catch {
