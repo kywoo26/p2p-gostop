@@ -1,0 +1,145 @@
+{
+  "conditions": "Node 24.21.0 / npm 11.19.0; npm ci once per new checkout; default production npm run build -w packages/web; no PRO_ASSET_REVIEW; three runs each; build timestamp embedded so artifact hashes may differ, raw lengths stable",
+  "series": {
+    "combined-after": [
+      {
+        "run": 1,
+        "bytes": 1577422,
+        "spareBytes": -4558,
+        "manifestSha256": "4c3b574a494ed61de72891ef027e88ebd6cdcd62bc685ab001fa7676f6bbf611"
+      },
+      {
+        "run": 2,
+        "bytes": 1577422,
+        "spareBytes": -4558,
+        "manifestSha256": "d3f85b35bb8de0485c83c4408761a1d539348413ec27343f9b553548d0d8a402"
+      },
+      {
+        "run": 3,
+        "bytes": 1577422,
+        "spareBytes": -4558,
+        "manifestSha256": "9c18860fb6d9d9e638d141e34a7e55540c6b001e039b3d4308ec4dfa89635137"
+      }
+    ],
+    "combined-before": [
+      {
+        "run": 1,
+        "bytes": 1577832,
+        "spareBytes": -4968,
+        "manifestSha256": "823457cfefe7fdba77267d9b4eacbb3f48a789d719c3187f035d8d7641230c15"
+      },
+      {
+        "run": 2,
+        "bytes": 1577832,
+        "spareBytes": -4968,
+        "manifestSha256": "01c2ffdd6041ea7656b7f1331fd9a051ac7ba106f9b801876d43ac19376e083d"
+      },
+      {
+        "run": 3,
+        "bytes": 1577832,
+        "spareBytes": -4968,
+        "manifestSha256": "21a4591d92645a3f92a11f5feb5dde1158ffacb2cc118a6ee89f31db135db03b"
+      }
+    ],
+    "main-after": [
+      {
+        "run": 1,
+        "bytes": 1570295,
+        "spareBytes": 2569,
+        "manifestSha256": "e22bba83cc0df03163aa2a9f81532d598d758504361a067e3ed1995426e433a0"
+      },
+      {
+        "run": 2,
+        "bytes": 1570295,
+        "spareBytes": 2569,
+        "manifestSha256": "bf35dbe5876f36412eaf08529080bb851576fcb86ff6644ef5002b0ff9597bce"
+      },
+      {
+        "run": 3,
+        "bytes": 1570295,
+        "spareBytes": 2569,
+        "manifestSha256": "119af69b9e7ed07e6a96c99a30209d05da62657b1a13f204273fce484022ad41"
+      }
+    ],
+    "main": [
+      {
+        "run": 1,
+        "bytes": 1570705,
+        "spareBytes": 2159,
+        "manifestSha256": "edd08e3cefc86c09c0fb000e445f17cd6f637ab2007febee5062c9c25936501d"
+      },
+      {
+        "run": 2,
+        "bytes": 1570705,
+        "spareBytes": 2159,
+        "manifestSha256": "2a52c9eb16477ff5f05b18a5935916cc60b06f22be8828971b0e57b95dc91684"
+      },
+      {
+        "run": 3,
+        "bytes": 1570705,
+        "spareBytes": 2159,
+        "manifestSha256": "7568eeaf9a4e795dfdf8d59bdde4a38a044cf132c1ba68e9658831d85635165e"
+      }
+    ],
+    "pr218": [
+      {
+        "run": 1,
+        "bytes": 1572844,
+        "spareBytes": 20,
+        "manifestSha256": "ffb554a4e460c83b5b15b95bfa35d9a04958f3c08d248031ee55a38287b6966e"
+      },
+      {
+        "run": 2,
+        "bytes": 1572844,
+        "spareBytes": 20,
+        "manifestSha256": "c0d8ec50095327e0bf637b16e121e960ded8556f22bcc1d02fe5ba9f44e62f68"
+      },
+      {
+        "run": 3,
+        "bytes": 1572844,
+        "spareBytes": 20,
+        "manifestSha256": "e684f0c1c4a849f8f75b833cae697fb267220f1a2abe87c5e3e3764607c0a790"
+      }
+    ],
+    "pr223": [
+      {
+        "run": 1,
+        "bytes": 1573352,
+        "spareBytes": -488,
+        "manifestSha256": "9d9f77009e454267dff76ac596cc5db740a1c2d7ce86731a351ce3a0b7d5488d"
+      },
+      {
+        "run": 2,
+        "bytes": 1573352,
+        "spareBytes": -488,
+        "manifestSha256": "38e086f6df2749bbc6e8553e7bc30ee1b9f80c211acce672815f363093bad578"
+      },
+      {
+        "run": 3,
+        "bytes": 1573352,
+        "spareBytes": -488,
+        "manifestSha256": "b37463252488906697268a51da3d535c59a9bbd9fe7f5a17b23259893a36913d"
+      }
+    ],
+    "pr225": [
+      {
+        "run": 1,
+        "bytes": 1573043,
+        "spareBytes": -179,
+        "manifestSha256": "4c39afd9ce14cb56eababe4e495f40db8316db3051b4daa13ac56939f2afa525"
+      },
+      {
+        "run": 2,
+        "bytes": 1573043,
+        "spareBytes": -179,
+        "manifestSha256": "b87cd1cd37983508c668226b205af35c503621028d33e8ea6af96af74328ac1c"
+      },
+      {
+        "run": 3,
+        "bytes": 1573043,
+        "spareBytes": -179,
+        "manifestSha256": "c242c7b0916bc77c73447b227cabe5f1ddb1d15e777a1e2ef10d57957c6a62c9"
+      }
+    ]
+  }
+}

@@ -346,6 +346,12 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 전체 raw 배포 1,572,864 B gate와 첫 필수 encoded 응답·후속 요청·JS 실행/이미지 decode/프레임을 분리한다. 로컬 Content-Encoding/encodedBodySize는 serving 경로와 조건을 함께 기록하며 오프라인 gzip 합계를 실제 serving이라고 쓰지 않는다. Galaxy/iPhone/Funnel 실기기·사용자 예산 승인·최종 UI 누적 통합은 미검증을 유지한다. NF-03/AC-07/NF-RP-06 규범·상태를 자동 승격하지 않는다. 안전 절감이 부족하면 근거를 포함한 개정 제안만 작성한다.
 
+B207-1 실측 결과: 각 조건3회 동일 raw로 main1,570,705 B, #218 1,572,844 B, 임시 #223 1,573,352 B, #225 1,573,043 B를 확인했다. 별도 실제 누적 합성은1,577,832 B(상한4,968 B 초과), skin provenance JSON 공백만 제거한 A/B는−410 B로1,577,422 B(4,558 B 초과)다. 카드52/이미지/글꼴/CSS/고지 blob 동일 및 전체 parsed metadata 동등성을 보존했다. 원 UI 소스 편집0, 규범/gate 변경0. [파일 manifest·3회·실제 serving·미적용 개정 제안](../docs/research/ui-bundle-budget.md)에 근거를 남긴다.
+
+| 실행 단위 | 상태 | 근거 | 미완 gate |
+|---|---|---|---|
+| B207-1 / NF-03·AC-07·NF-RP-06 | 고정 checkpoint 누적 실측·안전410 B 절감 구현, 실제 누적 raw 실패 | 계획357a349; raw accounting/metadata 직접 검사2, main 단독 build 통과. desktop 현행 static guest 입력 cold body747,451 B/identity; 최초 게임·전체 세션·실기기와 구분 | 최종 #223/#225 main 조합, hosted 새head CI·독립 리뷰, 전송/기기 baseline·사용자 예산 개정 승인. 기존 NF/AC 완료 상태 자동 승격0 |
+
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03)
 
 | 현재 상태 | 대표 구현·검증 근거 | 미완 범위 |
