@@ -151,3 +151,30 @@ test('상대 턴은 수신 이후만 한 줄 기록하고 내 탭 계측 표본�
   expect(info.mock.calls[0]![0]).toMatch(/^재생 시간 관측=상대 수신이후=/);
   expect(info.mock.calls[0]![0]).not.toMatch(/cards|좌석0|좌석1|RTT/);
 });
+
+test('진단 로그 append 비용: 같은 즉시 묶음 워밍업1 + 7회 (DOM/실기기 부하와 별개)', async ({
+  annotate,
+}) => {
+  await setup();
+  vi.spyOn(sounds, 'play').mockImplementation(() => {});
+  const original = log.info.bind(log);
+  const appendMs: number[] = [];
+  vi.spyOn(log, 'info').mockImplementation((line) => {
+    const start = performance.now();
+    original(line);
+    appendMs.push(performance.now() - start);
+  });
+  for (let sample = 0; sample < 8; sample++) {
+    root.style.setProperty('--dur-scale', '0');
+    pb.enqueue(events, initial, {
+      action: { type: 'play', seat: 0, card: 0 },
+      tapAt: performance.now(),
+    });
+    await vi.waitFor(() => expect(pb.idle).toBe(true));
+  }
+  expect(appendMs).toHaveLength(8);
+  const measured = appendMs.slice(1).sort((a, b) => a - b);
+  await annotate(
+    `PDR synthetic log append n=7 warmup=${appendMs[0]}ms p50=${measured[3]}ms max=${measured.at(-1)}ms (문자열 준비·DOM·실기기 제외)`,
+  );
+});

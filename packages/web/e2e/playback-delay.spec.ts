@@ -76,6 +76,7 @@ test('합성 main-thread 100ms 정지 뒤 카드·점수·입력 잠금이 수�
       ),
   ).toHaveLength(1);
   expect(observed.floorIds).toEqual(observed.expectedFloor);
+  await expect(page.getByTestId('my-score')).toHaveText(String(observed.score));
   // 슬롯 변경은 레이아웃 소유자에게 넘기는 재현 자료이며, 안정 슬롯 구현 완료로 판정하지 않는다.
   await testInfo.attach('synthetic-floor-slots', {
     body: JSON.stringify(observed.floor),

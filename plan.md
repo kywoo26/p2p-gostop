@@ -331,6 +331,8 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 - 밀기 읽기 근거: Game의 settlement 또는 controller.pushDecision 표시와 solo/host/guest getter는 playback 완료를 조건으로 삼지 않는다. 정산은 playback 큐로 늦추지만 밀기 pending은 권위 상태에서 즉시 노출될 수 있다. 고/스톱과 다른 경계이며 UI 소유자에게 넘긴다. 이 PR은 임의 delay·deadline/타이머 정책을 바꾸지 않는다. main #188 `75b4df1`의 Board inert는 통합 시 보존해야 한다.
 동일 fixture 자동 비교(실기기 아님): Chromium 빠름3경로, 경로마다 워밍업1+7표본, 직렬/포트4227. 기준 `fc02b1c`의 playback/choreo만 임시 복원한 실행 p50 no-match379/match-capture530/banner387ms, 수정본380/530/380ms. 계획340/500/340ms 동일. 21표본 전체 p50 387→380ms, 두 번째 최대533→530ms. 순서는 수정본→기준본이며 미세 차이는 스케줄링 잡음과 분리하지 못한다. 유의미한 성능 향상·계측 overhead0을 주장하지 않는다. 추가 계측의 두 clock 읽기/단계·bounded 배열과 로그 한 줄만 추가했으며 프레임/longtask 감시·read/write 최적화는 도입하지 않았다. 기준에서 새 회귀10실패→수정 뒤14통과, 기존 playback/anim 포함96통과. 필수 검사 lint/check·Node563·browser742·web build·smoke378·Android3작업 통과(통합 전 기준). browser 첫 실행은 공유63315포트 점유로 시작 실패했고 다음 실행 정상 완료했다. 통합 main 검사는 별도 최종 결과로 갱신한다.
 
+main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존했다. lint/check·Node563·browser754·Android 통과. 로컬 smoke는380통과/2실패/의존 timing2미실행이며, 실패2건(기존 auto-choices의 autoSeen0, p2p의 timeoutFrames0)은 파일 수정 없이 표적 재실행2통과했다. 남은 timing2검사도 통과했다(p50=393ms/두 번째 최대627ms). 초반 browser 검사 부하가 겹쳤으므로 이 실행은 앞의 A/B 통계에 합치지 않는다. 통합 head `9bf51d8`의 CI3작업은 모두 통과했으며 이후 테스트 보강 head의 CI는 별도로 확인한다. 진단 append 전용 합성 시험(문자열 준비·DOM·실기기 제외, 워밍업1+7)은 Chromium p50=시계해상도 아래/max약0.1ms, WebKit 모두 시계해상도 아래였다. 0ms는 비용0 증명이 아니다. 이 시험은 로그 버퍼 append만 측정하며 전체 계측 비용과 실제 UI 소비 부하는 별개다.
+
 ### 선택창 회전 잠금 (#155, UX-07·UX-24)
 
 | ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
