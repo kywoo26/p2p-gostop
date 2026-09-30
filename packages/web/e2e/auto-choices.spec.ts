@@ -1,5 +1,6 @@
 // C01·C02·U14: 저장된 솔로 권위 뷰에서 자동 입력과 메뉴 보류를 실제 화면으로 확인한다.
 import { cardId, PRESETS, reduce, type GameState } from '@p2p-gostop/engine';
+import type { BoardView, HostMessage, GuestMessage } from '@p2p-gostop/protocol';
 import { createScenario } from '@p2p-gostop/engine/testing';
 import { type ChildProcess, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -135,46 +136,61 @@ async function startRelay(): Promise<{ port: number; proc: ChildProcess }> {
   return { port, proc };
 }
 
-/** 수동으로 선택해야 하는 버튼만 누르고, 유일한 손패는 자동 입력에 맡긴다. */
-async function stepMatch(page: Page): Promise<void> {
-  await page.evaluate(() => {
+/** 공개 화면만 조작한다. 게스트의 유일한 합법 play는 절대로 수동 대체하지 않는다. */
+async function stepMatch(page: Page, authority: { seq: number; view: BoardView } | null = null) {
+  return page.evaluate((current) => {
     const root = document.querySelector<HTMLElement>('[data-testid="match"]');
-    if (root === null) return;
-    const next = root.querySelector<HTMLButtonElement>('[data-choice="next"]');
-    if (next && !next.disabled) {
-      next.click();
-      return;
+    if (root === null) return null;
+    const visible = (el: HTMLButtonElement) => !el.disabled && el.getClientRects().length > 0;
+    for (const choice of ['accept', 'next']) {
+      const button = root.querySelector<HTMLButtonElement>(`[data-choice="${choice}"]`);
+      if (button && visible(button)) {
+        button.click();
+        return 'round';
+      }
     }
-    if (root.dataset['canAct'] !== 'true') return;
+    if (root.dataset['canAct'] !== 'true') return null;
+    if (current !== null) {
+      if (Number(root.dataset['seq']) !== current.seq) return null;
+      const legal = current.view.legal;
+      if (current.view.pending?.kind === 'play' && legal.length === 1 && legal[0]?.type === 'play')
+        return null;
+    }
     const board = root.querySelector<HTMLElement>('[data-testid="board"]');
-    if (board === null) return;
-    const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]:not([disabled])')];
-    if (choices.length > 0) {
-      (
-        choices.find((el) =>
-          ['go', 'noShake', 'continue', 'single'].includes(el.dataset['choice'] ?? ''),
-        ) ?? choices[0]
-      )?.click();
-      return;
-    }
-    const flip = board.querySelector<HTMLButtonElement>('[data-choice="flipOnly"]:not([disabled])');
-    if (flip) {
-      flip.click();
-      return;
+    if (board === null) return null;
+    const choices = [...board.querySelectorAll<HTMLButtonElement>('[data-choice]')].filter(visible);
+    const choice =
+      choices.find((el) =>
+        ['go', 'noShake', 'continue', 'single'].includes(el.dataset['choice'] ?? ''),
+      ) ?? choices[0];
+    if (choice) {
+      choice.click();
+      return 'manual';
     }
     const hand = [
-      ...board.querySelectorAll<HTMLButtonElement>('[aria-label="내 손패"] button:not([disabled])'),
-    ];
-    if (hand.length === 1) {
-      const testWindow = window as typeof window & { singleWait?: number };
-      testWindow.singleWait = (testWindow.singleWait ?? 0) + 1;
-      // 자동 입력할 수 없는 마지막 카드(다른 합법 수 존재)는 수동으로 진행한다.
-      if (testWindow.singleWait > 3) hand[0]?.click();
-    } else if (hand.length > 1) {
-      (window as typeof window & { singleWait?: number }).singleWait = 0;
+      ...board.querySelectorAll<HTMLButtonElement>('[aria-label="내 손패"] button'),
+    ].filter(visible);
+    // 호스트 유일 수 역시 자동 입력에 맡긴다. 게스트는 위의 권위 합법 수 판정을 따른다.
+    if (
+      hand.length > 1 ||
+      (hand.length === 1 && current !== null && current.view.legal.length > 1)
+    ) {
       hand[0]?.click();
+      return 'manual';
     }
-  });
+    return null;
+  }, authority);
+}
+
+/** NP-02 재현용 가짜 난수: 저장·제품 훅 없이 양 브라우저의 commit-reveal 입력만 고정한다. */
+async function fixedRandom(page: Page, byte: number) {
+  await page.addInitScript((value) => {
+    crypto.getRandomValues = <T extends ArrayBufferView | null>(array: T): T => {
+      if (array === null) throw new TypeError('난수 배열 없음');
+      new Uint8Array(array.buffer, array.byteOffset, array.byteLength).fill(value);
+      return array;
+    };
+  }, byte);
 }
 
 test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 수동 선택은 계속 가능 @guest @paired', async ({
@@ -188,40 +204,44 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
   try {
     const host = await (await hostBrowser.newContext()).newPage();
     const guest = await (await guestBrowser.newContext()).newPage();
-    await host.addInitScript(() =>
-      localStorage.setItem('gostop.settings.v1', JSON.stringify({ gukjinAsk: true })),
-    );
-    const sent: { requestId: number | null; seq: number | null; action: string }[] = [];
-    const welcomes: string[] = [];
+    await fixedRandom(host, 17);
+    await fixedRandom(guest, 29);
+    await host.addInitScript(() => {
+      localStorage.setItem('gostop.settings.v1', JSON.stringify({ gukjinAsk: true }));
+      localStorage.setItem('gostop.p2p-timer.v1', 'null');
+    });
+    const sent: Extract<GuestMessage, { t: 'action' }>[] = [];
+    const received: HostMessage[] = [];
+    const unique: { seq: number; view: BoardView }[] = [];
+    let latest: { seq: number; view: BoardView } | null = null;
+    let revision = 0;
     await guest.routeWebSocket(/\/ws\?role=guest$/, (ws) => {
       const server = ws.connectToServer();
       ws.onMessage((raw) => {
-        const message = JSON.parse(raw.toString()) as {
-          t: string;
-          requestId?: number;
-          seq?: number;
-          payload?: unknown;
-        };
-        if (message.t === 'action')
-          sent.push({
-            requestId: message.requestId ?? null,
-            seq: message.seq ?? null,
-            action: JSON.stringify(message.payload),
-          });
+        const message = JSON.parse(raw.toString()) as GuestMessage;
+        if (message.t === 'action') sent.push(message);
         server.send(raw);
       });
       server.onMessage((raw) => {
-        const message = JSON.parse(raw.toString()) as { t: string; rules?: { gukjin?: string } };
-        if (message.t === 'welcome') welcomes.push(message.rules?.gukjin ?? '');
+        const message = JSON.parse(raw.toString()) as HostMessage;
+        // 게스트에게 공개된 권위 뷰/응답만 관측한다. reveal·가림 손패는 읽지 않는다.
+        if (['welcome', 'snapshot', 'events', 'status', 'reject'].includes(message.t)) {
+          received.push(message);
+          revision++;
+        }
+        if (message.t === 'snapshot' || message.t === 'events') {
+          latest = { seq: message.t === 'snapshot' ? message.seq : message.to, view: message.view };
+          if (
+            message.view.phase === 'turn' &&
+            message.view.pending?.kind === 'play' &&
+            message.view.pending.seat === 1 &&
+            message.view.legal.length === 1 &&
+            message.view.legal[0]?.type === 'play'
+          )
+            unique.push(latest);
+        }
         ws.send(raw);
       });
-    });
-    await guest.addInitScript(() => {
-      (window as typeof window & { autoSeen?: number }).autoSeen = 0;
-      new MutationObserver(() => {
-        if (document.body?.textContent?.includes('유일한 수 자동 진행'))
-          (window as typeof window & { autoSeen: number }).autoSeen++;
-      }).observe(document, { subtree: true, childList: true });
     });
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
@@ -231,25 +251,59 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();
     await expect(guest.getByTestId('lobby')).toBeVisible();
-    expect(welcomes).toContain('ask');
+    expect(received.some((m) => m.t === 'welcome' && m.rules.gukjin === 'ask')).toBe(true);
     await host.getByTestId('host-start').click();
     await expect(guest.getByTestId('match')).toBeVisible();
-    for (let i = 0; i < 900; i++) {
-      await stepMatch(host);
-      await stepMatch(guest);
-      if (
-        await guest.evaluate(() => (window as typeof window & { autoSeen?: number }).autoSeen ?? 0)
-      )
-        break;
-      await guest.waitForTimeout(20);
+
+    const manualBefore = [0, 0];
+    const manualAfter = [0, 0];
+    // 고정 입력의 첫 판에서 게스트 카드 45가 유일 수가 된다. 다음 판의 양 좌석 수동 입력까지 확인한다.
+    for (let step = 0; step < 100; step++) {
+      if (unique.length > 0 && manualAfter.every((n) => n > 0)) break;
+      const before = revision;
+      const clicked = new Set<number>();
+      await expect
+        .poll(
+          async () => {
+            for (const [seat, page] of [host, guest].entries()) {
+              if (clicked.has(seat)) continue;
+              const result = await stepMatch(page, seat === 1 ? latest : null);
+              if (result !== null) {
+                clicked.add(seat);
+                if (result === 'manual') {
+                  const counts = unique.length === 0 ? manualBefore : manualAfter;
+                  counts[seat] = (counts[seat] ?? 0) + 1;
+                }
+              }
+            }
+            return revision > before;
+          },
+          { message: '공개 권위 응답 또는 자동 입력으로 판이 진행되어야 한다' },
+        )
+        .toBe(true);
     }
+    expect(unique.length).toBeGreaterThan(0);
+    const candidate = unique[0]!;
+    expect(candidate.view.round).toBe(1);
+    expect(candidate.view.legal).toEqual([{ type: 'play', seat: 1, card: 45 }]);
+    const automatic = sent.filter((m) => m.seq === candidate.seq);
+    expect(automatic).toHaveLength(1);
+    expect(automatic[0]?.payload).toEqual(candidate.view.legal[0]);
+    expect(automatic[0]?.requestId).toBeDefined();
     expect(
-      await guest.evaluate(() => (window as typeof window & { autoSeen?: number }).autoSeen ?? 0),
-    ).toBeGreaterThan(0);
+      received.some(
+        (m) => (m.t === 'events' || m.t === 'snapshot') && m.requestId === automatic[0]?.requestId,
+      ),
+    ).toBe(true);
+    expect(received.filter((m) => m.t === 'reject')).toHaveLength(0);
+    expect(manualBefore.every((n) => n > 0)).toBe(true);
+    expect(manualAfter.every((n) => n > 0)).toBe(true);
     const ids = sent.map((entry) => entry.requestId);
     expect(ids.length).toBeGreaterThan(0);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(new Set(sent.map((entry) => `${entry.seq}:${entry.action}`)).size).toBe(sent.length);
+    expect(new Set(sent.map((entry) => `${entry.seq}:${JSON.stringify(entry.payload)}`)).size).toBe(
+      sent.length,
+    );
   } finally {
     await hostBrowser.close();
     await guestBrowser.close();
