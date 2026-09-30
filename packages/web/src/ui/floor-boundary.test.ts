@@ -51,6 +51,31 @@ test('strict 0이동은 불가능, 최소 무관 이동1·월 앵커 이동0인 
             (adjacent(a, c) && adjacent(b, c)),
         ).toBe(false);
       }
+  // 앵커0의 1장 이동 후보는 비앵커15/42뿐이다. 독립 구성 전수로 거리 하한도 확인한다.
+  let minimumDistance = Infinity;
+  for (const [from, anchor] of [
+    [6, 5],
+    [9, 8],
+  ])
+    for (const to of [0, 4, 10, 14]) {
+      if (!adjacent(anchor!, to)) continue;
+      const available = [0, 4, 10, 14, from!].filter((slot) => slot !== to);
+      for (const a of available)
+        for (const b of available) {
+          if (a === b) continue;
+          if (
+            (adjacent(1, a) && adjacent(1, b)) ||
+            (adjacent(1, a) && adjacent(a, b)) ||
+            (adjacent(1, b) && adjacent(a, b))
+          )
+            minimumDistance = Math.min(
+              minimumDistance,
+              Math.abs((from! % 5) - (to % 5)) +
+                Math.abs(Math.floor(from! / 5) - Math.floor(to / 5)),
+            );
+        }
+    }
+  expect(minimumDistance).toBe(2);
   const result = floorLayout(boundaryAfter, [], 300, 243.76, 48, previous);
   expect(result.conflict).toBe(false);
   expect(new Set(result.cells.map((c) => c.slot)).size).toBe(12);
@@ -62,6 +87,16 @@ test('strict 0이동은 불가능, 최소 무관 이동1·월 앵커 이동0인 
   ).toHaveLength(1);
   for (const cell of previous)
     expect(result.cells.find((n) => n.month === cell.month)?.anchor).toBe(cell.anchor);
+  expect(
+    previous.reduce((sum, cell) => {
+      const next = result.cells.find((c) => c.cards.includes(cell.cards[0]!))!.slot;
+      return (
+        sum +
+        Math.abs((cell.slot % 5) - (next % 5)) +
+        Math.abs(Math.floor(cell.slot / 5) - Math.floor(next / 5))
+      );
+    }, 0),
+  ).toBe(minimumDistance);
   expect(result.cells.find((c) => c.cards.includes(15))?.slot).toBe(10);
   expect(floorLayout([...boundaryAfter].reverse(), [], 300, 243.76, 48, previous)).toEqual(result);
 });

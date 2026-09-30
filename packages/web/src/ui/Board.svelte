@@ -419,7 +419,7 @@
     {
       'hud-expanded': expandedHud,
       selecting,
-      'two-hands': (me.hand?.length ?? 0) > 6,
+      'two-hands': pickFirst === null,
       'first-pick': pickFirst !== null,
       'go-stop': pending?.kind === 'goStop',
     },

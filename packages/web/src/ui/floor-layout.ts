@@ -1,13 +1,13 @@
 // UX-06: 중앙 더미(7번)를 비운 5×3 격자. 같은 월은 인접 셀, 흩뿌림은 셀 내부만 사용한다.
 import type { CardId, FloorGroupView } from '../lib/view-types.ts';
-export interface FloorCell extends FloorGroupView {
+export interface FloorSlot extends FloorGroupView {
   slot: number;
   anchor: number;
+}
+export interface FloorCell extends FloorSlot {
   x: number;
   y: number;
   angle: number;
-  dx: number;
-  dy: number;
 }
 // 더미 좌/우 → 상/하 → 대각 → 바깥 열. 동일 입력은 동일 슬롯을 선택한다.
 const SLOT_ORDER = [6, 8, 2, 12, 1, 3, 11, 13, 5, 9, 0, 4, 10, 14];
@@ -47,15 +47,12 @@ const choices = [false, true].map((diagonal) =>
   [1, 2, 3, 4].map((count) => placements(count, diagonal)),
 );
 
-export function floorLayout(
+export function assignFloor(
   groups: readonly FloorGroupView[],
   options: readonly CardId[],
-  width: number,
-  height: number,
-  cardWidth: number,
-  previous: readonly FloorCell[] = [],
+  previous: readonly FloorSlot[] = [],
   reserved: readonly number[] = [],
-): { cells: FloorCell[]; fits: boolean; folded: boolean; conflict: boolean; searches: number } {
+) {
   const folded = groups.reduce((n, group) => n + group.cards.length, 0) > 14;
   const blocks = [...groups]
     .sort((a, b) => a.month - b.month)
@@ -72,9 +69,8 @@ export function floorLayout(
           previous.push(id);
         else chunks.push([id]);
       }
-      const old = previous.find((cell) => cell.month === group.month);
       const anchorCards =
-        previous.find((cell) => cell.month === group.month && cell.slot === old?.anchor)?.cards ??
+        previous.find((cell) => cell.month === group.month && cell.slot === cell.anchor)?.cards ??
         [];
       const at = chunks.findIndex((cards) => cards.some((id) => anchorCards.includes(id)));
       if (at > 0) chunks.unshift(chunks.splice(at, 1)[0]!);
@@ -151,7 +147,6 @@ export function floorLayout(
   const search = (strict: boolean) => {
     let best: number[] | null = null;
     for (const candidates of choices) {
-      const failed = new Set<string>();
       const prefixes = new Map<string, number[]>();
       const current: number[][] = [];
       const menus = blocks.map((block, index) =>
@@ -173,9 +168,8 @@ export function floorLayout(
           return strict;
         }
         const key = `${index}:${used}`;
-        if (failed.has(key)) return false;
         const prefix = prefixes.get(key);
-        if (prefix && !less(score, prefix)) return false;
+        if (prefix && (strict || !less(score, prefix))) return false;
         prefixes.set(key, score);
         for (const entry of menus[index]!) {
           if ((used & entry.mask) !== 0) continue;
@@ -189,7 +183,6 @@ export function floorLayout(
           )
             return true;
         }
-        if (strict) failed.add(key);
         return false;
       };
       if (place(0, reservedMask, [0, 0, 0])) return;
@@ -208,20 +201,32 @@ export function floorLayout(
         cards,
         slot,
         anchor: slots[0] ?? slot,
-        x: 0,
-        y: 0,
-        angle: 0,
-        dx: 0,
-        dy: 0,
       };
     });
   });
-  return { ...projectFloor(cells, options, width, height, cardWidth), folded, conflict, searches };
+  return { cells, folded, conflict, searches };
+}
+
+export function floorLayout(
+  groups: readonly FloorGroupView[],
+  options: readonly CardId[],
+  width: number,
+  height: number,
+  cardWidth: number,
+  previous: readonly FloorSlot[] = [],
+  reserved: readonly number[] = [],
+) {
+  const assigned = assignFloor(groups, options, previous, reserved);
+  return {
+    ...assigned,
+    ...projectFloor(assigned.cells, options, width, height, cardWidth),
+    folded: assigned.folded,
+  };
 }
 
 /** 슬롯 소유권은 그대로 두고 viewport와 선택 강조만 투영한다. 탐색은 없다. */
 export function projectFloor(
-  input: readonly FloorCell[],
+  input: readonly FloorSlot[],
   options: readonly CardId[],
   width: number,
   height: number,
@@ -241,7 +246,7 @@ export function projectFloor(
     fits &&= cellWidth >= stackWidth + 0.5;
     const x = left + (cellWidth - stackWidth) / 2;
     const y = top + (cellHeight - cardHeight) / 2;
-    const cell: FloorCell = { ...source, x, y, angle: 0, dx: 0, dy: 0 };
+    const cell: FloorCell = { ...source, x, y, angle: 0 };
     // 선택 후보·과밀 스택은 회전하지 않는다. 일반 카드는 변환된 경계도 자기 셀 안에 둔다.
     if (cards.length > 1 || options.includes(cards[0]!)) return cell;
     const id = cards[0]!;
@@ -252,16 +257,9 @@ export function projectFloor(
       const radians = (Math.abs(angle) * Math.PI) / 180;
       const w = cardWidth * Math.cos(radians) + cardHeight * Math.sin(radians);
       const h = cardHeight * Math.cos(radians) + cardWidth * Math.sin(radians);
-      const right = x + dx + (cardWidth + w) / 2;
-      const bottom = y + dy + (cardHeight + h) / 2;
-      if (
-        right - w < left + 0.25 ||
-        right > left + cellWidth - 0.25 ||
-        bottom - h < top + 0.25 ||
-        bottom > top + cellHeight - 0.25
-      )
+      if (w + 2 * Math.abs(dx) + 0.5 > cellWidth || h + 2 * Math.abs(dy) + 0.5 > cellHeight)
         continue;
-      return { ...cell, angle, dx, dy };
+      return { ...cell, angle, x: x + dx, y: y + dy };
     }
     return cell;
   });

@@ -5,8 +5,8 @@
   import Card from './Card.svelte';
   import { cardLabel } from './cards.ts';
   import { promptFocus } from './prompt-focus.ts';
-  import { floorLayout, projectFloor } from './floor-layout.ts';
-  import type { FloorCell } from './floor-layout.ts';
+  import { assignFloor, projectFloor } from './floor-layout.ts';
+  import type { FloorSlot } from './floor-layout.ts';
   import { untrack } from 'svelte';
 
   interface Props {
@@ -41,8 +41,8 @@
   }: Props = $props();
   let table: HTMLElement;
   let bounds = $state({ width: 0, height: 0, cardWidth: 48 });
-  let placed = $state.raw<FloorCell[]>([]);
-  let reserved: FloorCell[] = [];
+  let placed = $state.raw<FloorSlot[]>([]);
+  let reserved: FloorSlot[] = [];
   let lastRound: number | undefined;
   let lastDeck = 0;
   let lastCards = '';
@@ -63,22 +63,16 @@
         lastCards = '';
       }
       const ids = new Set(input.flatMap((group) => group.cards));
-      reserved = reserved.filter((cell) => cell.cards.every((id) => !ids.has(id)));
-      if (playing && seq === lastSnapshotSeq)
-        reserved.push(...placed.filter((cell) => cell.cards.every((id) => !ids.has(id))));
+      const removed = (cell: FloorSlot) => cell.cards.every((id) => !ids.has(id));
+      reserved = reserved.filter(removed);
+      if (playing && seq === lastSnapshotSeq) reserved.push(...placed.filter(removed));
       else reserved = [];
-      const cardsKey = [...input]
-        .sort((a, b) => a.month - b.month)
-        .map((group) => `${group.month}:${[...group.cards].sort((a, b) => a - b).join(',')}`)
-        .join(';');
+      const cardsKey = [...ids].sort((a, b) => a - b).join(',');
       const optionsKey = [...candidates].sort((a, b) => a - b).join(',');
       if (cardsKey !== lastCards || (ids.size > 14 && optionsKey !== lastOptions))
-        placed = floorLayout(
+        placed = assignFloor(
           input,
           candidates,
-          336,
-          304,
-          48,
           placed,
           reserved.map((cell) => cell.slot),
         ).cells;
@@ -119,7 +113,7 @@
   const cells = $derived(
     compact
       ? layout.cells
-      : groups.map((group) => ({ ...group, slot: undefined, x: 0, y: 0, angle: 0, dx: 0, dy: 0 })),
+      : groups.map((group) => ({ ...group, slot: undefined, x: 0, y: 0, angle: 0 })),
   );
 </script>
 
@@ -159,8 +153,7 @@
         class={['group', `kind-${group.kind}`]}
         style:left={`${group.x}px`}
         style:top={`${group.y}px`}
-        style:rotate={`${group.angle ?? 0}deg`}
-        style:translate={`${group.dx ?? 0}px ${group.dy ?? 0}px`}
+        style:rotate={`${group.angle}deg`}
         data-floor-slot={group.slot}
         data-month={group.month}
         data-hand-link={handLinks[group.month]}

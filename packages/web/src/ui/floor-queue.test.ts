@@ -70,7 +70,7 @@ afterEach(() => {
 for (const mode of ['fifo', 'skip', 'reset'] as const) {
   test(`실제 Playback seed1 4묶음 ${mode}: 완료 snapshot 경계에서만 예약을 해제한다`, async () => {
     document.documentElement.dataset['speed'] = 'instant';
-    const solver = vi.mocked(floorMath.floorLayout);
+    const solver = vi.mocked(floorMath.assignFloor);
     solver.mockClear();
     const meta = { names: ['좌석0', '좌석1'] as const, balances: [100000, 100000] as const };
     let state = newRound(DEFAULT_RULES, 1, { dealer: 0 }).state;
@@ -97,7 +97,7 @@ for (const mode of ['fifo', 'skip', 'reset'] as const) {
     expect(pb.board.floor).toEqual(final.floor);
     const outcomes = solver.mock.results
       .filter((r) => r.type === 'return')
-      .map((r) => r.value as ReturnType<typeof floorLayout>);
+      .map((r) => r.value as ReturnType<typeof floorMath.assignFloor>);
     expect(outcomes.length).toBeGreaterThan(1);
     expect(outcomes.every((layout) => !layout.conflict)).toBe(true);
     const ids = [...screen.container.querySelectorAll<HTMLElement>('.floor [data-card-id]')]
@@ -129,7 +129,7 @@ for (const seq of [100, 101, 109, 2]) {
   });
 }
 test('투영·선택·메타데이터·busy/snapshot 변경은 전체 슬롯 탐색을 반복하지 않는다', async () => {
-  const solver = vi.mocked(floorMath.floorLayout);
+  const solver = vi.mocked(floorMath.assignFloor);
   solver.mockClear();
   const initial = { ...fixtures.board.states.play, floor: stableBefore };
   const screen = await render(Board, { view: initial });
