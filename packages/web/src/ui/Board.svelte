@@ -146,8 +146,9 @@
   }
   function managePromptLock(board: HTMLElement) {
     const change = (event: Event) => {
-      const { panel, active } = (event as CustomEvent<{ panel: HTMLElement; active: boolean | null }>)
-        .detail;
+      const { panel, active } = (
+        event as CustomEvent<{ panel: HTMLElement; active: boolean | null }>
+      ).detail;
       if (active) {
         dismissedPanels.delete(panel);
         promptPanels.add(panel);
