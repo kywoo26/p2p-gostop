@@ -61,3 +61,30 @@ test('재정렬 이동 중 탭은 카드를 내지 않고 완료 후 새 탭만 
   await screen.getByRole('button').click();
   expect(onplay).toHaveBeenCalledOnce();
 });
+
+test('총통 외곽은 폭탄 그림 없이 유지하고 확정 선이 행동 선에 덮이지 않는다 (UX-H05)', async () => {
+  const screen = await render(Hand, {
+    compact: true,
+    cards: [0, 1, 2, 3],
+    playable: [0, 1, 2, 3],
+    visualGroups: [{ id: 'chongtong-1', kind: 'chongtong', cards: [0, 1, 2, 3] }],
+  });
+  screen.container.classList.add('board');
+  expect(screen.container.querySelectorAll('[data-hand-action="chongtong"]')).toHaveLength(4);
+  const card = screen.container.querySelector<HTMLElement>('[data-slot="0"] .card')!;
+  expect(getComputedStyle(card).outlineStyle).toBe('solid');
+  expect(getComputedStyle(card).outlineWidth).toBe('4px');
+  expect(getComputedStyle(card, '::after').content).toBe('none');
+  await screen.rerender({
+    visualGroups: [
+      { id: 'chongtong-1', kind: 'chongtong', cards: [0, 1, 2, 3] },
+      { id: 'secured-0', kind: 'secured', cards: [0] },
+    ],
+  });
+  expect(getComputedStyle(card).outlineStyle).toBe('double');
+  expect(getComputedStyle(card).outlineWidth).toBe('4px');
+  card.style.willChange = 'transform, opacity';
+  expect(getComputedStyle(card).outlineStyle).toBe('none');
+  card.style.removeProperty('will-change');
+  expect(getComputedStyle(card).outlineStyle).toBe('double');
+});

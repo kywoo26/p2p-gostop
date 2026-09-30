@@ -321,7 +321,7 @@
   const floorHighlight = $derived([
     ...(pending?.kind === 'target' ? pending.options : []),
     ...(view.highlight ?? []),
-    ...previewCards,
+    ...(localHintLevel === 'off' ? [] : previewCards),
   ]);
   const selecting = $derived(pickFirst !== null || (pending !== null && pending.kind !== 'play'));
   const awaiting = $derived(pending !== null || pickFirst !== null);
