@@ -121,8 +121,7 @@ test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 �
       const before = welcomes.length;
       await page.getByRole('combobox', { name: '규칙' }).selectOption(preset);
       await expect.poll(() => welcomes.length).toBeGreaterThan(before);
-      // 적용 중 중간 welcome이 먼저 올 수 있어 마지막 welcome이 프리셋과 같아질 때까지 기다린다(네이티브 CI에서 재현).
-      await expect.poll(() => welcomes.at(-1)?.rules).toEqual(PRESETS[preset]);
+      expect(welcomes.slice(before).map((welcome) => welcome.rules)).toEqual([PRESETS[preset]]);
       await expect(page.getByText(/사용자 지정 규칙이 게스트에게 전달됩니다/)).toHaveCount(0);
     }
   } finally {

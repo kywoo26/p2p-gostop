@@ -198,7 +198,9 @@ export class GuestGame implements GameController {
     });
     this.session.onChange(() => this.sync());
     this.session.advanceTime(this.now());
-    this.session.join();
+    // 중계는 현재 상대가 있으면 present, 나중에 붙으면 joined를 보낸다. 여기서도 hello를
+    // 대기열에 넣으면 present의 hello와 겹쳐 옛 로비 welcome이 설정 변경 뒤에 도착할 수 있다.
+    if (!inner.onRelay) this.session.join();
     if (options.clock ?? true) {
       this.clock = setInterval(() => this.tick(), CLOCK_MS);
       document.addEventListener('visibilitychange', this.onVisible);
