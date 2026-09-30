@@ -1,4 +1,4 @@
-// 카드 카탈로그 (plan.md 1.4, code-refs.md 6.2, rules-commercial.md 1.1·12.1).
+// 카드 카탈로그 (intent/plan.md 1.4, code-refs.md 6.2, rules-commercial.md 1.1·12.1).
 // 상태에는 카드 ID(0~50 정수)만 두고, 카드의 성질은 이 불변 카탈로그에서 조회한다.
 
 /** 카드 ID. 0~47은 기본 48장(월 순서), 48~50은 보너스 카드. */

@@ -1,6 +1,8 @@
 // UX-H01/UX-H05, FR-46~50: 게임 규칙 판정과 분리된 시각 슬롯·그림 무가림.
+import { writeFile } from 'node:fs/promises';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { cueSave } from './hand-feedback-fixtures.ts';
 
 test.use({ deviceScaleFactor: 1 });
 for (const [width, height] of [
@@ -63,7 +65,7 @@ for (const [width, height] of [
               '.slot[data-hand-cue="matchable"], .slot[data-hand-cue="secured"]',
             ),
           ].map((el) => {
-            const style = getComputedStyle(el.querySelector('.art-window')!);
+            const style = getComputedStyle(el.querySelector('.card')!);
             return {
               cue: el.getAttribute('data-hand-cue'),
               action: el.getAttribute('data-hand-action'),
@@ -76,7 +78,7 @@ for (const [width, height] of [
               '.slot[data-hand-action="bomb"], .slot[data-hand-action="shake"]',
             ),
           ].map((el) => {
-            const art = el.querySelector('.art-window')!;
+            const art = el.querySelector('.card')!;
             const rect = art.getBoundingClientRect();
             const style = getComputedStyle(art, '::after');
             const w = parseFloat(style.width),
@@ -196,7 +198,7 @@ for (const [width, height] of [
       );
       expect(report.groupFrames[0]!.color).not.toBe(report.groupFrames[1]!.color);
       expect(report.groupFrames[0]!.background).not.toBe(report.groupFrames[1]!.background);
-      const actionArt = page.locator('.hand .slot[data-hand-action="bomb"] .art-window').first();
+      const actionArt = page.locator('.hand .slot[data-hand-action="bomb"] .card').first();
       const animation = () =>
         actionArt.evaluate((el) => getComputedStyle(el, '::after').animationName);
       await page
@@ -289,4 +291,246 @@ for (const width of [360, 390, 412, 430]) {
       await page.screenshot({ path: info.outputPath(`hand-layout-${fixture}-${width}.png`) });
     });
   }
+}
+
+// 같은 실제 공개 scenario의 상태별 기준샷. 갤러리 시각 슬롯은 판정 기대값으로 쓰지 않는다.
+for (const [width, height] of [
+  [360, 780],
+  [390, 734],
+  [412, 915],
+] as const) {
+  test(`${width}px 매칭·확정·누름·초점 외곽 @layout`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height });
+    await openCues(page, 'basic');
+    const matching = page.locator('[data-slot="32"]');
+    const secured = page.locator('[data-slot="24"]');
+    await expect(matching).toHaveAttribute('data-hand-cue', 'matchable');
+    await expect(secured).toHaveAttribute('data-hand-cue', 'secured');
+    await expect(page.locator('[data-slot="36"]')).not.toHaveAttribute('data-hand-cue');
+    await expect(secured).toHaveAccessibleName(/확정 획득 짝/);
+    await expect(matching).toHaveAccessibleName(/먹을 수 있음/);
+    const before = await page.locator('.hand .slot').evaluateAll((els) =>
+      els.map((el) => {
+        const r = el.getBoundingClientRect();
+        return [r.x, r.y, r.width, r.height];
+      }),
+    );
+    const report = await page.evaluate(() => {
+      const slots = [...document.querySelectorAll<HTMLElement>('.hand .slot')];
+      const art = slots.map((el) => el.querySelector('.art-window')!.getBoundingClientRect());
+      const overlap = (a: DOMRect, b: DOMRect) =>
+        Math.min(a.right, b.right) > Math.max(a.left, b.left) + 0.01 &&
+        Math.min(a.bottom, b.bottom) > Math.max(a.top, b.top) + 0.01;
+      const rgb = (color: string) => {
+        const ctx = document.createElement('canvas').getContext('2d')!;
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);
+      };
+      const luminance = (color: string) =>
+        rgb(color)
+          .map((v) => {
+            const s = v / 255;
+            return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+          })
+          .reduce((n, v, i) => n + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+      const contrast = (a: string, b: string) => {
+        const x = luminance(a),
+          y = luminance(b);
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      };
+      const styles = slots
+        .filter((el) => el.dataset['handCue'])
+        .map((el) => {
+          const style = getComputedStyle(el.querySelector('.card')!);
+          return {
+            cue: el.dataset['handCue'],
+            action: el.dataset['handAction'],
+            width: parseFloat(style.outlineWidth),
+            line: style.outlineStyle,
+            contrast: contrast(style.outlineColor, style.getPropertyValue('--color-hand-cue-base')),
+            animation: style.animationName,
+            transform: style.transform,
+          };
+        });
+      const clear = slots.every((el, i) => {
+        const r = art[i]!;
+        const style = getComputedStyle(el.querySelector('.card')!);
+        const extension = style.outlineStyle === 'none' ? 0 : parseFloat(style.outlineWidth) + 1;
+        const outer = new DOMRect(
+          r.x - extension,
+          r.y - extension,
+          r.width + 2 * extension,
+          r.height + 2 * extension,
+        );
+        return art.every((other, j) => i === j || !overlap(outer, other));
+      });
+      const actionGaps = ['bomb', 'shake'].map((action) => {
+        const els = slots.filter((el) => el.dataset['handAction'] === action);
+        return els.slice(1).map((el, i) => {
+          const left = el.querySelector('.card')!;
+          const right = els[i]!.querySelector('.card')!;
+          return (
+            left.getBoundingClientRect().left -
+            parseFloat(getComputedStyle(left).outlineWidth) -
+            right.getBoundingClientRect().right -
+            parseFloat(getComputedStyle(right).outlineWidth)
+          );
+        });
+      });
+      return {
+        styles,
+        clear,
+        actionGaps,
+        art: art.map((r) => ({ width: r.width, height: r.height })),
+        marks: document.querySelectorAll('.hand .mark,.floor .mark').length,
+      };
+    });
+    expect(report.clear).toBe(true);
+    expect(report.marks).toBe(0);
+    expect(report.art.every((r) => r.width >= 48 && r.height >= 48)).toBe(true);
+    expect(
+      report.styles
+        .filter((s) => s.cue === 'matchable')
+        .every((s) => s.width === 3 && s.line === 'solid'),
+    ).toBe(true);
+    expect(
+      report.styles
+        .filter((s) => s.cue === 'secured')
+        .every((s) => s.width === 4 && s.line === 'double'),
+    ).toBe(true);
+    expect(report.styles.every((s) => s.contrast >= 3 && s.animation === 'none')).toBe(true);
+    for (let i = 0; i < 2; i++)
+      expect(Math.abs(report.actionGaps[0]![i]! - report.actionGaps[1]![i]!)).toBeLessThanOrEqual(
+        0.02,
+      );
+    await info.attach('외곽 대비·행동 간격·도상 가림', {
+      body: JSON.stringify(report, null, 2),
+      contentType: 'application/json',
+    });
+    await writeFile(info.outputPath('cue-measurements.json'), JSON.stringify(report, null, 2));
+    await expect(page).toHaveScreenshot(`cues-${width}-normal.png`);
+    await page.keyboard.press('Tab');
+    await secured.focus();
+    await expect(secured).toBeFocused();
+    await expect(page.locator('.floor .card.highlight[data-card-id="25"]')).toHaveCount(1);
+    expect(await secured.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
+    expect(await secured.locator('.card').evaluate((el) => getComputedStyle(el).outlineStyle)).toBe(
+      'double',
+    );
+    await expect(page).toHaveScreenshot(`cues-${width}-focus.png`);
+    await secured.evaluate((el) => (el as HTMLElement).blur());
+    const box = (await matching.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await expect(page.locator('.floor .card.highlight[data-card-id="33"]')).toHaveCount(1);
+    expect(await matching.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('dashed');
+    expect(
+      await matching.locator('.card').evaluate((el) => getComputedStyle(el).outlineWidth),
+    ).toBe('3px');
+    await expect(page).toHaveScreenshot(`cues-${width}-press.png`);
+    expect(
+      await page.locator('.hand .slot').evaluateAll((els) =>
+        els.map((el) => {
+          const r = el.getBoundingClientRect();
+          return [r.x, r.y, r.width, r.height];
+        }),
+      ),
+    ).toEqual(before);
+    await page.mouse.move(1, 1);
+    await page.mouse.up();
+    await expect(page.locator('.floor .card.highlight[data-card-id="33"]')).toHaveCount(0);
+    for (const intensity of ['off', 'subtle', 'strong']) {
+      await page
+        .locator('.app-root')
+        .evaluate((el, value) => el.setAttribute('data-effect-intensity', value), intensity);
+      for (const motion of ['reduce', 'no-preference'] as const) {
+        await page.emulateMedia({ reducedMotion: motion });
+        expect(
+          await secured
+            .locator('.card')
+            .evaluate((el) => [
+              getComputedStyle(el).outlineStyle,
+              getComputedStyle(el).outlineWidth,
+              getComputedStyle(el).animationName,
+            ]),
+        ).toEqual(['double', '4px', 'none']);
+        expect(
+          await matching
+            .locator('.card')
+            .evaluate((el) => [
+              getComputedStyle(el).outlineStyle,
+              getComputedStyle(el).outlineWidth,
+            ]),
+        ).toEqual(['solid', '3px']);
+      }
+    }
+    // 실제 FLIP 계약의 will-change 부착/회수만 소비한다. 시간축·타이머는 만들지 않는다.
+    const card = secured.locator('.card');
+    await card.evaluate((el) => ((el as HTMLElement).style.willChange = 'transform'));
+    await expect
+      .poll(() =>
+        secured
+          .locator('.card')
+          .evaluate((el) => [getComputedStyle(el).outlineStyle, getComputedStyle(el).boxShadow]),
+      )
+      .toEqual(['none', 'none']);
+    await card.evaluate((el) => ((el as HTMLElement).style.willChange = ''));
+    expect(await secured.locator('.card').evaluate((el) => getComputedStyle(el).outlineStyle)).toBe(
+      'double',
+    );
+    await page
+      .locator('.app-root')
+      .evaluate((el) => el.setAttribute('data-effect-intensity', 'off'));
+    await page.keyboard.press('Tab');
+    await page.locator('[data-slot="0"]').focus();
+    await expect(page.locator('.group-selected')).toHaveCount(3);
+    await expect(page).toHaveScreenshot(`cues-${width}-group.png`);
+  });
+
+  for (const hint of ['off', 'basic', 'detail'] as const) {
+    test(`${width}px ${hint}: 누름·키보드 바닥 예고와 입력 @layout`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await openCues(page, hint);
+      const card = page.locator('[data-slot="32"]');
+      await page.keyboard.press('Tab');
+      await card.focus();
+      await expect(card).toBeFocused();
+      await expect(card).toBeEnabled();
+      await expect(page.locator('.floor .card.highlight[data-card-id="33"]')).toHaveCount(
+        hint === 'off' ? 0 : 1,
+      );
+      if (hint === 'off') {
+        await expect(
+          page.locator('.hand [data-hand-cue],.hand [data-hand-action],.floor [data-hand-link]'),
+        ).toHaveCount(0);
+        await expect(page).toHaveScreenshot(`cues-${width}-off.png`);
+      }
+      await card.evaluate((el) => (el as HTMLElement).blur());
+      const box = (await card.boundingBox())!;
+      await page.mouse.move(box.x + 12, box.y + 40);
+      await page.mouse.down();
+      await expect(page.locator('.floor .card.highlight[data-card-id="33"]')).toHaveCount(
+        hint === 'off' ? 0 : 1,
+      );
+      await page.mouse.move(1, 1);
+      await page.mouse.up();
+    });
+  }
+}
+
+async function openCues(page: Page, hint: 'off' | 'basic' | 'detail') {
+  await page.addInitScript(
+    ({ save, hint }) => {
+      localStorage.setItem('gostop.solo.v1', JSON.stringify(save));
+      localStorage.setItem(
+        'gostop.settings.v1',
+        JSON.stringify({ hintLevel: hint, effectIntensity: 'off', sound: false, vibrate: false }),
+      );
+    },
+    { save: cueSave(), hint },
+  );
+  await page.goto('./?speed=instant#/game');
+  await expect(page.locator('[data-slot="32"]')).toBeEnabled();
+  await page.evaluate(() => document.fonts.ready);
 }

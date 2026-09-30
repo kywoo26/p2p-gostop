@@ -1,4 +1,4 @@
-// 카드 SVG 최적화 설정 (svgo 4.1.0, plan.md 1.6·1.8). scripts/build-cards.mjs가 불러 쓴다.
+// 카드 SVG 최적화 설정 (svgo 4.1.0, intent/plan.md 1.6·1.8). scripts/build-cards.mjs가 불러 쓴다.
 // - 필터·메타데이터·스크립트·주석 제거 (Safari 래스터 성능, spec NF-03)
 // - 참조되는 id(<pattern>, <linearGradient> 등)는 cleanupIds가 짧게 바꾸되 참조와 함께 유지한다
 // - width/height·viewBox 유지: <img>의 고유 비율이 여기서 나온다

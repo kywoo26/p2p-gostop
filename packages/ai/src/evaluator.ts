@@ -1,4 +1,4 @@
-// 평가 함수 Evaluator(view, seat) → 점수 단위의 추정 우위 (spec AI-03, plan.md 1.5).
+// 평가 함수 Evaluator(view, seat) → 점수 단위의 추정 우위 (spec AI-03, intent/plan.md 1.5).
 // 특징: 양측 족보 진행도(광·고도리·단·열끗·띠·피), 흔들기·폭탄·고박 배수, 피박·광박 위험(양방향),
 // 고 가산, 내 손패로 먹을 기회, 바닥 카드를 상대가 먹을 확률(남은 카드 분포 추정). 가중치는 weights/default.json.
 import {

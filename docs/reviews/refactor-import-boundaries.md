@@ -1,6 +1,6 @@
 # R2 공개 API·import 경계 검증
 
-근거: `spec.md` NF-09, `plan.md` §0 원칙 9·§1.3/1.8·D4, `docs/refactor-plan.md` R2/RF-09·10. 기준 `7cb06f3`(#91·#93 병합). 제품 소스·공개 exports·의존성은 바꾸지 않는다.
+근거: `intent/spec.md` NF-09, `intent/plan.md` §0 원칙 9·§1.3/1.8·D4, `docs/refactor-plan.md` R2/RF-09·10. 기준 `7cb06f3`(#91·#93 병합). 제품 소스·공개 exports·의존성은 바꾸지 않는다.
 
 ## 적용 범위
 
@@ -12,6 +12,7 @@
 | relay-dev/test | protocol·engine |
 | tools/sim | engine·ai |
 | web | engine·ai·protocol, 자기 공개 web/net |
+| web/eslint.config.js (도구 설정만) | 정적 import의 정확한 `../../tools/lint/lint-imports.mjs` 경로만 추가 허용 |
 
 Oxlint `eslint/no-restricted-imports`의 패키지별 override와 web ESLint `no-restricted-imports`를 사용한다. 정적 import·타입 import·재수출에 모두 적용한다. 비공개 하위 경로를 막고 공개 `engine/testing`·`web/net`만 예외로 둔다. 명시된 6개 workspace와 packages/tools 경로가 포함된 상대 import도 금지한다. 기존 순수성·비보안 컨텍스트 API 규칙은 유지한다.
 
@@ -57,7 +58,7 @@ main `f9c38f5`를 병합한 기존 설정에서 리뷰의 세 사례를 재현�
 | 항목 | 보강 |
 |---|---|
 | `import()` 경로 | **따옴표 문자열 리터럴만 허용**. 치환 없는 템플릿도 금지하며 변수·문자열 결합·조건식·함수 호출·치환 있는 템플릿은 평가하지 않고 거부 |
-| 구현 | 루트 `lint-imports.mjs`의 `workspace/string-literal-imports`를 Oxlint와 web ESLint가 공유. 기존 문자열 경계 규칙은 유지 |
+| 구현 | `tools/lint/lint-imports.mjs`의 `workspace/string-literal-imports`를 Oxlint와 web ESLint가 공유. 기존 문자열 경계 규칙은 유지 |
 | 순수 패키지의 경계 override | `.ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs` 포함. `.cjs`는 ESM 재수출 자체가 문법 오류라 유효한 `import()`로 검사 |
 | 규범 | AGENTS §4에 허용표 링크·템플릿/계산 경로 금지·exports 변경 시 갱신 위치·Docker lint 명령 한 줄 추가 |
 | 의존성과 도구 경계 | 패키지·lock·버전 변경 0. 순수 패키지는 여전히 Oxlint, web은 ESLint이며 두 도구의 AST 규칙 API만 공유 |

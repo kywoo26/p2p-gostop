@@ -1,6 +1,8 @@
 /* UX-H05: 먹기/확정은 카드 상태, 폭탄/흔들기는 카드 안 그림. 별도 받침은 높이0. */
 :root .board {
-  --color-hand-match: oklch(85% 0.075 85);
+  --color-hand-match: oklch(88% 0.14 85);
+  --color-hand-secured: oklch(90% 0.14 160);
+  --color-hand-cue-base: oklch(20% 0.025 160);
 }
 :root .board .hand.compact {
   --card-w-l: 48px;
@@ -28,21 +30,17 @@
 :root .board .group-word {
   display: none;
 }
-:root .board .slot[data-hand-cue='matchable'] .art-window {
+:root .board .slot[data-hand-cue='matchable'] .card {
   translate: none;
-  outline: 1px solid var(--color-hand-match);
-  outline-offset: 1px;
-  box-shadow:
-    0 4px 5px #0006,
-    0 0 5px #dec29160;
-}
-:root .board .slot[data-hand-cue='secured'] .art-window {
-  translate: none;
-  outline: 3px double var(--color-hand-secured);
+  outline: 3px solid var(--color-hand-match);
   outline-offset: 0;
-  box-shadow:
-    0 5px 6px #0007,
-    0 0 5px #a1d9ba60;
+  box-shadow: 0 0 0 4px var(--color-hand-cue-base);
+}
+:root .board .slot[data-hand-cue='secured'] .card {
+  translate: none;
+  outline: 4px double var(--color-hand-secured);
+  outline-offset: 0;
+  box-shadow: 0 0 0 5px var(--color-hand-cue-base);
 }
 /* 폭탄/흔들기 묶음은 #164의 월/행동 속성만 소비한다. 가로 띠는 카드 위에 없다. */
 :root .board .slot[data-hand-action='bomb'] {
@@ -161,26 +159,26 @@
   z-index: -1;
 }
 /* 해당 카드 안의 전문 일러스트. 별도 월 색인이 없는 손패의 오른쪽 위에 배치. */
-:root .board .hand.compact .art-window {
+:root .board .hand.compact .card {
   position: relative;
 }
-:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='shake']) .art-window::after {
+:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='shake']) .card::after {
   content: '';
   position: absolute;
   top: 2px;
-  right: 2px;
-  width: 22px;
-  height: 22px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 1px solid var(--action-color);
   background: var(--action-paper) url('/skin/bomb-illustrated.webp') center / 20px 20px no-repeat;
   box-shadow: 0 0 0 1px #182e28;
   pointer-events: none;
 }
-:root .board .slot[data-hand-action='shake'] .art-window::after {
+:root .board .slot[data-hand-action='shake'] .card::after {
   background-image: url('/skin/bell-illustrated.webp');
 }
-:root .board .slot .art-window:has(.card[style*='will-change'])::after {
+:root .board .slot .card[style*='will-change']::after {
   display: none;
 }
 /* 신규 설정 필드의 읽기 계약만. 속성이 없으면 정적(subtle)이다. */
@@ -188,7 +186,7 @@
   [data-effect-intensity='strong']
     .board
     .slot:is([data-hand-action='bomb'], [data-hand-action='shake'])
-    .art-window::after {
+    .card::after {
     animation: skin-action-breath 1.6s ease-in-out infinite;
   }
 }
@@ -207,28 +205,80 @@
   background: transparent;
 }
 /* #114/#115 표시 계약만 소비. 월/카드 수/합법성을 CSS에서 판정하지 않는다. */
-:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='chongtong']) .art-window {
+:root .board .slot:is([data-hand-action='bomb'], [data-hand-action='chongtong']) .card {
   translate: none;
-  outline: 2px solid var(--color-hand-match);
+  outline: 4px solid var(--color-hand-match);
   outline-offset: 0;
-  box-shadow:
-    0 5px 6px #0007,
-    0 0 7px #dec29190;
+  box-shadow: 0 0 0 5px var(--color-hand-cue-base);
+}
+/* 같은 행의 폭탄/흔들기는 그림뿐 아니라 보이는 외곽까지 같은 4px 폭을 예약한다. */
+:root .board .slot[data-hand-action='shake'] .card {
+  outline: 4px solid var(--action-color);
+  outline-offset: 0;
+  box-shadow: 0 0 0 5px var(--color-hand-cue-base);
 }
 :root
   .board
   .slot[data-hand-cue='secured']:is([data-hand-action='bomb'], [data-hand-action='chongtong'])
-  .art-window {
-  outline: 3px double var(--color-hand-secured);
+  .card {
+  outline: 4px double var(--color-hand-secured);
+  box-shadow: 0 0 0 5px var(--color-hand-cue-base);
 }
-:root .board .floor .group:is([data-hand-link='bomb'], [data-hand-link='chongtong']) > .card {
-  outline: 2px solid var(--color-hand-match);
-  outline-offset: 1px;
-  box-shadow: 0 0 7px #dec29190;
+:root .board .floor .group:is([data-hand-link='bomb'], [data-hand-link='chongtong']) > .card,
+:root .board .floor .card.highlight {
+  outline: 3px solid var(--color-hand-match);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px var(--color-hand-cue-base);
 }
-/* 규칙보다 뒤에 두어 이동 중 강조 회수가 우선한다. */
-:root .board .hand.compact .slot .art-window:has(.card[style*='will-change']) {
+/* 상태 선은 카드 앞면·크기를 바꾸지 않는다. 누름/초점은 바깥 입력 슬롯에서 구분한다. */
+:root .board .hand.compact.hand {
+  gap: 8px;
+}
+/* 짧은 가로 재배치에서는 위 여백 4px를 줄 간격에 옮겨 영역 높이를 유지한다. */
+@media (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
+  :root .board .hand.compact.hand {
+    padding-top: 8px;
+  }
+}
+:root .board .hand.compact .slot.slot.selected {
+  outline: 2px dashed var(--skin-paper);
+  outline-offset: 4px;
+}
+:root .board .hand.compact .slot.slot:focus-visible {
+  outline: 2px solid var(--skin-paper);
+  outline-offset: 4px;
+}
+:root .board .hand.compact .slot.slot.selected::after {
+  display: none;
+}
+/* 선택/초점과 행동 그림이 기본 보조 선을 덮지 않는다. */
+:root .board .hand.compact .slot.slot[data-hand-cue='matchable'] .card {
+  outline: 3px solid var(--color-hand-match);
+}
+:root .board .hand.compact .slot.slot[data-hand-cue='matchable'][data-hand-action] .card {
+  outline-width: 4px;
+  box-shadow: 0 0 0 5px var(--color-hand-cue-base);
+}
+:root .board .hand.compact .slot.slot[data-hand-cue='secured'] .card {
+  outline: 4px double var(--color-hand-secured);
+}
+/* 필수 바닥 선택은 보조 단선보다 키보드 초점이 우선한다. */
+:root .board .floor-choice:focus-visible {
+  outline: 2px solid var(--skin-paper);
+  outline-offset: 4px;
+}
+/* 자기 style 속성으로 회수한다. WebKit의 동적 style 속성 :has 갱신 누락을 피한다. */
+:root .board .hand.compact .slot.slot .card[style*='will-change'] {
   translate: none;
   outline: none;
   box-shadow: none;
+}
+/* 외곽은 카드 자신에게 둬 이동·완료·취소가 같은 will-change 계약을 소비한다. */
+:root .board .hand.compact .slot.slot .art-window {
+  overflow: visible;
+  outline: none;
+  box-shadow: none;
+}
+:root .board .hand.compact .slot.slot:is(.selected, :focus-visible) .art-window {
+  transform: none;
 }

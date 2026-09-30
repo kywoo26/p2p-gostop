@@ -12,7 +12,7 @@ test('라이선스 화면: 저작자 3명, CC BY-SA 4.0, 원본·CC0 주소를 �
   }
   const text = document.body.textContent ?? '';
   expect(text).toContain('CC BY-SA 4.0');
-  // 보너스 3장·뒷면은 자체 제작 CC0 (plan.md D1)
+  // 보너스 3장·뒷면은 자체 제작 CC0 (intent/plan.md D1)
   await expect
     .element(screen.getByRole('heading', { name: '보너스 카드(48~50번)·카드 뒷면' }))
     .toBeVisible();

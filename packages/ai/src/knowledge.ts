@@ -1,4 +1,4 @@
-// 공개 정보 → 결정화(determinization) (spec AI-01·AI-03, plan.md 1.5).
+// 공개 정보 → 결정화(determinization) (spec AI-01·AI-03, intent/plan.md 1.5).
 // 보이지 않는 카드(엔진 unseenCards = 덱 − 내 손패·바닥·양측 획득패·진행 중인 턴의 공개 카드)를
 // 시드 난수로 섞어 상대 손패(장수는 공개)와 더미에 균등하게 나누고, 엔진 determinize로 뷰와 일관된 GameState를 만든다.
 // 결정화한 상태는 AI 내부의 가상 세계일 뿐이며 실제 상태와 무관하다.

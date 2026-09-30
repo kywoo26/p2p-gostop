@@ -1,4 +1,4 @@
-// 개발·E2E용 WebSocket 중계 서버. Android Ktor 중계(SmokeServer.kt RelayRoles)와 같은 규칙이다(#15·#24, plan.md 1.1).
+// 개발·E2E용 WebSocket 중계 서버. Android Ktor 중계(SmokeServer.kt RelayRoles)와 같은 규칙이다(#15·#24, intent/plan.md 1.1).
 // - /ws?role=host|guest. 역할마다 **최신 연결 하나**: 같은 역할이 다시 붙으면 이전 소켓을 4001 "replaced"로 닫는다.
 //   교체된 소켓에서 늦게 도착한 프레임은 버린다. 교체는 상대에게 left를 보내지 않는다(joined만).
 // - 알림 {"t":"relay","peer":…}: 새로 붙은 쪽에 present(상대 있음)·absent(없음), 상대에게 joined, 끊기면 상대에게 left.

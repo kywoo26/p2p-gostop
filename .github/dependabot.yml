@@ -1,4 +1,4 @@
-# 의존성 갱신 (plan.md 1.8, 5장). 쿨다운 3일을 생태계마다 명시해 .npmrc min-release-age=3과 맞춘다
+# 의존성 갱신 (intent/plan.md 1.8, 5장). 쿨다운 3일을 생태계마다 명시해 .npmrc min-release-age=3과 맞춘다
 # (기본값에 기대지 않는다, M0 리뷰 4.3).
 # Kotlin·AGP·Gradle·Ktor 등 AGENTS.md 2장 버전 표에 있는 항목을 올리는 PR은 표도 함께 고친다.
 version: 2

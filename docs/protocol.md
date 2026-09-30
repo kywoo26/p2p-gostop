@@ -1,6 +1,6 @@
 # M4 호스트·게스트 프로토콜
 
-근거: `spec.md` NP-01~NP-10, FR-07·FR-14·FR-51~53, MN-01/02/05, NF-05/06 및 `plan.md` 1.1·M4·§3-2. 이 문서는 `packages/protocol`(v3)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/README.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
+근거: `intent/spec.md` NP-01~NP-10, FR-07·FR-14·FR-51~53, MN-01/02/05, NF-05/06 및 `intent/plan.md` 1.1·M4·§3-2. 이 문서는 `packages/protocol`(v3)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/README.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
 
 전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 `PROTOCOL_VERSION = 3`이다. v2와 호환되지 않으며, 첫 hello의 버전이 다르면 호스트는 `VERSION_MISMATCH`와 새로고침 안내를 보낸다.
 
@@ -194,7 +194,7 @@
 
 ## 11. P2P 결정 타이머 v3 (#123)
 
-정책 정본: [spec §3.6·5.1·6.8](../spec.md#36-p2p-제한시간-개정안-123-승인-전), FR-16·51~53, NP-02/03/05/10, NF-05; 구현 인계: plan M3·M4·M6·D2. 준비 5초·마감 확인 2초 등 승인된 계약을 현행 실행값으로 적용한다.
+정책 정본: [spec §3.6·5.1·6.8](../intent/spec.md#36-p2p-제한시간-개정안-123-승인-전), FR-16·51~53, NP-02/03/05/10, NF-05; 구현 인계: plan M3·M4·M6·D2. 준비 5초·마감 확인 2초 등 승인된 계약을 현행 실행값으로 적용한다.
 
 ### 11.1 현행 계약과 변경 경계
 
