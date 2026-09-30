@@ -9,14 +9,17 @@
     text: string;
     /** 누가 했는지 ("상대 쪽!", M3 리뷰 I-4). 없으면 문구만 */
     actor?: string | null;
+    fullText?: string;
   }
 
-  let { kind, text, actor = null }: Props = $props();
+  let { kind, text, actor = null, fullText }: Props = $props();
 </script>
 
 <div
   class={['banner', `kind-${kind}`]}
   role="status"
+  aria-label={fullText}
+  title={fullText}
   in:fade={{ duration: durationMs('modal') }}
   out:fade={{ duration: durationMs('modal') }}
 >
