@@ -6887,7 +6887,7 @@
         360,
         780
       ],
-      "frames": 32,
+      "frames": 35,
       "before": [
         {
           "id": 16,
@@ -7013,6 +7013,102 @@
         }
       ],
       "frameCoordinateDeltas": [
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
         [
           [
             0.0,
@@ -8571,14 +8667,58 @@
       "rotation": "desktop fine pointer projection only; coarse cover separately verified in actual app"
     }
   ],
-  "currentCheckpoint": {
+  "productCheckpoint": {
     "parent": "12a2950ec92aba28e61e85da41fbc48cd6571dd9",
-    "pendingCommit": true,
     "rootApprovedBoardBudget": "one class condition; first pick unchanged",
     "testResults": "62 targeted browser tests + 4 actual-app development-server tests; standard smoke/build remain gated",
     "raw": 1573018,
     "cap": 1572864,
     "over": 154,
-    "otherBranches": "#218/#225 not yet integrated"
+    "otherBranches": "#218/#225 not yet integrated",
+    "head": "8ccc9b9ee69e57c6ad89199a27269d7bc1c77a8f",
+    "measurement": "exact checkpoint; historical before main #218 integration"
+  },
+  "integratedValidation": {
+    "head": "a9d5cfa22457e91ca835462a998ad6e9ebd55dd2",
+    "upstream": "2fe4da3f6ec841ecfff09fd03c227a242f05ebe7",
+    "raw": 1575162,
+    "cap": 1572864,
+    "over": 2298,
+    "categories": {
+      "JS": 580060,
+      "CSS": 92182,
+      "font": 144248,
+      "cards": 632380,
+      "metadata": 38399,
+      "skin": 87893
+    },
+    "distFiles": 75,
+    "checks": {
+      "npmCi": "pass",
+      "lint": "pass; privacy contract 16",
+      "check": "pass; Svelte 0 errors/warnings",
+      "node": 563,
+      "browser": 950,
+      "android": "assembleDebug/testDebugUnitTest/lint pass; max-workers=4",
+      "build": "fail NF-03",
+      "standardSmoke": "not started: build gate failed",
+      "developmentTarget": "4 pass; actual Playback frames and coarse rotation"
+    },
+    "ci": "https://github.com/kywoo26/p2p-gostop/actions/runs/36777106922",
+    "ciResult": "3 fail NF-03; E2E and CI Android not executed",
+    "combinedV040": "not this measurement; #225 absent",
+    "deviceAcceptance": "unverified; human only; existing fine-pointer 720x450 44px is below 48px norm",
+    "frameSummary": [
+      {
+        "engine": "chromium",
+        "consecutiveFrames": 37,
+        "maxRectDelta": 0.0
+      },
+      {
+        "engine": "webkit",
+        "consecutiveFrames": 35,
+        "maxRectDelta": 0.0
+      }
+    ]
   }
 }
