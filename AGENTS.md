@@ -49,7 +49,7 @@
 - **엔진**: 부수효과·타이머·I/O·`Math.random` 금지(oxlint `no-restricted-properties`·`no-restricted-globals`로 강제). 좌석은 인덱스 0/1, `human`/`computer` 같은 이름 금지. 상태에는 카드 ID(0~50)만.
 
 ## 4. 구조와 관례
-- 모노레포: `packages/{engine,ai,protocol,web,relay-dev}`, `tools/{sim,setup-host.sh}`, `android/`, `docs/`. 의존 방향: engine ← ai ← web, engine ← protocol ← web. android는 TS 패키지에 의존하지 않고 `packages/web/dist`만 `android/app/src/main/assets/web`으로 복사.
+- 모노레포: `packages/{engine,ai,protocol,web,relay-dev}`, `tools/{sim,privacy,lint,setup-host.sh}`, `android/`, `docs/`, `intent/`. 의존 방향: engine ← ai ← web, engine ← protocol ← web. android는 TS 패키지에 의존하지 않고 `packages/web/dist`만 `android/app/src/main/assets/web`으로 복사.
 - import 경계: [허용표·probe·갱신 규칙](docs/reviews/refactor-import-boundaries.md)을 따른다(공개 하위 경로는 `engine/testing`·`web/net`만). `import()`는 따옴표 문자열만 허용하며 템플릿·계산된 경로는 금지한다. workspace/exports 변경 시 허용표·린트·probe를 함께 갱신하고 `npm run lint`로 검사한다.
 - 엔진 API: `reduce(state, action) → {ok:true, state, events} | {ok:false, reason, message}`, `legalActions(state, seat)`, `playerView(state, seat)`, `settle(state, rules?)`. 모두 순수 함수, 시드 PRNG는 상태 안.
 - 웹: Svelte scoped CSS + `src/styles/tokens.css`(OKLCH, `--dur-*`). 카드 애니메이션은 `src/anim/`의 WAAPI FLIP 헬퍼, 모달·배너는 Svelte transition. 카드는 `<img>`로 svgo 최적화 SVG.

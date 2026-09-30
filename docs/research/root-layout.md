@@ -36,3 +36,5 @@
 정본 경로·파일 이동·기존 Markdown 링크 목적지 보존·익명화·git diff --check를 확인한다. 구조 이동으로 생긴 고장과 기존 실패/호스트 부족을 구별해 PR에 기록한다. 커밋과 PR에는 요구사항 ID, Closes #224, 이 계획의 실제 commit SHA, 수락 근거 및 검증 결과를 적는다. 독립 reviewer가 실제 diff와 계획·동일 head CI를 대조하도록 하고 병합은 수행하지 않는다.
 
 2026-10-01 root 조율 반영: #224 생성 후 이슈 제목·본문·labels·milestone·state는 이슈 정제 담당의 단독 소유다. 이 작업은 해당 필드를 더 이상 편집하지 않으며 PR·최종 SHA·이동경로·승인 범위·검증을 지정 리뷰/오케스트레이션 담당에게 인계한다. 운영 wrapper·release clone·secret에는 접근하지 않는다.
+
+통합 기록: clean 작업 브랜치에서 `origin/main`의 `2fc850f`(#222·#214 포함)를 merge한 commit은 `6ee9396`이다. Git이 `plan.md`의 upstream 수정 4행을 `intent/plan.md`로 자동 통합했고 제품 UI·테스트·기준샷 변경도 보존했다. #219는 아직 선행 PR이며 root가 병합 순서를 조율한다. 추가 main 통합은 인계 담당이 같은 merge 규약으로 진행한다. 이동 전후 비교 기준을 이 main으로 갱신하고 새 head의 필수 검증을 PR에 기록한다.
