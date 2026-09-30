@@ -106,6 +106,8 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
+**NF-09 CI 설치 경로:** Ubuntu 24.04 GitHub 러너의 기존 apt 미러 목록에서 공식 HTTPS archive/security를 Azure HTTP보다 우선한다(`.github/scripts/prefer-ubuntu-https.sh`, 미지원 형식은 무변경 실패). source·suite/component·Signed-By·신뢰 키·버전 핀·Playwright 공식 설치 명령과 20분 검증 상한은 보존하며, 호스트 설치는 기존 `tools/setup-host.sh`만 사용한다. 설치 지연 감소·전체 timing 완료는 hosted CI 측정 후 판정하고, 요구사항 완료 상태는 바꾸지 않는다.
+
 **RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
 
 **RP-04A 테스트 의존성(2026-09-29; ws 갱신 2026-09-29):** `packages/web`의 Node 전용 `test:net`에서 공개 중계 WebSocket과 실제로 통신하기 위해 `ws` 8.22.0 및 `@types/ws` 8.18.1을 개발 의존성으로 사용한다. `ws` 8.22.0은 npm에 2026-09-26 15:00 UTC 게시, 2026-09-29 19:15 UTC 확인으로 `min-release-age=3`(72시간)을 충족한다. AGENTS.md §2 버전 표에도 같은 근거를 기록한다. 두 패키지는 브라우저 번들 런타임에 포함되지 않으며 `web/src/net`의 생산 코드는 브라우저 내장 WebSocket을 사용한다.
