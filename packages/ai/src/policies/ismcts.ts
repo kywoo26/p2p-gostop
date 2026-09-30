@@ -1,4 +1,4 @@
-// 상용급 (spec AI-03·AI-05·AI-06, plan.md 1.5): 불완전 정보 몬테카를로 탐색.
+// 상용급 (spec AI-03·AI-05·AI-06, intent/plan.md 1.5): 불완전 정보 몬테카를로 탐색.
 // 반복마다 공개 정보와 일관된 결정화 하나를 뽑는다(모르는 카드 = 엔진 unseenCards를 상대 손패·더미에 균등 분배).
 // 루트 탐색 두 가지:
 //  - halving(기본): 공통 난수 + 순차 반감. 라운드마다 결정화 하나·롤아웃 난수 하나를 남은 후보 전부에 똑같이 쓰고
@@ -37,7 +37,7 @@ export interface IsmctsOptions {
 
 /** 기본 반복 상한: Node 기준 p95 ≤ 0.7s를 맞추는 값 (docs/ai-tuning.md) */
 export const DEFAULT_ISMCTS_ITERATIONS = 2000;
-/** 기본 시간 제한 (plan.md 1.5: 1.0s). 느린 기기에서의 안전장치 */
+/** 기본 시간 제한 (intent/plan.md 1.5: 1.0s). 느린 기기에서의 안전장치 */
 export const DEFAULT_TIME_BUDGET_MS = 1000;
 /** 시계 확인 주기(반복 수) */
 const CLOCK_EVERY = 16;

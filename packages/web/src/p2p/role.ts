@@ -1,4 +1,4 @@
-// 앱이 어느 역할로 열렸는지 (spec 2.1·2.2, plan.md 1.1).
+// 앱이 어느 역할로 열렸는지 (spec 2.1·2.2, intent/plan.md 1.1).
 // - Android WebView는 루프백 origin에서 `/?build=…`를 연다 → 호스트 앱(홈·혼자 연습·방 열기).
 // - iPhone은 QR로 `http://<핫스팟 IP>:17777/`을 연다 → 루프백이 아닌 origin이면 조작 없이 게스트 화면.
 // - `?role=guest`는 같은 기기에서 게스트를 시험할 때(E2E·개발), `?relay=host:port`는 개발 중계 주소를 덮어쓴다.

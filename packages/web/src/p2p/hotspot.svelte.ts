@@ -1,4 +1,4 @@
-// Android 핫스팟 상태 (브리지 hotspot 알림, plan.md 1.7). 방 열기 화면과 게임 화면(NF-06 경고)이 같이 읽는다.
+// Android 핫스팟 상태 (브리지 hotspot 알림, intent/plan.md 1.7). 방 열기 화면과 게임 화면(NF-06 경고)이 같이 읽는다.
 import { getBridge, type HotspotInfo, type PluginListenerHandle } from '../bridge/bridge.ts';
 import { log } from '../game/log.svelte.ts';
 

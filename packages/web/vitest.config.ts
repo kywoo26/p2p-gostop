@@ -1,4 +1,4 @@
-// 컴포넌트 테스트: Vitest 브라우저 모드 (Chromium + WebKit, plan.md 4장).
+// 컴포넌트 테스트: Vitest 브라우저 모드 (Chromium + WebKit, intent/plan.md 4장).
 // Playwright 브라우저가 필요하다(tools/setup-host.sh): npm run test:browser
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, mergeConfig } from 'vitest/config';

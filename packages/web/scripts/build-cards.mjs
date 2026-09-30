@@ -1,4 +1,4 @@
-// 카드 SVG 파이프라인 (plan.md 1.6, spec 6.6). 의존성: svgo(4.1.0)뿐.
+// 카드 SVG 파이프라인 (intent/plan.md 1.6, spec 6.6). 의존성: svgo(4.1.0)뿐.
 //
 //   node scripts/build-cards.mjs [--fetch] [--raw <디렉터리>] [--originals-only]
 //
@@ -69,7 +69,7 @@ function svgoOptimize(svg, path) {
   return optimize(svg, { ...svgoConfig, path }).data;
 }
 
-/** 자체 제작 그림 1장의 svgo 결과 상한 (plan.md D1) */
+/** 자체 제작 그림 1장의 svgo 결과 상한 (intent/plan.md D1) */
 const ORIGINAL_LIMIT_BYTES = 8 * 1024;
 
 if (!args['originals-only']) await rm(OUT, { recursive: true, force: true });

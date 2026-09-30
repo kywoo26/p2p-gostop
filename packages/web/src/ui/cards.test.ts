@@ -28,7 +28,7 @@ test('카드 이름·바닥 표식 (NF-08: 손패는 별도 표식 없이 aria-l
   ]);
   // 보너스는 그림에 가치가 크게 쓰여 있어 표식이 없다
   expect([48, 49, 50].map(cardIndex)).toEqual([null, null, null]);
-  // 光 원이 왼쪽 아래(3·8월 광)·왼쪽 위(12월 광)에 있는 카드는 표식이 오른쪽으로 간다 (plan.md D1)
+  // 光 원이 왼쪽 아래(3·8월 광)·왼쪽 위(12월 광)에 있는 카드는 표식이 오른쪽으로 간다 (intent/plan.md D1)
   expect([markSide(0, 'bottom'), markSide(8, 'bottom'), markSide(28, 'bottom')]).toEqual([
     'left',
     'right',
@@ -55,7 +55,7 @@ test('앞면 카드: 이름·그림·표식, 가려진 카드: 뒷면만', async
   expect(back.element().querySelector('img')?.getAttribute('src')).toMatch(/cards\/back\.svg$/);
 });
 
-test('카드 크기 s < m < l, 비율 103.2:168.2, 폭·높이는 정수 px (2x·3x 선명도, plan.md D1)', async () => {
+test('카드 크기 s < m < l, 비율 103.2:168.2, 폭·높이는 정수 px (2x·3x 선명도, intent/plan.md D1)', async () => {
   const widths: number[] = [];
   for (const size of ['s', 'm', 'l'] as const) {
     const screen = await render(Card, { id: 8, size });

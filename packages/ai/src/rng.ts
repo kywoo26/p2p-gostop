@@ -1,4 +1,4 @@
-// AI 전용 시드 난수 (spec AI-08, plan.md 원칙 6). Math.random 금지(oxlint)라서 xoshiro128**를 쓴다.
+// AI 전용 시드 난수 (spec AI-08, intent/plan.md 원칙 6). Math.random 금지(oxlint)라서 xoshiro128**를 쓴다.
 // 엔진의 rng.ts와 같은 알고리즘이지만, 탐색 루프에서 배열을 매번 새로 만들지 않도록 변경 가능한 객체로 둔다.
 import { createRng, type Seed } from '@p2p-gostop/engine';
 

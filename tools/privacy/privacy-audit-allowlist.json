@@ -945,7 +945,7 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "spec.md",
+      "path": "intent/spec.md",
       "type": "personal-path",
       "line": 407,
       "field": "personal-path",
@@ -1105,7 +1105,7 @@
       "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
     },
     {
-      "path": "privacy-audit.mjs",
+      "path": "tools/privacy/privacy-audit.mjs",
       "type": "personal-path",
       "line": 39,
       "field": "personal-path",
@@ -1113,7 +1113,7 @@
       "reason": "정상 fontconfig glob의 정확 비교 리터럴; 개인 식별자 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
+      "path": "tools/privacy/privacy-audit.test.mjs",
       "type": "personal-path",
       "line": 25,
       "field": "personal-path",
@@ -1121,7 +1121,7 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
+      "path": "tools/privacy/privacy-audit.test.mjs",
       "type": "personal-path",
       "line": 57,
       "field": "personal-path",
@@ -1129,7 +1129,7 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
+      "path": "tools/privacy/privacy-audit.test.mjs",
       "type": "personal-path",
       "line": 65,
       "field": "personal-path",
@@ -1137,7 +1137,7 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
+      "path": "tools/privacy/privacy-audit.test.mjs",
       "type": "tailnet-host",
       "line": 14,
       "field": "tailnet-host",
@@ -1145,7 +1145,7 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
+      "path": "tools/privacy/privacy-audit.test.mjs",
       "type": "literal-credential",
       "line": 16,
       "field": "secret",
@@ -1153,7 +1153,7 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     },
     {
-      "path": "privacy-audit.test.mjs",
+      "path": "tools/privacy/privacy-audit.test.mjs",
       "type": "literal-credential",
       "line": 103,
       "field": "secret",

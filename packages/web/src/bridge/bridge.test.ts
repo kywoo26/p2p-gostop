@@ -1,4 +1,4 @@
-// Android 셸 브리지 (plan.md 1.7): 웹 no-op 구현과, 가짜 HostBridge 객체로 본 선 계약(요청 id·응답·hotspot 알림).
+// Android 셸 브리지 (intent/plan.md 1.7): 웹 no-op 구현과, 가짜 HostBridge 객체로 본 선 계약(요청 id·응답·hotspot 알림).
 import { expect, test, vi } from 'vitest';
 import { createNativeBridge, getBridge, parseHotspot, type HostBridgeObject } from './bridge.ts';
 

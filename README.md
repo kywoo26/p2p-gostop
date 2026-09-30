@@ -2,7 +2,7 @@
 
 인터넷 없이 두 사람이 얼굴을 마주하고 치는 **2인 맞고** 앱이다. Android 폰이 핫스팟과 게임 서버를 겸하고(호스트), iPhone은 그 핫스팟에 붙어 Safari로 참가한다(게스트). 혼자 CPU와 연습하는 모드도 있다. 가상 머니만 쓴다.
 
-- 왜: [`intend.md`](intend.md) · 무엇을: [`spec.md`](spec.md) · 어떻게: [`plan.md`](plan.md) · 작업 규범: [`AGENTS.md`](AGENTS.md)
+- 왜: [`intent/intent.md`](intent/intent.md) · 무엇을: [`intent/spec.md`](intent/spec.md) · 어떻게: [`intent/plan.md`](intent/plan.md) · 작업 규범: [`AGENTS.md`](AGENTS.md)
 - 규칙의 단일 근거: [`docs/research/rules-commercial.md`](docs/research/rules-commercial.md) 12장
 
 ## 구조
@@ -16,12 +16,17 @@ packages/
   web/        Vite + Svelte 5 웹 앱 (호스트·게스트·솔로 화면)
 tools/
   sim/        셀프플레이 시뮬레이션 CLI
+  privacy/    개인정보 검사·합성 테스트·허용표
+  lint/       Oxlint·web ESLint 공유 import 규칙
   setup-host.sh  호스트 툴체인 1회 설치 (Node·apt·브라우저·Android SDK)
 android/      Android 셸 (Kotlin + WebView + Ktor)
 docs/         조사 문서, 실기기 테스트 절차·기록
+intent/       intent.md → spec.md → plan.md: 제품 의도·명세·구현 계획 정본
 ```
 
 의존 방향: `engine ← ai ← web`, `engine ← protocol ← web`, `protocol ← relay-dev`. Android 앱은 TS 패키지에 의존하지 않고 `packages/web/dist`만 앱 자산으로 복사한다.
+
+문서의 인라인 파일 경로와 실행 명령은 저장소 루트 기준이며 Markdown 링크는 해당 문서 기준이다. [루트 구조 결정·이동 계획](docs/research/root-layout.md)에 공식 SDLC 가이드와 프로젝트 판단을 구분해 기록했다.
 
 ## 개발 환경
 
@@ -49,7 +54,7 @@ npm run sim -- 42 --workers 4        # 셀프플레이 시뮬레이션 CLI (공�
 - `.npmrc`의 `min-release-age=3`은 게시 3일이 안 된 버전을 설치하지 않는다(공급망 방어). `ignore-scripts=true`로 설치 스크립트도 막는다.
 - **개발 이미지 삭제 뒤 정리**(2026-09-30, 선택): 옛 이미지·볼륨은 `docker image rm p2p-gostop-dev:1 p2p-gostop-dev:2 p2p-gostop-dev:3 p2p-gostop-dev:4`, `docker volume rm p2p-gostop-gradle p2p-gostop-npm p2p-gostop-android`로 지운다. 옛 컨테이너가 남긴 root 소유 `node_modules`가 있으면(`ls -ld node_modules`) `sudo chown -R "$USER" node_modules` 뒤 `npm ci`.
 
-## 툴체인 (plan.md 1.8)
+## 툴체인 (intent/plan.md 1.8)
 
 | 대상 | 린트 | 포맷 | 타입 검사 |
 |---|---|---|---|
@@ -73,9 +78,9 @@ npm run sim -- 42 --workers 4        # 셀프플레이 시뮬레이션 CLI (공�
 
 ## 문서 지도
 
-- [의도](intend.md) → [명세](spec.md) → [구현 계획](plan.md): 목표·요구사항·현재 마일스톤과 결정.
+- [의도](intent/intent.md) → [명세](intent/spec.md) → [구현 계획](intent/plan.md): 목표·요구사항·현재 마일스톤과 결정.
 - [작업 규범](AGENTS.md): 작업 제약과 버전 표의 정본.
-- [Galaxy·솔로 계획](plan.md#현재-트랙): 현재 증분·PR 소유권·완료 조건.
+- [Galaxy·솔로 계획](intent/plan.md#현재-트랙): 현재 증분·PR 소유권·완료 조건.
 - [UI 규범·구현 지도](docs/design/ui-spec.md): UX-01~25, 화면·상태·이벤트·현재 격차; 구 docs/ui.md를 대체.
 - [프로토콜](docs/protocol.md): 메시지·전송·세션 계약.
 - [규칙 벡터](docs/rules-vectors.md): 규칙 ID와 테스트의 대응.
