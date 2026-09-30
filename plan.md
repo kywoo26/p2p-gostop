@@ -106,6 +106,10 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
+**#208 개인정보 잔존·재유입 감사 (NF-01·NF-RP-06):** Node 내장 API만 쓰는 추적 텍스트/PR 추가 행 검사와 합성 반례 테스트를 루트 lint에 연결한다. 신규 의존성·제품 상한은 추가하지 않는다. §1.9의 공개 검증 자료도 값 비노출·역할별 일반화를 적용한다. 범위·오탐·#190 소유 잔존·과거 이력/외부 미검증은 [감사 기록](docs/reviews/privacy-residue-audit.md)에 구분한다. 요구사항 완료 상태는 변경하지 않는다.
+
+**NF-09 CI 설치 경로:** Ubuntu 24.04 GitHub 러너의 기존 apt 미러 목록에서 공식 HTTPS archive/security를 Azure HTTP보다 우선한다(`.github/scripts/prefer-ubuntu-https.sh`, 미지원 형식은 무변경 실패). source·suite/component·Signed-By·신뢰 키·버전 핀·Playwright 공식 설치 명령과 20분 검증 상한은 보존하며, 호스트 설치는 기존 `tools/setup-host.sh`만 사용한다. 설치 지연 감소·전체 timing 완료는 hosted CI 측정 후 판정하고, 요구사항 완료 상태는 바꾸지 않는다.
+
 **RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
 
 **RP-04A 테스트 의존성(2026-09-29; ws 갱신 2026-09-29):** `packages/web`의 Node 전용 `test:net`에서 공개 중계 WebSocket과 실제로 통신하기 위해 `ws` 8.22.0 및 `@types/ws` 8.18.1을 개발 의존성으로 사용한다. `ws` 8.22.0은 npm에 2026-09-26 15:00 UTC 게시, 2026-09-29 19:15 UTC 확인으로 `min-release-age=3`(72시간)을 충족한다. AGENTS.md §2 버전 표에도 같은 근거를 기록한다. 두 패키지는 브라우저 번들 런타임에 포함되지 않으며 `web/src/net`의 생산 코드는 브라우저 내장 WebSocket을 사용한다.
@@ -321,12 +325,33 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 3-2. 진행 매트릭스 (기본 2026-09-29 main `daa5e7d`; RP-07 2026-09-30 `e33f044` 기반 갱신)
 
+### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
+
+- 사용자 실측 v0.3.1 `4e536e1` 빠름 6표본은 [PDR-01](docs/device-test/results.md#pdr-01--사용자-제공-v031-부분-관측)에 최소 익명 증거만 기록했다. full play618/619/683/702ms 네 경로와 prompt223/choose462를 섞어 수용 통과로 판정하지 않는다. NF-03 미검증·AC-06 부분 상태 유지.
+- `game/playback.recovery.test.ts`: 합성 도착50/150/300ms에서 reset 뒤 stale snapshot/선택창·효과, dispose 뒤 읽기 대기, reset→burst를 수정 전 Chromium/WebKit10실패로 재현했다. generation 소유권으로 커밋·이벤트·계측·정산을 보호하고 대기를 스킵해 회수한다. 정상 FIFO와 #185 milestone 큐는 보존한다. 복구 없는 빈 이벤트 snapshot/정산 표식은 기존 FIFO 순서를 유지한다. #191~195의 저장/호스트 metadata·timer audit와 다른 renderer 재생 수명 결함이다.
+- 기존 100개 TurnTiming·400줄/줄2000자 진단 버퍼를 재사용한다. enqueue/queue/replay/snap/첫 DOM commit과 단계12개 이하를 묶음당 한 줄로 기록한다. 상대 턴은 수신 이후로 표시하며 내 AC-06 표본에 넣지 않는다. 프레임별 수집·상시 폴링·외부 분석·wire 확장 없음. 취소 묶음은 기록하지 않는다.
+- `e2e/playback-delay.spec.ts`: 고정 match-capture에서 합성 main-thread100ms 정지 실행 표식, busy=true/첫 턴 timing 미완료에서 홈 이탈, 복귀 뒤 카드 중복 없음/권위 바닥·점수 일치 및 다음 손패 입력의 권위 원장1회 수락을 Chromium/WebKit에서 검증한다. 이전 head9548dd9 검사는 수렴 뒤 홈 복귀와 busy=false까지만 검사했으며 재생 중 이탈·다음 입력 수락 근거로 세지 않는다. 합성 지연은 Singapore RTT가 아니며 자동 결과는 실기기 성공이 아니다.
+- 사용자 착지/바닥 이동의 읽기·계산 재현: CardPlayed는 독립 바닥 셀을 커밋하고 tick 뒤 새 셀로 FLIP한다. Matched는 강조이며 대상 위 겹침을 만들지 않는다. 현행 동일 월 인접 독립 셀·48px·5×3 규범과 관련된 설계 경계다. 순수 floorLayout 합성 월4=[14],월8=[28,29],월10=[37]에13 추가(360×300,48px)에서 기존28:5→8,29:6→9,14:8→6 이동을 재현했다. 고정 match-capture 초기 바닥에서는 기존 이동0,낸13의 셀5/대상14의 셀6이다. 실제 사용자 장면 동일 원인 판정은 보류. 안정 슬롯/겹침 설계는 Floor 소유자·연구 담당 조율 후이며 이 PR은 Floor/Board를 수정하지 않는다.
+- 밀기 읽기 근거: Game의 settlement 또는 controller.pushDecision 표시와 solo/host/guest getter는 playback 완료를 조건으로 삼지 않는다. 정산은 playback 큐로 늦추지만 밀기 pending은 권위 상태에서 즉시 노출될 수 있다. 고/스톱과 다른 경계이며 UI 소유자에게 넘긴다. 이 PR은 임의 delay·deadline/타이머 정책을 바꾸지 않는다. main #188 `75b4df1`의 Board inert는 통합 시 보존해야 한다.
+동일 fixture 자동 비교(실기기 아님): Chromium 빠름3경로, 경로마다 워밍업1+7표본, 직렬/포트4227. 기준 `fc02b1c`의 playback/choreo만 임시 복원한 실행 p50 no-match379/match-capture530/banner387ms, 수정본380/530/380ms. 계획340/500/340ms 동일. 21표본 전체 p50 387→380ms, 두 번째 최대533→530ms. 순서는 수정본→기준본이며 미세 차이는 스케줄링 잡음과 분리하지 못한다. 유의미한 성능 향상·계측 overhead0을 주장하지 않는다. 추가 계측의 두 clock 읽기/단계·bounded 배열과 로그 한 줄만 추가했으며 프레임/longtask 감시·read/write 최적화는 도입하지 않았다. 기준에서 새 회귀10실패→수정 뒤14통과, 기존 playback/anim 포함96통과. 필수 검사 lint/check·Node563·browser742·web build·smoke378·Android3작업 통과(통합 전 기준). browser 첫 실행은 공유63315포트 점유로 시작 실패했고 다음 실행 정상 완료했다. 통합 main 검사는 별도 최종 결과로 갱신한다.
+
+main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존했다. lint/check·Node563·browser754·Android 통과. 로컬 smoke는380통과/2실패/의존 timing2미실행이며, 실패2건(기존 auto-choices의 autoSeen0, p2p의 timeoutFrames0)은 파일 수정 없이 표적 재실행2통과했다. 남은 timing2검사도 통과했다(p50=393ms/두 번째 최대627ms). 초반 browser 검사 부하가 겹쳤으므로 이 실행은 앞의 A/B 통계에 합치지 않는다. 통합 head `9bf51d8`의 CI3작업은 모두 통과했으며 이후 테스트 보강 head의 CI는 별도로 확인한다. 진단 append 전용 합성 시험(문자열 준비·DOM·실기기 제외, 워밍업1+7)은 Chromium p50=시계해상도 아래/max약0.1ms, WebKit 모두 시계해상도 아래였다. 0ms는 비용0 증명이 아니다. 이 시험은 로그 버퍼 append만 측정하며 전체 계측 비용과 실제 UI 소비 부하는 별개다.
+
+독립 리뷰 [PR203 review5369028450](https://github.com/kywoo26/p2p-gostop/pull/203#pullrequestreview-5369028450)의 P2는 이전 head `9548dd9` CI3/3과 별개인 공개 callback 합성 반례다. `onBanner` reset→새 flip FIFO→throw의 옛 catch 큐 초기화와 미부착/분배 Jjok→옛 InstantPayout/ScoreChanged 잔여 실행을 기본20검사 중14실패·6통과로 재현했다. 실제 제품 vibrateFor/사용자 이상 장면에서 reset/throw가 발생했다는 근거는 아니다. catch를 묶음 세대에 묶어 stale 예외 후 새 FIFO를 계속 drain하고, 이벤트·onBanner/names callback 앞뒤 및 choreo callback 뒤에 세대 검사를 적용한다. 직렬 pump가 새 FIFO/선택/정산까지 처리한 뒤 잠금을 한 번 풀며 옛 finally가 새 스킵을 해제하지 않도록 보호한다(추가 합성2실패 재현). 새 세대 flip/족보 한 번·최신 pending/board·취소 timing 없음과 같은 세대 enqueue의 정상 잔여 이벤트 보존을 검사한다. 보강 callback22검사와 전체 browser776·Node563·lint/check 및 표적 E2E2 통과. PR203/#209는 리뷰 수정 새 head CI·좁은 재검토 전 완료 확정을 철회했으며 UI/슬롯/밀기·실기기·RTT는 별도 범위로 유지한다. main `664a181`과의 병합 조합/full CI는 아직 검사하지 않았으며 이 수정 때문에 강제 통합하지 않는다.
+리뷰 수정본의 로컬 PR 필수 smoke384검사 모두 통과(포트4227, workers2, timing 직렬), web build/번들 gate 및 Android assembleDebug/testDebugUnitTest/lint(--max-workers=4) 통과. 직렬 Chromium 빠름 워밍업1+경로별7표본은 p50 380/530/380ms, 전체21표본 p50=380ms/두 번째 최대530ms/최대531ms였다. 앞의 A/B나 실제 Galaxy 관측에 합치지 않고 이 실행의 회귀 근거로만 남긴다. 속도 향상·실기기 성공·NF-03 최초 paint 수용을 뜻하지 않는다.
+
+### 선택창 회전 잠금 (#155, UX-07·UX-24)
+
+| ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
+|---|---|---|---|
+| UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 독립 리뷰 P1은 퇴장 중 재활성 창의 복원값을 false로 정정하여 수정하며, 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 입력 회귀 검증을 추가한다. | 같은 리뷰어의 재등장 경계 재검토 대기. Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
+
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |
 | ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. Docker 컨텍스트 허용 목록과 `docker/relay/check-context.sh` canary export를 CI에 추가. `feat/relay-public` 임시 병합 이미지에서 비root/읽기 전용/루프백 기동, 로컬 `/health`·`/version`·정적 release 경로·Compose healthy 확인 | RP-02가 main에 병합된 뒤 재검사. Galaxy APK 동시 release·사람 PC 검증 대기                |
-| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | Windows 수동 시작·종료·Funnel·재부팅과 공개 health 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
+| RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | PR #190 / Refs #210: PS7/5.1 UTF-8·stderr/exitcode·runtime 정체·잠금/소유 프로세스·nonce Compose 실패 격리 합성 회귀(`tools/relay/validation.md`). 기존 wrapper live 검증과 현재 소유권 수정본 live 미검증을 분리. 수동 재부팅·게임 실기기 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
 
 위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
 
@@ -412,7 +437,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-RP-04 | 자동 검증 완료·실기기 미검증 | reload/resume·snapshot·4001·재시작 뒤 새 방, AC-RP-01/02/03 E2E. 실제 망 이동은 사람 절차 |
 | FR-RP-05 | 자동 검증 완료·실기기 미검증 | 호스트 부재·방 소실·만료 안내, AC-RP-02/03 E2E와 relay TTL 테스트. 10분 실시간 대기는 사람 절차 |
 | FR-RP-06 | 구현·자동 검증 완료(실기기 미검증) | RP-06 단일 BoardView/액션, 넓은 화면·키보드·200% Mac Chromium/WebKit E2E와 모바일 레이아웃 회귀; RP-07 동일 정적 웹·게임·정산 AC-RP-01 E2E. Mac Safari/Chrome·iPhone 실기기 조작은 사람 절차 |
-| FR-RP-07 | 자동 검증 완료·실기기 미검증 | health→방→공유, AC-RP-01 E2E와 기존 안내 테스트. Windows start/stop·Funnel은 사람 절차 |
+| FR-RP-07 | 자동 검증 완료·실기기 미검증 | health→방→공유, AC-RP-01 E2E와 기존 안내 테스트. Windows start/stop·Funnel 운영 검증은 `tools/relay/validation.md`; 게임 실기기·재부팅 미검증 |
 | FR-RP-08 | 자동 검증 범위 완료·실기기 미검증 | RP-04A/B Android JVM gate와 AC-RP-04 웹 회귀. Galaxy LOHS/FGS/LAN 수신은 사람 절차 |
 | NP-RP-01/02 | 자동 검증 완료·실기기 미검증 | 공개 역할 인증·실제 브라우저 방 생성/접속, AC-RP-01/02 E2E와 `public-auth.test.ts`; 실제 Funnel TLS는 사람 절차 |
 | NP-RP-03/04 | 자동 검증 완료·실기기 미검증 | 링크 claim/재사용·코드 승인/거절·위조 토큰, AC-RP-02 E2E와 `public-net.test.ts`; 실제 QR 전달은 사람 절차 |

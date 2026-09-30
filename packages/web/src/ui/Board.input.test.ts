@@ -75,6 +75,59 @@ for (const kind of ['target', 'gostop', 'gukjin', 'shake', 'chongtong', 'first']
   });
 }
 
+for (const kind of ['target', 'gostop', 'shake']) {
+  test(`${kind}: 선택과 가로 잠금 합성, 선택 해제 뒤 가로 유지·세로 복구`, async () => {
+    const original = window.matchMedia.bind(window);
+    let landscape = false;
+    let notify = () => {};
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => {
+      if (!query.includes('(orientation: landscape)')) return original(query);
+      return {
+        media: query,
+        get matches() {
+          return landscape;
+        },
+        addEventListener(_type: string, callback: EventListenerOrEventListenerObject) {
+          notify = () => {
+            if (typeof callback === 'function') callback(new Event('change'));
+            else callback.handleEvent(new Event('change'));
+          };
+        },
+        removeEventListener() {},
+      } as unknown as MediaQueryList;
+    });
+    try {
+      const onaction = vi.fn();
+      const screen = await render(Board, {
+        view: layoutFixture(kind),
+        extras: layoutExtras(kind),
+        onaction,
+      });
+      const hand = screen.container.querySelector<HTMLElement>('.hand-zone')!;
+      const dialog = screen.container.querySelector<HTMLElement>('.prompt, .table.choosing')!;
+      await vi.waitFor(() => expect(hand.inert).toBe(true));
+      landscape = true;
+      notify();
+      expect(hand.inert).toBe(true);
+      landscape = false;
+      notify();
+      expect(hand.inert).toBe(true);
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      landscape = true;
+      notify();
+      await screen.rerender({ view: layoutFixture('play'), extras: layoutExtras('play') });
+      expect(hand.inert).toBe(true);
+      screen.container.querySelector<HTMLButtonElement>('.hand button')!.click();
+      expect(onaction).not.toHaveBeenCalled();
+      landscape = false;
+      notify();
+      await vi.waitFor(() => expect(hand.inert).toBe(false));
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+}
+
 test('폭탄 카드는 Enter로 즉시 폭탄, Shift+Enter로 해당 한 장만 낸다', async () => {
   const onaction = vi.fn();
   const screen = await render(Board, {
@@ -293,3 +346,55 @@ test('등장/사라짐을 빠르게 되돌려도 재등장한 선택 창의 잠�
     expect(screen.container.querySelector('.hand-zone')!.closest('[inert]')).toBeNull(),
   );
 });
+
+for (const kind of ['gostop', 'shake']) {
+  test(`${kind}: 30ms 뒤 반전한 선택 창은 같은 노드에서 초점·클릭·키보드 입력 복구`, async () => {
+    document.documentElement.dataset['speed'] = 'normal';
+    const onaction = vi.fn();
+    const screen = await render(Board, {
+      view: layoutFixture(kind),
+      extras: layoutExtras(kind),
+      onaction,
+    });
+    const dialog = screen.container.querySelector<HTMLDialogElement>('.prompt')!;
+    const hand = screen.container.querySelector<HTMLElement>('.hand-zone')!;
+    const delay = (milliseconds: number) =>
+      new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+    await delay(300);
+    await screen.rerender({ busy: true });
+    expect(dialog.inert).toBe(true);
+    await delay(30);
+    await screen.rerender({ busy: false });
+    await delay(350);
+    expect(screen.container.querySelector('.prompt')).toBe(dialog);
+    expect(dialog.inert).toBe(false);
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    expect(hand.inert).toBe(true);
+    expect(onaction).not.toHaveBeenCalled();
+    const button = dialog.querySelector<HTMLButtonElement>(
+      kind === 'gostop' ? '[data-choice="go"]' : '[data-choice="shake"]',
+    )!;
+    const bounds = button.getBoundingClientRect();
+    expect(
+      button.contains(
+        document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2),
+      ),
+    ).toBe(true);
+    await userEvent.click(button);
+    expect(onaction).toHaveBeenCalledTimes(1);
+    button.focus();
+    await userEvent.keyboard('{Tab}{Shift>}{Tab}{/Shift}{Enter}');
+    expect(onaction).toHaveBeenCalledTimes(2);
+    expect(onaction.mock.calls.map(([action]) => action)).toEqual([
+      kind === 'gostop' ? { type: 'go', seat: 0 } : { type: 'shake', seat: 0, accept: true },
+      kind === 'gostop' ? { type: 'go', seat: 0 } : { type: 'shake', seat: 0, accept: true },
+    ]);
+    await screen.rerender({ view: layoutFixture('play'), extras: layoutExtras('play') });
+    await vi.waitFor(() => expect(screen.container.querySelector('.prompt')).toBeNull());
+    expect(hand.inert).toBe(false);
+    expect(
+      document.activeElement === screen.container.querySelector('.board') ||
+        document.activeElement?.matches('.hand button'),
+    ).toBe(true);
+  });
+}

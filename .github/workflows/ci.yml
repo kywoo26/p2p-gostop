@@ -102,6 +102,11 @@ jobs:
           path: ~/.cache/ms-playwright
           # P2P E2E는 프로젝트가 chromium이어도 게스트 WebKit을 직접 실행한다.
           key: playwright-${{ runner.os }}-${{ matrix.project }}-${{ steps.playwright-version.outputs.version }}-both
+      - name: Ubuntu apt HTTPS archive 우선 (NF-09)
+        # 기존 공식 미러의 우선순위만 바꾼다. source·서명·버전 핀과 아래 설치 명령은 보존한다.
+        run: |
+          bash .github/scripts/prefer-ubuntu-https.test.sh
+          sudo bash .github/scripts/prefer-ubuntu-https.sh
       - name: Playwright 브라우저·시스템 라이브러리 (캐시 미스)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium webkit
