@@ -122,3 +122,28 @@ test('이름 선두가 겹치는 저장본은 사건 텍스트를 임의 치환�
     conciseSoloNotice('선 고르기: 나 1월 광 · 컴퓨터 · 상용급 2월 열끗', ['나', '컴퓨터 · 상용급']),
   ).toBe('선 고르기: 나 1월 광 · 컴퓨터 2월 열끗');
 });
+
+test('선 고르기는 사람 이름 내부를 보존하고 접두부 뒤 AI 필드만 줄인다', async () => {
+  const names = ['합성 · 컴퓨터 · 상용급 사용자', '컴퓨터 · 상용급'] as const;
+  const text = `선 고르기: ${names[0]} 1월 광 · ${names[1]} 2월 열끗`;
+  const expected = `선 고르기: ${names[0]} 1월 광 · 컴퓨터 2월 열끗`;
+  expect(conciseSoloNotice(text, names)).toBe(expected);
+  const base = fixtures.board.states.play;
+  const view = {
+    ...base,
+    seats: [
+      { ...base.seats[0], name: names[0] },
+      { ...base.seats[1], name: names[1] },
+    ] as const,
+  };
+  const original = JSON.stringify(view);
+  const screen = await render(Board, {
+    view,
+    soloDifficulty: 'commercial',
+    toast: { id: 1, text },
+  });
+  const status = screen.container.querySelector('[data-testid="event-rail"] [role="status"]')!;
+  expect(status.textContent).toBe(expected);
+  expect(status.getAttribute('aria-label')).toBe(text);
+  expect(JSON.stringify(view)).toBe(original);
+});

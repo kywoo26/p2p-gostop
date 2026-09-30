@@ -21,6 +21,7 @@ export function conciseSoloNotice(text: string, names: readonly [string, string]
   const prefix = `${names[1]} `;
   if (text.startsWith(prefix)) return `컴퓨터 ${text.slice(prefix.length)}`;
   const pick = `선 고르기: ${names[0]} `;
-  if (text.startsWith(pick)) return text.replace(` · ${names[1]} `, ' · 컴퓨터 ');
+  if (text.startsWith(pick))
+    return pick + text.slice(pick.length).replace(` · ${names[1]} `, ' · 컴퓨터 ');
   return text;
 }
