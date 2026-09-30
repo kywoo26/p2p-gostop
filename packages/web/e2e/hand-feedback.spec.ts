@@ -401,7 +401,9 @@ for (const [width, height] of [
     ).toBe(true);
     expect(report.styles.every((s) => s.contrast >= 3 && s.animation === 'none')).toBe(true);
     for (let i = 0; i < 2; i++)
-      expect(report.actionGaps[0]![i]).toBeCloseTo(report.actionGaps[1]![i]!, 1);
+      expect(Math.abs(report.actionGaps[0]![i]! - report.actionGaps[1]![i]!)).toBeLessThanOrEqual(
+        0.02,
+      );
     await info.attach('외곽 대비·행동 간격·도상 가림', {
       body: JSON.stringify(report, null, 2),
       contentType: 'application/json',
