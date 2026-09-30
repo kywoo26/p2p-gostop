@@ -62,6 +62,14 @@ test('중계 present로 첫 hello를 한 번 보내고 프리셋 welcome도 한 
   expect(welcomes).toHaveLength(2);
   expect(welcomes[1]).toMatchObject({ rules: PRESETS.arcade });
   expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
+
+  // 수동 재접속은 새 소켓의 present가 hello를 맡는다. 먼저 보낸 hello가 큐에 남으면
+  // 새 소켓에서 두 번 도착해 같은 welcome을 두 번 받는다.
+  guest.reconnect();
+  link.notify(1, 'present');
+  link.flush();
+  expect(welcomes).toHaveLength(3);
+  expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
 });
 
 function lcg(seed: number) {
