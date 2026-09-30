@@ -165,3 +165,21 @@ main **b9bd84b**(원격 대전·#181 CI 분할 포함)를 **26b97c6**으로 통�
 - 리뷰 수정본 빌드는 1,528.0/1,536KiB, 외부 요청0이다. 브라우저726/726에서 실제 엔진의 `Captured → ScoreChanged` 순서·국진 자동 위치, 연속 완료 보존·중복·판 교체·즉시 모드 읽기 시간·대기 항목 추가 시 타이머 비갱신을 검증했다. 일반 배치 감사는 콜아웃 제외130화면 위반0으로 다시 확인했다.
 - 족보 완료는 재생된 `ScoreChanged.breakdown`만 비교한다. 점수 합0은 완료 족보가 없는 기준선이며, 중간 판 복원에서 합이 양수이면 첫 `ScoreChanged`를 기준선으로 삼고 소급 완료를 추정하지 않는다. 복원 직후 첫 변경의 새 족보까지 구분하려면 초기 공개 뷰에 좌석별 `ScoreBreakdown`이 필요하다. protocol/wire는 확장하지 않았다.
 - 피박/광박 상시 스탬프는 공개 `PlayerView`에 진행 중 양쪽 위험/확정 필드가 없어 보류한다. `stopPreview.steps`는 선택 순간만 제공한다. PA-06b 음향·진동과 실기기 검증도 보류한다.
+
+## 2026-10-01 매칭·확정 획득 시인성 정정
+
+Refs #80·#115, spec FR-41·46~48·NF-08, plan §3-2, UX-H05·UX-A01. 사용자 승인된 좁은 개선이며 #80/#115 전체 수용·#204 획득 전체보기·바닥 월 묶음/배치 안정화 완료를 뜻하지 않는다. 기본값은 현재 spec의 basic을 따른다. 옛 이슈의 off 기본값·선 형태 설명은 해당 정리 담당의 범위이며 이 PR은 본문을 바꾸지 않는다.
+
+- 일반 매칭은 황동 1px에서 3px 단선으로, 확정은 청록 3px에서 4px 이중선으로 강화했다. 밝기/채도를 올리고 흐린 발광 대신 1px 어두운 바깥 받침을 둔다. 대응 바닥은 같은 황동 3px 단선이며 확정으로 승격하지 않는다. 폭탄·흔들기 외곽은 모두4px를 사용해 장식 확장으로 생긴 간격 차이를 없앤다. 카드 크기·48px 입력·앞면 노출·월/종류 aria-label은 보존한다.
+- 누름은 밝은 점선, 실제 키보드 초점은 밝은 실선인 입력 슬롯으로 구분한다. 카드의 기본 단선/이중선은 초점에서도 유지한다. 선택 시 카드 들림/화살표를 외곽으로 대체해 위 줄과 다른 카드 도상을 덮지 않는다. 두 줄 간격8px, 짧은 데스크톱 가로 재배치에서만 위 여백12→8px로 이전해 기존 영역 높이도 유지한다. 모바일의 획득패/손패 분리 여백은 보존한다.
+- WebKit에서 자식 style 변경 뒤 부모 `:has([style*='will-change'])`의 보조 선이 남는 반례를 확인했다. 선·받침·행동 그림을 카드 자신의 CSS로 옮겼다. 기존 FLIP의 will-change 회수/완료/취소만 사용하며 새 observer·timer·RAF·filter·자산·의존성은 없다. 이동 중 선/받침이 사라지고 회수 뒤 이중선으로 복구하는 Chromium/WebKit 검사를 추가했다. FPS 향상은 측정·주장하지 않는다.
+- Board 변경은 별도 승인된 `floorHighlight`의 preview 조건1줄뿐이다. 힌트 끔에서 누름/키보드 바닥 보조를 제거하고 `pending.options`·`view.highlight` 필수 강조는 유지한다. Hand/Floor 안에서 판정을 재구현하지 않았다. off/basic/detail, 필수 대상2장·폭탄 Shift+Enter·실제 초점, 상대 revealed 월 반례(삼광 점수와 독립), 동일 공개 뷰의 숨은 손패/더미 교환 UI/ARIA 동일성을 검증했다. 기존 CF02·05·06 대상 가치/선택 독립과 CF09 공개 상대 월 반례는 엔진 판정 그대로다.
+- 전후 샘플은 같은 실제 엔진 scenario(`e2e/hand-feedback-fixtures.ts`)의 360×780·390×734·412×915, Chromium/WebKit이다. 일반 화면 안에 무표식/매칭/확정·폭탄·흔들기를 함께 두고 초점/묶음 선택/누름 바닥/힌트 끔을 각각 캡처했다. 변경 전30장은 `fc02b1c`에 비교 fixture만 추가한 캡처로 `e2e/__screenshots__/hand-feedback.spec.ts/before/`, 변경 후30장은 같은 디렉터리의 `cues-*` 기준샷이다. 전체60장과 바닥 예고를 직접 비교했다. PNG는 IHDR/IDAT/IEND/sRGB/sBIT만 포함하며 텍스트·EXIF·개인 식별 metadata는 없다.
+- 실제 경계색과 어두운 받침의 대비는 황동 **12.34:1**, 청록 **14.07:1**(sRGB 변환 후 WCAG 산술). 카드 원본 모든 픽셀과의 대비를 뜻하지 않는다. 장식 외곽과 다른 카드 앞면의 교차0, 월/종류 배지0, 행동 그림20px의 다른 카드 교차0. 폭탄/흔들기 보이는 내부 간격은 360px 약1.6px, 390px 약7.6px, 412px 12px로 두 묶음 간 차이≤0.02px다. 상태·초점에 따른 슬롯 좌표/크기 변화0이며 효과 off/subtle/strong·reduced-motion에서도 기본 의미를 유지한다.
+- 갤러리 board/target/gostop 기준샷은 바깥 카드 선·누름/초점·행 간격 수정 때문에 갱신한다. layout fan 412×915와 desktop1440×900 기준샷도 같은 이유로 갱신한다. 공개 판정·바닥 좌표/구조·겹침 정책·Board 입력/playback은 변경하지 않는다. 기준 허용 오차·FR/NF 수치는 완화하지 않는다.
+
+대표 비교: [변경 전 360 Chromium](../../packages/web/e2e/__screenshots__/hand-feedback.spec.ts/before/before-chromium-360-normal.png), [변경 후](../../packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-normal-chromium.png), [바닥 누름 예고](../../packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-press-webkit.png), [초점·확정](../../packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-focus-webkit.png). 샘플은 브라우저 자동 검사이며 실제 Galaxy 읽힘과 OS 스크린리더는 미검증이다. [사람 후속 절차](../device-test/visual-direction.md)의 매칭·확정 항목으로 밝기·시스템 확대·실제 탭 결과를 받아 기록한다.
+
+공식 API 확인: 현재 도구에 Context7이 없어 [Playwright 시각 비교](https://playwright.dev/docs/test-snapshots)와 [MDN outline](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/outline)을 직접 확인했다. 런타임 라이브러리 API 추가는 없다.
+
+호스트 검증: Node24.21.0/npm11.19.0 `npm ci`, lint/check 통과, Node563개·브라우저742개 통과. 표적 시각/전체 배치/데스크톱 검사는 Chromium/WebKit **286개 통과**. build의 dist **1,529.5/1,536KiB**, 외부 URL0. Android assembleDebug/testDebugUnitTest/lint는 `--max-workers=4`로 통과했다. 첫 smoke에서 의도된 미갱신 기준샷과 짧은 가로 손패 높이 초과를 발견해 기준샷/여백을 정정했고, 별도 P2P 자동 선택 관측 검사1건은 최종 smoke에서 통과했다. 최종 PR 필수 smoke **400개 통과**(수정된 기준샷을 갱신 없이 비교, @timing은 설정대로 직렬). 전체 E2E(full)와 실기기 통과로 확대 해석하지 않는다.
