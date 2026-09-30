@@ -1161,20 +1161,5 @@
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
     }
   ],
-  "pending": [
-    {
-      "path": "tools/relay/README.md",
-      "type": "personal-path",
-      "lines": [3, 43],
-      "reason": "#190 소유: main 잔존, 게시 9de79c2에서 해소. 추가 행에는 허용하지 않음; 병합 후 제거.",
-      "baseline": "664a181e4ab006a450e11f2111134272ac0ad3ef"
-    },
-    {
-      "path": "tools/relay/relay.ps1",
-      "type": "personal-path",
-      "lines": [5, 6],
-      "reason": "#190 소유: main 잔존, 게시 9de79c2에서 해소. 추가 행에는 허용하지 않음; 병합 후 제거.",
-      "baseline": "664a181e4ab006a450e11f2111134272ac0ad3ef"
-    }
-  ]
+  "pending": []
 }
