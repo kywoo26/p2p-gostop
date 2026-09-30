@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { Difficulty } from '@p2p-gostop/ai';
+  import { conciseSoloNotice, difficultyLabels, playerLabel } from '../game/player-labels.ts';
   import Scene from '../pro-assets/Scene.svelte';
   // 게임판 (spec 6.2, FR-40): 각 진영 점수판·상대 획득패, 중앙 바닥·더미, 선택 영역, 내 획득패·현황·손패.
   // 보는 좌석(view.viewer)의 입력을 엔진 액션으로 만들어 onaction으로 올린다. 규칙 검증은 엔진(legalActions)이 한다.
@@ -47,6 +49,7 @@
       readonly highlight?: readonly CardId[];
     };
     soloPlayerView?: PlayerView | undefined;
+    soloDifficulty?: Difficulty | undefined;
     extras?: BoardExtras | null;
     /** 갤러리/후속 기본 보조의 시각 슬롯. 확보 짝 판정은 여기서 하지 않는다. */
     handVisualGroups?: readonly HandVisualGroup[];
@@ -90,6 +93,7 @@
     view,
     roundChanges = [0, 0],
     soloPlayerView,
+    soloDifficulty,
     extras = null,
     handVisualGroups = [],
     onhintdisplayed,
@@ -200,6 +204,18 @@
   const seat = $derived(view.viewer);
   const me = $derived(view.seats[seat]);
   const opponent = $derived(view.seats[seat === 0 ? 1 : 0]);
+  const opponentLabel = $derived(
+    playerLabel(opponent.name, soloDifficulty !== undefined && seat === 0),
+  );
+  const displayToast = $derived(
+    toast && soloDifficulty !== undefined
+      ? {
+          ...toast,
+          fullText: toast.text,
+          text: conciseSoloNotice(toast.text, [view.seats[0].name, view.seats[1].name]),
+        }
+      : toast,
+  );
   const myStats = $derived(seatStats(me));
   const opponentStats = $derived(seatStats(opponent));
   const expandedHud = $derived(
@@ -439,7 +455,7 @@
     <div class="table-heading">
       <span>{view.round}판 · 점당 {formatCompactMoney(perPoint, unit)}</span>
       <strong title={opponent.name}
-        >{pending?.kind === 'target' ? '먹을 바닥패를 선택하세요' : opponent.name}</strong
+        >{pending?.kind === 'target' ? '먹을 바닥패를 선택하세요' : opponentLabel}</strong
       >
     </div>
     <div class="menu-reserved" data-testid="menu-reserved" aria-hidden="true">메뉴</div>
@@ -458,6 +474,7 @@
         who="상대"
         timerText={timerSeat !== null && timerSeat !== seat ? timerText : null}
         name={opponent.name}
+        displayName={opponentLabel}
         score={opponent.score}
         goCount={opponent.goCount}
         balance={opponent.balance}
@@ -488,7 +505,7 @@
       {#if timeoutText && timerText}<p class="timer-prompt">{timerText} · {timeoutText}</p>{/if}
       <EventRail
         {banner}
-        {toast}
+        toast={displayToast}
         {actor}
         round={view.round}
         viewer={seat}
@@ -630,6 +647,10 @@
       <h2>판 정보</h2>
       <button type="button" onclick={() => infoDialog.close()}>닫기</button>
     </header>
+    {#if soloDifficulty !== undefined}
+      <p>컴퓨터 난이도: {difficultyLabels[soloDifficulty]}</p>
+    {/if}
+    <p>나: {me.name} · 상대: {opponent.name}</p>
     {#if timerText}
       <p>{timerText}{timeoutText ? ` · ${timeoutText}` : ''}</p>
       <p>판 정보를 보는 동안에도 시간은 흐릅니다.</p>
