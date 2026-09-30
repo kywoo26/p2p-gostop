@@ -146,7 +146,7 @@ async function stepMatch(page: Page, authority: { seq: number; view: BoardView }
       const button = root.querySelector<HTMLButtonElement>(`[data-choice="${choice}"]`);
       if (button && visible(button)) {
         button.click();
-        return 'round';
+        return { kind: 'round' as const };
       }
     }
     if (root.dataset['canAct'] !== 'true') return null;
@@ -165,7 +165,7 @@ async function stepMatch(page: Page, authority: { seq: number; view: BoardView }
       ) ?? choices[0];
     if (choice) {
       choice.click();
-      return 'manual';
+      return { kind: 'selection' as const };
     }
     const hand = [
       ...board.querySelectorAll<HTMLButtonElement>('[aria-label="내 손패"] button'),
@@ -175,8 +175,14 @@ async function stepMatch(page: Page, authority: { seq: number; view: BoardView }
       hand.length > 1 ||
       (hand.length === 1 && current !== null && current.view.legal.length > 1)
     ) {
-      hand[0]?.click();
-      return 'manual';
+      const button = hand[0]!;
+      const played = {
+        kind: 'play' as const,
+        seq: Number(root.dataset['seq']),
+        card: Number(button.dataset['slot']),
+      };
+      button.click();
+      return played;
     }
     return null;
   }, authority);
@@ -255,6 +261,56 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
     await host.getByTestId('host-start').click();
     await expect(guest.getByTestId('match')).toBeVisible();
 
+    type ManualPlay = {
+      seat: number;
+      seq: number;
+      card: number;
+      receivedFrom: number;
+      after: boolean;
+    };
+    const accepted: ManualPlay[] = [];
+    async function acceptManual(play: ManualPlay) {
+      // 다른 좌석의 응답이나 단순 선택 UI 열기는 이 클릭의 수락으로 세지 않는다.
+      let requestId: number | undefined;
+      if (play.seat === 1) {
+        const matchingAction = () =>
+          sent.find(
+            (m) =>
+              m.seq === play.seq &&
+              m.payload.type === 'play' &&
+              m.payload.seat === 1 &&
+              m.payload.card === play.card,
+          );
+        await expect
+          .poll(matchingAction, { message: '게스트 수동 play의 seq·payload에 대응하는 실제 전송' })
+          .toBeDefined();
+        const action = matchingAction()!;
+        expect(action.requestId).toBeDefined();
+        requestId = action.requestId;
+      }
+      await expect
+        .poll(
+          () =>
+            received
+              .slice(play.receivedFrom)
+              .some(
+                (m) =>
+                  m.t === 'events' &&
+                  m.to > play.seq &&
+                  (play.seat === 0 || m.requestId === requestId) &&
+                  m.list.some(
+                    (event) =>
+                      event.type === 'CardPlayed' &&
+                      event.seat === play.seat &&
+                      event.cards.some((card) => card === play.card),
+                  ),
+              ),
+          { message: '해당 수동 play의 공개 CardPlayed 이벤트·권위 뷰 진전·게스트 requestId ack' },
+        )
+        .toBe(true);
+      accepted.push(play);
+    }
+
     const manualBefore = [0, 0];
     const manualAfter = [0, 0];
     // 고정 입력의 첫 판에서 게스트 카드 45가 유일 수가 된다. 다음 판의 양 좌석 수동 입력까지 확인한다.
@@ -262,18 +318,19 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
       if (unique.length > 0 && manualAfter.every((n) => n > 0)) break;
       const before = revision;
       const clicked = new Set<number>();
+      const pending: ManualPlay[] = [];
       await expect
         .poll(
           async () => {
             for (const [seat, page] of [host, guest].entries()) {
               if (clicked.has(seat)) continue;
+              const receivedFrom = received.length;
+              const after = unique.length > 0;
               const result = await stepMatch(page, seat === 1 ? latest : null);
               if (result !== null) {
                 clicked.add(seat);
-                if (result === 'manual') {
-                  const counts = unique.length === 0 ? manualBefore : manualAfter;
-                  counts[seat] = (counts[seat] ?? 0) + 1;
-                }
+                if (result.kind === 'play')
+                  pending.push({ seat, seq: result.seq, card: result.card, receivedFrom, after });
               }
             }
             return revision > before;
@@ -281,6 +338,12 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
           { message: '공개 권위 응답 또는 자동 입력으로 판이 진행되어야 한다' },
         )
         .toBe(true);
+      // 마지막 클릭도 실제 전송·권위 수락을 기다린 뒤에만 카운트와 종료 조건에 반영한다.
+      for (const play of pending) {
+        await acceptManual(play);
+        const counts = play.after ? manualAfter : manualBefore;
+        counts[play.seat] = (counts[play.seat] ?? 0) + 1;
+      }
     }
     expect(unique.length).toBeGreaterThan(0);
     const candidate = unique[0]!;
@@ -298,6 +361,12 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
     expect(received.filter((m) => m.t === 'reject')).toHaveLength(0);
     expect(manualBefore.every((n) => n > 0)).toBe(true);
     expect(manualAfter.every((n) => n > 0)).toBe(true);
+    expect(accepted.filter((play) => !play.after).every((play) => play.seq < candidate.seq)).toBe(
+      true,
+    );
+    expect(accepted.filter((play) => play.after).every((play) => play.seq > candidate.seq)).toBe(
+      true,
+    );
     const ids = sent.map((entry) => entry.requestId);
     expect(ids.length).toBeGreaterThan(0);
     expect(new Set(ids).size).toBe(ids.length);
