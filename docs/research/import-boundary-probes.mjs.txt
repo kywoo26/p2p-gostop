@@ -1,5 +1,5 @@
 // 실행: node --input-type=module < docs/research/import-boundary-probes.mjs.txt
-// 실제 패키지 위치의 일회 파일을 검사하고 finally에서 지운다. 제품 의존성·lint 예외를 추가하지 않는다.
+// 실제 패키지 위치의 일회 파일을 검사하고 finally에서 지운다. #224 도구 설정의 정확한 예외도 구분한다.
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
@@ -66,6 +66,11 @@ add('packages/ai/src', "export * from '@p2p-gostop/protocol';", true, 'mjs');
 add('packages/web/src/lib', '<script lang="ts">void import(`@p2p-gostop/relay-dev`);</script>', true);
 add('packages/web/src/lib', '<script lang="ts">void import("@p2p-gostop/engine");</script>', false);
 add('packages/web/e2e', 'void import(`@p2p-gostop/relay-dev`);', true);
+// #224: 같은 도구 경로라도 제품 코드·E2E에서는 금지한다.
+for (const dir of ['packages/web/src/lib', 'packages/web/e2e']) {
+  add(dir, "import '../../../../tools/lint/lint-imports.mjs';", true);
+  add(dir, "void import('../../../../tools/lint/lint-imports.mjs');", true);
+}
 let passed = 0;
 for (const { dir, source, banned, extension } of cases) {
   const web = dir.startsWith('packages/web/');
@@ -86,4 +91,22 @@ for (const { dir, source, banned, extension } of cases) {
     unlinkSync(file);
   }
 }
-console.log(`import boundary probes: ${passed}/${cases.length} passed`);
+// 실제 설정 파일을 바꾸지 않고 stdin의 파일명을 설정 경로로 지정한다.
+const configCases = [
+  ["import '../../tools/lint/lint-imports.mjs';", false],
+  ["import '../../tools/lint/other.mjs';", true],
+  ["import '../../tools/privacy/privacy-audit.mjs';", true],
+  ["import '../../tools/lint/lint-imports.mjs/nested';", true],
+  ["import '@p2p-gostop/engine/src/index.ts';", true],
+  ["void import('../../tools/lint/lint-imports.mjs');", true],
+];
+for (const [source, banned] of configCases) {
+  const run = spawnSync('../../node_modules/.bin/eslint', ['--stdin', '--stdin-filename', 'eslint.config.js', '--format', 'json'], { cwd: 'packages/web', input: source, encoding: 'utf8' });
+  if (run.error) throw run.error;
+  const diagnostics = JSON.parse(run.stdout).flatMap((report) => report.messages);
+  const found = diagnostics.some((item) => /no-restricted-(imports|syntax)/.test(item.ruleId ?? ''));
+  if (found !== banned || run.status !== (banned ? 1 : 0))
+    throw new Error(JSON.stringify({ source, banned, status: run.status, diagnostics, stderr: run.stderr }));
+  passed++;
+}
+console.log(`import boundary probes: ${passed}/${cases.length + configCases.length} passed`);

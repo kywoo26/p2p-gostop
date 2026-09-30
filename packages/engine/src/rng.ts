@@ -1,4 +1,4 @@
-// 시드 PRNG: xoshiro128** (Blackman & Vigna, 2018)을 직접 구현한다 (plan.md 1.4).
+// 시드 PRNG: xoshiro128** (Blackman & Vigna, 2018)을 직접 구현한다 (intent/plan.md 1.4).
 // 상태는 JSON 직렬화 가능한 uint32 4개이며, 엔진 상태에 그대로 저장한다. 모든 함수는 순수 함수다.
 
 /** xoshiro128** 내부 상태. 모두 uint32, 전부 0이면 안 된다. */

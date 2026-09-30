@@ -15,7 +15,7 @@ PR #$ARGUMENTS 를 검토한다.
 3. `gh pr diff $ARGUMENTS`를 읽고 아래 체크리스트를 적용한다.
    - 요구사항 ID별 충족·부분·미충족과 근거(파일:라인, 테스트 이름)
    - AGENTS.md 3장 금지 목록(Svelte 4 문법, 비보안 컨텍스트 API, 엔진 부수효과·`Math.random`, 툴체인 경계, erasable TS 문법)
-   - 새 의존성이 AGENTS.md 2장 버전 표에 있는지, 없으면 plan.md 1.8 근거가 있는지
+   - 새 의존성이 AGENTS.md 2장 버전 표에 있는지, 없으면 intent/plan.md 1.8 근거가 있는지
    - 규칙 로직 변경이면 벡터에 규칙 ID·한국어 설명, 정상·경계·반례 3종이 있는지
    - PR이 소유 범위 밖 파일을 바꿨는지
 4. reviewer 시스템 프롬프트의 보고 형식으로 끝낸다.

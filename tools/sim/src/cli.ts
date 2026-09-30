@@ -1,4 +1,4 @@
-// 셀프플레이 시뮬레이션 CLI (plan.md M2). 사용: npm run sim -- --a commercial --b normal --rounds 2000
+// 셀프플레이 시뮬레이션 CLI (intent/plan.md M2). 사용: npm run sim -- --a commercial --b normal --rounds 2000
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { parseArgs, USAGE, type SideConfig } from './config.ts';

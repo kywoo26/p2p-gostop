@@ -1,4 +1,4 @@
-// CPU 결정 Web Worker (spec AI-05: UI를 막지 않는다, plan.md 1.5).
+// CPU 결정 Web Worker (spec AI-05: UI를 막지 않는다, intent/plan.md 1.5).
 // 메인 스레드가 { id, req }를 보내면 { id, ok, action, ms } 또는 { id, ok: false, error }로 답한다.
 import { decide, type AiRequest } from '../game/ai-core.ts';
 

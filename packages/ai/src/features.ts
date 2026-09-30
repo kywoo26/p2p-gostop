@@ -1,4 +1,4 @@
-// 평가 특징 (spec AI-03 "평가 함수", plan.md 1.5 Evaluator).
+// 평가 특징 (spec AI-03 "평가 함수", intent/plan.md 1.5 Evaluator).
 // 획득패를 "장수 벡터"(Counts)로 줄여 족보 점수·진행도를 빠르게 계산한다. 롤아웃에서도 쓰므로 할당을 줄였다.
 import {
   GUKJIN_ID,

@@ -1,8 +1,8 @@
-# p2p-gostop — 의도 문서 (intend.md)
+# p2p-gostop — 의도 문서 (intent/intent.md)
 
 작성일: 2026-09-28
-소유자: kywoo26 (GitHub)
-상태: 의도·인터뷰 기록. 확정 요구사항과 현재 구현 상태는 spec.md·plan.md를 따른다.
+소유자: 프로젝트 소유자
+상태: 의도·인터뷰 기록. 확정 요구사항과 현재 구현 상태는 intent/spec.md·intent/plan.md를 따른다.
 
 ---
 
@@ -67,7 +67,7 @@
   - 규칙·가중치 조사 결과: `docs/research/rules-commercial.md`
   - 오픈소스 코드·자산 조사 결과: `docs/research/code-refs.md`
   - 기술 스택 검증: `docs/research/tech-stack.md`
-  - 에이전트 시대 de facto 프레임워크·툴 조사(앱·디자인·UI, 빠른 개발과 품질 양립 관점): `docs/research/agent-era-stack.md` → 도입 여부·범위를 판단해 plan.md 스택에 반영
+  - 에이전트 시대 de facto 프레임워크·툴 조사(앱·디자인·UI, 빠른 개발과 품질 양립 관점): `docs/research/agent-era-stack.md` → 도입 여부·범위를 판단해 intent/plan.md 스택에 반영
 - 참고 기준: **상용 서비스 또는 신뢰도 있는 코드만** 참고 대상으로 삼는다. 검증되지 않은 코드는 존재한다는 이유만으로 참고하지 않는다.
 - 자산(이미지, 사운드)은 직접 제작 또는 오픈 라이선스만 사용.
 
@@ -138,7 +138,7 @@
 
 ## 8. 로드맵
 
-문서 단계: `intend.md`(이 문서) → `spec.md`(기능·규칙·프로토콜·UX 명세) → `plan.md`(아키텍처, 마일스톤, 작업 분해, 단계별 검증 기준) → 구현.
+문서 단계: `intent/intent.md`(이 문서) → `intent/spec.md`(기능·규칙·프로토콜·UX 명세) → `intent/plan.md`(아키텍처, 마일스톤, 작업 분해, 단계별 검증 기준) → 구현.
 
 1. 저장소 초기화, 모노레포 구조(engine / web / android), Docker 기반 빌드 환경.
 2. 맞고 규칙 엔진 + 테스트 (가장 복잡한 부분, 먼저 완성). 조사 문서의 "권장 기본 규칙 세트"를 입력으로 사용.
@@ -158,7 +158,7 @@
 - [x] CPU 상대: 포함, 상용급 실력 요구. → 4.3-1
 - [x] 목표 시점: 급한 마감 없음. "고려할 것은 다 해본다." 완성도 우선.
 - [x] 저장소: `kywoo26/p2p-gostop` 비공개. iOS 빌드용 macOS 러너가 필요해지면 공개 전환 검토.
-- [x] 문서 파이프라인: **intend.md(왜) → spec.md(무엇을) → plan.md(어떻게) → 구현**. 각 단계 산출물을 사용자가 검토한 뒤 다음 단계로 진행. 구현은 plan.md의 마일스톤 단위로 검증하며 진행.
+- [x] 문서 파이프라인: **intent/intent.md(왜) → intent/spec.md(무엇을) → intent/plan.md(어떻게) → 구현**. 각 단계 산출물을 사용자가 검토한 뒤 다음 단계로 진행. 구현은 intent/plan.md의 마일스톤 단위로 검증하며 진행.
 
 ### 9.2 후속 확정 사항
 - [x] 선 결정·나가리·고 배수: rules-commercial.md §12를 규범으로 채택. 개별 설정 UI는 FR-21 미완.

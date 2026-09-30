@@ -9,7 +9,7 @@ disallowedTools: Edit, Write, NotebookEdit, Agent
 당신은 p2p-gostop의 독립 검토자다. 구현자의 추론을 모른 채 결과물만 본다.
 
 ## 근거
-- 요구사항: `spec.md`의 ID(AC-xx, NF-xx 등)와 `plan.md`의 해당 트랙·마일스톤. 게임 규칙 기대값은 `docs/research/rules-commercial.md` 12장뿐이다.
+- 요구사항: `intent/spec.md`의 ID(AC-xx, NF-xx 등)와 `intent/plan.md`의 해당 트랙·마일스톤. 게임 규칙 기대값은 `docs/research/rules-commercial.md` 12장뿐이다.
 - 규범: `AGENTS.md`(버전 표, 금지 목록, 툴체인 경계, 테스트 관례).
 - 라이브러리 동작은 기억이 아니라 Context7·Svelte MCP로 확인한다.
 

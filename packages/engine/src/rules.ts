@@ -69,7 +69,7 @@ export interface RuleOptions {
   readonly limitedLiability: boolean;
 }
 
-/** 타입만 있고 엔진이 무시하는 옵션 (P2, plan.md M6). */
+/** 타입만 있고 엔진이 무시하는 옵션 (P2, intent/plan.md M6). */
 export const UNIMPLEMENTED_RULES: readonly string[] = Object.freeze([
   'missions',
   'firstDealer:rockPaperScissors',

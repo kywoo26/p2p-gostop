@@ -1,6 +1,6 @@
 # PC 공개 중계 수동 운영 (FR-RP-07 · NF-RP-06 · RP-03B)
 
-Windows의 Docker Desktop WSL2 통합과 Windows Tailscale 앱을 사용한다. 게임할 때만 켜고 끝나면 끈다. 정본은 [spec §13](../../spec.md)·[plan §1.9](../../plan.md)이다.
+Windows의 Docker Desktop WSL2 통합과 Windows Tailscale 앱을 사용한다. 게임할 때만 켜고 끝나면 끈다. 정본은 [spec §13](../../intent/spec.md)·[plan §1.9](../../intent/plan.md)이다.
 
 ## 간단 기동 가이드 (Windows PowerShell)
 

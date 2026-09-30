@@ -55,7 +55,7 @@ export function cardIndex(id: CardId): CardIndex | null {
 }
 
 /**
- * 표식을 오른쪽 모서리에 두는 카드 (plan.md D1). 기본은 왼쪽이다.
+ * 표식을 오른쪽 모서리에 두는 카드 (intent/plan.md D1). 기본은 왼쪽이다.
  * Commons 그림(viewBox 103.2×168.2)의 光 원·띠 글자·주요 도상이 있는 쪽을 피한다.
  * 12/16px 색인의 실제 보호 영역 교차는 CardArt.test.ts에서 바닥·손패 크기별로 검사한다.
  * - 위: 11월 광(봉황 머리), 12월 광(光 원 x 11~46, y 9~44), 8월 열끗(기러기)

@@ -1,7 +1,7 @@
-# p2p-gostop — 구현 계획 (plan.md)
+# p2p-gostop — 구현 계획 (intent/plan.md)
 
 작성일: 2026-09-28 · 상태: v0.11 진행 매트릭스 리뷰 반영 (2026-09-29)
-상위 문서: `intend.md`(왜) → `spec.md`(무엇을) → **이 문서**(어떻게)
+상위 문서: `intent/intent.md`(왜) → `intent/spec.md`(무엇을) → **이 문서**(어떻게)
 근거: `docs/research/tech-stack.md`(플랫폼 제약), `docs/research/code-refs.md`(설계 차용), `docs/research/rules-commercial.md`(규칙), `docs/research/agent-era-stack.md`(에이전트 시대 스택 판단)
 
 ---
@@ -67,17 +67,19 @@ p2p-gostop/
 │  │  └─ public/cards/          # 화투 SVG (CC BY-SA 4.0, svgo 최적화) + 자체 제작 보너스·뒷면
 │  └─ relay-dev/                # Node용 개발 중계 서버(Android Ktor 중계와 같은 규칙). 로컬 개발·E2E 전용
 ├─ tools/
-│  └─ sim/                      # CLI: 셀프플레이 시뮬레이션, AI 강도 벤치마크, 머니 모델 산정
+│  ├─ sim/                      # CLI: 셀프플레이 시뮬레이션, AI 강도 벤치마크, 머니 모델 산정
+│  ├─ privacy/                  # 개인정보 검사·합성 테스트·좁은 허용표
+│  └─ lint/                     # Oxlint·web ESLint 공유 import 규칙
 ├─ android/                     # Android Studio 표준 레이아웃 (Gradle KTS, version catalog)
 │  ├─ app/src/main/{kotlin,res,assets/web}
 │  ├─ gradle/libs.versions.toml
 │  └─ settings.gradle.kts
 ├─ .github/workflows/           # ci.yml, release.yml
 ├─ docs/                        # research/, ai-tuning.md, money-model.md, device-test-log/
-├─ intend.md · spec.md · plan.md
+└─ intent/                      # intent.md → spec.md → plan.md: 제품 SDLC 정본
 ```
 
-**#224 루트 구조 정리 계획 (NF-09·NF-01·NF-RP-06):** [위치 결정·실행 계획](docs/research/root-layout.md)을 따른다. 사용자 요청으로 공식 SDLC 가이드의 문서 home을 확인하고 이동 범위 판단·실행을 위임받았다. 구현 전 이 계획을 commit하고 SHA를 PR에 기록한다. 문서·검사 도구의 위치와 참조만 바꾸며 §3-2 요구사항 상태·제품 동작·버전 핀은 유지한다.
+**#224 루트 구조 정리 계획 (NF-09·NF-01·NF-RP-06):** [위치 결정·실행 계획](../docs/research/root-layout.md)을 따른다. 사용자 요청으로 공식 SDLC 가이드의 문서 home을 확인하고 이동 범위 판단·실행을 위임받았다. 구현 전 이 계획을 commit하고 SHA를 PR에 기록한다. 문서·검사 도구의 위치와 참조만 바꾸며 §3-2 요구사항 상태·제품 동작·버전 핀은 유지한다.
 
 ### 1.3 모듈 경계와 의존 방향
 
@@ -94,7 +96,7 @@ p2p-gostop/
 ### 1.5 AI 설계
 
 - `packages/ai`는 공개 `PlayerView`만 받고 시드 주입으로 결정론을 유지한다. 쉬움·보통·상용급 3단계이며 상용급은 결정화 몬테카를로와 루트 순차 반감을 사용한다(UCT 모드는 옵션으로 유지).
-- Web Worker에서 실행하며 가중치·벤치마크 근거는 [AI 튜닝](docs/ai-tuning.md)에 둔다. #66 재도전(PR #167)은 보통 65.01%가 95% 구간 62.91–67.10%로 미확정, 쉬움 76.87%가 미달이므로 AI-04·AC-03(P0)은 미완이다. Node 응답 시간은 AI-05 모바일 실측을 대체하지 않는다.
+- Web Worker에서 실행하며 가중치·벤치마크 근거는 [AI 튜닝](../docs/ai-tuning.md)에 둔다. #66 재도전(PR #167)은 보통 65.01%가 95% 구간 62.91–67.10%로 미확정, 쉬움 76.87%가 미달이므로 AI-04·AC-03(P0)은 미완이다. Node 응답 시간은 AI-05 모바일 실측을 대체하지 않는다.
 
 ### 1.6 웹 앱 설계
 
@@ -108,7 +110,7 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
-**#208 개인정보 잔존·재유입 감사 (NF-01·NF-RP-06):** Node 내장 API만 쓰는 추적 텍스트/PR 추가 행 검사와 합성 반례 테스트를 루트 lint에 연결한다. 신규 의존성·제품 상한은 추가하지 않는다. §1.9의 공개 검증 자료도 값 비노출·역할별 일반화를 적용한다. 범위·오탐·#190 소유 잔존·과거 이력/외부 미검증은 [감사 기록](docs/reviews/privacy-residue-audit.md)에 구분한다. 요구사항 완료 상태는 변경하지 않는다.
+**#208 개인정보 잔존·재유입 감사 (NF-01·NF-RP-06):** Node 내장 API만 쓰는 추적 텍스트/PR 추가 행 검사와 합성 반례 테스트를 루트 lint에 연결한다. 신규 의존성·제품 상한은 추가하지 않는다. §1.9의 공개 검증 자료도 값 비노출·역할별 일반화를 적용한다. 범위·오탐·#190 소유 잔존·과거 이력/외부 미검증은 [감사 기록](../docs/reviews/privacy-residue-audit.md)에 구분한다. 요구사항 완료 상태는 변경하지 않는다.
 
 **NF-09 CI 설치 경로:** Ubuntu 24.04 GitHub 러너의 기존 apt 미러 목록에서 공식 HTTPS archive/security를 Azure HTTP보다 우선한다(`.github/scripts/prefer-ubuntu-https.sh`, 미지원 형식은 무변경 실패). source·suite/component·Signed-By·신뢰 키·버전 핀·Playwright 공식 설치 명령과 20분 검증 상한은 보존하며, 호스트 설치는 기존 `tools/setup-host.sh`만 사용한다. 설치 지연 감소·전체 timing 완료는 hosted CI 측정 후 판정하고, 요구사항 완료 상태는 바꾸지 않는다.
 
@@ -119,7 +121,7 @@ p2p-gostop/
 **RP-05A 공개 중계 E2E 도구(2026-09-30):** `packages/web/e2e/remote-host-real.spec.ts`는 호스트의 OpenSSL로 실행 중 임시 자체 서명 인증서를 만들고 Node HTTPS 프록시를 통해 실제 `RELAY_PUBLIC=1` relay-dev를 검사한다. 앱 런타임·npm 의존성은 추가하지 않는다. `knip.json`의 web 한정 `ignoreBinaries`는 이 호스트 시스템 명령만 허용한다.
 
 **PA-01~04 전문 자산 평가(2026-09-29, 예산 개정 승인 전):** NF-03의 전체1.5MiB·게스트 첫 로딩≤2초와 기존 카테고리 예산은 현행 유지한다. `design/pro-assets`의 명시적 `PRO_ASSET_REVIEW=1` 평가 빌드만 초과 자산을 포함한다. 기본/릴리스 빌드에는 평가 팩을 제외하고 기존 용량 gate를 적용한다. `docs/research/pro-assets.md`의 NF-03 개정안은 리뷰·사용자 승인 전 규범이 아니다. 원본은 `assets-src/`, 평가 변환물은 `public/pro/`에 둔다. Pillow 10.2.0(HPND, PEP 723 `uv run`), FFmpeg 7:6.1.1-3ubuntu5(Ubuntu GPL dev 도구), libavif-bin 1.0.4-1ubuntu3(BSD-2-Clause, 둘은 Ubuntu 24.04 apt)으로 고정해(`tools/setup-host.sh`) WebP/AVIF·해상도 단계·atlas·ogg/m4a·고지를 생성한다. 앱 런타임 npm 의존성0, Pixi/GSAP 등 금지 유지. 아트 디렉션은 `docs/design/art-direction.md`로 통일하고 RPG UI/Animal 팩은 제외한다. Met CC0 원화·기존 Hwatu의 CC BY-SA 4.0 파생 초상을 구분 고지하며 Commons48 원본은 유지한다. Ogg는 bitexact/serial=0과 두 번 인코딩 해시 검사를 고정한다. FPS·메모리·배터리 NF 후보는 연구 문서에만 두고 리뷰 전 spec를 바꾸지 않는다.
-정확한 버전은 [AGENTS.md §2](AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](docs/research/agent-era-stack.md)다.
+정확한 버전은 [AGENTS.md §2](../AGENTS.md)의 단일 표를 따른다. 비교 근거는 [스택 조사](../docs/research/agent-era-stack.md)다.
 
 **A 시각 방향 확정(2026-09-29, VD-01~05):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/art-direction.md#결정-이력`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
@@ -159,7 +161,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ### 1.9 원격 중계 모드 개정안 (사용자 답변 반영, 최종 승인 대기)
 
-근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-사용자-답변-반영-최종-승인-대기), [후보·공식 한도](docs/research/remote-play.md). **1순위 PC+Funnel(2026-09-29 사용자 기본 WS 통과 확인), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 선택적 RP-A 테일넷 직접 연결(상대 설치 필요·우선 구현 안 함)**. [실측 결과](docs/device-test/remote-play.md#결과-기록--2026-09-29-사용자-제공)에서 프록시 host의 1008 거절도 확인했으므로 RP-02는 루프백 제한을 토큰 기반 인증으로 대체한다. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
+근거: [spec §13 FR/NP/NF-RP·AC-RP](spec.md#13-원격-대전-개정안-사용자-답변-반영-최종-승인-대기), [후보·공식 한도](../docs/research/remote-play.md). **1순위 PC+Funnel(2026-09-29 사용자 기본 WS 통과 확인), 2순위 Cloudflare DO(PC 없이 상시 필요 시), 선택적 RP-A 테일넷 직접 연결(상대 설치 필요·우선 구현 안 함)**. [실측 결과](../docs/device-test/remote-play.md#결과-기록--2026-09-29-사용자-제공)에서 프록시 host의 1008 거절도 확인했으므로 RP-02는 루프백 제한을 토큰 기반 인증으로 대체한다. 구현·배포는 리뷰와 사용자 승인 뒤 별도 PR로 진행한다.
 
 | 경로             | 구조·책임                                                                                                                                                                         |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -208,7 +210,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 #### 두 안의 공통 전송 경계
 
-[refactor-plan §4 전송 추상화](docs/refactor-plan.md#4-장기-계획-접점-있는-것-보존-필요한-것만-준비)의 기존 `Transport` 계약을 사용한다. **B안은 설정 가능한 중계 HTTPS/WSS URL + 공개 중계 인증 어댑터**, A안은 선택 시 Galaxy 테일넷 HTTP/WS URL + 현행 직접 연결 어댑터를 주입한다. 엔진·세션·hello/snapshot은 endpoint를 알지 않는다. B안 중계 URL은 호스트 설정에서 명시적으로 등록/변경하고 프로토콜·정규화된 origin을 검증하며, 공개 초대 링크의 임의 endpoint를 신뢰하지 않는다. 허용 origin은 배포 설정/사용자 확인으로 확정하고 검사 gate에 반영한다. A안이 미구현일 때 해당 선택 UI/접속 경로는 활성화하지 않는다. 방 토큰·저장·재접속은 모드+origin+room별로 격리, URL/모드 변경은 세션 종료 후 적용한다. RP-A의 HTTP 허용이 B안의 WSS 필수를 완화하지 않는다.
+[refactor-plan §4 전송 추상화](../docs/refactor-plan.md#4-장기-계획-접점-있는-것-보존-필요한-것만-준비)의 기존 `Transport` 계약을 사용한다. **B안은 설정 가능한 중계 HTTPS/WSS URL + 공개 중계 인증 어댑터**, A안은 선택 시 Galaxy 테일넷 HTTP/WS URL + 현행 직접 연결 어댑터를 주입한다. 엔진·세션·hello/snapshot은 endpoint를 알지 않는다. B안 중계 URL은 호스트 설정에서 명시적으로 등록/변경하고 프로토콜·정규화된 origin을 검증하며, 공개 초대 링크의 임의 endpoint를 신뢰하지 않는다. 허용 origin은 배포 설정/사용자 확인으로 확정하고 검사 gate에 반영한다. A안이 미구현일 때 해당 선택 UI/접속 경로는 활성화하지 않는다. 방 토큰·저장·재접속은 모드+origin+room별로 격리, URL/모드 변경은 세션 종료 후 적용한다. RP-A의 HTTP 허용이 B안의 WSS 필수를 완화하지 않는다.
 
 #### RP-A 테일넷 직접 연결 — 선택적 확장, 기본 경로의 선행 아님
 
@@ -226,11 +228,11 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 시간은 **담당 1인의 구현·해당 자동 검증 합계 추정**, 각 행은 1일 이내(최대8시간) PR 범위다. 달력상 연속 일정/완료 보장이 아니며 리뷰·선행 병합 대기와 사람의 2시간 연결 시험은 별도다. 신규 경로는 후보 이름이며 RP-01에서 확정한다. `web/`는 `packages/web/`, `android/…/`는 `android/app/src/main/kotlin/com/kywoo26/p2pgostop/`를 뜻한다. 각 행 소유자는 해당 PR 담당이며 인계 전 같은 파일을 병렬 수정하지 않는다. **기본 실행 순서는 RP-01→02A→02B→02C→03A→03B→04A→04B→05A→05B→05C→06→07**이다. 아래 RP-A1/A2는 별도 선택 시만 실행하며 기본 경로를 막지 않는다.
 
-공통 인계: 선행 PR 번호·병합 SHA·API/props/상태 계약·통과 테스트·남은 실패를 후속 PR 본문에 기록한다. [리팩터 소유권](docs/refactor-plan.md#5-에이전트용-변경-위치-지도와-소유권)·[스킨 시작 조건](docs/design/pro-skin-plan.md#1-시작-조건과-이식-경계)·§3이 정본이다. **RP-05/06 및 RP-A의 홈/로비 변경은 #104→후속 스킨 PR 병합 뒤** 디자인 담당이 경로/기준샷을 인계한다. 스킨 PR 번호가 정해지면 인계 기록에 연결하며 미병합 동안 UI 착수 금지. `p2p/*`·App/Game·bridge 접점은 **v0.2.2 UX 담당(#151 후속·§3 .2-A~C)과 상태/재접속 계약 조율 후 담당 변경 병합본으로 직렬 인계**한다. 합의가 없으면 net/Android 독립 부분까지만 진행한다.
+공통 인계: 선행 PR 번호·병합 SHA·API/props/상태 계약·통과 테스트·남은 실패를 후속 PR 본문에 기록한다. [리팩터 소유권](../docs/refactor-plan.md#5-에이전트용-변경-위치-지도와-소유권)·[스킨 시작 조건](../docs/design/pro-skin-plan.md#1-시작-조건과-이식-경계)·§3이 정본이다. **RP-05/06 및 RP-A의 홈/로비 변경은 #104→후속 스킨 PR 병합 뒤** 디자인 담당이 경로/기준샷을 인계한다. 스킨 PR 번호가 정해지면 인계 기록에 연결하며 미병합 동안 UI 착수 금지. `p2p/*`·App/Game·bridge 접점은 **v0.2.2 UX 담당(#151 후속·§3 .2-A~C)과 상태/재접속 계약 조율 후 담당 변경 병합본으로 직렬 인계**한다. 합의가 없으면 net/Android 독립 부분까지만 진행한다.
 
 | PR / 일별 범위·예상 시간                         | 단독 소유 파일·담당 영역                                                                                                                                                                                         | 선행 병합 → 인계 조건·완료 기준                                                                                                                                                                                                    |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RP-01 · 공개 중계 규범/인증 계약, 4~6h           | 문서 담당: `intend.md`, `AGENTS.md`, `spec.md`, `plan.md`, `docs/protocol.md`                                                                                                                                    | 확정 인터뷰 반영본의 최종 명세 승인(RP-A 불필요) → #123 문서 담당과 wire 버전/전송 제어 경계 합의, 공식 API·신규 파일/의존성 계획 확정. 게임 wire 변경은 별도 승인                                                                 |
+| RP-01 · 공개 중계 규범/인증 계약, 4~6h           | 문서 담당: `intent/intent.md`, `AGENTS.md`, `intent/spec.md`, `intent/plan.md`, `docs/protocol.md`                                                                                                                                    | 확정 인터뷰 반영본의 최종 명세 승인(RP-A 불필요) → #123 문서 담당과 wire 버전/전송 제어 경계 합의, 공식 API·신규 파일/의존성 계획 확정. 게임 wire 변경은 별도 승인                                                                 |
 | RP-02A · 생성/역할 인증, 6~8h                    | 서버 담당: `packages/relay-dev/src/{index,cli}.ts`, 신규 `src/auth.ts`·대응 `test/`                                                                                                                              | RP-01 → 공개 모드 기본 비활성, loopback 우회 없는 토큰 인증·교체 전 인증 테스트. 인증 결과 타입/토큰 권한을 02B에 인계(NP-RP-01/02/05)                                                                                             |
 | RP-02B · 방·초대·TTL·제한, 6~8h                  | 서버 담당: relay-dev 신규 `src/rooms.ts`·`src/limits.ts`, `src/index.ts`·대응 `test/`                                                                                                                            | 02A 병합 → 코드/claim/만료·방 격리·큐 제한·재시작 소실 테스트, 방 API/오류·설정 계약을 02C/04에 인계(NP-RP-03~07)                                                                                                                  |
 | RP-02C · 정적 서빙, 4~6h                         | 서버 담당: relay-dev 신규 `src/static.ts`, `src/{index,cli}.ts`·대응 `test/`                                                                                                                                     | 02B 병합 → dist만 제공·traversal/설정 노출 차단·버전 경로 검사. 최소 health 응답·실행 인자/포트/dist 경로를 RP-03A/04A에 인계; Docker/웹 UI 제외                                                                                   |
@@ -263,7 +265,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 2. 개발 환경 (네이티브, 버전 핀)
 
-- 호스트(WSL2 Ubuntu 24.04)와 CI(`ubuntu-24.04`)가 같은 명령을 네이티브로 실행한다. 명령·부하 규칙은 [AGENTS.md §5](AGENTS.md)가 정본이다(NF-09, 전환 근거 [process-local-first](docs/reviews/process-local-first.md)).
+- 호스트(WSL2 Ubuntu 24.04)와 CI(`ubuntu-24.04`)가 같은 명령을 네이티브로 실행한다. 명령·부하 규칙은 [AGENTS.md §5](../AGENTS.md)가 정본이다(NF-09, 전환 근거 [process-local-first](../docs/reviews/process-local-first.md)).
 - 동일성은 버전 핀으로 맞춘다: Node `.nvmrc`, npm `package-lock.json`(Playwright 1.63.0 → 브라우저 빌드), JDK 21, Android `platforms;android-36`·`build-tools;36.0.0`(Gradle 설정), 자산 변환 apt 버전(AGENTS §2).
 - 호스트는 `tools/setup-host.sh`가 한 번에 준비한다(nvm, sudo apt: Playwright 의존성·`openjdk-21-jdk-headless`·FFmpeg·libavif, uv 확인, `~/Android/Sdk`). 파이썬 스크립트(자산 변환·폰트)는 PEP 723 메타데이터로 `uv run`한다. CI는 `setup-node`(.nvmrc)·`setup-java`(Temurin 21)·`playwright install --with-deps`·러너 내장 Android SDK를 쓴다.
 - 릴리스 웹 빌드는 비밀 없는 읽기 전용 잡에서 돌고 산출물만 서명 잡으로 넘긴다(§5, M0 R-1).
@@ -277,12 +279,12 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 | 단계             | 현재 상태·남은 기준                                                                                                                    | 근거                                                                                 |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월                                                                          | [M0 리뷰](docs/reviews/README.md), [실기기 원문](docs/device-test/results.md)        |
-| M1 엔진          | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28)                                                             | [M1 리뷰](docs/reviews/README.md), [규칙 벡터](docs/rules-vectors.md)                |
-| M2 AI·머니       | 조건부 진행: AC-03 기준선 63.35%/77.02%, #167 후보 보통 미확정(65.01%)·쉬움 미달(76.87%), P0 미완; MN-03·AC-10 부분(각 프리셋 3,000판) | [AI 튜닝](docs/ai-tuning.md), [머니 산정](docs/money-model.md), #66·#67              |
-| M3 솔로 UI       | 구현·표시 수정 병합(#34); UX 규범 격차는 후속                                                                                          | [M3 리뷰](docs/reviews/README.md), [UI 규범](docs/design/ui-spec.md)                 |
-| M4 정식 P2P      | 통합·프로토콜 후속 병합(#42·#54·#59); 밀기 웹 PR #100 병합; 로비 준비·기록/연결 상태 및 E2E 단언 보강 남음                             | [프로토콜 리뷰](docs/reviews/README.md), #44·#75, §3-2                               |
-| M5 실기기        | 현재 UI AC-08·AC-09 미검증, iPhone 확보 후 재개(#75)                                                                                   | [통합 절차](docs/device-test/procedure.md), [결과 로그](docs/device-test/results.md) |
+| M0 핫스팟 스모크 | AC-00 통과; B/C·장시간 복귀 등 미확인 항목은 통합 절차로 이월                                                                          | [M0 리뷰](../docs/reviews/README.md), [실기기 원문](../docs/device-test/results.md)        |
+| M1 엔진          | 구현·규칙 벡터·불변식 검사, 밀기·revealed·applyUnchecked 후속 병합(PR #28)                                                             | [M1 리뷰](../docs/reviews/README.md), [규칙 벡터](../docs/rules-vectors.md)                |
+| M2 AI·머니       | 조건부 진행: AC-03 기준선 63.35%/77.02%, #167 후보 보통 미확정(65.01%)·쉬움 미달(76.87%), P0 미완; MN-03·AC-10 부분(각 프리셋 3,000판) | [AI 튜닝](../docs/ai-tuning.md), [머니 산정](../docs/money-model.md), #66·#67              |
+| M3 솔로 UI       | 구현·표시 수정 병합(#34); UX 규범 격차는 후속                                                                                          | [M3 리뷰](../docs/reviews/README.md), [UI 규범](../docs/design/ui-spec.md)                 |
+| M4 정식 P2P      | 통합·프로토콜 후속 병합(#42·#54·#59); 밀기 웹 PR #100 병합; 로비 준비·기록/연결 상태 및 E2E 단언 보강 남음                             | [프로토콜 리뷰](../docs/reviews/README.md), #44·#75, §3-2                               |
+| M5 실기기        | 현재 UI AC-08·AC-09 미검증, iPhone 확보 후 재개(#75)                                                                                   | [통합 절차](../docs/device-test/procedure.md), [결과 로그](../docs/device-test/results.md) |
 | M6 완성도        | Galaxy 호스트·솔로 우선, P1·AC 전부 충족해야 v1.0.0                                                                                    | [현재 트랙](#현재-트랙)                                                              |
 
 ### 현재 트랙
@@ -290,7 +292,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 - 최신 상태·릴리스 우선순위는 §3-2를 정본으로 삼고, PR별 계획·공유 파일 소유권은 아래 #152 이관 내용을 따른다.
 - 병합된 #56·#60·#38·#73은 진행 중으로 세지 않는다. PR #151(선택 자동화·국진 설정)과 #94/#95(의존성)는 병합됐고, PR #104(화면)는 미완이며, §3-2의 릴리스 분류·코드 기준을 따른다.
 
-<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 Galaxy 계획의 경로·절 앵커는 [이관표](docs/plan-galaxy-solo.md)에서 이 절과 해당 정본으로 연결한다.
+<a id="releases"></a><a id="ownership"></a><a id="verification"></a><a id="gaps"></a> 옛 Galaxy 계획의 경로·절 앵커는 [이관표](../docs/plan-galaxy-solo.md)에서 이 절과 해당 정본으로 연결한다.
 
 Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone 확보 후 #75에서 재개한다. 아래는 #152에서 이관한 PR 단위 ID와 파일 소유권이다. 단위 ID의 버전 접두사는 기존 인계 순서를 보존한 이름이며, 현재 릴리스 배정·완료 상태는 §3-2가 우선한다. 각 선행 작업의 병합본을 인계받아 충돌 파일을 직렬로 수정한다.
 
@@ -305,7 +307,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | v0.2.3 .3-C  | Galaxy 안내·화면 유지·복구 #75(옛 #68/#69 이관; #64는 #88/#150 완료)   | Sol: Android Activity/Service/Diagnostics와 웹 session/solo/current/local/Diagnostics; .2-B·.3-B 저장 소유권 인계                                                    |
 | v0.2.3 .3-D  | 카드·Galaxy 예산·강도 보고 #66/#75(옛 #70 이관)                        | Sol 통합: 갤러리/E2E 기준샷, device-test 절차, `ai-tuning.md`; 카드·AI 담당 산출물 인계                                                                              |
 
-`settings/**`는 .2-B→.3-A→.3-B, `solo.svelte.ts`는 .2-A→.2-C→.3-B→.3-C, `session.ts`는 .2-A→.2-C→.3-C 순으로 소유한다. 공용 갤러리 기준샷은 각 기능 병합 뒤 .3-D가 갱신한다. 규칙 항목의 정본은 [rules-commercial §12.7](docs/research/rules-commercial.md#127-사용자-설정으로-노출할-토글)과 [spec FR-21](spec.md)이다.
+`settings/**`는 .2-B→.3-A→.3-B, `solo.svelte.ts`는 .2-A→.2-C→.3-B→.3-C, `session.ts`는 .2-A→.2-C→.3-C 순으로 소유한다. 공용 갤러리 기준샷은 각 기능 병합 뒤 .3-D가 갱신한다. 규칙 항목의 정본은 [rules-commercial §12.7](../docs/research/rules-commercial.md#127-사용자-설정으로-노출할-토글)과 [spec FR-21](spec.md)이다.
 
 #### 공유 파일 인계
 
@@ -329,7 +331,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ### 재생 지연 복구 근거 (NF-03·AC-06·NP-03, 기준 main `fc02b1c`)
 
-- 사용자 실측 v0.3.1 `4e536e1` 빠름 6표본은 [PDR-01](docs/device-test/results.md#pdr-01--사용자-제공-v031-부분-관측)에 최소 익명 증거만 기록했다. full play618/619/683/702ms 네 경로와 prompt223/choose462를 섞어 수용 통과로 판정하지 않는다. NF-03 미검증·AC-06 부분 상태 유지.
+- 사용자 실측 v0.3.1 `4e536e1` 빠름 6표본은 [PDR-01](../docs/device-test/results.md#pdr-01--사용자-제공-v031-부분-관측)에 최소 익명 증거만 기록했다. full play618/619/683/702ms 네 경로와 prompt223/choose462를 섞어 수용 통과로 판정하지 않는다. NF-03 미검증·AC-06 부분 상태 유지.
 - `game/playback.recovery.test.ts`: 합성 도착50/150/300ms에서 reset 뒤 stale snapshot/선택창·효과, dispose 뒤 읽기 대기, reset→burst를 수정 전 Chromium/WebKit10실패로 재현했다. generation 소유권으로 커밋·이벤트·계측·정산을 보호하고 대기를 스킵해 회수한다. 정상 FIFO와 #185 milestone 큐는 보존한다. 복구 없는 빈 이벤트 snapshot/정산 표식은 기존 FIFO 순서를 유지한다. #191~195의 저장/호스트 metadata·timer audit와 다른 renderer 재생 수명 결함이다.
 - 기존 100개 TurnTiming·400줄/줄2000자 진단 버퍼를 재사용한다. enqueue/queue/replay/snap/첫 DOM commit과 단계12개 이하를 묶음당 한 줄로 기록한다. 상대 턴은 수신 이후로 표시하며 내 AC-06 표본에 넣지 않는다. 프레임별 수집·상시 폴링·외부 분석·wire 확장 없음. 취소 묶음은 기록하지 않는다.
 - `e2e/playback-delay.spec.ts`: 고정 match-capture에서 합성 main-thread100ms 정지 실행 표식, busy=true/첫 턴 timing 미완료에서 홈 이탈, 복귀 뒤 카드 중복 없음/권위 바닥·점수 일치 및 다음 손패 입력의 권위 원장1회 수락을 Chromium/WebKit에서 검증한다. 이전 head9548dd9 검사는 수렴 뒤 홈 복귀와 busy=false까지만 검사했으며 재생 중 이탈·다음 입력 수락 근거로 세지 않는다. 합성 지연은 Singapore RTT가 아니며 자동 결과는 실기기 성공이 아니다.
@@ -355,7 +357,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | RP-03A / NF-RP-06 | 부분 | `docker/relay/Dockerfile`, `compose.relay.yaml`, `tools/relay/create-credentials.ts`·README. Docker 컨텍스트 허용 목록과 `docker/relay/check-context.sh` canary export를 CI에 추가. `feat/relay-public` 임시 병합 이미지에서 비root/읽기 전용/루프백 기동, 로컬 `/health`·`/version`·정적 release 경로·Compose healthy 확인 | RP-02가 main에 병합된 뒤 재검사. Galaxy APK 동시 release·사람 PC 검증 대기                |
 | RP-03B / FR-RP-07 | 부분 | `tools/relay/start.cmd`, `stop.cmd`, `relay.ps1`, `write-qr.ts`; Compose config·QR 생성·문서 점검. 시작 프로세스 독립 추적·실패 정리와 marker 없는 종료 탐지를 추가                                                                                                                                                         | PR #190 / Refs #210: PS7/5.1 UTF-8·stderr/exitcode·runtime 정체·잠금/소유 프로세스·nonce Compose 실패 격리 합성 회귀(`tools/relay/validation.md`). 기존 wrapper live 검증과 현재 소유권 수정본 live 미검증을 분리. 수동 재부팅·게임 실기기 검증 대기. 앱의 3단계 UI는 RP-05C 범위 |
 
-위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
+위 상태는 PC 운영 도구만 다룬다. FR-RP-07 전체 수용과 NF-RP-06 wire 호환 판정은 아직 하지 않는다. [사람 검증 칸](../docs/device-test/remote-play.md#rp-03ab-pc-운영-검증-기록-칸-사람-실행)에 결과 제공 후 기록한다.
 
 후속 main `8d2911b`(#152 문서/계획 이관, #154 sim 통계/보고 분리)을 병합했다. 아래 코드 대조·실행 수치는 `daa5e7d` 기준으로 보존하고, 삭제 문서 링크와 계획 소유권은 #152 정본으로 연결한다. AI-04·AC-03 행의 #167 판정은 별도로 `9f778f3` 소스에서 측정했으며 상태는 부분·P0 미완이다. 이번 병합에서는 링크 검사·lint를 수행하며 요구사항 완료율은 바꾸지 않는다.
 
@@ -363,7 +365,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 
 **판정:** 완료=해당 범위의 구현·검증 근거 확인, 부분=일부 구현 또는 정량 기준 미달, 미구현=사용 가능한 기능 경로 없음, 미검증=구현은 있으나 필수 측정/실기기 증거 없음. 테스트 파일의 존재만으로 수치 기준이나 실기기 통과를 인정하지 않는다. 진행 중 PR #104의 코드는 기준 SHA에 없으므로 완료에 넣지 않는다. #151의 자동 선택·자동 진행·국진 설정은 코드와 회귀 테스트를 대조해 반영했다. 부분에 임의의 50% 가중치를 주지 않는다.
 
-경로 약어: E=`packages/engine`, A=`packages/ai`, P=`packages/protocol`, W=`packages/web`, S=`tools/sim`, K=`android/app/src/main/kotlin/com/kywoo26/p2pgostop`, KT=`android/app/src/test/kotlin/com/kywoo26/p2pgostop`. `src/`·`test/`·`e2e/` 경로는 각 접두사의 실제 파일이다. 실기기 열의 `—`는 순수 로직/자동 검증 범위, `미`는 현재 정식 UI·기기의 사람 검증 없음, `M0`는 [사람 제공 스모크 기록](docs/device-test/results.md)만 확인됨을 뜻한다. `M0`도 현재 게임 전체 통과는 아니다.
+경로 약어: E=`packages/engine`, A=`packages/ai`, P=`packages/protocol`, W=`packages/web`, S=`tools/sim`, K=`android/app/src/main/kotlin/com/kywoo26/p2pgostop`, KT=`android/app/src/test/kotlin/com/kywoo26/p2pgostop`. `src/`·`test/`·`e2e/` 경로는 각 접두사의 실제 파일이다. 실기기 열의 `—`는 순수 로직/자동 검증 범위, `미`는 현재 정식 UI·기기의 사람 검증 없음, `M0`는 [사람 제공 스모크 기록](../docs/device-test/results.md)만 확인됨을 뜻한다. `M0`도 현재 게임 전체 통과는 아니다.
 
 ### 기능 (FR)
 
@@ -579,7 +581,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 - 핵심 구조는 intend의 기내 오프라인1:1·iPhone 무설치와 일치하나 현재 실기기1판/복귀·상용급 AI 수용은 미완이다. 관측량 자체를 낭비로 단정하지 않고, 아래 반복·확장이 검증보다 앞서는 점을 과투자 위험으로 판단한다.
 - 문서 관측: PR #84 직전(`bb389e5^1`)→직후(`bb389e5`)→#152 이전 main(`daa5e7d`)의 추적 `docs/**/*.md`는 **4,548→4,071→7,002줄**(당시46파일), 루트 intend/spec/plan 합은 **841→759→854줄**(이 PR 매트릭스 추가분 제외). 재현: 각 ref에 `git ls-tree -r --name-only <ref> -- docs`로 .md를 골라 `git show <ref>:<path>`를 연결한 뒤 `wc -l`; 루트3파일도 동일. 이미 병합된 [문서 정리 #84](https://github.com/kywoo26/p2p-gostop/pull/84)를 이어 상태 정본을 §3-2로 모은다.
 - PNG 관측: `git ls-tree -rl daa5e7d`의 .png blob 크기 합 **82개·16,520,127바이트**(15.76MiB), 그중 docs/design **31개·3,890,113바이트**, E2E **screenshots** **32개·5,241,545바이트**. #84 전후는36개·4,281,640바이트로 동일했다. 회귀 기준샷은 필요한 검증 자산이며 낭비로 일괄 취급하지 않는다.
-- 디자인 반복은 개별 A/B 후보 수가 아닌 방향 검토 회차로 **4회**: [#37](https://github.com/kywoo26/p2p-gostop/pull/37)의 모던 A/B→클래식 리마스터(2회, [기각 기록](docs/design/cards-polish.md)), [#92/#101의 A/B/C 검토·A 채택](docs/design/art-direction.md#결정-이력)(1회), [#146→#147 전문 자산 평가](https://github.com/kywoo26/p2p-gostop/pull/147)(1회). **#104 화면/손패 무가림 수렴→스킨** 순서로 고정하고 평가 자산을 출시 완료로 세지 않는다.
+- 디자인 반복은 개별 A/B 후보 수가 아닌 방향 검토 회차로 **4회**: [#37](https://github.com/kywoo26/p2p-gostop/pull/37)의 모던 A/B→클래식 리마스터(2회, [기각 기록](../docs/design/cards-polish.md)), [#92/#101의 A/B/C 검토·A 채택](../docs/design/art-direction.md#결정-이력)(1회), [#146→#147 전문 자산 평가](https://github.com/kywoo26/p2p-gostop/pull/147)(1회). **#104 화면/손패 무가림 수렴→스킨** 순서로 고정하고 평가 자산을 출시 완료로 세지 않는다.
 - 이슈는 초기58→25, 원래58개는 #113 종료/#30 재개 후에도25(16/9)다(신규 #155 포함 전체26). v0.2.2 직접 지적·필수 플레이→v0.2.3 상세 보조·머니·환급 정책 검토로 제한하고 새 편의/빌드 미세 최적화는 후순위로 둔다. Galaxy 검증을 계속하고 iPhone은 #75에서 확보 후 재개하며, 다음 판단 근거는 AI 강도·사용자 플레이 결과다.
 
 ## 4. 테스트 전략
@@ -639,7 +641,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 
 ## 8. 초기 구축 이력
 
-M0 골격·스모크 작업은 완료되어 §3과 [리뷰 인덱스](docs/reviews/README.md)로 대체한다. 당시에는 `docker/compose.yml`의 분리된 서비스·셸 래퍼를 썼으며, §2의 단일 이미지·루트 Compose로 교체했다.
+M0 골격·스모크 작업은 완료되어 §3과 [리뷰 인덱스](../docs/reviews/README.md)로 대체한다. 당시에는 `docker/compose.yml`의 분리된 서비스·셸 래퍼를 썼으며, §2의 단일 이미지·루트 Compose로 교체했다.
 
 ---
 
@@ -649,8 +651,8 @@ D1·D2는 기존 트랙 ID를 유지하고, 나머지 확정 결정을 D3~D6으�
 
 | ID  | 결정                                                                        | 근거·남은 일                                                                                                           |
 | --- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| D1  | Commons 48장 유지·앱 렌더링 개선, 보너스 3장·뒷면만 같은 화풍으로 신규 제작 | 사용자 2026-09-29 결정. 시안 A/B·클래식 리마스터 기각, PR #37 닫힘. [구현 수치·검증 절차](docs/design/cards-polish.md) |
-| D2  | [UI 규범](docs/design/ui-spec.md) UX-01~25를 spec §6에 반영                 | PR #55 설계 완료, 구현 격차 #46~#53 유지                                                                               |
+| D1  | Commons 48장 유지·앱 렌더링 개선, 보너스 3장·뒷면만 같은 화풍으로 신규 제작 | 사용자 2026-09-29 결정. 시안 A/B·클래식 리마스터 기각, PR #37 닫힘. [구현 수치·검증 절차](../docs/design/cards-polish.md) |
+| D2  | [UI 규범](../docs/design/ui-spec.md) UX-01~25를 spec §6에 반영                 | PR #55 설계 완료, 구현 격차 #46~#53 유지                                                                               |
 | D3  | 순수 TS 엔진 한 벌, Android는 셸·중계 전용                                  | §1.1·§1.4, spec FR-11·NF-09                                                                                            |
 | D4  | 하이브리드 도구·Svelte·WAAPI·npm workspaces 유지                            | §1.8, 버전 정본 AGENTS.md §2                                                                                           |
 | D5  | 포트 17777, WebView origin 127.0.0.1, 패키지 com.kywoo26.p2pgostop          | §1.7, 앱 이름 “맞고 P2P”(가칭)                                                                                         |

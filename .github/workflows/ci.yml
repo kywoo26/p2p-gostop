@@ -1,4 +1,4 @@
-# plan.md §2·§5. 러너에서 네이티브로 두 잡을 병렬 실행한다. 로컬과는 같은 버전 핀(.nvmrc·package-lock·Gradle 설정)으로 맞춘다.
+# intent/plan.md §2·§5. 러너에서 네이티브로 두 잡을 병렬 실행한다. 로컬과는 같은 버전 핀(.nvmrc·package-lock·Gradle 설정)으로 맞춘다.
 name: ci
 
 on:

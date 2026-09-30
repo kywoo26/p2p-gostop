@@ -1,5 +1,5 @@
 <script lang="ts">
-  // 카드 한 장. <img>로 svgo 최적화 SVG를 그린다(인라인 SVG·filter 금지, plan.md 1.6).
+  // 카드 한 장. <img>로 svgo 최적화 SVG를 그린다(인라인 SVG·filter 금지, intent/plan.md 1.6).
   // 구조: .card(이동: flipMove 대상) > .inner(뒤집기: flipCard 대상) > 앞면·뒷면 <img>
   // 어느 면이 보이는지는 3D 뒷면 감추기(backface-visibility)에 맡기지 않고 불투명도로 정한다(M3 리뷰 S-1):
   // WebKit은 합성 레이어가 없는 preserve-3d 안의 뒷면을 감추지 않아, DOM 순서상 위인 뒷면 <img>가 앞면을 덮었다.

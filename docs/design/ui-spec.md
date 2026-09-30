@@ -2,7 +2,7 @@
 
 > **#123 개정안:** §16은 main `1287e7f` 대비 리뷰·사용자 승인 전 제안이다. 기존 UX-09·HUD 계약은 비교를 위해 유지한다. P2P 기본 10초·호스트 끄기/조정·솔로 제외는 확정, 배치·초과 행동·시계 세부값은 권고다.
 
-상태: **D2 UI 구현 규범** · 2026-09-29 · 솔로·호스트·게스트 정식 UI 대상. [spec §6](../../spec.md)의 UX-01~25 상세 정의이며 [plan §9 D1·D2](../../plan.md)를 따른다. 규범과 구현 현황(§10·§13)은 구분한다. 카드 방향은 **Commons 48장 유지·렌더링 개선, 보너스 3장·뒷면만 신규 제작**이다. 게임 규칙은 변경하지 않는다.
+상태: **D2 UI 구현 규범** · 2026-09-29 · 솔로·호스트·게스트 정식 UI 대상. [spec §6](../../intent/spec.md)의 UX-01~25 상세 정의이며 [plan §9 D1·D2](../../intent/plan.md)를 따른다. 규범과 구현 현황(§10·§13)은 구분한다. 카드 방향은 **Commons 48장 유지·렌더링 개선, 보너스 3장·뒷면만 신규 제작**이다. 게임 규칙은 변경하지 않는다.
 
 ## 1. 화면 크기와 안전 영역
 
@@ -85,7 +85,7 @@
 
 **이전 A 화면 적용 기록(#104, PA-05 개정 전):** [a-screens-validation.md](a-screens-validation.md). #46/#47 구현은 위6행·HUD 예산을 사용하며 작은 화면의 획득패는 §14 UX-H02b대로 상세에 접는다. 선 고르기8장은 분배 전 빈 손패 행을 회수해 선택224px를 사용한다. 아래 §8·§14의 기존 구현 격차/후속 소유 기록보다 이 적용 기록의 검증 범위가 최신이며, #51 확대·실기기 실측 대기는 그대로다.
 
-**UX-15.** 아래 단계·정지 시간(ms)은 `spec.md` §6.4와 같은 시간표다. 기본값은 보통, 빠름은 AC-06용 기존 이동 표(정지 0), 매우 빠름은 빠름 ×0.6이다. 정지는 해당 이동이 끝난 뒤 다음 이벤트를 커밋하기 전까지다. 복잡한 빠름 턴은 이동 시간 계획 합을 500ms로 비례 압축한다. 선택 없는 빠름 턴의 탭→이벤트 재생·최신 뷰 스냅 완료 목표는 ≤700ms다. 보통의 대표 경로인 **낸 카드 매칭 → 더미 공개 → 획득** 계획은 약 1.6~2.2초이며, 이 경로를 고정한 E2E p50 허용 범위는 1.4~2.4초다.
+**UX-15.** 아래 단계·정지 시간(ms)은 `intent/spec.md` §6.4와 같은 시간표다. 기본값은 보통, 빠름은 AC-06용 기존 이동 표(정지 0), 매우 빠름은 빠름 ×0.6이다. 정지는 해당 이동이 끝난 뒤 다음 이벤트를 커밋하기 전까지다. 복잡한 빠름 턴은 이동 시간 계획 합을 500ms로 비례 압축한다. 선택 없는 빠름 턴의 탭→이벤트 재생·최신 뷰 스냅 완료 목표는 ≤700ms다. 보통의 대표 경로인 **낸 카드 매칭 → 더미 공개 → 획득** 계획은 약 1.6~2.2초이며, 이 경로를 고정한 E2E p50 허용 범위는 1.4~2.4초다.
 
 | 단계·정지 (ms) | 보통(기본) | 빠름 | 매우 빠름 |
 |---|---:|---:|---:|
@@ -252,7 +252,7 @@ PNG는 디자인 설명용 도식이며 실제 카드 도상을 복제하지 않
 
 ## 12. 명세 반영
 
-`spec.md` §6에 UX-01~25 개정안 반영됨(2026-09-29).
+`intent/spec.md` §6에 UX-01~25 개정안 반영됨(2026-09-29).
 
 ## 13. 현재 웹 구현 지도 (docs/ui.md에서 통합)
 
@@ -294,7 +294,7 @@ AC-06 계측은 click timeStamp→이벤트 재생·스냅 완료를 기록한�
 ### 조사 근거와 적용 범위
 
 - Apple [Layout](https://developer.apple.com/design/human-interface-guidelines/layout), [Buttons](https://developer.apple.com/design/human-interface-guidelines/buttons), [Motion](https://developer.apple.com/design/human-interface-guidelines/motion), [Dark Mode](https://developer.apple.com/design/human-interface-guidelines/dark-mode): 안전 영역·입력 크기·움직임·외관. 제품 수치 48px/8px는 이 앱의 더 엄격한 결정이다.
-- Material 3 [Motion](https://m3.material.io/styles/motion/overview), [Elevation](https://m3.material.io/styles/elevation/overview), [Color roles](https://m3.material.io/styles/color/roles): 의미 역할·층위·전환의 개념만 참고한다. 앱의 구체 시간은 UX-15 표가 정본이며 `spec.md` §6.4와 같은 값을 쓴다.
+- Material 3 [Motion](https://m3.material.io/styles/motion/overview), [Elevation](https://m3.material.io/styles/elevation/overview), [Color roles](https://m3.material.io/styles/color/roles): 의미 역할·층위·전환의 개념만 참고한다. 앱의 구체 시간은 UX-15 표가 정본이며 `intent/spec.md` §6.4와 같은 값을 쓴다.
 - W3C [WCAG 2.2](https://www.w3.org/TR/WCAG22/): AA 기준과 모션 감소 관련 AAA 권고를 구분했다.
 - 상용 맞고 참고: [피망 뉴맞고 Google Play](https://play.google.com/store/apps/details?id=com.neowiz.games.newmatgo), [한게임 신맞고 Google Play](https://play.google.com/store/apps/details?id=com.NHNEnt.NDuelgo)의 **스토어 화면 이미지**만 배치 방향을 확인했다. 상대 정보 상단, 바닥 중앙, 내 손패 하단의 관행을 차용하되 그래픽·자산·문구를 베끼지 않았다. 스토어 이미지가 모든 게임 상태를 보여 주지 않으므로 최악 배치 수치는 자체 설계 가정이다.
 
@@ -440,7 +440,7 @@ FLIP의 will-change가 있는 카드만 기존 그림 창 잘림을 해제하고
 
 ## 16. P2P 제한시간 UI 개정안 (#123, 승인 전)
 
-정책 정본: [spec FR-16·51~53 / NP-10](../../spec.md#36-p2p-제한시간-개정안-123-승인-전), [프로토콜 v3 초안](../protocol.md#11-p2p-결정-타이머-v3-초안-123-승인-전). 판정은 호스트만 하며 UI의 0초가 액션 실행을 뜻하지 않는다. 기존 #104의 최종 화면 구조를 인계받아 적용한다.
+정책 정본: [spec FR-16·51~53 / NP-10](../../intent/spec.md#36-p2p-제한시간-개정안-123-승인-전), [프로토콜 v3 초안](../protocol.md#11-p2p-결정-타이머-v3-초안-123-승인-전). 판정은 호스트만 하며 UI의 0초가 액션 실행을 뜻하지 않는다. 기존 #104의 최종 화면 구조를 인계받아 적용한다.
 
 | 항목 / ID | 개정 전 | 개정 후 제안 |
 |---|---|---|

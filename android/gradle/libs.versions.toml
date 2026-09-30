@@ -1,9 +1,9 @@
-# 버전은 AGENTS.md 2장 버전 표를 따른다. 표에 없는 항목은 plan.md 1.8의 테스트 전용(junit·json)이다.
+# 버전은 AGENTS.md 2장 버전 표를 따른다. 표에 없는 항목은 intent/plan.md 1.8의 테스트 전용(junit·json)이다.
 [versions]
 agp = "9.4.1"
 kotlin = "2.4.20"
 ktor = "3.6.0"
-# Ktor 3.6.0이 끌어오는 코루틴 버전과 같게 둔다(plan.md 1.8 "Android 런타임 의존성", M0 리뷰).
+# Ktor 3.6.0이 끌어오는 코루틴 버전과 같게 둔다(intent/plan.md 1.8 "Android 런타임 의존성", M0 리뷰).
 coroutines = "1.11.0"
 zxing = "3.5.4"
 webkit = "1.17.1"

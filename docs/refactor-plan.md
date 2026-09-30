@@ -1,8 +1,8 @@
 # 리팩토링 감사와 실행 계획
 
 작성 2026-09-29 · 기준 `bb389e5` · 브랜치 `refactor/audit-plan`.
-상위: [intend](../intend.md) → [spec](../spec.md) → [plan §1·§1.8·§3·§9](../plan.md).
-규칙 정답은 [rules-commercial §12](research/rules-commercial.md), 파일 소유권은 [Galaxy 계획 §5](../plan.md#ownership)와 사용자 최신 지정이 우선이다. 이 문서는 기능 완료·병합·배포 승인이 아니다.
+상위: [intend](../intent/intent.md) → [spec](../intent/spec.md) → [plan §1·§1.8·§3·§9](../intent/plan.md).
+규칙 정답은 [rules-commercial §12](research/rules-commercial.md), 파일 소유권은 [Galaxy 계획 §5](../intent/plan.md#ownership)와 사용자 최신 지정이 우선이다. 이 문서는 기능 완료·병합·배포 승인이 아니다.
 
 조회 시 #56·#85는 이미 병합됐고 #38·#73·#83·#86·#88·#89는 열려 있다. 그렇더라도 사용자 지정대로 웹 UI와 session 파싱/p2p는 이번 구현에서 제외한다. Galaxy 문서의 과거 상태 표를 현재 상태로 오인하지 않는다.
 

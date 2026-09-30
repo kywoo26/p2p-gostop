@@ -24,8 +24,8 @@
     "android": "android/gradlew -p android assembleDebug testDebugUnitTest lint --max-workers=4",
     "verify": "npm run lint && npm run check && npm test && npm run test:browser && npm run build && npm run e2e && npm run android",
     "e2e:smoke": "npm run e2e:smoke -w packages/web",
-    "privacy:test": "node --test privacy-audit.test.mjs",
-    "privacy:check": "node privacy-audit.mjs"
+    "privacy:test": "node --test tools/privacy/privacy-audit.test.mjs",
+    "privacy:check": "node tools/privacy/privacy-audit.mjs"
   },
   "devDependencies": {
     "knip": "6.38.0",

@@ -1,4 +1,4 @@
-// Android 셸 브리지 (plan.md 1.7). Capacitor 플러그인 모양의 인터페이스로 두어 향후 전환에 대비한다.
+// Android 셸 브리지 (intent/plan.md 1.7). Capacitor 플러그인 모양의 인터페이스로 두어 향후 전환에 대비한다.
 // 모든 메서드는 Promise를 돌려주고, 이벤트는 addListener → PluginListenerHandle.remove()로 구독·해제한다.
 //
 // 선 계약 (android GameActivity.kt의 HostBridge 주석이 단일 근거):
@@ -14,7 +14,7 @@
 // - openDiagnostics / getDeviceInfo → deviceInfo{device,version,gitSha,buildTime}
 // - LAN 노출은 명시적으로 연다(NF-06): startHotspot이 LAN을 열고, "주소만 표시"는 enableLan{bool} → lan{enabled}.
 //   stopHotspot → stopHotspot{stopped}은 서버를 유지한 채 주소만 표시로 내린다. LAN이 열리면 hotspot.warning을 보여 준다.
-// 근거: plan.md 1.7 "HostBridge 단일 계약".
+// 근거: intent/plan.md 1.7 "HostBridge 단일 계약".
 // 받는 쪽은 옛 키 `t`도 `type`으로 받아 준다. 브라우저(게스트·개발)에서는 no-op 구현이 된다.
 // 게스트 iPhone Safari는 진동이 없다(navigator.vibrate 금지, NF-02). 진동은 이 브리지로만 한다.
 
