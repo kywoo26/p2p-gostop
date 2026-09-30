@@ -131,7 +131,7 @@ export class Playback {
   private readonly onIdle: ((skipped: boolean) => void) | undefined;
   private readonly onBanner: ((kind: Banner['kind']) => void) | undefined;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
-  private host: ReplayHost | null = null;
+  private host: { readonly root: HTMLElement } | null = null;
   private queue: Batch[] = [];
   private pumping = false;
   private generation = 0;
@@ -174,14 +174,7 @@ export class Playback {
       this.host = null;
       return;
     }
-    this.host = {
-      root,
-      commit: async (board) => {
-        this.board = board;
-        await tick();
-      },
-      onEvent: (event) => this.onEvent(event),
-    };
+    this.host = { root };
     void this.pump();
   }
 
@@ -259,30 +252,36 @@ export class Playback {
         const generation = this.generation;
         const current = () => !this.disposed && generation === this.generation;
         const startedAt = performance.now();
-        const measured = await this.play(batch, current);
-        if (!current()) continue;
-        // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
-        this.recordTiming(batch, startedAt, measured);
-        if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
-          const root = this.host.root;
-          this.activeRoot = root;
-          try {
-            await waitHold(root, baseMs('banner', root) * 2);
-          } finally {
-            if (!current() || this.host?.root !== root) unskip(root);
-            this.activeRoot = null;
+        try {
+          const measured = await this.play(batch, current);
+          if (!current()) continue;
+          // AC-06: 탭→턴 종료는 판 끝 대기(마지막 획득·배너를 읽을 시간) 전에 잰다
+          this.recordTiming(batch, startedAt, measured);
+          if (batch.events.some((e) => e.type === 'RoundEnded') && this.host !== null) {
+            const root = this.host.root;
+            this.activeRoot = root;
+            try {
+              await waitHold(root, baseMs('banner', root) * 2);
+            } finally {
+              if ((!current() && !this.skipped) || this.host?.root !== root) unskip(root);
+              this.activeRoot = null;
+            }
           }
+          if (!current()) continue;
+          if (batch.settlement !== null) this.settlement = batch.settlement;
+        } catch (error) {
+          log.error(`재생 오류: ${String(error)}`);
+          // callback이 reset→enqueue→throw하면 옛 예외가 새 FIFO를 비워서는 안 된다.
+          // 이 pump만 큐를 drain하므로 옛 play의 finally가 끝난 뒤 새 세대를 이어 간다.
+          if (!current()) continue;
+          const last = this.queue.at(-1);
+          if (last !== undefined) this.board = last.board;
+          this.queue = [];
+          this.pending = 0;
         }
-        if (!current()) continue;
-        if (batch.settlement !== null) this.settlement = batch.settlement;
       }
-    } catch (error) {
-      log.error(`재생 오류: ${String(error)}`);
-      const last = this.queue.at(-1);
-      if (last !== undefined) this.board = last.board;
-      this.queue = [];
-      this.pending = 0;
     } finally {
+      // batch가 아니라 직렬 pump의 소유권: 새 세대 FIFO까지 drain한 뒤 한 번만 잠금을 푼다.
       wasSkipped = this.skipped;
       this.skipped = false;
       this.pumping = false;
@@ -319,17 +318,30 @@ export class Playback {
             onStep: (kind, ms) => {
               if (steps.length < 12) steps.push({ kind, ms: Math.round(ms) });
             },
-            onEvent: (event) => {
-              if (current()) this.onEvent(event);
-            },
+            onEvent: (event) => this.onEvent(event, current),
           };
     this.activeRoot = host?.root ?? null;
     try {
       if (host === null || this.disposed) {
-        for (const e of events) this.onEvent(e);
+        for (const e of events) {
+          if (!current()) break;
+          this.onEvent(e, current);
+          if (!current()) break;
+        }
       } else if (isDealBatch(events)) {
         this.clearToast();
-        for (const e of events) this.onEvent(e);
+        for (const e of events) {
+          if (!current()) break;
+          this.onEvent(e, current);
+          if (!current()) break;
+        }
+        if (!current())
+          return {
+            firstCommitAt,
+            replayEndedAt: performance.now(),
+            completedAt: performance.now(),
+            steps,
+          };
         if (events.some((e) => e.type === 'FirstPicked')) {
           // 선 고르기 결과를 읽을 시간
           await waitHold(host.root, baseMs('banner', host.root) * 2);
@@ -349,7 +361,8 @@ export class Playback {
       if (current()) await commit(batch.board);
       return { firstCommitAt, replayEndedAt, completedAt: performance.now(), steps };
     } finally {
-      if (host !== null && (!current() || this.host?.root !== host.root)) unskip(host.root);
+      if (host !== null && ((!current() && !this.skipped) || this.host?.root !== host.root))
+        unskip(host.root);
       this.activeRoot = null;
     }
   }
@@ -403,8 +416,10 @@ export class Playback {
 
   // ---- 이벤트 부수 효과: 배너·토스트·효과음 (spec 6.5, FR-18) ----
 
-  private nameOf(seat: Seat | null): string {
-    return seat === null ? '' : this.names()[seat];
+  private nameOf(seat: Seat | null, current: () => boolean): string {
+    if (seat === null || !current()) return '';
+    const names = this.names();
+    return current() ? names[seat] : '';
   }
 
   private showBanner(banner: Banner): void {
@@ -433,7 +448,8 @@ export class Playback {
     this.toast = null;
   }
 
-  private onEvent(event: EngineEvent): void {
+  private onEvent(event: EngineEvent, current: () => boolean): void {
+    if (!current()) return;
     if (event.type === 'ScoreChanged' && event.seat !== null) {
       const before = this.previousScores[event.seat];
       const after = event.breakdown;
@@ -451,8 +467,11 @@ export class Playback {
     if (banner !== null) {
       this.showBanner(banner);
       sounds.play(BANNER_SOUND[banner.kind]);
+      if (!current()) return;
       this.onBanner?.(banner.kind);
+      if (!current()) return;
     }
+    let toast: string | null = null;
     switch (event.type) {
       case 'CardPlayed':
         sounds.play('play');
@@ -472,43 +491,38 @@ export class Playback {
         break;
       case 'InstantPayout':
         sounds.play('payout');
-        this.showToast(
-          `${this.nameOf(event.seat)} ${INSTANT_LABEL[event.kind] ?? event.kind} 즉시 정산 +${event.points}점`,
-        );
+        if (!current()) return;
+        toast = `${this.nameOf(event.seat, current)} ${INSTANT_LABEL[event.kind] ?? event.kind} 즉시 정산 +${event.points}점`;
         break;
       case 'PpeokTaken':
-        this.showToast(`${this.nameOf(event.seat)} 뻑 먹기`);
+        toast = `${this.nameOf(event.seat, current)} 뻑 먹기`;
         break;
       case 'SelfPpeok':
-        this.showToast(`${this.nameOf(event.seat)} 자뻑`);
+        toast = `${this.nameOf(event.seat, current)} 자뻑`;
         break;
       case 'FirstPicked': {
         const [a, b] = event.picks;
-        this.showToast(
-          `선 고르기: ${this.nameOf(0)} ${cardLabel(a)} · ${this.nameOf(1)} ${cardLabel(b)}`,
-        );
+        toast = `선 고르기: ${this.nameOf(0, current)} ${cardLabel(a)} · ${this.nameOf(1, current)} ${cardLabel(b)}`;
         break;
       }
       case 'FirstPickTie':
-        this.showToast('같은 월: 다시 고릅니다');
+        toast = '같은 월: 다시 고릅니다';
         break;
       case 'FirstPickerChosen':
-        this.showToast(`${this.nameOf(event.seat)} 선`);
+        toast = `${this.nameOf(event.seat, current)} 선`;
         break;
       case 'Redealt':
-        this.showToast('바닥 총통: 다시 나눕니다');
+        toast = '바닥 총통: 다시 나눕니다';
         break;
       case 'GukjinPlaced':
-        this.showToast(`${this.nameOf(event.seat)} 국진: ${event.asPi ? '쌍피' : '열끗'}`);
+        toast = `${this.nameOf(event.seat, current)} 국진: ${event.asPi ? '쌍피' : '열끗'}`;
         break;
       case 'RoundEnded':
         sounds.play('end');
         break;
       case 'Shake':
         if (event.seat !== this.viewer) {
-          this.showToast(
-            `${this.nameOf(event.seat)} 흔들기: ${event.cards.map((id) => cardLabel(id)).join(', ')}`,
-          );
+          toast = `${this.nameOf(event.seat, current)} 흔들기: ${event.cards.map((id) => cardLabel(id)).join(', ')}`;
         }
         break;
       default:
@@ -516,8 +530,9 @@ export class Playback {
     }
     if (event.type === 'Bomb' && event.seat !== null) {
       const month = getCard(event.cards[0] ?? 0).month;
-      this.showToast(`${this.nameOf(event.seat)} 폭탄 (${month ?? ''}월)`);
+      toast = `${this.nameOf(event.seat, current)} 폭탄 (${month ?? ''}월)`;
     }
+    if (current() && toast !== null) this.showToast(toast);
   }
 
   private initialScores(board: BoardView): [ScoreBreakdown | null, ScoreBreakdown | null] {

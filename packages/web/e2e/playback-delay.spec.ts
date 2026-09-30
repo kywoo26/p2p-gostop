@@ -2,7 +2,7 @@
 import { expect, test } from '@playwright/test';
 import { TIMING_FIXTURES, timingSave } from './timing-fixtures.ts';
 
-test('합성 main-thread 100ms 정지 뒤 카드·점수·입력 잠금이 수렴한다 @guest', async ({
+test('합성 main-thread 정지·재생 중 홈 이탈/복귀 뒤 정합과 다음 입력 수락 @guest', async ({
   page,
 }, testInfo) => {
   const fixture = TIMING_FIXTURES.find((f) => f.id === 'match-capture')!;
@@ -26,7 +26,14 @@ test('합성 main-thread 100ms 정지 뒤 카드·점수·입력 잠금이 수�
           ]),
         ),
       );
-    const observation = { before: slots(), changes: [] as Record<string, string>[] };
+    const observation = {
+      before: slots(),
+      changes: [] as Record<string, string>[],
+      longTaskMs: 0,
+      busyAtLeave: '',
+      timingAtLeave: '',
+      left: false,
+    };
     (window as unknown as { __floor: typeof observation }).__floor = observation;
     const observer = new MutationObserver(() =>
       observation.changes.push(slots() as Record<string, string>),
@@ -39,13 +46,41 @@ test('합성 main-thread 100ms 정지 뒤 카드·점수·입력 잠금이 수�
     document.querySelector<HTMLElement>(`[aria-label="내 손패"] [data-slot="${card}"]`)!.click();
     document.querySelector<HTMLElement>('[data-testid="game-menu"]')!.click();
     setTimeout(() => {
-      const end = performance.now() + 100;
+      const start = performance.now();
+      const end = start + 100;
       while (performance.now() < end) {
         /* 합성 긴 작업: 네트워크 지연과 별개 */
       }
+      observation.longTaskMs = performance.now() - start;
+      observation.busyAtLeave =
+        document.querySelector<HTMLElement>('[data-testid="board"]')!.dataset['busy'] ?? '';
+      observation.timingAtLeave =
+        document.querySelector<HTMLElement>('[data-testid="solo"]')!.dataset['playTimings'] ?? '';
+      document.querySelector<HTMLElement>('[data-menu="home"]')!.click();
+      observation.left = true;
     }, 50);
     setTimeout(() => observer.disconnect(), 1500);
   }, fixture.card);
+  await expect(page.getByRole('button', { name: /이어하기/ })).toBeVisible();
+  const interruption = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __floor: {
+            longTaskMs: number;
+            busyAtLeave: string;
+            timingAtLeave: string;
+            left: boolean;
+          };
+        }
+      ).__floor,
+  );
+  expect(interruption.longTaskMs).toBeGreaterThanOrEqual(100);
+  expect(interruption.busyAtLeave).toBe('true');
+  expect(interruption.timingAtLeave).toBe('');
+  expect(interruption.left).toBe(true);
+  await page.getByRole('button', { name: /이어하기/ }).click();
+  await expect(page.getByTestId('solo')).toHaveAttribute('data-can-act', 'true');
   await expect(page.getByTestId('board')).toHaveAttribute('data-busy', 'false');
   await expect(page.getByTestId('solo')).toHaveAttribute('data-play-timings', /^\d+$/);
   const observed = await page.evaluate(() => {
@@ -82,7 +117,26 @@ test('합성 main-thread 100ms 정지 뒤 카드·점수·입력 잠금이 수�
     body: JSON.stringify(observed.floor),
     contentType: 'application/json',
   });
-  await page.locator('[data-menu="home"]').click();
-  await page.getByRole('button', { name: /이어하기/ }).click();
-  await expect(page.getByTestId('board')).toHaveAttribute('data-busy', 'false');
+  // 표시 잠금 해제만으로 완료하지 않는다: 다음 손패 입력이 권위 저장 원장에 정확히 한 번 추가돼야 한다.
+  const nextCard = page.locator('[aria-label="내 손패"] button:not([disabled])').first();
+  await expect(nextCard).toBeEnabled();
+  const card = Number(await nextCard.getAttribute('data-slot'));
+  const before = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('gostop.solo.v1')!).session.actions.length,
+  );
+  await nextCard.click();
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ before, card }) =>
+          JSON.parse(localStorage.getItem('gostop.solo.v1')!)
+            .session.actions.slice(before)
+            .filter(
+              (action: { type: string; seat: number; card?: number }) =>
+                action.type === 'play' && action.seat === 0 && action.card === card,
+            ).length,
+        { before, card },
+      ),
+    )
+    .toBe(1);
 });

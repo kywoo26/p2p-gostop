@@ -1,10 +1,10 @@
 // NF-03·AC-06·NP-03: 도착 지연은 합성이며 실제 해외망 RTT가 아니다.
-import type { EngineEvent } from '@p2p-gostop/engine';
+import { scoreCaptured, type EngineEvent } from '@p2p-gostop/engine';
 import { tick } from 'svelte';
 import { afterEach, expect, test, vi } from 'vitest';
 import { fixtures } from '../lib/fixtures.ts';
 import { snap } from './display.ts';
-import { Playback, type RoundSummary } from './playback.svelte.ts';
+import { Playback, type PlaybackOptions, type RoundSummary } from './playback.svelte.ts';
 import { sounds } from './sound.ts';
 import { log } from './log.svelte.ts';
 
@@ -19,14 +19,14 @@ let pb: Playback;
 let root: HTMLDivElement;
 let prior: string | undefined;
 
-async function setup() {
+async function setup(options: Partial<PlaybackOptions> = {}, attached = true) {
   prior = document.documentElement.dataset['speed'];
   document.documentElement.dataset['speed'] = 'normal';
   root = document.createElement('div');
   document.body.append(root);
   const onIdle = vi.fn();
-  pb = new Playback(initial, { viewer: 0, names: () => ['좌석0', '좌석1'], onIdle });
-  pb.attach(root);
+  pb = new Playback(initial, { viewer: 0, names: () => ['좌석0', '좌석1'], onIdle, ...options });
+  if (attached) pb.attach(root);
   await tick();
   onIdle.mockClear();
   return onIdle;
@@ -38,6 +38,208 @@ afterEach(() => {
   if (prior === undefined) delete document.documentElement.dataset['speed'];
   else document.documentElement.dataset['speed'] = prior;
   vi.restoreAllMocks();
+});
+
+// 공개 callback의 합성 재진입. 실제 vibrateFor/사용자 장면에서 reset/throw가 났다는 증거가 아니다.
+test.each([false, true])(
+  '옛 callback reset→새 FIFO→throw: attached=%s 새 선택/정산을 보존한다',
+  async (attached) => {
+    const latest = { ...fixtures.board.states.target, round: initial.round + 1 };
+    const summary = {
+      view: fixtures.settlement,
+      instant: [],
+      nextCarry: null,
+    } as unknown as RoundSummary;
+    const onIdle = await setup(
+      {
+        onBanner: () => {
+          pb.reset(latest);
+          pb.enqueue([{ type: 'CardFlipped', seq: 8, seat: 0, cards: [8] }], latest);
+          pb.enqueue([{ type: 'CardFlipped', seq: 9, seat: 0, cards: [12] }], latest);
+          pb.enqueue(
+            [{ type: 'RoundEnded', seq: 10, seat: 0, cards: [], reason: 'stop', winner: 0 }],
+            latest,
+            { settlement: summary },
+          );
+          pb.skip(); // 새 세대의 스킵도 옛 play의 finally가 해제하지 않아야 한다.
+          throw new Error('synthetic callback exception');
+        },
+      },
+      attached,
+    );
+    const during: { busy: boolean; scale: string }[] = [];
+    const sound = vi.spyOn(sounds, 'play').mockImplementation((kind) => {
+      if (kind === 'flip')
+        during.push({ busy: pb.busy, scale: root.style.getPropertyValue('--dur-scale') });
+    });
+    vi.spyOn(log, 'error').mockImplementation(() => {});
+    pb.enqueue([{ type: 'Jjok', seq: 1, seat: 0, cards: [4, 5] }], initial, {
+      action: { type: 'play', seat: 0, card: 0 },
+      tapAt: performance.now(),
+    });
+    await vi.waitFor(() => expect(during.length).toBeGreaterThan(0));
+    expect(during[0]).toEqual({ busy: true, scale: attached ? '0' : '' });
+    await vi.waitFor(() => expect(pb.settlement).toBe(summary));
+    expect(sound.mock.calls.map(([kind]) => kind)).toEqual(['jjok', 'flip', 'flip', 'end']);
+    expect(during).toEqual([
+      { busy: true, scale: attached ? '0' : '' },
+      { busy: true, scale: attached ? '0' : '' },
+    ]);
+    expect(pb.board).toEqual(snap(latest, latest.inFlight));
+    expect(pb.pending).toBe(0);
+    expect(pb.busy).toBe(false);
+    expect(pb.timings).toEqual([]);
+    expect(onIdle).not.toHaveBeenCalled();
+    pb.release();
+    expect(pb.idle).toBe(true);
+    expect(onIdle).toHaveBeenCalledTimes(1);
+  },
+);
+
+const zero = scoreCaptured({ gwang: [], yeol: [], tti: [], pi: [] }, false);
+const godori: EngineEvent = {
+  type: 'ScoreChanged',
+  seq: 4,
+  seat: 0,
+  cards: [],
+  breakdown: { ...zero, godori: 5, total: 5 },
+};
+const dealt: EngineEvent = {
+  type: 'Dealt',
+  seq: 5,
+  seat: 0,
+  cards: [],
+  dealer: 0,
+  handCounts: [10, 10],
+  deckCount: 23,
+};
+
+test.each(['detached', 'deal', 'replay'] as const)(
+  '%s callback reset: 옛 payout/ScoreChanged를 막고 새 세대 flip/족보를 한 번 재생한다',
+  async (mode) => {
+    const latest = {
+      ...initial,
+      round: initial.round + 1,
+      seats: [
+        { ...initial.seats[0], score: 0 },
+        { ...initial.seats[1], score: 0 },
+      ] as const,
+    };
+    const onIdle = await setup(
+      {
+        onBanner: () => {
+          pb.reset(latest);
+          pb.enqueue([godori, { type: 'CardFlipped', seq: 8, seat: 0, cards: [8] }], latest);
+        },
+      },
+      mode !== 'detached',
+    );
+    document.documentElement.dataset['speed'] = 'instant';
+    const sound = vi.spyOn(sounds, 'play').mockImplementation(() => {});
+    const old: EngineEvent[] = [
+      { type: 'Jjok', seq: 1, seat: 0, cards: [4, 5] },
+      { type: 'InstantPayout', seq: 2, seat: 0, cards: [], kind: 'firstPpeok', points: 2, from: 1 },
+      godori,
+    ];
+    if (mode === 'deal') old.push(dealt);
+    pb.enqueue(old, initial);
+    await vi.waitFor(() => expect(pb.idle).toBe(true));
+    expect(sound.mock.calls.map(([kind]) => kind)).toEqual(['jjok', 'flip']);
+    expect(pb.toast).toBeNull();
+    expect(pb.banner).toBeNull();
+    expect(pb.milestones.map(({ round, text }) => ({ round, text }))).toEqual([
+      { round: latest.round, text: '고도리' },
+    ]);
+    expect(pb.board).toEqual(snap(latest));
+    expect(pb.pending).toBe(0);
+    expect(onIdle).toHaveBeenCalledTimes(1);
+  },
+);
+
+test.each(['detached', 'deal', 'replay'] as const)(
+  '%s callback dispose: 잔여 효과와 idle을 차단한다',
+  async (mode) => {
+    const onIdle = await setup({ onBanner: () => pb.dispose() }, mode !== 'detached');
+    document.documentElement.dataset['speed'] = 'instant';
+    const sound = vi.spyOn(sounds, 'play').mockImplementation(() => {});
+    const old: EngineEvent[] = [
+      { type: 'Jjok', seq: 1, seat: 0, cards: [4, 5] },
+      { type: 'InstantPayout', seq: 2, seat: 0, cards: [], kind: 'firstPpeok', points: 2, from: 1 },
+      godori,
+    ];
+    if (mode === 'deal') old.push(dealt);
+    pb.enqueue(old, initial);
+    await vi.waitFor(() => expect(pb.busy).toBe(false));
+    expect(sound.mock.calls.map(([kind]) => kind)).toEqual(['jjok']);
+    expect(pb.toast).toBeNull();
+    expect(pb.banner).toBeNull();
+    expect(pb.milestones).toEqual([]);
+    expect(pb.pending).toBe(0);
+    expect(onIdle).not.toHaveBeenCalled();
+  },
+);
+
+test('names callback reset 뒤 옛 toast를 쓰지 않고 새 세대를 진행한다', async () => {
+  const latest = { ...initial, round: initial.round + 1 };
+  await setup({
+    names: () => {
+      pb.reset(latest);
+      pb.enqueue([{ type: 'CardFlipped', seq: 8, seat: 0, cards: [8] }], latest);
+      return ['좌석0', '좌석1'];
+    },
+  });
+  document.documentElement.dataset['speed'] = 'instant';
+  const sound = vi.spyOn(sounds, 'play').mockImplementation(() => {});
+  pb.enqueue(
+    [{ type: 'InstantPayout', seq: 2, seat: 0, cards: [], kind: 'firstPpeok', points: 2, from: 1 }],
+    initial,
+  );
+  await vi.waitFor(() => expect(pb.idle).toBe(true));
+  expect(pb.toast).toBeNull();
+  expect(pb.board).toEqual(snap(latest));
+  expect(sound.mock.calls.map(([kind]) => kind)).toEqual(['payout', 'flip']);
+});
+
+test('Bomb 배너 callback reset은 같은 이벤트의 뒤쪽 toast/names도 차단한다', async () => {
+  const latest = { ...initial, round: initial.round + 1 };
+  const names = vi.fn(() => ['좌석0', '좌석1'] as const);
+  await setup(
+    {
+      names,
+      onBanner: () => {
+        pb.reset(latest);
+        pb.enqueue([{ type: 'CardFlipped', seq: 8, seat: 0, cards: [8] }], latest);
+      },
+    },
+    false,
+  );
+  const sound = vi.spyOn(sounds, 'play').mockImplementation(() => {});
+  pb.enqueue(
+    [{ type: 'Bomb', seq: 1, seat: 0, cards: [4, 5, 6], month: 2, handCards: 3 }],
+    initial,
+  );
+  await vi.waitFor(() => expect(pb.idle).toBe(true));
+  expect(names).not.toHaveBeenCalled();
+  expect(pb.toast).toBeNull();
+  expect(sound.mock.calls.map(([kind]) => kind)).toEqual(['bomb', 'flip']);
+});
+
+test('같은 세대 callback enqueue는 옛 잔여 이벤트와 새 FIFO를 보존한다', async () => {
+  await setup(
+    { onBanner: () => pb.enqueue([{ type: 'CardFlipped', seq: 8, seat: 0, cards: [8] }], initial) },
+    false,
+  );
+  const sound = vi.spyOn(sounds, 'play').mockImplementation(() => {});
+  pb.enqueue(
+    [
+      { type: 'Jjok', seq: 1, seat: 0, cards: [4, 5] },
+      { type: 'InstantPayout', seq: 2, seat: 0, cards: [], kind: 'firstPpeok', points: 2, from: 1 },
+    ],
+    initial,
+  );
+  await vi.waitFor(() => expect(pb.idle).toBe(true));
+  expect(sound.mock.calls.map(([kind]) => kind)).toEqual(['jjok', 'payout', 'flip']);
+  expect(pb.toast?.text).toContain('첫뻑');
 });
 
 test.each([50, 150, 300])(

@@ -211,6 +211,7 @@ async function runStep(
     if (host.isCurrent?.() === false) return board;
     next = applyEvent(next, event);
     host.onEvent(event);
+    if (host.isCurrent?.() === false) return board;
   }
   if (step.kind === 'none' || durScale(host.root) === 0) {
     await host.commit(next);
