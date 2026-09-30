@@ -596,6 +596,8 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | Android          | android            | JUnit + Ktor testApplication, Android Lint                    | 매 PR                                  |
 | 실기기           | 전체               | 사용자 + 절차서 + 로그 공유                                   | M0, M5, 릴리스                         |
 
+NP-10·NF-09 / #221(#219 CI 후속): `web/src/p2p/wiring.test.ts` 소유의 두 제한시간 시험은 무작위 선 고르기가 4수 안에 끝난다는 준비 가정을 정상 분배가 확인된 합성 난수 fixture로 대체하고 spy를 복원한다. 두 번 동월 반례는 합성 재현이며 CI 당시 seed는 미확정이다. 회귀는 Chromium·WebKit의 `preparing` 진입·기존 시간 단언과 시험 간 spy 복원을 확인한다(v0.3.3 목표).
+
 ---
 
 ## 5. CI/CD (GitHub Actions, `ubuntu-24.04` 고정)
