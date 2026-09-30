@@ -150,7 +150,7 @@
         event as CustomEvent<{ panel: HTMLElement; active: boolean | null }>
       ).detail;
       if (active) {
-        dismissedPanels.delete(panel);
+        if (dismissedPanels.delete(panel)) appliedInert.set(panel, false);
         promptPanels.add(panel);
       } else {
         promptPanels.delete(panel);

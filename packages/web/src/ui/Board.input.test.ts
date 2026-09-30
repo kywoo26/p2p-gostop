@@ -383,7 +383,7 @@ for (const kind of ['gostop', 'shake']) {
     await userEvent.click(button);
     expect(onaction).toHaveBeenCalledTimes(1);
     button.focus();
-    await userEvent.keyboard('{Enter}');
+    await userEvent.keyboard('{Tab}{Shift>}{Tab}{/Shift}{Enter}');
     expect(onaction).toHaveBeenCalledTimes(2);
     expect(onaction.mock.calls.map(([action]) => action)).toEqual([
       kind === 'gostop' ? { type: 'go', seat: 0 } : { type: 'shake', seat: 0, accept: true },
