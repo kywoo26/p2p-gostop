@@ -338,6 +338,14 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
+### #207 B207-2 예산 정의·gate 개정 초안 (NF-03·AC-07·NF-RP-06)
+
+계획 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`에서 별도 Draft로 초기 필수 encoded response body **1,500,000 B(decimal MB)**와 모든 배포 파일 raw **2,097,152 B(2 MiB)**를 분리한 승인 대상 spec/gate diff를 준비한다. 현 main의 raw1,572,864 B 규범은 사용자 최종 승인·별도 병합 전 유지된다. 본 branch의 제안 검사 통과는 사용자 승인/출하/기능PR 통합이 아니다. 기존 실제 누적1,577,077 B·4,213 B 초과 실패를 보존한다.
+
+소유는 해당 NF/AC 문단·필요 최소 ui-spec 참조·이 실행 단위/매트릭스, raw gate 상수와 경계/전체 파일 회계 검사, 비공개 loopback 실제 제품 요청 계측이다. UI/규칙/wire/저장/자산/ARIA/제품 guard와 기존 하위 자산 예산은 변경하지 않는다. 2초/100ms/60fps 목표는 별도 보존한다. 2MiB−1/정확/초과, 숨김/metadata/바이너리 포함 회계·외부 URL 반례를 확인하고 기존 고정 UI artifact에 old/proposed gate를 적용해 바이트 동일 A/B를 남긴다.
+
+현행 StaticSite와 기존 loopback LAN E2E 흐름으로 host/guest 로비→첫 게임 상호작용 가능, warm/후속 판 unique encoded body를 가능한 고정 합법 fixture로 Chromium/WebKit 각각3회 관측한다. 요청 집합·Content-Encoding/cache와 관측 endpoint를 명시하며 부재 worker 비용을0이라고 추정하지 않는다. 실패하면 ready를 꾸미지 않고 불가 이유/수용 미완을 기록한다. Galaxy/iPhone 핫스팟 baseline·JS parse/decode/frame/전력·사람 최소3회/독립 리뷰 후 규범 결정 추천과 사용자 최종 승인 대기를 노출한다. Draft 해제·merge/tag/release·원 UI cap 우회는 승인하지 않는다.
+
 ### #207 누적 번들 실측·손실 없는 최적화 (NF-03·AC-07·NF-RP-06)
 
 실행 단위 **B207-1**: main `2e90fedb2bca04c6157ea594cf743d52032abcc1`, #218 `ad1afc818af1506aad710439de508bccf50adda2`, #223 임시 head `12a2950ec92aba28e61e85da41fbc48cd6571dd9`, #225 `a3acbb8df4b969046c6a4bd9cf97fe16db47b905`를 고정한다. 별도 임시 합성 tree에서 개별·실제 누적 artifact를 같은 버전/명령으로 세 번 빌드하고 파일 SHA-256·raw 카테고리 manifest를 남긴다. 단순 증분 합은 실제 누적 측정으로 쓰지 않는다. #223은 최종 제품 전이므로 새 head 누적 gate는 별도다.
