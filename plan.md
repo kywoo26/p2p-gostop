@@ -106,6 +106,8 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
+**#208 개인정보 잔존·재유입 감사 (NF-01·NF-RP-06):** Node 내장 API만 쓰는 추적 텍스트/PR 추가 행 검사와 합성 반례 테스트를 루트 lint에 연결한다. 신규 의존성·제품 상한은 추가하지 않는다. §1.9의 공개 검증 자료도 값 비노출·역할별 일반화를 적용한다. 범위·오탐·#190 소유 잔존·과거 이력/외부 미검증은 [감사 기록](docs/reviews/privacy-residue-audit.md)에 구분한다. 요구사항 완료 상태는 변경하지 않는다.
+
 **NF-09 CI 설치 경로:** Ubuntu 24.04 GitHub 러너의 기존 apt 미러 목록에서 공식 HTTPS archive/security를 Azure HTTP보다 우선한다(`.github/scripts/prefer-ubuntu-https.sh`, 미지원 형식은 무변경 실패). source·suite/component·Signed-By·신뢰 키·버전 핀·Playwright 공식 설치 명령과 20분 검증 상한은 보존하며, 호스트 설치는 기존 `tools/setup-host.sh`만 사용한다. 설치 지연 감소·전체 timing 완료는 hosted CI 측정 후 판정하고, 요구사항 완료 상태는 바꾸지 않는다.
 
 **RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
