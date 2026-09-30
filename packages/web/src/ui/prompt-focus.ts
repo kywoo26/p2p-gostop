@@ -93,7 +93,10 @@ export function promptFocus(panel: HTMLElement) {
   return {
     destroy() {
       release();
-      notify(null);
+      // 퇴장 노드가 DOM에서 사라진 뒤에만 보드의 보관 목록에서 제거한다.
+      queueMicrotask(() => {
+        if (!panel.isConnected) notify(null);
+      });
       panel.removeEventListener('introstart', acquire);
       panel.removeEventListener('outrostart', release);
     },
