@@ -97,14 +97,15 @@ test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 �
 }) => {
   const server = await relay();
   const guest = await browser.newPage();
-  const welcomes: { rules: unknown }[] = [];
+  const welcomes: { rules: unknown; names: unknown }[] = [];
   guest.on('websocket', (socket) => {
     socket.on('framereceived', ({ payload }) => {
       const message = JSON.parse(typeof payload === 'string' ? payload : payload.toString()) as {
         t?: string;
         rules?: unknown;
+        names?: unknown;
       };
-      if (message.t === 'welcome') welcomes.push({ rules: message.rules });
+      if (message.t === 'welcome') welcomes.push({ rules: message.rules, names: message.names });
     });
   });
   try {
@@ -117,15 +118,79 @@ test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 �
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();
     await expect.poll(() => welcomes.length).toBeGreaterThan(0);
+    let previous = welcomes.length;
+    let previousRules: unknown = null;
     for (const preset of ['traditional', 'standard', 'arcade'] as const) {
-      const before = welcomes.length;
       await page.getByRole('combobox', { name: '규칙' }).selectOption(preset);
-      await expect.poll(() => welcomes.length).toBeGreaterThan(before);
-      // 적용 중 중간 welcome이 먼저 올 수 있어 마지막 welcome이 프리셋과 같아질 때까지 기다린다(네이티브 CI에서 재현).
       await expect.poll(() => welcomes.at(-1)?.rules).toEqual(PRESETS[preset]);
+      const current = welcomes.length - 1;
+      // 다음 welcome은 같은 소켓에서 앞선 모든 welcome 뒤에 온다. 이를 전송 완료 경계로 쓴다.
+      expect(welcomes.slice(previous, current).map((welcome) => welcome.rules)).toEqual(
+        previousRules === null ? [] : [previousRules],
+      );
+      previous = current;
+      previousRules = PRESETS[preset];
       await expect(page.getByText(/사용자 지정 규칙이 게스트에게 전달됩니다/)).toHaveCount(0);
     }
+    // 마지막 프리셋도 호스트 이름 변경 welcome으로 경계를 닫아 늦은 중복을 검사한다.
+    await page.getByRole('textbox', { name: '내 이름' }).fill('순서 확인');
+    await page.getByRole('textbox', { name: '내 이름' }).blur();
+    await expect.poll(() => welcomes.at(-1)?.names).toEqual(['순서 확인', '민지']);
+    expect(welcomes.slice(previous, -1).map((welcome) => welcome.rules)).toEqual([PRESETS.arcade]);
   } finally {
+    await guest.close();
+    server.proc.kill();
+  }
+});
+
+test('4001 뒤 수동 재접속은 hello와 welcome을 한 번씩 보내고 로비 규칙을 복구한다 (FR-51, NP-02) @guest', async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  const server = await relay();
+  const guest = await browser.newPage();
+  const replacement = await browser.newPage();
+  let hellos = 0;
+  const welcomes: unknown[] = [];
+  guest.on('websocket', (socket) => {
+    socket.on('framesent', ({ payload }) => {
+      const message = JSON.parse(typeof payload === 'string' ? payload : payload.toString()) as {
+        t?: string;
+      };
+      if (message.t === 'hello') hellos++;
+    });
+    socket.on('framereceived', ({ payload }) => {
+      const message = JSON.parse(typeof payload === 'string' ? payload : payload.toString()) as {
+        t?: string;
+        rules?: unknown;
+      };
+      if (message.t === 'welcome') welcomes.push(message.rules);
+    });
+  });
+  try {
+    const root = baseURL ?? 'http://127.0.0.1:4173';
+    const query = `?speed=instant&relay=127.0.0.1:${server.port}`;
+    await page.goto(`${root}/${query}&role=host#/versus`);
+    await guest.goto(`${root}/${query}&role=guest`);
+    await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
+    await guest.getByRole('button', { name: '입장' }).click();
+    await expect.poll(() => welcomes.length).toBe(1);
+    await replacement.goto(`${root}/${query}&role=guest`);
+    await replacement.getByRole('textbox', { name: '내 이름' }).fill('다른 손님');
+    await replacement.getByRole('button', { name: '입장' }).click();
+    await expect(guest.getByRole('button', { name: '다시 연결' })).toBeVisible();
+    const beforeHello = hellos;
+    const beforeWelcome = welcomes.length;
+    await guest.getByRole('button', { name: '다시 연결' }).click();
+    await expect.poll(() => welcomes.length).toBeGreaterThan(beforeWelcome);
+    await page.getByRole('combobox', { name: '규칙' }).selectOption('arcade');
+    await expect.poll(() => welcomes.at(-1)).toEqual(PRESETS.arcade);
+    expect(hellos - beforeHello).toBe(1);
+    expect(welcomes.slice(beforeWelcome)).toEqual([PRESETS.standard, PRESETS.arcade]);
+    await expect(guest.getByTestId('lobby')).toBeVisible();
+  } finally {
+    await replacement.close();
     await guest.close();
     server.proc.kill();
   }

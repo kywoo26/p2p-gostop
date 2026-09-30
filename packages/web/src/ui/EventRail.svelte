@@ -1,6 +1,7 @@
 <script lang="ts">
-  // UX-08 / #47: 사건은 예약 행만 사용. 선택 중 마지막 문구를 보관한다.
-  // 시간/소리/효과 강도는 기존 재생기와 후속 effects PR 소유.
+  // UX-08 / PA-06: 사건은 예약 행만 사용. 선택 중 마지막 문구를 보관한다.
+  import type { Seat } from '@p2p-gostop/engine';
+  import { baseMs } from '../anim/durations.ts';
   import type { Banner } from './banner.ts';
   import EventBanner from './EventBanner.svelte';
   let {
@@ -9,30 +10,100 @@
     actor = null,
     blocked = false,
     idle,
+    round = 0,
+    viewer = 0,
+    milestones = [],
   }: {
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
     actor?: string | null;
     blocked?: boolean;
     idle: string;
+    round?: number;
+    viewer?: Seat;
+    milestones?: readonly {
+      readonly id: number;
+      readonly round: number;
+      readonly seat: Seat;
+      readonly text: string;
+    }[];
   } = $props();
   let deferred = $state('');
+  let latched = $state<(Banner & { readonly id?: number }) | null>(null);
+  type Milestone = {
+    readonly kind: 'jokbo';
+    readonly text: string;
+    readonly seat: Seat;
+    readonly id: number;
+    readonly round: number;
+  };
+  let queue = $state.raw<Milestone[]>([]);
+  let seen = 0;
+  let previousRound: number | null = null;
+  const nextMilestone = $derived(queue[0] ?? null);
+  const milestoneId = $derived(nextMilestone?.id ?? null);
+  const milestonePaused = $derived(blocked || banner !== null || latched !== null);
+  const shown = $derived(
+    banner ?? latched ?? (nextMilestone?.round === round ? nextMilestone : null),
+  );
+  const shownActor = $derived(
+    shown?.seat === undefined || shown.seat === null
+      ? actor
+      : shown.seat === viewer
+        ? '나'
+        : '상대',
+  );
   $effect(() => {
-    if (blocked && (banner || toast)) {
-      deferred = [banner ? `${actor ?? ''} ${banner.text}`.trim() : '', toast?.text]
+    if (blocked) {
+      latched = null;
+      return;
+    }
+    if (banner !== null) latched = banner;
+  });
+  $effect(() => {
+    if (latched === null) return;
+    const id = latched.id;
+    const timer = window.setTimeout(() => {
+      if (latched?.id === id) latched = null;
+    }, baseMs('eventCallout'));
+    return () => window.clearTimeout(timer);
+  });
+  $effect(() => {
+    if (previousRound !== null && round !== previousRound) {
+      queue = [];
+      latched = null;
+    }
+    previousRound = round;
+    const fresh = milestones.filter((item) => item.id > seen);
+    if (fresh.length > 0) seen = fresh[fresh.length - 1]!.id;
+    const current = fresh.filter((item) => item.round === round);
+    if (current.length > 0)
+      queue = [...queue, ...current.map((item) => ({ ...item, kind: 'jokbo' as const }))];
+  });
+  $effect(() => {
+    const id = milestoneId;
+    if (id === null || milestonePaused) return;
+    const timer = window.setTimeout(() => {
+      if (queue[0]?.id === id) queue = queue.slice(1);
+    }, baseMs('eventCallout'));
+    return () => window.clearTimeout(timer);
+  });
+  $effect(() => {
+    if (blocked && (shown || toast)) {
+      deferred = [shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '', toast?.text]
         .filter(Boolean)
         .join(' · ');
-    } else if (!blocked && (banner || toast)) deferred = '';
+    } else if (!blocked && (shown || toast)) deferred = '';
   });
 </script>
 
 {#if !blocked}
   <div class="event-rail" data-testid="event-rail">
-    {#if banner}
+    {#if shown}
       <EventBanner
-        kind={banner.kind}
-        text={[banner.text, toast?.text].filter(Boolean).join(' · ')}
-        {actor}
+        kind={shown.kind}
+        text={shown.text.split(' · ')[0] ?? shown.text}
+        actor={shownActor}
       />
     {:else}<p role="status" class:quiet={!toast && !deferred}>
         {toast?.text ?? (deferred ? `${idle} · ${deferred}` : idle)}
@@ -42,10 +113,17 @@
 
 <style>
   .event-rail {
+    display: flex;
+    justify-content: flex-end;
     min-width: 0;
     max-height: 100%;
     overflow: hidden;
     pointer-events: none;
+  }
+  @media (min-height: 900px) {
+    .event-rail {
+      justify-content: center;
+    }
   }
   .quiet {
     position: absolute;
@@ -68,20 +146,21 @@
   .event-rail :global(.banner) {
     min-width: 0;
     max-width: 100%;
-    font-size: 20px;
-    line-height: 22px;
-    padding: 2px 8px;
-    box-shadow: none;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
     overflow: hidden;
   }
-  .event-rail :global(.actor) {
-    display: inline;
-    font-size: inherit;
-    line-height: inherit;
-    opacity: 1;
+  @media (max-height: 899px) {
+    .event-rail :global(.banner) {
+      flex-direction: column;
+      gap: 0;
+      max-width: 82px;
+      padding: 4px;
+    }
+    .event-rail :global(.banner::before) {
+      display: none;
+    }
+    .event-rail :global(.banner strong) {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
   }
 </style>

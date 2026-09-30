@@ -115,6 +115,7 @@ export class GuestGame implements GameController {
 
   private readonly session: GuestSession;
   private readonly ws: { dispose(): void; reconnect(force?: boolean): void } | null;
+  private readonly hasRelayNotices: boolean;
   private readonly onTicket: (ticket: GuestTicket) => void;
   private readonly persist: boolean;
   private readonly now: () => number;
@@ -172,6 +173,7 @@ export class GuestGame implements GameController {
       this.ws = ws;
       inner = ws;
     }
+    this.hasRelayNotices = inner.onRelay !== undefined;
     this.playback = new Playback(emptyBoard(ME, ['호스트', options.name], [0, 0]), {
       viewer: ME,
       names: () => this.names,
@@ -198,7 +200,9 @@ export class GuestGame implements GameController {
     });
     this.session.onChange(() => this.sync());
     this.session.advanceTime(this.now());
-    this.session.join();
+    // 중계는 현재 상대가 있으면 present, 나중에 붙으면 joined를 보낸다. 여기서도 hello를
+    // 대기열에 넣으면 present의 hello와 겹쳐 옛 로비 welcome이 설정 변경 뒤에 도착할 수 있다.
+    if (!this.hasRelayNotices) this.session.join();
     if (options.clock ?? true) {
       this.clock = setInterval(() => this.tick(), CLOCK_MS);
       document.addEventListener('visibilitychange', this.onVisible);
@@ -616,7 +620,8 @@ export class GuestGame implements GameController {
       return;
     }
     this.ws?.reconnect(true);
-    this.session.join();
+    // 새 소켓의 present/joined가 hello를 보낸다. 여기서도 보내면 대기열 hello와 중복된다.
+    if (!this.hasRelayNotices) this.session.join();
   }
 
   /** 진단 로그를 호스트로 올린다 (FR-30, NP-09: 줄 2KB·메시지 64KB 바이트 상한은 GuestSession이 자른다) */

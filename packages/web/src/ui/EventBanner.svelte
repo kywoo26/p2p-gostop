@@ -1,12 +1,11 @@
 <script lang="ts">
-  import Sprite from '../pro-assets/Sprite.svelte';
-  // 이벤트 배너 (spec 6.4: 350ms 표시 후 다음 단계와 겹쳐 사라짐, 6.5: 문구·색). 모달·배너는 Svelte transition(plan.md 1.6).
-  import { fade, scale } from 'svelte/transition';
+  // PA-06 / UX-09: 예약 레일 안의 짧은 한지 콜아웃. 시간 토큰은 durationMs와 동기화된다.
+  import { fade } from 'svelte/transition';
   import { durationMs } from '../anim/durations.ts';
   import type { BannerKind } from './banner.ts';
 
   interface Props {
-    kind: BannerKind;
+    kind: BannerKind | 'jokbo';
     text: string;
     /** 누가 했는지 ("상대 쪽!", M3 리뷰 I-4). 없으면 문구만 */
     actor?: string | null;
@@ -18,75 +17,91 @@
 <div
   class={['banner', `kind-${kind}`]}
   role="status"
-  in:scale={{ duration: durationMs('modal'), start: 0.7 }}
-  out:fade={{ duration: durationMs('banner') / 2 }}
+  in:fade={{ duration: durationMs('modal') }}
+  out:fade={{ duration: durationMs('modal') }}
 >
-  <Sprite {kind} />
-  {#if actor}<span class="actor">{`${actor} `}</span>{/if}{text}!
+  {#if actor}<span class="actor">{`${actor} `}</span>{/if}<strong>{text}!</strong>
 </div>
 
 <style>
   .banner {
-    --bg: var(--color-event-stop);
-    --fg: var(--color-banner-dark-text);
-    display: inline-block;
-    min-width: 7rem;
-    padding: var(--space-2) var(--space-6);
-    border-radius: var(--radius-m);
-    border: 2px solid oklch(100% 0 0 / 0.35);
-    background: var(--bg);
-    color: var(--fg);
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: 0.04em;
-    text-align: center;
-    box-shadow: 0 0.5rem 1.5rem oklch(0% 0 0 / 0.45);
-  }
-
-  .actor {
-    display: block;
-    font-size: var(--font-size-m);
-    font-weight: 700;
+    --mark: var(--skin-brass);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 4px 6px;
+    border: 1px solid var(--skin-brass);
+    border-radius: 4px;
+    background: var(--skin-paper);
+    color: var(--color-hud);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
     letter-spacing: 0;
-    line-height: 1.1;
-    opacity: 0.85;
+    text-align: center;
+    pointer-events: none;
   }
-
-  /* 밝은 배경(따닥·쓸·고·스톱)은 어두운 글자, 진한 배경(뻑·쪽·흔들기·폭탄)은 흰 글자 (명도 대비 3:1 이상, 큰 글자) */
+  .banner::before {
+    content: '';
+    flex: none;
+    width: 4px;
+    height: 18px;
+    border-radius: 2px;
+    background: var(--mark);
+  }
+  strong {
+    font-weight: 600;
+  }
+  .actor {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 16px;
+  }
+  .kind-go {
+    flex-direction: column;
+    gap: 0;
+    min-width: 72px;
+    font-size: 24px;
+    line-height: 28px;
+    min-height: 52px;
+    padding: 4px;
+  }
+  .kind-go::before {
+    display: none;
+  }
   .kind-ppeok {
-    --bg: var(--color-event-ppeok);
-    --fg: var(--color-banner-light-text);
+    --mark: var(--color-event-ppeok);
   }
-
   .kind-jjok {
-    --bg: var(--color-event-jjok);
-    --fg: var(--color-banner-light-text);
+    --mark: var(--color-event-jjok);
   }
-
   .kind-ttadak {
-    --bg: var(--color-event-ttadak);
+    --mark: var(--color-event-ttadak);
   }
-
   .kind-sseul {
-    --bg: var(--color-event-sseul);
+    --mark: var(--color-event-sseul);
   }
-
   .kind-shake,
   .kind-bomb,
   .kind-chongtong {
-    --bg: var(--color-event-shake);
-    --fg: var(--color-banner-light-text);
+    --mark: var(--color-event-shake);
   }
-
-  .kind-go {
-    --bg: var(--color-event-go);
-  }
-
-  /* 나가리·허당: 판이 그냥 끝남 (중립색) */
   .kind-nagari,
   .kind-hudang {
-    --bg: var(--color-surface-raised);
-    --fg: var(--color-text);
+    --mark: var(--color-hud-muted);
+  }
+  :global([data-effect-intensity='subtle']) .banner {
+    padding: 4px 8px;
+  }
+  :global([data-effect-intensity='strong']) .banner {
+    padding: 6px 12px;
+  }
+  :global([data-effect-intensity='strong']) .kind-go {
+    padding: 4px;
+  }
+  :global([data-effect-intensity='off']) .banner {
+    --mark: var(--color-hud);
   }
 </style>

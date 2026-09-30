@@ -13,7 +13,8 @@
     type Seat,
     type PlayerView,
   } from '@p2p-gostop/engine';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
+  import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import type { BoardExtras } from '../game/adapter.ts';
   import { handAssist, handAssistPlayer, hintLevelOf } from '../game/assist.ts';
   import type { HintLevel } from '../game/assist.ts';
@@ -57,6 +58,12 @@
     confirmDelay?: boolean;
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
+    milestones?: readonly {
+      readonly id: number;
+      readonly round: number;
+      readonly seat: Seat;
+      readonly text: string;
+    }[];
     /** 이벤트 재생 중 (입력 잠금) */
     busy?: boolean;
     /** 상대(CPU)가 생각 중 */
@@ -91,6 +98,7 @@
     confirmDelay = false,
     banner = null,
     toast = null,
+    milestones = [],
     busy = false,
     thinking = false,
     turnMs = null,
@@ -106,13 +114,84 @@
 
   let landscape = $state(false);
   let infoDialog: HTMLDialogElement;
+  // UX-07/24: 회전 잠금과 선택 창 잠금은 이 보드 한 곳에서 합성한다.
+  // 선택 창 전환 중에는 여러 창이 공존할 수 있으므로 활성 창을 모두 추적한다.
+  const promptPanels = new SvelteSet<HTMLElement>();
+  const dismissedPanels = new SvelteSet<HTMLElement>();
+  const appliedInert = new SvelteMap<HTMLElement, boolean>();
+  function applyBackgroundInert(board: HTMLElement) {
+    const next = new SvelteSet<HTMLElement>();
+    if (landscape) {
+      for (const selector of ['.hud', '.decision-area', '.mine-hud', '.hand-zone']) {
+        const node = board.querySelector<HTMLElement>(selector);
+        if (node) next.add(node);
+      }
+    }
+    for (const panel of promptPanels) {
+      for (let child = panel; child.parentElement; child = child.parentElement) {
+        for (const sibling of child.parentElement.children) {
+          if (
+            sibling instanceof HTMLElement &&
+            sibling !== child &&
+            !sibling.matches('script, style')
+          )
+            next.add(sibling);
+        }
+        if (child.parentElement === board || child.parentElement === document.body) break;
+      }
+    }
+    for (const panel of dismissedPanels) next.add(panel);
+    for (const [node, previous] of appliedInert) {
+      if (next.has(node)) continue;
+      node.inert = previous;
+      appliedInert.delete(node);
+    }
+    for (const node of next) {
+      if (!appliedInert.has(node)) appliedInert.set(node, node.inert);
+      node.inert = true;
+    }
+  }
+  function managePromptLock(board: HTMLElement) {
+    const change = (event: Event) => {
+      const { panel, active } = (
+        event as CustomEvent<{ panel: HTMLElement; active: boolean | null }>
+      ).detail;
+      if (active) {
+        if (dismissedPanels.delete(panel)) appliedInert.set(panel, false);
+        promptPanels.add(panel);
+      } else {
+        promptPanels.delete(panel);
+        if (active === null) dismissedPanels.delete(panel);
+        else dismissedPanels.add(panel);
+      }
+      applyBackgroundInert(board);
+    };
+    board.addEventListener('promptlockchange', change);
+    return {
+      destroy() {
+        board.removeEventListener('promptlockchange', change);
+        for (const [node, previous] of appliedInert) node.inert = previous;
+        appliedInert.clear();
+        promptPanels.clear();
+        dismissedPanels.clear();
+      },
+    };
+  }
   $effect(() => {
     // 손에 든 기기의 가로 회전만 안내한다. Mac 창은 방향·크기와 무관하게 같은 판을 쓴다.
     const media = window.matchMedia(
       '(orientation: landscape) and (pointer: coarse) and (max-width: 1023px)',
     );
     const update = () => {
+      const wasLandscape = untrack(() => landscape);
       landscape = media.matches;
+      const board = root;
+      if (board) untrack(() => applyBackgroundInert(board));
+      if (wasLandscape && !media.matches && !document.querySelector('dialog:modal')) {
+        const panel = untrack(() => [...promptPanels].find((node) => node.isConnected));
+        if (panel && !panel.contains(document.activeElement))
+          (panel.querySelector<HTMLElement>('h2') ?? panel).focus({ preventScroll: true });
+      }
     };
     update();
     media.addEventListener('change', update);
@@ -350,12 +429,13 @@
   data-busy={busy}
   data-turn-ms={turnMs}
   bind:this={root}
+  use:managePromptLock
   onpointerdowncapture={startSkip}
   onpointerupcapture={finishSkip}
   onpointercancel={() => (skipPress = null)}
 >
   <Scene scene="table" />
-  <div class="hud" inert={landscape} data-testid="hud">
+  <div class="hud" data-testid="hud">
     <div class="table-heading">
       <span>{view.round}판 · 점당 {formatCompactMoney(perPoint, unit)}</span>
       <strong title={opponent.name}
@@ -403,7 +483,6 @@
   <div
     class="decision-area"
     class:idle-slot={(!selecting || pending?.kind === 'target') && !view.canFlipOnly}
-    inert={landscape}
   >
     <div class="decision-content">
       {#if timeoutText && timerText}<p class="timer-prompt">{timerText} · {timeoutText}</p>{/if}
@@ -411,6 +490,9 @@
         {banner}
         {toast}
         {actor}
+        round={view.round}
+        viewer={seat}
+        {milestones}
         blocked={selecting || view.canFlipOnly}
         idle={thinking
           ? '상대 차례 · 생각 중'
@@ -493,7 +575,7 @@
       {/if}
     </div>
   </div>
-  <div class="mine-hud" inert={landscape}>
+  <div class="mine-hud">
     <div class="scoreboard" class:expanded={expandedHud} aria-label="내 점수판">
       <SeatBar
         who="나"
@@ -517,7 +599,7 @@
   <div class="captured-zone mine">
     <CapturedPile summary stats={myStats} label="내 획득패" highlight={view.highlight ?? []} />
   </div>
-  <div class="hand-zone" inert={landscape}>
+  <div class="hand-zone">
     <Hand
       compact
       cards={me.hand ?? []}

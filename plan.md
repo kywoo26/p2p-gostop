@@ -321,6 +321,12 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 ## 3-2. 진행 매트릭스 (기본 2026-09-29 main `daa5e7d`; RP-07 2026-09-30 `e33f044` 기반 갱신)
 
+### 선택창 회전 잠금 (#155, UX-07·UX-24)
+
+| ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
+|---|---|---|---|
+| UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 독립 리뷰 P1은 퇴장 중 재활성 창의 복원값을 false로 정정하여 수정하며, 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 입력 회귀 검증을 추가한다. | 같은 리뷰어의 재등장 경계 재검토 대기. Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
+
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |
@@ -379,7 +385,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | FR-48 | 부분   | E/src/preview.ts·interaction-assist.ts, P/src/view.ts; W/src/game/assist.ts·ui/Board.svelte 기본 매칭/확정/행동 상태 데이터                                                                                               | 카드 상태 CSS·상세 순수 API·200%·초점 통합 #81·#51                                                                               | 미     |
 | FR-49 | 미구현 | A/src/policies/ismcts.ts는 CPU 전용, W/src/settings/settings.svelte.ts에 조언 opt-in/요청 경로 없음                                                                                                                       | 솔로 전용 조언·P2P 계산 차단 회귀 #90                                                                                            | —      |
 | FR-50 | 부분   | W/src/game/session.ts·solo.svelte.ts·storage/session-schema.ts에 실제 손패 표식 표시 기반 단조 hintUsage 훅·판 기록, session-save.test.ts의 v0/v1 복원→정산 미확인 보존 #80·#115                                          | 옛 기록 미확인 UI·AI 조언 사용 #90·#44                                                                                           | —      |
-| FR-51 | 완료   | W/src/routes/HostRoom.svelte·p2p/host-save.ts의 로비 끄기/5~60초·별도 저장, P/src/messages.ts welcome; W/e2e/p2p.spec.ts 사전 표시                                                                                        | 실기기 로비·저장 확인 #75                                                                                                        | 미     |
+| FR-51 | 완료   | W/src/routes/HostRoom.svelte·p2p/host-save.ts의 로비 끄기/5~60초·별도 저장, P/src/messages.ts welcome; W/e2e/p2p.spec.ts 사전 표시; W/src/p2p/wiring.test.ts·e2e/settings-rules.spec.ts 로비 welcome 단일 전파 #178 | 실기기 로비·저장 확인 #75                                                                                                        | 미     |
 | FR-52 | 완료   | W/src/ui/Board.svelte·SeatBar.svelte, routes/Game.svelte의 HUD·프롬프트·메뉴·판 정보 시계; W/e2e/p2p.spec.ts                                                                                                              | 최소 높이·Safari 음성 안내 실기기 확인 #75                                                                                       | 미     |
 | FR-53 | 완료   | P/src/timer-policy.ts·host.ts·verify.ts 초과 행동/결과 기록·검증; P/test/timer.test.ts, relay-dev/test/session-relay.test.ts, W/e2e/p2p.spec.ts                                                                           | 실기기 결과 확인 #75                                                                                                             | —      |
 
@@ -388,7 +394,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 | ID    | 상태 | 코드·검증 근거                                                                                                                                                 | 남은 항목·추적                                                    | 실기기 |
 | ----- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
 | NP-01 | 완료 | P/src/transport.ts·codec.ts, W/src/p2p/link.ts; P/test/protocol.test.ts, W/src/p2p/wiring.test.ts                                                              | —                                                                 | —      |
-| NP-02 | 완료 | P/src/messages.ts·host.ts·guest.ts, W/src/p2p/guest.svelte.ts; P/test/schema-contracts.test.ts·session.test.ts, W/e2e/reconnect.spec.ts 응답 유실              | v3 결정 계약은 NP-10                                              | —      |
+| NP-02 | 완료 | P/src/messages.ts·host.ts·guest.ts, W/src/p2p/guest.svelte.ts; P/test/schema-contracts.test.ts·session.test.ts, W/e2e/reconnect.spec.ts 응답 유실; W/src/p2p/wiring.test.ts·e2e/settings-rules.spec.ts 단일 welcome #178 | v3 결정 계약은 NP-10                                              | —      |
 | NP-03 | 완료 | P/src/host.ts·guest.ts; P/test/session.test.ts·timer.test.ts, W/e2e/p2p.spec.ts 토큰 복귀·순번·시계                                                            | —                                                                 | —      |
 | NP-04 | 완료 | P/src/messages.ts·guest.ts 버전 거부; P/test/m4.test.ts·session.test.ts                                                                                        | —                                                                 | —      |
 | NP-05 | 완료 | P/src/guest.ts ping·host.ts 60초 감시·2초 마감 확인; P/test/session.test.ts·timer.test.ts                                                                      | —                                                                 | —      |
@@ -451,12 +457,12 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 |---|---|---|---|---|
 | NF-01 | 완료 | W/scripts/check-bundle.mjs, 로컬 public/cards·src/styles/fonts, K/server/SmokeServer.kt; KT/NoExternalUrlTest.kt, W/e2e/fonts.spec.ts 로컬 요청 | — | M0 |
 | NF-02 | 부분 | android/app/build.gradle.kts min33/target36, W/eslint.config.js 금지 API; W/e2e/p2p-screens.spec.ts HTTP·WebKit | 현재 iOS26.5 Safari·Android16 실제 UI 확인 #75 | 미 |
-| NF-03 | 미검증 | W/scripts/check-bundle.mjs·src/anim/flip.ts, W/e2e/solo.spec.ts timing·fonts.spec.ts | 첫 로딩2초/응답100ms/60fps 실제 핫스팟·기기 측정 #75; 평가 자산 빌드는 릴리스 근거 제외 | 미 |
+| NF-03 | 미검증 | W/scripts/check-bundle.mjs·src/anim/flip.ts·ui/EventRail.svelte, W/e2e/solo.spec.ts timing·fonts.spec.ts; PA-06 콜아웃은 예약 행만 사용하며 1.2초 토큰과 연속 완료 큐를 대조 | 첫 로딩2초/응답100ms/60fps 실제 핫스팟·기기 측정 #75; 평가 자산 빌드는 릴리스 근거 제외 | 미 |
 | NF-04 | 부분 | P/src/guest.ts·host.ts, K/HotspotService.kt, W/src/p2p/link.ts·styles/tokens.css; P/test/session.test.ts, W/src/p2p/wiring.test.ts | 실제 서비스 알림1개·유휴/복귀·배터리 회차 #75 | 미 |
 | NF-05 | 부분 | W/src/p2p/link.ts·host-save.ts·storage/session-save.ts; W/e2e/reconnect.spec.ts·navigation.spec.ts, P/test/session.test.ts | 정상 복귀와 응답 유실 경로의 5초 목표 구별·OS 종료 복구 실측 #75, 타이머 복귀 제안 #123 | 미 |
 | NF-06 | 부분 | K/server/SmokeServer.kt LAN gate, P/src/host.ts 토큰, W/src/routes/HostRoom.svelte 경고; KT/server/M4ServerTest.kt, P/test/session.test.ts | 토큰은 random32 전체 hex로 **256비트**, 명세128비트와 불일치(보안 약화 아님). #44에서 명세 정합 결정 | — |
 | NF-07 | 완료 | W/scripts/generate-oss-notices.mjs 수동 `oss:refresh`·oss-notices.test.mjs의 Vite 번들/lockfile 검사·vite.config.ts 배포 모듈 목록·public/oss/NOTICE.txt·routes/License.svelte·fonts/attribution.ts; Android `verifyOssNotices`의 런타임 그래프 검사, W/src/routes/License.test.ts·scripts/check-bundle.mjs, APK 자산 포함 검사 | 커밋된 웹·Android 고지를 각 빌드 단계에서 대조; 카드·폰트·자산 파일별 출처 유지 | — |
-| NF-08 | 부분 | W/src/ui/Card.svelte·Hand.svelte·Screen.svelte·styles/tokens.css; W/e2e/gallery.spec.ts axe·cards.spec.ts·hand-feedback.spec.ts. 손패·바닥은 별도 월 숫자·종류 배지 없이 카드 도상과 월·종류 aria-label을 사용(2026-09-30 개정) | 200% 확대·초점·진동 개별 끄기 #51·#49·#115; UX-06 전체 앞면 손패·주 버튼 같은 카드 놓기·5×3 기본 격자·손패/바닥48px·획득32px, 5크기×2엔진130화면 배치 감사 통과(기록: pro-skin-validation.md) | 미 |
+| NF-08 | 부분 | W/src/ui/Card.svelte·Hand.svelte·Screen.svelte·SeatBar.svelte·EventBanner.svelte·styles/tokens.css; W/e2e/gallery.spec.ts axe·cards.spec.ts·hand-feedback.spec.ts. 손패·바닥은 별도 월 숫자·종류 배지 없이 카드 도상과 월·종류 aria-label을 사용(2026-09-30 개정); PA-06 사건 문구와 `ScoreChanged.breakdown` 기반 족보 완료·연속 표시, 뻑·흔들 카운터 숫자+도상은 #171 구현 확인 | 200% 확대·초점·진동 개별 끄기 #51·#49·#115; UX-06 전체 앞면 손패·주 버튼 같은 카드 놓기·5×3 기본 격자·손패/바닥48px·획득32px, 콜아웃 제외 5크기×2엔진130화면 배치 감사 및 별도 콜아웃 표시 중 5크기×2엔진 검사 통과(기록: pro-skin-validation.md) | 미 |
 | NF-09 | 완료 | E/src/reduce.ts·rng.ts·replay.ts, A/src/rng.ts; E/test/api.test.ts·properties.test.ts, A/test/info-hiding.test.ts | AI 고정 반복 예산 기준 | — |
 | NF-10 | 미검증 | android/app/build.gradle.kts min33, AndroidManifest.xml NEARBY_WIFI_DEVICES·위치권한 없음, MainActivity.kt 이유 안내 | 서명 릴리스 APK≤15MB 실측·권한 UX #75; debug 크기를 릴리스 증거로 쓰지 않음 | 미 |
 | AC-00 | 완료 | K/HotspotService.kt·qr/WifiQr.kt·server/SmokePage.kt; KT/HotspotSessionTest.kt, docs/device-test/results.md v0.0.1·v0.0.2 사용자 로그 | 잠금 장시간·현재 게임은 AC-08/09 | M0 |
@@ -497,7 +503,7 @@ Safari는 WebKit 자동 검사로 계속 확인하고 실기기 판정은 iPhone
 
 현재 정식 UI의 **실기기 미검증 연결 목록**: FR-01~05·FR-12·FR-14·FR-15·FR-17·FR-19·FR-21~23·FR-30·FR-32·FR-40~46·FR-48·FR-51~52, AI-05, MN-04·MN-05, NF-02~05·NF-08·NF-10, AC-06·AC-08·AC-09. M0/구버전 결과를 이 목록의 통과로 전용하지 않는다. 미구현 기능은 구현 후 사람 회차에 포함한다. 순수 엔진·머니 산술·프로토콜 단위 검증은 실기기 요구와 분리한다.
 
-초기 head `e0a0bd8`의 실행 근거(아래 수치는 #151 병합 후 결과가 아님; 모두 `/home/k/.local/bin/docker compose run --rm dev …`): `npm ci`, `npm run check`, `npm test`(27파일·519테스트), `npm run test:browser`(52파일·350테스트), `npm run build -w packages/web`(1242.8KiB/1536KiB·외부 요청0), `npm run e2e -w packages/web`(108통과·평가용 등18건 skip), `android/gradlew -p android assembleDebug testDebugUnitTest lint` 통과. 별도 `env ENGINE_FULL=1 npm test -- packages/engine/test/properties.test.ts`의10,000판+첫 판1,000판도 통과했다. 포맷·린트 및 ID 누락/중복 검사는 PR 검증 기록으로 남긴다. 이 실행에 실기기·AI 강도 재측정·머니10,000판 재산정은 포함하지 않았다.
+초기 head `e0a0bd8`의 실행 근거(아래 수치는 #151 병합 후 결과가 아님; 모두 `"$HOME/.local/bin/docker" compose run --rm dev …`): `npm ci`, `npm run check`, `npm test`(27파일·519테스트), `npm run test:browser`(52파일·350테스트), `npm run build -w packages/web`(1242.8KiB/1536KiB·외부 요청0), `npm run e2e -w packages/web`(108통과·평가용 등18건 skip), `android/gradlew -p android assembleDebug testDebugUnitTest lint` 통과. 별도 `env ENGINE_FULL=1 npm test -- packages/engine/test/properties.test.ts`의10,000판+첫 판1,000판도 통과했다. 포맷·린트 및 ID 누락/중복 검사는 PR 검증 기록으로 남긴다. 이 실행에 실기기·AI 강도 재측정·머니10,000판 재산정은 포함하지 않았다.
 
 리뷰 반영 병합 트리(`daa5e7d` 포함)에서도 같은 Docker 진입점으로 `npm ci`, lint/check, Node519개, 브라우저56파일·366개, E2E117통과·19 skip, 웹 빌드1247.5/1536KiB·외부 요청0, Android assembleDebug/testDebugUnitTest/lint를 다시 통과했다. ENGINE_FULL의10,000판+첫 판1,000판도2/2 통과(44.96초). 매트릭스86 ID·닫힘33개·§3-3 진단5줄을 별도 검사했다. 실기기 판정은 바꾸지 않는다.
 
@@ -651,5 +657,5 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 ### PA-05~07 전문 스킨 구현 분할 (#104 이후)
 
 - **PA-05 / design/pro-skin**: #104 구조와 #166 제한시간 계약을 보존하고 Board·HUD·Home에 아트 디렉션을 적용한다. 사용자 확정 C/A/b안에 따라 SeatBar 마크업을 진영별로 재배치하고 공개 뷰의 스톱 예상액을 표시한다. PromptPanel의 WebKit 초점 순환 시점도 보완한다. 규칙·행동·`data-hand-*` 판정·`anim/*`·`--dur-*`는 변경하지 않는다. `public/skin`은 승인된 `public/pro`의 1x WebP 17개(재질4·홈1·초상12)와 행동 그림2개·manifest를 고른 ≤128KiB 하위 예산이다. 새 런타임 의존성0, uv Pillow12.3.0 파이프라인 재사용. 빌드는 Node `check-skin.mjs`로 manifest의 SHA-256·크기·추가/누락0·총128KiB를 검사한다. 원본·카드 해시 및 재생성 동일성은 개발 시 수동 `uv run packages/web/scripts/build-skin-assets.py --check`로 검증한다. 전체 dist 1.5MiB gate는 그대로이며 큰 atlas·2x/3x·AVIF/오디오 이중 포맷은 평가 팩에 둔다.
-- **PA-06 / 사건 효과·음향**: EventRail의 예약 공간·#86 시간표 안 사건별 도형/입자. #117·#49의 CC0 사건음·강조/소리/진동 켬 기본과 기존 명시 off/절제 값 보존, BGM 없음. #128은 #49에 통합. 설정 스키마/이전은 Sol #62 소유(effectIntensity·sound·vibrate, 필드 없음에만 신규 기본)이며 디자인은 읽기만 한다. sound.ts·재생 큐 효과 훅·p2p/common.ts 기존 bridge.vibrate 호출은 디자인 소유, 새 웹 진동 API 없음.
+- **PA-06 / 사건 효과·음향**: 시각 분할 `design/event-effects`에서 사건·고·족보 1.2초 콜아웃을 구현하고, #171 내 HUD 뻑·흔들 숫자+도상을 검증한다(UX-09, NF-03/NF-08). 족보 완료는 재생된 `ScoreChanged.breakdown`만 사용하고 연속 완료를 예약 레일 큐에 보존한다. 중간 판 복원에서 초기 점수 분해가 없으면 첫 점수 사건을 기준선으로 삼는다(필요 필드·검증은 pro-skin-validation.md). 피박/광박 상시 스탬프는 진행 중 양쪽 위험·확정 필드가 공개 뷰에 없어 보류한다. 음향·진동은 PA-06b에서 다루고 설정 값은 읽기만 한다. EventRail 예약 공간·#86 시간표와 기존 진동 브리지·설정 스키마를 유지한다.
 - **PA-07 / 정산·설정·기록**: #100 정산 상태·고정 행동 및 Sol 설정 UI 결과에 같은 화조도/먹색 프레임을 적용. 각 분할은 KEEP-01~18·최소4화면·axe·픽셀 갱신 사유·접근성 전후·필수 검사로 검증한다. NF-03 개정 승인 대기 유지, 실기기·청취 결과는 사람이 제공한 것만 기록한다.

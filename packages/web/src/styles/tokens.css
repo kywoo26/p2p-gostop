@@ -6,7 +6,7 @@
 /*
  * 디자인 토큰 (plan.md 1.6). 다크 배경, OKLCH 팔레트, 애니메이션 시간 예산(spec 6.4).
  * 보통은 단계별 이동·정지 시간표, 빠름은 AC-06 표, 매우 빠름은 빠름 ×0.6이다.
- * --dur-scale: 0은 스킵·동작 줄이기·E2E 즉시 모드에 공통으로 적용한다.
+ * --dur-scale: 0은 스킵·동작 줄이기·E2E 즉시 모드의 이동·정지에 적용한다. 문구 읽기 시간은 유지한다.
  */
 :root {
   color-scheme: dark;
@@ -176,6 +176,7 @@
   --dur-capture-stagger: calc(30ms * var(--dur-scale));
   --dur-steal: calc(200ms * var(--dur-scale));
   --dur-banner: calc(350ms * var(--dur-scale));
+  --dur-event-callout: 1200ms;
   --dur-modal: calc(150ms * var(--dur-scale));
   --dur-deal-total: calc(1200ms * var(--dur-scale));
   --dur-turn-budget: calc(700ms * var(--dur-scale));
@@ -194,6 +195,7 @@
   --dur-capture-stagger: calc(40ms * var(--dur-scale));
   --dur-steal: calc(350ms * var(--dur-scale));
   --dur-banner: calc(900ms * var(--dur-scale));
+  --dur-event-callout: 1200ms;
   --dur-modal: calc(225ms * var(--dur-scale));
   --dur-deal-total: calc(1800ms * var(--dur-scale));
   --dur-turn-budget: calc(2200ms * var(--dur-scale));

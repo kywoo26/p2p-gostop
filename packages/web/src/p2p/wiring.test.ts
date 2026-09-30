@@ -4,6 +4,7 @@
 import { PRESETS, type Action, type CardId } from '@p2p-gostop/engine';
 import {
   createMemoryTransportPair,
+  createQueuedTransportPair,
   decode,
   type DecisionClock,
   type BoardView,
@@ -28,6 +29,58 @@ const CONFIG: HostConfig = {
 };
 
 const TIMED_CONFIG: HostConfig = { ...CONFIG, timerDecisionMs: 5_000 };
+
+test('중계 present로 첫 hello를 한 번 보내고 프리셋 welcome도 한 번만 받는다 (FR-51, NP-02)', () => {
+  const [hostWire, guestWire, link] = createQueuedTransportPair();
+  const welcomes: HostMessage[] = [];
+  const send = hostWire.send.bind(hostWire);
+  hostWire.send = (message: Message) => {
+    if (message.t === 'welcome') welcomes.push(message);
+    send(message);
+  };
+  const host = new HostGame({ config: CONFIG, transport: hostWire, clock: false, persist: false });
+  const guest = new GuestGame({
+    name: '민지',
+    transport: guestWire,
+    onTicket: () => {},
+    clock: false,
+    persist: false,
+  });
+  onTestFinished(() => {
+    guest.dispose();
+    host.dispose();
+  });
+
+  expect(link.queue).toHaveLength(0);
+  link.notify(1, 'present');
+  link.flush();
+  expect(welcomes).toHaveLength(1);
+  expect(guest.lobby?.rules).toEqual(PRESETS.standard);
+
+  host.configure({ ...CONFIG, preset: 'arcade', rules: PRESETS.arcade });
+  link.flush();
+  expect(welcomes).toHaveLength(2);
+  expect(welcomes[1]).toMatchObject({ rules: PRESETS.arcade });
+  expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
+
+  // 수동 재접속은 새 소켓의 present가 hello를 맡는다. 먼저 보낸 hello가 큐에 남으면
+  // 새 소켓에서 두 번 도착해 같은 welcome을 두 번 받는다.
+  guest.reconnect();
+  link.notify(1, 'present');
+  link.flush();
+  expect(welcomes).toHaveLength(3);
+  expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
+
+  // 호스트 부재 중 수동 재접속은 hello를 쌓지 않고, 복귀 알림에서 한 번 보낸다.
+  guestWire.disconnect();
+  link.notify(1, 'absent');
+  guest.reconnect();
+  expect(link.queue).toHaveLength(0);
+  link.notify(1, 'joined');
+  link.flush();
+  expect(welcomes).toHaveLength(4);
+  expect(guest.lobby?.rules).toEqual(PRESETS.arcade);
+});
 
 function lcg(seed: number) {
   let x = seed >>> 0;
@@ -670,6 +723,7 @@ test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고
     onTicket: () => {},
     persist: false,
   });
+  notifyRelay({ t: 'relay', peer: 'present' });
   await settle();
   host.start();
   await settle();
