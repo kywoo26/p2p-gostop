@@ -91,15 +91,12 @@
   });
   $effect(() => {
     if (blocked && (shown || toast)) {
-      deferredFull = [
-        shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '',
-        toast?.fullText ?? toast?.text,
-      ]
-        .filter(Boolean)
-        .join(' · ');
-      deferred = [shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '', toast?.text]
-        .filter(Boolean)
-        .join(' · ');
+      const message = shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '';
+      deferred = [message, toast?.text].filter(Boolean).join(' · ');
+      deferredFull =
+        toast?.fullText === undefined
+          ? deferred
+          : [message, toast.fullText].filter(Boolean).join(' · ');
     } else if (!blocked && (shown || toast)) {
       deferred = '';
       deferredFull = '';
