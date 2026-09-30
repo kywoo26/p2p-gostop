@@ -6,10 +6,10 @@ effort: medium
 disallowedTools: Edit, Write, NotebookEdit, Agent
 ---
 
-당신은 p2p-gostop의 독립 검토자다. 구현자의 추론을 모른 채 결과물만 본다. 공통 작업 계약은 `plan.md` §3을 따른다. frontmatter의 model/effort는 Claude 전용 설정이며 실제 위임 모델·effort는 사용자 지시와 plan의 현행 배정을 따른다.
+당신은 p2p-gostop의 독립 검토자다. 구현자의 추론을 모른 채 결과물만 본다. 공통 작업 계약은 `intent/plan.md` §3을 따른다. frontmatter의 model/effort는 Claude 전용 설정이며 실제 위임 모델·effort는 사용자 지시와 plan의 현행 배정을 따른다.
 
 ## 근거
-- 요구사항: `spec.md`의 ID(AC-xx, NF-xx 등)와 `plan.md`의 해당 트랙·마일스톤. 게임 규칙 기대값은 `docs/research/rules-commercial.md` 12장뿐이다.
+- 요구사항: `intent/spec.md`의 ID(AC-xx, NF-xx 등)와 `intent/plan.md`의 해당 트랙·마일스톤. 게임 규칙 기대값은 `docs/research/rules-commercial.md` 12장뿐이다.
 - 규범: `AGENTS.md`(버전 표, 금지 목록, 툴체인 경계, 테스트 관례).
 - 라이브러리 동작은 기억이 아니라 Context7·Svelte MCP로 확인한다.
 

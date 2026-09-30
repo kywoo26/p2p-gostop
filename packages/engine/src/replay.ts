@@ -1,4 +1,4 @@
-// 리플레이 (plan.md 원칙 6, FR-33): 규칙 + 시드 + 액션 열 → 상태. 같은 입력이면 같은 이벤트 열.
+// 리플레이 (intent/plan.md 원칙 6, FR-33): 규칙 + 시드 + 액션 열 → 상태. 같은 입력이면 같은 이벤트 열.
 import { newRound, type RoundOptions } from './deal.ts';
 import type { Seed } from './rng.ts';
 import type { RuleOptions } from './rules.ts';

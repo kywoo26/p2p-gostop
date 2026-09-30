@@ -112,6 +112,6 @@ Context7 도구가 노출되지 않아 [Svelte effect/lifecycle](https://svelte.
 
 ## #152/#154 후속 병합 (main 8d2911b)
 
-문서 정리의 `visual-direction.md` 삭제를 유지하고 #104 KEEP-10(빈 바닥/전용 버튼만 스킵, HUD 등 스킵0)을 새 정본 `foundations/README.md`에 이관했다. plan.md 자동 병합과 관련6문서 로컬 링크46개를 확인했다. 앱 소스·기준샷 추가 변경0.
+문서 정리의 `visual-direction.md` 삭제를 유지하고 #104 KEEP-10(빈 바닥/전용 버튼만 스킵, HUD 등 스킵0)을 새 정본 `foundations/README.md`에 이관했다. intent/plan.md 자동 병합과 관련6문서 로컬 링크46개를 확인했다. 앱 소스·기준샷 추가 변경0.
 
 Docker 필수 검사 전부 통과: npm ci/lint/check, Node522/28파일, 브라우저420/64파일, build **1,283.1/1,536KiB**·외부URL0, E2E **265통과/19제외/실패·재시도0**(3.4분, 기준샷 갱신 없음), Android assembleDebug/testDebugUnitTest/lint 성공. 제외 사유와 실기기 미검증 범위는 위 #151 검증과 동일하다.

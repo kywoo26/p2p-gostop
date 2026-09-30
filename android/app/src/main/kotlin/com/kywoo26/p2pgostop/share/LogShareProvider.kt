@@ -16,7 +16,7 @@ import java.io.FileNotFoundException
  * 로그 파일을 공유 시트로 넘기는 읽기 전용 ContentProvider (spec FR-30, M0 리뷰 L-2).
  *
  * androidx.core `FileProvider`와 같은 역할을 하되 의존성을 늘리지 않으려고 필요한 부분만 구현했다
- * (plan.md 1.8 표 밖 의존성 추가 금지). `exported=false` + `grantUriPermissions=true`라서
+ * (intent/plan.md 1.8 표 밖 의존성 추가 금지). `exported=false` + `grantUriPermissions=true`라서
  * 공유 인텐트의 `FLAG_GRANT_READ_URI_PERMISSION`으로 받은 앱만, `cacheDir/shared_logs/`의 파일만 읽을 수 있다.
  * 받는 앱이 이름·크기를 물으면 `OpenableColumns`(DISPLAY_NAME, SIZE)로 답한다.
  */

@@ -153,10 +153,9 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
   try {
     const git = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'pipe' });
     git('init', '-q');
-    writeFileSync(
-      join(dir, 'privacy-audit-allowlist.json'),
-      JSON.stringify({ allowances: [], pending: [] }),
-    );
+    mkdirSync(join(dir, 'tools', 'privacy'), { recursive: true });
+    const policyPath = join('tools', 'privacy', 'privacy-audit-allowlist.json');
+    writeFileSync(join(dir, policyPath), JSON.stringify({ allowances: [], pending: [] }));
     writeFileSync(join(dir, '.gitignore'), 'ignored.md\n');
     writeFileSync(join(dir, 'public.md'), home);
     writeFileSync(join(dir, 'ignored.md'), credential);
@@ -166,7 +165,7 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
     symlinkSync('private/missing.md', join(dir, 'link.md'));
     git(
       'add',
-      'privacy-audit-allowlist.json',
+      policyPath,
       '.gitignore',
       'private/missing.md',
       'link.md',
@@ -184,14 +183,14 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
     );
     const baseline = git('rev-parse', 'HEAD').toString().trim();
     writeFileSync(
-      join(dir, 'privacy-audit-allowlist.json'),
+      join(dir, policyPath),
       JSON.stringify({
         allowances: [],
         pending: [{ path: 'public.md', type: 'personal-path', lines: [1], baseline }],
       }),
     );
     writeFileSync(join(dir, 'public.md'), home + '-changed');
-    git('add', 'privacy-audit-allowlist.json', 'public.md');
+    git('add', policyPath, 'public.md');
     git(
       '-c',
       'user.name=Synthetic',

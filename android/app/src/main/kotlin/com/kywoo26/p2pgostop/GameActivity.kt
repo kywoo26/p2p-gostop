@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** HostBridge 계약의 정본은 plan.md §1.7. 게임 로직은 루프백 WebView 번들에만 있다. */
+/** HostBridge 계약의 정본은 intent/plan.md §1.7. 게임 로직은 루프백 WebView 번들에만 있다. */
 // WEB_MESSAGE_LISTENER는 onCreate에서 검사한다. JS는 번들된 루프백 페이지만 실행한다.
 // onRenderProcessGone은 createWebView의 WebViewClient에서 구현한다.
 @SuppressLint("RequiresFeature", "SetJavaScriptEnabled", "MissingOnRenderProcessGone", "UseKtx")

@@ -1,4 +1,4 @@
-# AI 조정 기록 (spec AI-02·AI-03·AI-04·AI-05·AI-06·AI-07·AI-08, plan.md M2·M6)
+# AI 조정 기록 (spec AI-02·AI-03·AI-04·AI-05·AI-06·AI-07·AI-08, intent/plan.md M2·M6)
 
 작성: 2026-09-28 · M6 후속: 2026-09-29 · AC-03 재도전: 2026-09-30 · 대상: `packages/ai` · 도구: `tools/sim` (`npm run sim -- -- …`)
 

@@ -1,4 +1,4 @@
-// 화면이 받는 뷰 데이터 타입의 단일 정의 (plan.md "M3 준비 결과가 M4에 넘기는 입력", spec 6.1·6.2).
+// 화면이 받는 뷰 데이터 타입의 단일 정의 (intent/plan.md "M3 준비 결과가 M4에 넘기는 입력", spec 6.1·6.2).
 // 호스트는 좌석 1(게스트)에게 이 BoardView를 보내고, 좌석 0 화면도 같은 타입으로 그린다(HostSession.hostView()).
 // 필드 이름은 packages/engine의 PlayerView·SeatView·FloorGroup·Pending·SettleStep과 되도록 같게 맞췄다.
 // 엔진에 없는 값(이름, 잔액, 족보 진행도, 현재 배수)은 view.ts의 toBoardView가 계산한다.
@@ -14,7 +14,7 @@ import type {
   SettleStep,
 } from '@p2p-gostop/engine';
 
-// 같은 도메인 값은 엔진의 공개 계약을 재사용한다(NP-02, plan.md §1.3·§1.4).
+// 같은 도메인 값은 엔진의 공개 계약을 재사용한다(NP-02, intent/plan.md §1.3·§1.4).
 export type { CardId, Month, Seat, SettleStepKind } from '@p2p-gostop/engine';
 
 /** 획득패의 기존 화면 이름을 유지하되 카드 분류는 엔진 계약을 따른다. */

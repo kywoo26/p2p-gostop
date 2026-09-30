@@ -51,7 +51,7 @@
           {
             "object": "Math",
             "property": "random",
-            "message": "엔진·AI는 시드 PRNG(packages/engine/src/rng.ts)만 쓴다 (AGENTS.md 3장, plan.md 원칙 6)."
+            "message": "엔진·AI는 시드 PRNG(packages/engine/src/rng.ts)만 쓴다 (AGENTS.md 3장, intent/plan.md 원칙 6)."
           }
         ]
       }
@@ -200,5 +200,5 @@
       }
     }
   ],
-  "jsPlugins": ["./lint-imports.mjs"]
+  "jsPlugins": ["./tools/lint/lint-imports.mjs"]
 }

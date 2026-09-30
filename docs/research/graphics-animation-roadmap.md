@@ -1,6 +1,6 @@
 # 그래픽·애니메이션 현대화 로드맵
 
-> 연구 제안, 2026-09-30 UTC(한국 시간10-01) 확인. **규범 개정 승인이나 구현 완료 문서가 아니다.** 기준: `intend.md` → `spec.md` → `plan.md`, 최신 `docs/design/ui-spec.md`. 제품·자산·의존성 변경 없음.
+> 연구 제안, 2026-09-30 UTC(한국 시간10-01) 확인. **규범 개정 승인이나 구현 완료 문서가 아니다.** 기준: `intent/intent.md` → `intent/spec.md` → `intent/plan.md`, 최신 `docs/design/ui-spec.md`. 제품·자산·의존성 변경 없음.
 
 ## 먼저 읽을 결론
 
@@ -171,7 +171,7 @@ AI frontend 생성 서비스도 별도로 비교했다. [v0 공식 FAQ](https://
 
 ## 5. spec 개정 조항 초안과 측정 계약
 
-다음 표는 모두 **미승인 초안**이다. 기존 NF/AC 수치를 임의로 완화하지 않는다. measured baseline이 없는 새 p95/p99·전력·메모리 숫자는 확정 권고하지 않는다. `plan.md` 상태·완료율도 이 연구로 변경하지 않는다.
+다음 표는 모두 **미승인 초안**이다. 기존 NF/AC 수치를 임의로 완화하지 않는다. measured baseline이 없는 새 p95/p99·전력·메모리 숫자는 확정 권고하지 않는다. `intent/plan.md` 상태·완료율도 이 연구로 변경하지 않는다.
 
 | 현행 ID/취지 | 실제 문제 | 제안 문구 초안 / 필요 이유 | 측정·통과 기준 | 비용·보안·접근성 / 승인 전제 |
 |---|---|---|---|---|
@@ -219,7 +219,7 @@ AI frontend 생성 서비스도 별도로 비교했다. [v0 공식 FAQ](https://
 
 ### 근거 파일 연결
 
-규범: [intend](../../intend.md), [spec](../../spec.md), [plan](../../plan.md), [UI](../design/ui-spec.md), [아트 방향](../design/art-direction.md), [최신 디자인 검증](../design/pro-skin-validation.md), [기존 자산 연구](pro-assets.md). 코드 참조는 efb0702 기준이고 #185 변경은 별도 구분했다.
+규범: [intend](../../intent/intent.md), [spec](../../intent/spec.md), [plan](../../intent/plan.md), [UI](../design/ui-spec.md), [아트 방향](../design/art-direction.md), [최신 디자인 검증](../design/pro-skin-validation.md), [기존 자산 연구](pro-assets.md). 코드 참조는 efb0702 기준이고 #185 변경은 별도 구분했다.
 
 | 경계 | 직접 읽은 코드 |
 |---|---|

@@ -8,7 +8,7 @@ agent: reviewer
 allowed-tools: Bash(gh pr view *) Bash(gh pr diff *) Bash(gh pr checks *) Bash(gh issue view *)
 ---
 
-PR #$ARGUMENTS 를 검토한다. 공통 작업 계약은 `plan.md` §3이며 AGENTS.md가 단일 규범이다.
+PR #$ARGUMENTS 를 검토한다. 공통 작업 계약은 `intent/plan.md` §3이며 AGENTS.md가 단일 규범이다.
 
 1. `gh pr view $ARGUMENTS --json title,body,headRefName,headRefOid,baseRefName,files,commits`로 범위를 잡고, 본문과 커밋 메시지에서 요구사항 ID를 모은다. ID가 없으면 그것 자체를 "중요" 결함으로 적는다.
 2. 본문의 수락 기록·실제 계획 commit full SHA를 읽어 그 시점의 plan과 spec 요구를 확인한다. 파일/순서/위험/증명·소유 인계를 실제 diff와 비교하고 승인된 이탈이 코드와 같은 commit의 계획에 반영됐는지 확인한다. 기존 작업은 현행 보완을 확인하고 소급 최초 계획 SHA를 만들게 하지 않는다.
@@ -16,7 +16,7 @@ PR #$ARGUMENTS 를 검토한다. 공통 작업 계약은 `plan.md` §3이며 AGE
 4. `gh pr diff $ARGUMENTS`를 읽고 아래 체크리스트를 적용한다.
    - 요구사항 ID별 충족·부분·미충족과 근거(파일:라인, 테스트 이름)
    - AGENTS.md 3장 금지 목록(Svelte 4 문법, 비보안 컨텍스트 API, 엔진 부수효과·`Math.random`, 툴체인 경계, erasable TS 문법)
-   - 새 의존성이 AGENTS.md 2장 버전 표에 있는지, 없으면 plan.md 1.8 근거가 있는지
+   - 새 의존성이 AGENTS.md 2장 버전 표에 있는지, 없으면 intent/plan.md 1.8 근거가 있는지
    - 규칙 로직 변경이면 벡터에 규칙 ID·한국어 설명, 정상·경계·반례 3종이 있는지
    - PR이 소유 범위 밖 파일을 바꿨는지
 5. reviewer 시스템 프롬프트의 보고 형식으로 끝낸다.

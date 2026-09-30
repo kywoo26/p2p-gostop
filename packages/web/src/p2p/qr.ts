@@ -1,5 +1,5 @@
 // 방 열기 화면의 QR 두 개 (spec FR-03): Wi-Fi 접속(WIFI: 스킴, 항상 T:WPA)과 게임 주소.
-// QR 행렬은 uqr(plan.md 1.8)로 만들고 그림은 SVG 경로 하나로 그린다(외부 요청·canvas 없음).
+// QR 행렬은 uqr(intent/plan.md 1.8)로 만들고 그림은 SVG 경로 하나로 그린다(외부 요청·canvas 없음).
 import { encode } from 'uqr';
 
 /** WIFI: 스킴의 특수 문자(\ ; , : ")는 역슬래시로 이스케이프한다 (Android WifiQr.kt와 같은 규칙) */
