@@ -49,3 +49,15 @@ assert.match(runtime, /PowerShell\\7\\pwsh\.exe/);
 assert.match(runtime, /WindowsPowerShell\\v1\.0\\powershell\.exe/);
 assert.match(helper, /FunnelState \$after \$dns/);
 assert.doesNotMatch(helper, /2>&1|\$LASTEXITCODE/);
+
+// 공개 문서는 실제 계정/호스트/임시 worktree 대신 placeholder를 사용한다.
+const publicDocs = await Promise.all(
+  ['README.md', 'validation.md'].map((name) => readFile(`tools/relay/${name}`, 'utf8')),
+);
+for (const document of publicDocs) {
+  assert.doesNotMatch(document, /\/home\/[a-z0-9_-]+\/|\.paseo\/worktrees\/|\\Users\\[^<>\\]+\\/i);
+  assert.doesNotMatch(document, /https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.ts\.net/i);
+}
+assert.doesNotMatch(helper, /\/home\/[a-z0-9_-]+\//i);
+assert.match(helper, /command -v docker/);
+assert.match(helper, /\$Repo = \$env:RELAY_WSL_REPO/);

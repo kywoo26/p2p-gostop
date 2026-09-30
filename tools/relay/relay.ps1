@@ -4,8 +4,8 @@ param([Parameter(Mandatory = $true)][ValidateSet('start', 'stop')][string]$Actio
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'native.ps1')
 Write-Host ("Runtime: {0} {1}" -f $PSVersionTable.PSEdition, $PSVersionTable.PSVersion)
-$Repo = if ($env:RELAY_WSL_REPO) { $env:RELAY_WSL_REPO } else { '/home/k/github/p2p-gostop' }
-$Docker = '/home/k/.local/bin/docker'
+$Repo = $env:RELAY_WSL_REPO
+$Docker = $null
 $Target = 'http://127.0.0.1:17777'
 $SecretDirectory = '$HOME/.local/share/p2p-gostop/relay'
 $Origin = 'http://127.0.0.1:17777'
@@ -13,7 +13,7 @@ $Release = 'v0.0.0'
 $Marker = Join-Path $PSScriptRoot '.funnel-owned'
 $FunnelStdout = Join-Path $env:TEMP 'p2p-gostop-relay-funnel.stdout'
 $FunnelStderr = Join-Path $env:TEMP 'p2p-gostop-relay-funnel.stderr'
-$Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { 'C:\Program Files\Tailscale\tailscale.exe' }
+$Tailscale = if ($env:RELAY_TAILSCALE_EXE) { $env:RELAY_TAILSCALE_EXE } else { Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe' }
 
 function Fail([string]$Message) { throw $Message }
 function Wsl([string]$Command) {
@@ -118,6 +118,12 @@ function PublicHealth([string]$Url) {
 }
 
 try {
+  if (-not $Repo -or -not $Repo.StartsWith('/')) { Fail 'Set RELAY_WSL_REPO to the absolute WSL release repository path.' }
+  $dockerPath = if ($env:RELAY_WSL_DOCKER) { $env:RELAY_WSL_DOCKER } else {
+    (Wsl 'command -v docker || { test -x "$HOME/.local/bin/docker" && printf "%s" "$HOME/.local/bin/docker"; }' | Out-String).Trim()
+  }
+  if (-not $dockerPath) { Fail 'Docker CLI was not found in WSL. Set RELAY_WSL_DOCKER to its executable path.' }
+  $Docker = "'" + $dockerPath.Replace("'", "'\''") + "'"
   if ($Action -eq 'start' -and -not (Test-Path $Tailscale)) { Fail "Tailscale is missing: $Tailscale. Install/start the Windows app." }
   if ($Action -eq 'start') {
     try { $null = Wsl 'test -f compose.relay.yaml' }
