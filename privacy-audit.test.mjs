@@ -177,7 +177,7 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
     rmSync(join(dir, 'private', 'missing.md'));
     const child = spawnSync(
       process.execPath,
-      [fileURLToPath(new URL('./privacy-audit.mjs', import.meta.url))],
+      [fileURLToPath(new URL('./privacy-audit.mjs', import.meta.url)), '--base', 'HEAD'],
       { cwd: dir, encoding: 'utf8' },
     );
     assert.equal(child.status, 1);

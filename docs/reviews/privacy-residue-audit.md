@@ -34,3 +34,7 @@ main의 `tools/relay/README.md:3,43`·`tools/relay/relay.ps1:5,6` personal-path 
 `nvm use`·`npm ci`, lint(합성 검사기 8개 포함), check, 단위 테스트 563개, 브라우저 테스트 738개, 웹 build, E2E smoke 382개, Android assembleDebug/testDebugUnitTest/lint(`--max-workers=4`)가 성공했다. E2E는 `PLAYWRIGHT_PORT=4232`, 설정 기본 4 workers 이하로 한 번 실행했고 full 반복은 하지 않았다. 검사기 최종 수정은 lint·check와 표적 테스트로 검증하며 제품 실행 코드가 바뀌지 않아 제품 전체 검증을 반복하지 않는다. 독립 리뷰·최종 SHA CI는 별도 대기다. 실기기 시험 결과는 만들지 않는다.
 
 재검사 시 열린 PR은 #190·#203·#213·#214이며 #203 게시 head는 `9548dd9d89888ed83be7cd68ec462121d55cb8c0`, #214는 `463d686b86ee28469d0445a24c96842a002b1df3`이다. 텍스트 추가 행·본문·댓글의 남은 패턴 후보는 #190 확인된 합성 tailnet 4개뿐이다. #214 이미지 patch 82개는 내용 미검증으로 별도 집계하며 finding 0이라고 표현하지 않는다.
+
+CI의 첫 검사기 HEAD는 합성 임시 저장소가 `GITHUB_BASE_REF=main`을 상속하여 존재하지 않는 origin/main 비교에서 실패했다. 같은 환경변수로 로컬 재현 후 임시 저장소에만 `--base HEAD`를 명시했다. 실제 PR origin/main 비교 및 기준 blob pending 계약은 변경하지 않았다. 자동 rerun 대신 표적 환경 재검증과 새 SHA CI로 확인한다.
+
+#190 최종 게시 `4a4384d75b629a948cecd3d949307ff2d9630755`의 변경 텍스트를 읽기 전용으로 재검사했다. README/relay의 main 잔존 4곳 해소를 재확인했고, check-native 합성 tailnet 4곳과 새 check-ownership 합성 6곳은 담당자 주석·고정 JSON/로컬 소유권 반례 근거로 정확 경로·행·일치 지문만 추가 허용했다. PR 본문/댓글 재검사와 #190 통합 후 pending 4곳 제거는 별도 확인한다. 소유 파일 직접 편집·운영 접근은 없다.

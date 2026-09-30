@@ -1055,6 +1055,86 @@
       "field": "secret",
       "sha256": "0ff6289462a47efb1b4eb8071a8f6df2772ec9d195601ac6171d1131d981c657",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "tools/relay/check-native.ps1",
+      "type": "tailnet-host",
+      "line": 26,
+      "field": "tailnet-host",
+      "sha256": "1f71fdff15c3e7d9cd109acd9f4e34bfa3b46f7ed783f09cf43f621eff4ef450",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-native.ps1",
+      "type": "tailnet-host",
+      "line": 27,
+      "field": "tailnet-host",
+      "sha256": "1f71fdff15c3e7d9cd109acd9f4e34bfa3b46f7ed783f09cf43f621eff4ef450",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-native.ps1",
+      "type": "tailnet-host",
+      "line": 29,
+      "field": "tailnet-host",
+      "sha256": "c2c67c4e9d5e2a557f131cbc86f13967dabdf14316069c53f9ef8b25f213a645",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-native.ps1",
+      "type": "tailnet-host",
+      "line": 31,
+      "field": "tailnet-host",
+      "sha256": "1f71fdff15c3e7d9cd109acd9f4e34bfa3b46f7ed783f09cf43f621eff4ef450",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-ownership.ps1",
+      "type": "tailnet-host",
+      "line": 12,
+      "field": "tailnet-host",
+      "sha256": "8261bee8bf24a644e948a6a699ce22676c41e9cbef1512f51e18484a76ed8d2b",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-ownership.ps1",
+      "type": "tailnet-host",
+      "line": 62,
+      "field": "tailnet-host",
+      "sha256": "8261bee8bf24a644e948a6a699ce22676c41e9cbef1512f51e18484a76ed8d2b",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-ownership.ps1",
+      "type": "tailnet-host",
+      "line": 120,
+      "field": "tailnet-host",
+      "sha256": "c2c67c4e9d5e2a557f131cbc86f13967dabdf14316069c53f9ef8b25f213a645",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-ownership.ps1",
+      "type": "tailnet-host",
+      "line": 123,
+      "field": "tailnet-host",
+      "sha256": "8261bee8bf24a644e948a6a699ce22676c41e9cbef1512f51e18484a76ed8d2b",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-ownership.ps1",
+      "type": "tailnet-host",
+      "line": 126,
+      "field": "tailnet-host",
+      "sha256": "8261bee8bf24a644e948a6a699ce22676c41e9cbef1512f51e18484a76ed8d2b",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
+    },
+    {
+      "path": "tools/relay/check-ownership.ps1",
+      "type": "tailnet-host",
+      "line": 142,
+      "field": "tailnet-host",
+      "sha256": "c2c67c4e9d5e2a557f131cbc86f13967dabdf14316069c53f9ef8b25f213a645",
+      "reason": "#190 게시 4a4384d: 담당자가 직접 구성한 합성 JSON/로컬 인수 소유권 정상·반례. 실제 환경 조회 없음."
     }
   ],
   "pending": [
