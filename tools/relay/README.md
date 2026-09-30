@@ -12,7 +12,7 @@ $RelayTools = '<Windows도구폴더>'
 & "$RelayTools\start.cmd"
 ```
 
-1. Docker Desktop과 Windows Tailscale을 켜고 위 명령을 **Windows PowerShell**에서 실행한다. start/stop은 PATH의 `pwsh.exe` → 기본 PowerShell 7 설치 → Windows PowerShell 5.1 순서로 탐색한다. **7이 없을 때만** 5.1 fallback이며, 7 실패 후 자동 재기동하지 않는다. `Runtime: Core 7...` 또는 `Runtime: Desktop 5.1...`로 실제 버전을 표시한다. 준비된 이미지로 `up -d --no-build`하므로 재빌드는 필요 없다.
+1. Docker Desktop과 Windows Tailscale을 켜고 위 명령을 **Windows PowerShell**에서 실행한다. start/stop은 절대 경로 PATH의 `pwsh.exe` → 기본 PowerShell 7 설치 → Windows PowerShell 5.1 순서로 탐색하며, 현재 폴더를 암묵적으로 검색하지 않는다. 선택한 실행 파일의 제품 정보와 Core 7 정체를 확인한다. **7이 없을 때만** 5.1 fallback이며, 7 실패 후 자동 재기동하지 않는다. `Runtime: Core 7...` 또는 `Runtime: Desktop 5.1...`로 실제 버전을 표시한다. 준비된 이미지로 별도 소유 프로젝트에 `up -d --no-build --no-recreate --pull never`하므로 재빌드는 필요 없다.
 2. **`Relay ready:`가 나온 뒤** 출력된 `Health:` 주소를 열어 `relay=p2p-gostop`, `ready=true`를 확인한다. 승인 URL은 관리 콘솔에서 이 노드의 공개 권한을 허용하는 주소다. `Relay ready`의 공개 서비스 URL이 앱에 저장할 중계 기본 주소다.
 3. 같은 release의 Galaxy 앱 원격 설정에 기본 주소와 생성 자격을 본인 화면에서만 등록한다. 앱에서 health 확인 → 방 생성 → **앱이 만든 초대 링크**를 iPhone Safari로 공유한다. wrapper QR은 중계 기본 주소이며 방 초대가 아니다. health 성공과 실제 게임 연결 성공은 구분한다.
 4. 게임이 끝나면 **같은 PowerShell 창·같은 wrapper**에서 종료한다.
@@ -21,7 +21,7 @@ $RelayTools = '<Windows도구폴더>'
 & "$RelayTools\stop.cmd"
 ```
 
-성공 출력은 `Relay Funnel endpoint disabled.` 또는 `No relay Funnel endpoint is active.`, 이어서 `Relay container stopped.`다. Ctrl+C로 foreground Funnel이 이미 꺼져 설정이 없으면 추가 off가 필요 없다. 이 상태의 `handler does not exist`는 해제할 대상이 없다는 뜻이다. 다른 endpoint, Tailscale 앱 자체, 로그인/부팅 설정은 변경하지 않는다. `--bg`는 사용하지 않는다.
+소유 자원이 있으면 성공 출력은 `Relay Funnel endpoint disabled.`, 이어서 `Relay container stopped.`다. marker가 없으면 `No resources are owned by this wrapper; nothing was changed.`로 끝나며 기존 서비스를 정리하지 않는다. Ctrl+C로 foreground Funnel이 이미 꺼져 설정이 없으면 추가 off가 필요 없다. 이 상태에서 수동 off의 `handler does not exist`는 해제할 대상이 없다는 뜻이다. wrapper는 off/reset을 호출하지 않는다. 다른 endpoint, Tailscale 앱 자체, 로그인/부팅 설정은 변경하지 않는다. `--bg`는 사용하지 않는다.
 
 탐색기는 `explorer.exe $RelayTools`로 열어 start/stop을 더블클릭할 수 있다. 이 방식은 먼저 Windows 사용자 환경변수에 `RELAY_WSL_REPO`를 설정한다. 5.1을 직접 지정하는 진단은 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$RelayTools\relay.ps1" start`이며, 종료는 마지막 인수만 `stop`으로 바꾼다. 스크립트 자체도 UTF-8 stdout/stderr와 exitcode를 명시적으로 처리하므로 콘솔 인코딩을 수동 변경할 필요가 없다.
 
@@ -48,16 +48,16 @@ RELAY_IMAGE_TAG=$(git rev-parse --short=12 HEAD) docker compose -f compose.relay
 
 자격 파일은 저장소 밖에 생성되며 기존 파일을 덮어쓰지 않는다. **생성 자격, 실제 status JSON/peer 정보, 초대값, 개인 경로/호스트는 채팅·Git·PR·공유 로그에 출력하지 않는다.** 자격 내용은 Galaxy 개인 설정에만 등록한다. start는 파일이 없으면 같은 외부 위치에 생성한다. 회전/폐기는 먼저 stop하고 방 종료를 확인한 뒤 별도 작업으로 한다. 재시작하면 메모리 방이 사라진다.
 
-v0.3.1 운영 수정은 별도 wrapper 폴더에서 제공한다. 원본 release 태그·추적 파일·dist·이미지 SHA 태그는 유지한다. wrapper의 폴더 위치를 운영 중 이동하지 않는다. marker/QR은 wrapper 옆에 생성하며 QR는 파일로 직접 연다. `/version` release와 정적 경로를 확인한 뒤에만 공개한다. 다음 정식 release에서 수정 wrapper를 함께 배포한다.
+v0.3.1 운영 수정은 별도 wrapper 폴더에서 제공한다. 원본 release 태그·추적 파일·dist·이미지 SHA 태그는 유지한다. wrapper의 폴더 위치를 운영 중 이동하지 않는다. marker/잠금/QR은 wrapper 옆에 생성하며 QR는 파일로 직접 연다. 시작부터 종료 정리까지 잠금으로 동시 호출을 막고, marker의 소유 프로젝트·정확한 프로세스·노드/대상을 확인한다. 이전 wrapper의 marker는 승계하지 않는다. 운영 중에는 기존 wrapper를 보존하고 종료에도 그 wrapper를 사용한다. `/version` release와 정적 경로를 확인한 뒤에만 공개한다. 다음 정식 release에서 수정 wrapper를 함께 배포한다.
 
 ## 실패 진단·검증
 
 | 실패 | 확인할 것 |
 |---|---|
 | Docker/WSL prerequisite | Docker Desktop·WSL2 통합, `RELAY_WSL_REPO` 절대 경로, Docker CLI 탐색 |
-| 로컬 health/version | 같은 release의 dist/이미지·자격 파일·고정 중계 포트 점유. WSL의 `docker compose -f compose.relay.yaml logs --tail=30 relay`를 개인적으로 확인 |
+| 로컬 health/version | 같은 release의 dist/이미지·자격 파일·고정 중계 포트 점유. 고정 기본 Compose 프로젝트를 수동 down하지 말고 같은 wrapper stop 후 재시도 |
 | Tailscale/Funnel | Windows 앱 연결·MagicDNS·이 노드 승인·443. 다른 endpoint를 대체하지 않음 |
 | 공개 health | 로컬 health → Funnel 승인/설정 → Windows localhost 전달 → DNS/TLS 순서. 원인을 추측해 단정하지 않음 |
-| stop 불완전 | 같은 wrapper stop 재실행. `funnel reset`/`tailscale down`은 사용하지 않음 |
+| stop 불완전 | marker를 지우거나 폴더를 옮기지 말고 같은 wrapper stop 재실행. 새 PowerShell 창에서도 marker로 소유 프로젝트를 복원한다. legacy/부분 marker 또는 바뀐 프로세스·노드는 자동 종료를 거부한다. 알려진 원래 wrapper로 종료하거나 남은 foreground 호출이 끝난 뒤 재시도. reset/down 금지 |
 
-텍스트 Funnel status는 foreground 설정을 누락할 수 있어 스크립트는 JSON의 `Foreground`도 검사한다. 서비스 기동 없는 회귀검사는 각 PowerShell에서 `check-native.ps1`·`check-runtime.ps1`을 `-File`로 실행한다. Node 정적 검사는 `node tools/relay/check-static.ts`. [운영 검증 근거](validation.md)와 [게임 실기기 절차](../../docs/device-test/remote-play.md)는 구분한다.
+텍스트 Funnel status는 foreground 설정을 누락할 수 있어 스크립트는 JSON의 `Foreground`도 검사한다. 서비스 기동 없는 회귀검사는 각 PowerShell에서 `check-native.ps1`·`check-runtime.ps1`·`check-ownership.ps1`을 `-File`로 실행한다. Node 정적 검사는 `node tools/relay/check-static.ts`. [운영 검증 근거](validation.md)와 [게임 실기기 절차](../../docs/device-test/remote-play.md)는 구분한다.

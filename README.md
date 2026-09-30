@@ -81,6 +81,7 @@ npm run sim -- 42 --workers 4        # 셀프플레이 시뮬레이션 CLI (공�
 - [규칙 벡터](docs/rules-vectors.md): 규칙 ID와 테스트의 대응.
 - [AI 튜닝](docs/ai-tuning.md): 강도·응답 벤치마크와 미달 근거.
 - [머니 모델](docs/money-model.md): 표준 3,000판 산정·프리셋 미완 상태.
+- [PC 중계 운영](tools/relay/README.md): Windows 수동 start/health/앱 연결/stop 정본.
 - [실기기 절차](docs/device-test/procedure.md) / [결과 로그](docs/device-test/results.md): M0·MVP·M4·U1·UI 절차 통합, 사용자 결과 원문 보존.
 - [상용 규칙 조사](docs/research/rules-commercial.md): §12가 게임 규칙의 유일한 규범.
 - [코드·자산 조사](docs/research/code-refs.md): 설계 비교와 라이선스 근거.

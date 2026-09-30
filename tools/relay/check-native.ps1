@@ -20,9 +20,9 @@ try {
   $tokens = $null; $errors = $null
   $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'relay.ps1'), [ref]$tokens, [ref]$errors)
   Assert ($errors.Count -eq 0) 'Common script parse failed'
-  $function = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'FunnelState' }, $true)
-  Invoke-Expression $function.Extent.Text
+  . (Join-Path $PSScriptRoot 'ownership.ps1')
   $Target = 'http://127.0.0.1:17777'
+  # Explicit synthetic hostnames: constructed here, never read from Tailscale/environment.
   $foreground = '{"Foreground":{"synthetic":{"TCP":{"443":{"HTTPS":true}},"Web":{"sample.example.ts.net:443":{"Handlers":{"/":{"Proxy":"http://127.0.0.1:17777"}}}}}}}' | ConvertFrom-Json
   $state = FunnelState $foreground 'sample.example.ts.net'
   Assert ($state.Ours -and $state.HasEndpoint -and -not $state.ForeignTarget) 'Foreground endpoint missed'
