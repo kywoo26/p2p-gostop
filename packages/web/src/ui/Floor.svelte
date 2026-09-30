@@ -13,6 +13,7 @@
     compact?: boolean;
     round?: number;
     playbackBusy?: boolean;
+    snapshotSeq?: number;
     options?: readonly CardId[];
     onchoose?: (id: CardId) => void;
     groups: readonly FloorGroupView[];
@@ -29,6 +30,7 @@
     compact = false,
     round = 0,
     playbackBusy = false,
+    snapshotSeq = 0,
     options = [],
     onchoose,
     groups,
@@ -45,13 +47,15 @@
   let lastDeck = 0;
   let lastCards = '';
   let lastOptions = '';
-  // 재생 중 제거된 셀을 예약하고, 최종 스냅 뒤 큐 해제에서 재사용한다.
+  let lastSnapshotSeq: number | undefined;
+  // 중간 commit은 seq를 유지한다. 묶음 최종 스냅 또는 큐 해제에서 예약을 푼다.
   $effect.pre(() => {
     const input = groups,
       candidates = options,
       playing = playbackBusy,
       nextRound = round,
-      deck = deckCount;
+      deck = deckCount,
+      seq = snapshotSeq;
     untrack(() => {
       if (nextRound !== lastRound || deck > lastDeck) {
         placed = [];
@@ -60,7 +64,7 @@
       }
       const ids = new Set(input.flatMap((group) => group.cards));
       reserved = reserved.filter((cell) => cell.cards.every((id) => !ids.has(id)));
-      if (playing)
+      if (playing && seq === lastSnapshotSeq)
         reserved.push(...placed.filter((cell) => cell.cards.every((id) => !ids.has(id))));
       else reserved = [];
       const cardsKey = [...input]
@@ -87,6 +91,7 @@
       lastOptions = optionsKey;
       lastRound = nextRound;
       lastDeck = deck;
+      lastSnapshotSeq = seq;
     });
   });
   $effect(() => {

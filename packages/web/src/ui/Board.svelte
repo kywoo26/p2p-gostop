@@ -476,6 +476,7 @@
       compact
       round={view.round}
       {playbackBusy}
+      snapshotSeq={view.eventSeq}
       groups={view.floor}
       options={pending?.kind === 'target' ? pending.options : []}
       onchoose={(card) => act({ type: 'chooseTarget', seat, card })}
