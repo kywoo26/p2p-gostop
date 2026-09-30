@@ -165,20 +165,6 @@ async function startTimedDecision(host: HostGame, guest: GuestGame): Promise<Dec
   return host.decisionClock!;
 }
 
-/** 정상 분배 fixture: 첫 선 고르기에서 동월·즉시 정산 없이 제한시간 결정을 만든다 (#221). */
-function fixTimedDecisionRandom(): void {
-  const original = crypto.getRandomValues;
-  expect(vi.isMockFunction(original)).toBe(false);
-  const random = vi.spyOn(crypto, 'getRandomValues').mockImplementation((array) => {
-    if (array instanceof Uint8Array) array.fill(0);
-    return array;
-  });
-  onTestFinished(() => {
-    random.mockRestore();
-    expect(crypto.getRandomValues).toBe(original);
-  });
-}
-
 test('새 로비의 v2 첫 hello에도 VERSION_MISMATCH와 새로고침 안내를 보낸다 (NP-04)', () => {
   const [hostWire, guestWire] = createMemoryTransportPair();
   const host = new HostGame({
@@ -198,9 +184,8 @@ test('새 로비의 v2 첫 hello에도 VERSION_MISMATCH와 새로고침 안내�
 });
 
 test('소켓 닫힘은 현재 단조 시각에서 잔여량을 보존하고 중복 닫힘으로 환급하지 않는다 (NP-10)', async () => {
-  fixTimedDecisionRandom();
   let now = 0;
-  const [hostWire, guestWire] = createMemoryTransportPair();
+  const [hostWire, guestWire] = createTimedDecisionTransportPair();
   const host = new HostGame({
     config: TIMED_CONFIG,
     transport: hostWire,
@@ -234,10 +219,9 @@ test('소켓 닫힘은 현재 단조 시각에서 잔여량을 보존하고 중�
 });
 
 test('게스트 hidden→visible은 열린 소켓에서도 hello·snapshot·새 offer를 시작한다 (NP-10)', async () => {
-  fixTimedDecisionRandom();
   let now = 0;
   const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
-  const [hostWire, guestWire] = createMemoryTransportPair();
+  const [hostWire, guestWire] = createTimedDecisionTransportPair();
   const host = new HostGame({
     config: TIMED_CONFIG,
     transport: hostWire,
@@ -779,3 +763,18 @@ test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고
   host.dispose();
   guest.dispose();
 }, 30_000);
+
+/** 정상 분배 fixture: 첫 선 고르기에서 동월·즉시 정산 없이 제한시간 결정을 만든다 (#221). */
+function createTimedDecisionTransportPair() {
+  const original = crypto.getRandomValues;
+  expect(vi.isMockFunction(original)).toBe(false);
+  const random = vi.spyOn(crypto, 'getRandomValues').mockImplementation((array) => {
+    if (array instanceof Uint8Array) array.fill(0);
+    return array;
+  });
+  onTestFinished(() => {
+    random.mockRestore();
+    expect(crypto.getRandomValues).toBe(original);
+  });
+  return createMemoryTransportPair();
+}
