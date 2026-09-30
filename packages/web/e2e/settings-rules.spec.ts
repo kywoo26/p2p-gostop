@@ -136,9 +136,7 @@ test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 �
     await page.getByRole('textbox', { name: '내 이름' }).fill('순서 확인');
     await page.getByRole('textbox', { name: '내 이름' }).blur();
     await expect.poll(() => welcomes.at(-1)?.names).toEqual(['순서 확인', '민지']);
-    expect(welcomes.slice(previous, -1).map((welcome) => welcome.rules)).toEqual([
-      PRESETS.arcade,
-    ]);
+    expect(welcomes.slice(previous, -1).map((welcome) => welcome.rules)).toEqual([PRESETS.arcade]);
   } finally {
     await guest.close();
     server.proc.kill();
