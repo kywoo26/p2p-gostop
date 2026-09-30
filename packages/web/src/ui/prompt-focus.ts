@@ -1,6 +1,4 @@
-// UX-07/24: 예약 행의 인라인 dialog를 유지하며 배경 잠금·초점 순환/복귀를 제공한다.
-// 전환 중 두 선택 창이 잠시 공존해도 먼저 닫힌 창이 다른 창의 잠금을 풀지 않는다.
-const locks = new WeakMap<HTMLElement, { count: number; previous: boolean }>();
+// UX-07/24: 선택 창의 열림 상태를 Board에 알리고 초점 순환/복귀를 제공한다.
 const panels = new Set<HTMLElement>();
 const controls =
   'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]';
@@ -26,35 +24,23 @@ export function promptFocus(panel: HTMLElement) {
     ?.querySelector<HTMLButtonElement>('[data-testid="game-menu"]');
   const activeTargets = () => [...focusable(panel), ...(menu && available(menu) ? [menu] : [])];
   const suspended = () => !!panel.closest('[inert]') || !!document.querySelector('dialog:modal');
-  const siblings: HTMLElement[] = [];
   let released = true;
+  const notify = (active: boolean | null) =>
+    board?.dispatchEvent(new CustomEvent('promptlockchange', { detail: { panel, active } }));
   const focusFirst = () =>
     (panel.querySelector<HTMLElement>('h2') ?? panel).focus({ preventScroll: true });
   function acquire() {
     if (!released) return;
     released = false;
-    panel.inert = false;
     panels.add(panel);
     if (menu) {
       if (!menu.id) menu.id = `${panel.getAttribute('aria-labelledby')}-menu`;
       panel.setAttribute('aria-owns', menu.id);
     }
-    for (let child: HTMLElement = panel; child.parentElement; child = child.parentElement) {
-      for (const sibling of child.parentElement.children) {
-        if (
-          !(sibling instanceof HTMLElement) ||
-          sibling === child ||
-          sibling.matches('script, style')
-        )
-          continue;
-        const lock = locks.get(sibling) ?? { count: 0, previous: sibling.inert };
-        lock.count++;
-        locks.set(sibling, lock);
-        sibling.inert = true;
-        siblings.push(sibling);
-      }
-      if (child.parentElement === board || child.parentElement === document.body) break;
-    }
+    // 자식 action은 부모 Board의 action보다 먼저 실행될 수 있다.
+    queueMicrotask(() => {
+      if (!released) notify(true);
+    });
     document.addEventListener('keydown', keydown, true);
     document.addEventListener('focusin', retainFocus);
     queueMicrotask(() => {
@@ -85,17 +71,9 @@ export function promptFocus(panel: HTMLElement) {
     released = true;
     panels.delete(panel);
     panel.removeAttribute('aria-owns');
-    panel.inert = true; // 사라지는 애니메이션 중 중복 선택 방지
+    notify(false); // Board가 사라지는 애니메이션 중인 창도 잠근다.
     document.removeEventListener('keydown', keydown, true);
     document.removeEventListener('focusin', retainFocus);
-    for (const sibling of siblings) {
-      const lock = locks.get(sibling)!;
-      if (--lock.count === 0) {
-        sibling.inert = lock.previous;
-        locks.delete(sibling);
-      }
-    }
-    siblings.length = 0;
     queueMicrotask(() => {
       if ([...panels].some((node) => node.isConnected)) return;
       if (previous && available(previous) && previous !== document.body) {
@@ -115,6 +93,7 @@ export function promptFocus(panel: HTMLElement) {
   return {
     destroy() {
       release();
+      notify(null);
       panel.removeEventListener('introstart', acquire);
       panel.removeEventListener('outrostart', release);
     },
