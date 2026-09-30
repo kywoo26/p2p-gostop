@@ -1,8 +1,8 @@
 <script lang="ts">
   // UX-08 / PA-06: 사건은 예약 행만 사용. 선택 중 마지막 문구를 보관한다.
-  import type { ScoreBreakdown, Seat } from '@p2p-gostop/engine';
+  import type { Seat } from '@p2p-gostop/engine';
+  import { baseMs } from '../anim/durations.ts';
   import type { Banner } from './banner.ts';
-  import { completedJokbo } from './banner.ts';
   import EventBanner from './EventBanner.svelte';
   let {
     banner = null,
@@ -12,7 +12,7 @@
     idle,
     round = 0,
     viewer = 0,
-    jokboScores = null,
+    milestones = [],
   }: {
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
@@ -21,19 +21,31 @@
     idle: string;
     round?: number;
     viewer?: Seat;
-    jokboScores?: readonly [ScoreBreakdown, ScoreBreakdown] | null;
+    milestones?: readonly {
+      readonly id: number;
+      readonly round: number;
+      readonly seat: Seat;
+      readonly text: string;
+    }[];
   } = $props();
   let deferred = $state('');
   let latched = $state<(Banner & { readonly id?: number }) | null>(null);
-  let milestone = $state<{
+  type Milestone = {
     readonly kind: 'jokbo';
     readonly text: string;
     readonly seat: Seat;
     readonly id: number;
-  } | null>(null);
-  let previous: { round: number; scores: readonly [ScoreBreakdown, ScoreBreakdown] } | null = null;
-  let sequence = 0;
-  const shown = $derived(banner ?? latched ?? milestone);
+    readonly round: number;
+  };
+  let queue = $state.raw<Milestone[]>([]);
+  let seen = 0;
+  let previousRound: number | null = null;
+  const nextMilestone = $derived(queue[0] ?? null);
+  const milestoneId = $derived(nextMilestone?.id ?? null);
+  const milestonePaused = $derived(blocked || banner !== null || latched !== null);
+  const shown = $derived(
+    banner ?? latched ?? (nextMilestone?.round === round ? nextMilestone : null),
+  );
   const shownActor = $derived(
     shown?.seat === undefined || shown.seat === null
       ? actor
@@ -53,29 +65,27 @@
     const id = latched.id;
     const timer = window.setTimeout(() => {
       if (latched?.id === id) latched = null;
-    }, 1200);
+    }, baseMs('eventCallout'));
     return () => window.clearTimeout(timer);
   });
   $effect(() => {
-    if (jokboScores === null) return;
-    if (previous?.round === round) {
-      for (const seat of [0, 1] as const) {
-        const text = completedJokbo(previous.scores[seat], jokboScores[seat]);
-        if (text !== null) {
-          milestone = { kind: 'jokbo', text, seat, id: ++sequence };
-        }
-      }
-    } else {
-      milestone = null;
+    if (previousRound !== null && round !== previousRound) {
+      queue = [];
+      latched = null;
     }
-    previous = { round, scores: jokboScores };
+    previousRound = round;
+    const fresh = milestones.filter((item) => item.id > seen);
+    if (fresh.length > 0) seen = fresh[fresh.length - 1]!.id;
+    const current = fresh.filter((item) => item.round === round);
+    if (current.length > 0)
+      queue = [...queue, ...current.map((item) => ({ ...item, kind: 'jokbo' as const }))];
   });
   $effect(() => {
-    if (milestone === null || banner !== null || latched !== null || blocked) return;
-    const id = milestone.id;
+    const id = milestoneId;
+    if (id === null || milestonePaused) return;
     const timer = window.setTimeout(() => {
-      if (milestone?.id === id) milestone = null;
-    }, 1200);
+      if (queue[0]?.id === id) queue = queue.slice(1);
+    }, baseMs('eventCallout'));
     return () => window.clearTimeout(timer);
   });
   $effect(() => {

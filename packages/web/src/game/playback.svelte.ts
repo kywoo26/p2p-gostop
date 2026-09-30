@@ -3,12 +3,19 @@
 // anim/choreo.ts로 재생하고 최신 뷰로 스냅한다. 판이 끝난 묶음(정산 포함)을 재생하면 정산 화면을 띄우고
 // release()까지 다음 묶음을 멈춘다(다음 판 분배는 사용자가 "다음 판"을 누른 뒤에 보인다).
 // 화면은 board·busy·banner·toast·timings·settlement만 읽는다. 사람/CPU/원격을 구분하지 않는다.
-import { getCard, type Action, type EngineEvent, type Seat } from '@p2p-gostop/engine';
+import {
+  getCard,
+  scoreCaptured,
+  type Action,
+  type EngineEvent,
+  type ScoreBreakdown,
+  type Seat,
+} from '@p2p-gostop/engine';
 import { tick } from 'svelte';
 import { deal, planTurn, replay, skip, unskip, waitHold, type ReplayHost } from '../anim/choreo.ts';
 import { baseMs, durationMs, scaledMs } from '../anim/durations.ts';
 import type { BoardView } from '../lib/view-types.ts';
-import { bannerForEngineEvent, type Banner } from '../ui/banner.ts';
+import { bannerForEngineEvent, completedJokbo, type Banner } from '../ui/banner.ts';
 import { cardLabel } from '../ui/cards.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
 import type { SettlementDisplay } from './adapter.ts';
@@ -95,6 +102,15 @@ export class Playback {
   busy = $state(false);
   banner = $state.raw<(Banner & { readonly id: number }) | null>(null);
   toast = $state.raw<{ readonly id: number; readonly text: string } | null>(null);
+  /** ScoreChanged가 확정한 족보 완료. 재생 단계가 빠르게 이어져도 항목을 잃지 않는다. */
+  milestones = $state.raw<
+    readonly {
+      readonly id: number;
+      readonly round: number;
+      readonly seat: Seat;
+      readonly text: string;
+    }[]
+  >([]);
   timings = $state.raw<readonly TurnTiming[]>([]);
   /** 재생을 마친 판의 정산 화면. 떠 있는 동안 다음 묶음은 기다린다 */
   settlement = $state.raw<RoundSummary | null>(null);
@@ -114,6 +130,9 @@ export class Playback {
   private disposed = false;
   private bannerSeq = 0;
   private toastSeq = 0;
+  private milestoneSeq = 0;
+  private scoreRound: number;
+  private previousScores: [ScoreBreakdown | null, ScoreBreakdown | null];
   private bannerTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(initial: BoardView, options: PlaybackOptions) {
@@ -122,6 +141,8 @@ export class Playback {
     this.onIdle = options.onIdle;
     this.onBanner = options.onBanner;
     this.board = $state.raw(snap(initial, initial.inFlight));
+    this.scoreRound = initial.round;
+    this.previousScores = this.initialScores(initial);
     this.settlement = options.settlement ?? null;
   }
 
@@ -177,6 +198,9 @@ export class Playback {
     this.queue = [];
     this.pending = 0;
     this.board = snap(board, board.inFlight);
+    this.scoreRound = board.round;
+    this.previousScores = this.initialScores(board);
+    this.milestones = [];
     this.settlement = settlement;
     this.skipped = false;
   }
@@ -235,6 +259,11 @@ export class Playback {
   /** 묶음 하나 재생 → 최신 뷰로 스냅 (spec 6.4) */
   private async play(batch: Batch): Promise<void> {
     const events = batch.events;
+    if (this.scoreRound !== batch.board.round) {
+      this.scoreRound = batch.board.round;
+      this.previousScores = this.initialScores(batch.board);
+      this.milestones = [];
+    }
     const host = this.host;
     if (host === null || this.disposed) {
       for (const e of events) this.onEvent(e);
@@ -300,6 +329,19 @@ export class Playback {
   }
 
   private onEvent(event: EngineEvent): void {
+    if (event.type === 'ScoreChanged' && event.seat !== null) {
+      const before = this.previousScores[event.seat];
+      const after = event.breakdown;
+      if (before !== null) {
+        const text = completedJokbo(before, after);
+        if (text !== null)
+          this.milestones = [
+            ...this.milestones,
+            { id: ++this.milestoneSeq, round: this.scoreRound, seat: event.seat, text },
+          ];
+      }
+      this.previousScores[event.seat] = after;
+    }
     const banner = bannerForEngineEvent(event);
     if (banner !== null) {
       this.showBanner(banner);
@@ -371,5 +413,13 @@ export class Playback {
       const month = getCard(event.cards[0] ?? 0).month;
       this.showToast(`${this.nameOf(event.seat)} 폭탄 (${month ?? ''}월)`);
     }
+  }
+
+  private initialScores(board: BoardView): [ScoreBreakdown | null, ScoreBreakdown | null] {
+    const empty = scoreCaptured({ gwang: [], yeol: [], tti: [], pi: [] }, false);
+    return ([0, 1] as const).map((seat) => (board.seats[seat].score === 0 ? empty : null)) as [
+      ScoreBreakdown | null,
+      ScoreBreakdown | null,
+    ];
   }
 }

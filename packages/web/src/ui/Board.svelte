@@ -6,7 +6,6 @@
   // data-anchor는 애니메이션 기준점(src/anim/choreo.ts), data-* 상태 속성은 E2E 자동 플레이·계측용이다.
   import {
     getCard,
-    scoreCaptured,
     sameAction,
     type Action,
     type CardId,
@@ -35,7 +34,7 @@
   import PickFirstPrompt from './PickFirstPrompt.svelte';
   import SeatBar from './SeatBar.svelte';
   import SeatProgress from './SeatProgress.svelte';
-  import { gukjinAsPiOf, seatStats, type SeatExtras } from './seat-stats.ts';
+  import { seatStats, type SeatExtras } from './seat-stats.ts';
 
   type BoardSeat = SeatView & SeatExtras;
 
@@ -58,6 +57,12 @@
     confirmDelay?: boolean;
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
+    milestones?: readonly {
+      readonly id: number;
+      readonly round: number;
+      readonly seat: Seat;
+      readonly text: string;
+    }[];
     /** 이벤트 재생 중 (입력 잠금) */
     busy?: boolean;
     /** 상대(CPU)가 생각 중 */
@@ -92,6 +97,7 @@
     confirmDelay = false,
     banner = null,
     toast = null,
+    milestones = [],
     busy = false,
     thinking = false,
     turnMs = null,
@@ -124,11 +130,6 @@
   const opponent = $derived(view.seats[seat === 0 ? 1 : 0]);
   const myStats = $derived(seatStats(me));
   const opponentStats = $derived(seatStats(opponent));
-  const jokboScores = $derived(
-    [0, 1].map((seat) =>
-      scoreCaptured(view.seats[seat as Seat].captured, gukjinAsPiOf(view.seats[seat as Seat])),
-    ) as [ReturnType<typeof scoreCaptured>, ReturnType<typeof scoreCaptured>],
-  );
   const expandedHud = $derived(
     [me.balance, opponent.balance].some((balance) => formatMoney(balance, unit).length > 10),
   );
@@ -419,7 +420,7 @@
         {actor}
         round={view.round}
         viewer={seat}
-        {jokboScores}
+        {milestones}
         blocked={selecting || view.canFlipOnly}
         idle={thinking
           ? '상대 차례 · 생각 중'

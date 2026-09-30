@@ -319,6 +319,7 @@
       confirmDelay={'confirmDelay' in settings.value && settings.value.confirmDelay === true}
       banner={pb.banner}
       toast={pb.toast}
+      milestones={pb.milestones}
       busy={pb.busy || !controller.canAct}
       thinking={controller.thinking}
       turnMs={pb.lastTiming?.ms ?? null}

@@ -44,7 +44,7 @@ const MILESTONES = [
   ['gwang', '광'],
 ] as const;
 
-/** 공개 획득패를 엔진 점수 함수로 계산한 전후 값에서 새로 완성된 족보만 알린다. */
+/** 엔진이 확정한 점수 분해의 전후 값에서 새로 완성된 족보만 알린다. */
 export function completedJokbo(before: ScoreBreakdown, after: ScoreBreakdown): string | null {
   const names = MILESTONES.filter(([key]) => before[key] === 0 && after[key] > 0).map(
     ([, name]) => name,
