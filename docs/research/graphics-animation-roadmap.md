@@ -112,13 +112,13 @@ Chromium 매칭 trace의 Layout 50회/4.095ms, UpdateLayoutTree 75회/6.683ms, P
 | 도구·직접 근거 | 실제 도움 | 이 앱의 비용/판정 |
 |---|---|---|
 | [Penpot](https://penpot.app/), [MPL-2.0 저장소](https://github.com/penpot/penpot), [2.18.0 릴리스](https://github.com/penpot/penpot/releases/tag/2.18.0)(09-23) | 토큰·컴포넌트·flex/grid 프로토타입, SVG/CSS inspect, MCP로 design↔agent 작업 | **디자인 작업 후보 추천.** 무료 self-host 가능; 앱 bundle 추가0. 서버 운영/계정/자산 동기화 비용은 별도. MPL은 Penpot 소스 변경 파일 배포에 적용, 우리 출력 디자인 전부를 MPL로 만드는 뜻 아님. MCP 읽기/쓰기 권한 및 로컬 export pin 필요 |
-| [Anthropic frontend-design SKILL](https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/SKILL.md), [개별 Apache-2.0](https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/LICENSE.txt) | generic UI 회피, 의도 있는 방향·차별점·두 번의 critique | **프로젝트용 짧은 디자인 brief에 적용할 원리 추천.** 기존 tokens/48px/한글폰트/금지 목록이 우선. 복사·변형 배포 시 license/notice/변경 고지; runtime0. root skills 저장소의 다른 라이선스를 전체에 가정하지 않음 |
+| [Anthropic frontend-design SKILL](https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/SKILL.md), [개별 Apache-2.0](https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/LICENSE.txt) | generic UI 회피, 의도 있는 방향·차별점·두 번의 critique. 확인한 공식 저장소 최근 commit은09-29 | **프로젝트용 짧은 디자인 brief에 적용할 원리 추천.** 기존 tokens/48px/한글폰트/금지 목록이 우선. 복사·변형 배포 시 license/notice/변경 고지; runtime0. root skills 저장소의 다른 라이선스를 전체에 가정하지 않음 |
 | [Vercel web-design-guidelines](https://raw.githubusercontent.com/vercel-labs/agent-skills/main/skills/web-design-guidelines/SKILL.md), [공식 README의 MIT 선언](https://github.com/vercel-labs/agent-skills) | focus/touch/reduced-motion/compositor/타이포 audit, React/Next skill과 역할 분리 | audit 참고 후보. 이 앱을 React/Next로 이전할 이유는 없음. 개별 고지/소스 pin 확인 뒤 재사용, 최신 guideline 자동 fetch의 변경을 검토 없이 신뢰하지 않기. deployment skill은 LAN 앱 목적과 무관 |
 | [Bits UI](https://www.bits-ui.com/docs/introduction), [2.19.3 manifest](https://raw.githubusercontent.com/huntabyte/bits-ui/main/packages/bits-ui/package.json)(MIT, Svelte ^5.33) | 스타일 없는 dialog/popover/focus/키보드 부품; Tailwind 필수 아님 | 접근성 부품의 반복 결함이 입증될 때 **국소 의존성 제안**. 자체 게임판 아트를 만들어주지는 않음. Floating UI/runed/tabbable 등 전이 비용과 기존 dialog 테스트 이전을 측정; #188/#169를 라이브러리 교체로 우회하지 않음 |
 | [Motion animate](https://motion.dev/docs/animate), [MIT 소스](https://github.com/motiondivision/motion), [npm 공식 metadata](https://registry.npmjs.org/motion/latest)(13.4.6) | JS/SVG용 mini와 hybrid, spring/sequence·스타일 batch | mini2.3KB/hybrid18KB는 제공자 표기(압축 정의 미명시), 우리 dist 증가량 아님. 현재 WAAPI 순서를 대체할 이득 미증명. 필요 시 단일 효과 prototype만 비교; 프레임/취소 문제를 자동 해결한다고 주장하지 않음 |
-| [GSAP 현행 무료 라이선스](https://gsap.com/community/standard-license/) | 정교한 timeline·SVG authoring | 무료와 OSI OSS를 혼동하지 않음. 현행 **금지 유지**, 재검토도 plan 개정 제안으로만. 자체 FLIP·상태 큐와 중복, vendor benchmark 성능 수치를 채택 근거로 쓰지 않음 |
-| [Pixi8.21.0](https://github.com/pixijs/pixijs/releases/tag/v8.21.0)(09-17), [Phaser4.2.1](https://github.com/phaserjs/phaser/releases/tag/v4.2.1)(07-09) | 2D sprite/배치 렌더링 vs scene/input/tween을 포함한 게임 framework | **현행 둘 다 금지.** Phaser를 과거3.x 정보만으로 평가하지 않음. 전면안 C의 대표만 비교, physics/scene loop가 필요 없는 턴제에 과잉일 가능성. 패키지 정확한 추가바이트·모바일 성능 미측정 |
-| [Threlte](https://threlte.xyz/) | Svelte의 Three.js 3D scene 작성 | SSR/React 도입 없이도3D는 가능하지만 현재 카드/table의3D 필요가 입증되지 않음. geometry/light/material·텍스처·GPU·접근성 유지 비용이 큼. 신규 의존성 제안 승인 전 제외 |
+| [GSAP 현행 무료 라이선스](https://gsap.com/community/standard-license/) | 정교한 timeline·SVG authoring | 상업 사용도 no-charge지만 경쟁 visual animation builder 제한이 있는 별도 라이선스. 무료와 OSI OSS를 혼동하지 않음. 현행 **금지 유지**, 재검토도 plan 개정 제안으로만. 자체 FLIP·상태 큐와 중복, vendor benchmark 성능 수치를 채택 근거로 쓰지 않음 |
+| [Pixi8.21.0](https://github.com/pixijs/pixijs/releases/tag/v8.21.0)(09-17), [Phaser4.2.1](https://github.com/phaserjs/phaser/releases/tag/v4.2.1)(07-09) | 2D sprite/배치 렌더링 vs scene/input/tween을 포함한 게임 framework | **현행 둘 다 금지.** 원 제공자 [Pixi MIT](https://github.com/pixijs/pixijs/blob/dev/LICENSE)·[Phaser MIT](https://github.com/phaserjs/phaser/blob/master/LICENSE.md) 고지 확인, 유료/NC 때문에 기각하는 것은 아님. Phaser를 과거3.x 정보만으로 평가하지 않음. 전면안 C의 대표만 비교, physics/scene loop가 필요 없는 턴제에 과잉일 가능성. 패키지 정확한 추가바이트·모바일 성능 미측정 |
+| [Threlte](https://threlte.xyz/), [MIT 고지](https://github.com/threlte/threlte/blob/main/LICENSE.md) | Svelte의 Three.js 3D scene 작성 | SSR/React 도입 없이도3D는 가능하지만 현재 카드/table의3D 필요가 입증되지 않음. geometry/light/material·텍스처·GPU·접근성 유지 비용이 큼. 신규 의존성 제안 승인 전 제외 |
 | [Rive pricing](https://www.rive.app/pricing) | 디자이너 state machine·vector motion, agent 기능 | 무료 editor 학습과 앱용 `.riv` export를 분리: 현재 export는 유료 Cadet부터. **무료 채택안 제외.** OSS runtime이 있다고 authoring/export까지 무료라고 쓰지 않음 |
 
 “스킬을 많이 넣으면 화면이 좋아진다”도 검증 대상이다. [WebDev-Skills-Bench 원 논문](https://arxiv.org/abs/2608.23067)(2026-08-24 preprint)은 31스킬/50프로젝트/4모델에서 주입 시 평균 완수율 저하·토큰 증가를 보고한다. 이 결과를 우리 Sol/Svelte의 효과 수치로 전용하지 않는다. 따라서 한 개의 짧은 프로젝트 brief와 스킬 없음 비교를 같은 fixture로 시행하고, 디자인 판정·수정횟수·접근성 실패·토큰/시간을 기록한다. stack에 맞지 않는 예제 묶음을 상시 주입하지 않는다.
@@ -173,43 +173,61 @@ Chromium 매칭 trace의 Layout 50회/4.095ms, UpdateLayoutTree 75회/6.683ms, P
 
 | 현행 ID/취지 | 실제 문제 | 제안 문구 초안 / 필요 이유 | 측정·통과 기준 | 비용·보안·접근성 / 승인 전제 |
 |---|---|---|---|---|
-| NF-03 / AC-07 전체1.5MB·첫로드2초 | spec 전송, gate raw1.5MiB, 초기 guest와전체dist 불일치 | “1.5MiB=1,572,864 B; raw dist, 초기 필수 encoded response body, 한 세션 모든 자산의 unique encoded body를 별도 보고한다.” strict안은현행raw상한도 유지. 완화안은전송회계 변경 후raw상한 별도 승인 | strict안 raw≤1,572,864, 외부 요청0 유지. 세션cold asset inventory 누락0. 현행2초는실핫스팟 진입→font/필수도상 준비·최초입력 가능 기준으로 정의 | 압축 serving/버전cache 추가 검증. lazy는전체회계에서 제외하지 않음. 확대/설정/정산/재연결도 offline 자산 inventory 포함. 완화 숫자는 baseline 후 사용자승인 |
-| NF-03 응답≤100ms | 턴완료와시각반응혼합 | “입력 수신→첫 pressed/accepted 피드백≤100ms. 요청/권위응답/재생완료는분리기록.” | pointerdown/up 또는키보드 시작점을입력방식별표기, 다음presentation 근사/영상 실측. 100ms 기존목표 유지; p95/p99 수용분위수는기기baseline 후확정 | 계측 listener비용. 식별/초대/로그를기록하지 않고synthetic action ID만 |
-| NF-03 60fps / AC-06≤700ms | 완료시간이긴frame을놓침 | “선택없는fast의완료와frame cadence를각각수용. display refresh period를기록하고active-window frame interval p95/p99, missed-vsync 추정, trace long frames를보고.” | 기존C7회p50≤700·두번째최대≤900, normal1.4–2.4sec 보존. frame≤16.67ms는60Hz주기의 설명이며새합격상한아님. dropped=Σmax(0,round(Δt/refreshPeriod)−1)는rAF기반**추정**으로표시, 실제presentation과분리 | hostedWebKit벽시계기록정책보존. [LoAF](https://developer.chrome.com/docs/web-platform/long-animation-frames)는>50ms 진단이며60fps gate대체아님; 미지원환경결측. 새분위수/허용비율은baseline 후승인 |
-| NF-04 idle/전력 | JS loop정지와CSS무한pulse 충돌 | “판대기/hidden의decorative RAF·CSS infinite animation은정지,유한input feedback 뒤static. heartbeat/IP감시는기존예외.” | action가능 idle/상대대기/hidden에서앱RAF·decorativeanimation0; protocol timer별도. battery/thermal은아래회차로기록,새%상한미정 | strong효과기본변경필요없음. UX-H05pulse의유한/idle정의승인. loop관찰만으로전력절감%주장금지 |
-| NF-08 / UX-13 접근성 | renderer전환시색/초점/200%손실 | “시각효과는공개뷰DOM과동등정보·행동을보존,Canvas장식은aria-hidden,동작줄이기는운동0/문구유지.” | 48px/앞면100%/도상/aria-label/키보드/200% equivalent panel,가림0·중복발화0. axe와사람SR/zoom검증분리 | Canvas overlay입력받지않음. font/CC조건유지. 기존규범명확화 우선,새장식은UX승인 |
-| AC-06 / §6.4 / UX-16 정합·취소 | FIFO와새사건수렴표현,active reset경쟁 | “정상연속events는순서보존. 복구snapshot/reset/dispose는generation을무효화하고최신accepted view를snap. stale callback은board/배너/idle을변경하지않는다.” | active재생중reset→추가event,detach/dispose,skip+cancel,뒤늦은snapshot/다음round:최신 accepted view와cardIDs/점수/pending일치,불법입력/숨은정보0. 오류시대기없는active도수렴 | seq/round프로토콜의의미변경금지. snapshot접수이후입력unlock시점도규정. 정책명확화승인 후표적replay tests |
-| FR-23 / UX-15~19 효과설정·읽기 | 효과길이와입력잠금/콜아웃수명혼합 | “off/subtle/strong 저장값과normal기본유지. reduced/skip은운동을 제거하되#185읽기콜아웃은턴진행과독립. simultaneous효과는레일/요약으로정보보존.” | #1851200ms읽기·queue/판경계,복원초기score없는제한문서화. 기존시간표/fast700 유지. PA06b음향·박스탬프각gate유지 | 읽기연장때문에판재생대기추가금지. 원문UX와중복/충돌만수정,개정은별도PR승인 |
+| NF-03 / AC-07 전체1.5MB·첫 로드2초 | spec은 전송, gate는 raw1.5MiB. 초기 guest와 전체 dist가 다름 | “1.5MiB=1,572,864 B. raw dist, 초기 필수 encoded body, 세션 전체 unique encoded body를 별도 보고한다.” strict안은 현행 raw 상한도 유지, 완화안은 전송 회계와 별도 raw 상한 승인 | strict raw≤1,572,864 B, 외부 요청0 유지. cold session 자산 누락0. 실핫스팟 진입→font/필수도상 준비·최초입력 가능≤2초 | 압축·버전 cache 검증. lazy 자산도 전체 회계에 포함. 확대/정산/재연결 offline inventory 필요. 완화 숫자는 baseline 후 사용자 승인 |
+| NF-03 응답≤100ms | 턴 완료와 시각 반응 혼합 | “입력 수신→최초 pressed/accepted 피드백≤100ms. 요청/권위 응답/재생 완료는 분리한다.” | pointer/키보드별 시작점 표기, 다음 presentation의 근사/영상 측정 구분. 기존100ms 유지; p95/p99 수용 분위수는 기기 baseline 후 확정 | 계측 비용, synthetic action ID만 기록. 사용자 식별자·초대 URL 제외 |
+| NF-03 60fps / AC-06≤700ms | 완료 시간만으로 긴 frame을 놓침 | “완료와 cadence를 각각 수용한다. refresh period, active 구간 frame interval p95/p99, missed-vsync 추정, trace long frame을 보고한다.” | 기존 Chromium7회 p50≤700·두 번째 최대≤900, normal1.4–2.4초 보존. 16.67ms는60Hz 주기 설명이며 새 합격 상한 아님. dropped 추정=Σmax(0,round(Δt/refreshPeriod)−1), 실제 presentation과 구분 | hosted WebKit 기록 정책 유지. [LoAF](https://developer.chrome.com/docs/web-platform/long-animation-frames)는>50ms 진단이지60fps gate가 아님. 미지원은 결측. 새 허용 비율은 baseline 후 승인 |
+| NF-04 idle/전력 | JS loop 정지와 CSS 무한 pulse 충돌 | “판 대기/hidden의 장식 RAF·CSS infinite animation은 정지한다. 유한 input feedback 후 static. heartbeat/IP 감시는 기존 예외다.” | 행동 가능한 idle/상대 대기/hidden의 앱 장식 loop0; protocol timer 별도. battery/thermal은 아래 회차로 기록, 새% 상한 미정 | strong 기본값 변경 불필요. UX-H05 pulse의 유한/idle 정의 승인. loop 관찰만으로 전력 절감% 주장 금지 |
+| NF-08 / UX-13 접근성 | renderer 전환 시 색·초점·200% 손실 | “효과는 공개 뷰 DOM과 동등 정보·행동을 보존한다. Canvas 장식은 aria-hidden. reduced-motion은 운동0, 문구 유지.” | 48px/앞면100%/도상/aria-label/키보드/200% equivalent panel. 가림0·중복 발화0, axe와 사람 SR/zoom 검증 분리 | 효과 overlay 입력 없음, font/CC 조건 유지. 기존 규범 명확화 우선, 새 장식은 UX 승인 |
+| AC-06 / §6.4 / UX-16 정합·취소 | FIFO와 새 사건 수렴 표현, active reset 경쟁 | “정상 events는 순서 보존. 복구 snapshot/reset/dispose는 generation 무효화와 최신 accepted view snap. stale callback은 board/배너/idle을 변경하지 않는다.” | active replay 중 reset→추가 event, detach/dispose, skip+cancel, 늦은 snapshot/다음 round에서 최신 뷰와 cardIDs/점수/pending 일치. 불법 입력·숨은 정보0. 대기 없는 active 실패도 수렴 | seq/round 프로토콜 의미 유지. snapshot 접수 후 입력 unlock 시점도 정의. 정책 승인 뒤 표적 경쟁 반례 테스트 |
+| FR-23 / UX-15~19 설정·읽기 | 효과 길이와 입력 잠금/콜아웃 수명 혼합 | “off/subtle/strong 저장값과 normal 기본 유지. reduced/skip은 운동을 제거하되 #185 읽기 콜아웃은 턴 진행과 독립. 동시 효과는 레일/요약으로 정보 보존.” | #1851200ms 읽기·queue/판 경계, 복원 첫 score 변화 제한 명시. 기존 시간표/fast700 유지. PA06b 음향·박스탬프 각각 gate 유지 | 읽기 연장으로 턴 대기 추가 금지. UX 중복·충돌을 별도 개정 PR로 승인 |
 
 ### 5.1 후속 baseline의 재현 단위
 
 | 분리할 조건 | 필요한 정의/기록 |
 |---|---|
-| cold / warm / cache | cold: 새 browser profile·HTTP cache없음·첫요청, OS/DNS/socket warm 여부도표기. warm: 같은 assetversion의두번째navigation. decode-warm: image.decode/fonts.ready 이후턴. cold network와warm decode를섞지않음 |
-| 초기 필수 / 후속 / offline | route별manifest의필수font/card/skin·worker와license설정경로를분류. session union을추가합산. host가오프라인으로각파일제공하는지확인; guest의cache영속성은보장하지않음. lazy처음진입시호스트요청도offline LAN요청 |
-| 장치·네트워크 | 사람이Galaxy모델/Android/WebView버전, iPhone모델/iOS/Safari,60/120Hz,밝기·전원·핫스팟거리/신호·냉각상태를기록. 자동viewport/DPR는그장치실측이아님 |
-| active 프레임 / latency | 동일seed·카드·경로,fast/normal/skip/reduced 각각. input ack,권위뷰접수,replay끝,tick 후snap을분리; rAF/trace는gesture부터animation끝구간만분석. app계측off control도비교 |
-| decode / GPU / JS memory | decode wall/error와선택asset별RGBA계산·총동시decoded set. 지원시heap관찰은JS만; GPU layer/texture는Inspector/OS도구가측정한범위를명시. 측정불가를0으로대체하지않음 |
-| 장시간 열·배터리 | 같은조건idle10분/active20분을후보A/B로교차반복,잔량%·OS열상태·frame변화·foreground host/guest역할·충전여부기록. OS%해상도/환경오차가커서1회차1%차이로채택안만들지않음. 반복편차후threshold결정 |
+| cold / warm / cache | cold: 새 profile·HTTP cache 없음·첫 요청, OS/DNS/socket warm 여부도 표기. warm: 동일 asset version의 두 번째 navigation. decode-warm: image.decode/fonts.ready 이후 턴. cold network와 warm decode를 섞지 않음 |
+| 초기 필수 / 후속 / offline | route별 font/card/skin·worker·license 자산 inventory, session union 추가 합산. host가 offline으로 각 파일을 제공하는지 확인. guest cache 영속성은 보장하지 않음. lazy 최초 진입 요청도 offline LAN 요청 |
+| 장치·네트워크 | 사람이 Galaxy 모델/Android/WebView, iPhone 모델/iOS/Safari,60/120Hz, 밝기·전원·핫스팟 신호·냉각 상태를 기록. 자동 viewport/DPR는 장치 실측이 아님 |
+| active frame / latency | 동일 seed·카드·경로의 fast/normal/skip/reduced. input ack/권위 뷰 접수/replay 끝/tick 후 snap을 분리. 정식 frame 표본은 gesture→animation 끝 구간만. 계측 off control과 비교 |
+| decode / GPU / JS memory | decode wall/error, 자산별 RGBA 계산과 동시 decoded set. heap은 JS만. GPU layer/texture는 Inspector/OS 도구의 측정 범위를 명시. 측정 불가를0으로 대체하지 않음 |
+| 장시간 열·배터리 | idle10분/active20분을 후보 A/B로 교차 반복. 잔량%·OS 열 상태·frame 변화·host/guest 역할·충전 여부 기록. 이 시간은 실험 설계 후보이며 새 수용 상한 아님. OS% 해상도·환경 오차 때문에1회1% 차이로 채택하지 않음. 반복 편차 후 threshold 결정 |
 
-일회성 재현 명령은 저장소루트에서 `nvm use`, `npm ci`, `npm run build -w packages/web`, `npm run preview -w packages/web -- --port 4220`. Playwright는 lock의1.63.0, 표적스크립트는 `/tmp/graphics-probe.mjs`에 작성해 `e2e/timing-fixtures.ts`의 synthetic save만 로드한다. getBoundingClientRect/getComputedStyle/animate 횟수 wrapper·독립rAF·Chromium DevTools timeline을 관찰하고, 원문 로그/실제초대URL/사용자저장을 읽지 않는다. 추적자료는저장소에추가하지 않으며 공개재현에는개인홈/계정/호스트/워크트리 식별자를제거한다. 위 집계만본 문서의지속근거다. 정확한wrapper는동작을교란할수있으므로그대로성능gate에넣지말고정식계측설계를후속PR에서리뷰한다.
+일회성 재현은 저장소 루트에서 `nvm use`, `npm ci`, `npm run build -w packages/web`, `npm run preview -w packages/web -- --port 4220`. lock의 Playwright1.63.0으로 다음 순서를 사용했다.
+
+1. 외부 origin 요청을 차단한 새 context, viewport412×840/DPR3.5. guest 이름 입력란과 fonts.ready에서 navigation/resource timing 수집.
+2. [timing-fixtures.ts](../../packages/web/e2e/timing-fixtures.ts)의 `TIMING_FIXTURES[1]`, `[2]` 및 `timingSave`로 synthetic local save 설정. `?speed=fast#/`의 이어하기, `data-can-act=true`, 모든 img의 decode 완료 대기.
+3. getBoundingClientRect/getComputedStyle/animate wrapper의 횟수·시간, 독립 rAF를 관찰. Chromium만 `devtools.timeline,blink.user_timing` trace. `[aria-label="내 손패"] [data-slot="<fixture.card>"]`의 좌상단+20px를 클릭.
+4. solo의 숫자 `data-play-timings`가 생기면 완료/계획값 수집, 관찰 종료. rAF 분위수는 정렬 후 ceil(N×p)번째 값. Layout/UpdateLayoutTree/Paint는 이름이 같은 `ph=X` 이벤트의 dur 합계. wrapper·click 준비 시간이 섞이는 한계는 §1.2에 명시.
+
+압축 집계는 dist 재귀 탐색→각 파일의 byteLength·`gzipSync(buffer,{level:9})`·`brotliCompressSync` quality11의 byteLength 합이다. 확장자 `.svg`이면서 cards 경로인 것만 카드 카테고리, skin의 `.webp`만 이미지 카테고리로 분류한다. 고지·manifest는 별도다. 스크립트·trace는 `/tmp`에 두고 제품 파일은 수정하지 않았다. 원문 로그/실제 초대 URL/사용자 저장은 읽지 않았다. 공개 재현물에는 개인 경로·호스트 식별자를 넣지 않는다. 관찰 wrapper를 그대로 제품 gate에 넣지 말고 후속 계측 PR에서 설계를 리뷰한다.
 
 ## 6. 후속 작업은 다섯 실행 단위
 
-각 단위는 별도 PR. 아래 파일은 **향후 경계 제안**, 이 연구의 편집권한이 아니다. 모델은 모두 gpt-6.1-sol, 에이전트병렬화/Astra를요구하지않는다. 단위3은 #185 병합본을 기준으로 시작한다.
+각 단위는 별도 PR. 파일은 **향후 경계 제안**이며 이 연구의 편집 권한이 아니다. 모델은 모두 gpt-6.1-sol, 추가 에이전트/Astra를 요구하지 않는다. 단위3은 #185 병합본 기준이다.
 
-| 단위/분류 | 파일 경계·효과·의존성 | 검증·중단/rollback | 추정 작업량 / effort |
+| 단위/분류 | 파일 경계·효과·의존성 | 검증·중단/rollback | 계획 추정 / effort |
 |---|---|---|---|
-| 1 선행계측 | `scripts/check-bundle.mjs`, `e2e/timing-fixtures.ts`·표적perf도구, `docs/device-test/` 절차. raw/encoded/session·frame/latency baseline. 기존NF gate완화없음 | synthetic정보만,script관찰on/off비교. 초대/로그노출이나측정오버헤드가큰경우계측제거. 사람실측결과만device기록 | 8–16h / high |
-| 2 현행내정합개선 | `game/playback.svelte.ts`, `anim/choreo.ts`·`flip.ts`, guest전달접점만. generation취소·reset/snap·읽기batch. 1의계측과취소정책합의의존 | 표적browser replay 경쟁반례·skip/cancel/hidden/finalview; 기존timing. event손실/입력deadlock/숨은정보/동작시간악화면각변경별되돌림 | 8–16h / high |
-| 3 현행내시각prototype→선택후구현 | `styles/tokens.css`, Board/SeatBar/Hand/EventRail/Settlement/Home scopedCSS, galleryfixture·디자인문서. palette/48px/앞면/시간표유지,Penpot 또는프로젝트brief로2방향정지+운동비교 | #185콜아웃큐/20화면재사용,200%/reduced/입력지연/가림/개인정보감사. 사용자가시각안을고르기전규범밖색/폰트/질감본선반영금지. 기준샷갱신은선택뒤 | prototype8–16h,통합16–32h / high |
-| 4 개정승인후회계·idle규범 | spec NF-03/04/08·AC-06/07·FR-23,plan매트릭스,ui-spec UX-15~19/H05,staticserving/buildgate. 1baseline으로수치선정,strict안먼저 | compression협상/MIME/cacheversion·offline전경로. staleasset/전송증가/idle돌아옴이면serving원복. 사용자가완화안거절하면현행cap내절감만 | 8–16h / high |
-| 5 조건부B A/B | 새`anim/effects` 국소층·gallery,필요assetmanifest만. 1/2/3결과와자산/규범승인후먹선효과1종DOM대Canvas2D,WebGL은2D한계증거후 | 동일시각/시간/fixture로실기기frame·전력·메모리·context loss/hidden복귀. 반복편차를넘는개선/동등접근성없으면층삭제하고A유지. C전환은별도근거없으면열지않음 | prototype16–32h + 검증8–16h / high |
+| 1 선행 계측 | check-bundle·timing fixture/표적 perf 도구·device-test 절차. raw/encoded/session·frame/latency baseline. 기존 gate 완화 없음 | synthetic만 사용, 계측 on/off 비교. 민감 정보 노출·큰 관찰 오버헤드 시 제거. 사람 실측만 device 결과 기록 | 8–16h / high |
+| 2 현행 내 정합 개선 | Playback·choreo·flip, guest 전달 접점. generation 취소/reset/snap·읽기 batch. 단위1과 취소 정책 합의에 의존 | 표적 browser 경쟁 반례·skip/cancel/hidden/final view·기존 timing. event 손실/입력 deadlock/숨은 정보/시간 악화면 변경별 원복 | 8–16h / high |
+| 3 현행 내 시각 prototype→선택 후 구현 | tokens, Board/SeatBar/Hand/EventRail/Settlement/Home scoped CSS, gallery·디자인 문서. 고정 palette/48px/앞면/시간표 아래 두 방향 정지+운동 비교 | #185 큐/20화면 재사용,200%/reduced/가림/입력 latency 확인. 규범 밖 색·폰트·질감은 사용자 선택·재승인 전 본선 반영 금지. 기준샷 갱신은 선택 후 | prototype8–16h, 통합16–32h / high |
+| 4 개정 승인 후 회계·idle 규범 | spec NF-03/04/08·AC-06/07·FR-23, plan 매트릭스, UX-15~19/H05, static serving/build gate. 단위1 baseline으로 숫자 선정 | compression 협상/MIME/cache version·offline 전 경로. stale asset/전송 증가/idle loop 발생 시 serving 원복. 완화안 거절 시 현행 cap 내 절감만 | 8–16h / high |
+| 5 조건부B A/B | 국소 anim/effects·gallery·선택 asset manifest. 단위1/2/3과 승인 후 먹선1종 DOM vs Canvas2D. WebGL은2D 한계 증거 후 | 같은 시각/시간/fixture의 실기기 frame·전력·메모리·context loss/복귀 비교. 반복 편차를 넘는 이득과 동등 접근성이 없으면 레이어 삭제, A 유지. C 전환은 별도 증거 전 착수 권고 없음 | prototype16–32h+검증8–16h / high |
 
-모든후속의표적테스트는 `PLAYWRIGHT_PORT=4220`, workers≤4(타이밍직렬),필요한Gradle은 `--max-workers=4`. 이 docs-only 연구는 fullE2E·Android제품테스트를추가로반복하지않는다. 현행 CI가PR필수검사를실행하며 hosted결과와실기기를분리한다.
+후속 표적 E2E는 `PLAYWRIGHT_PORT=4220`, workers≤4(타이밍 직렬), 필요한 Gradle은 `--max-workers=4`. 이 docs-only 연구는 full E2E·Android 제품 테스트를 추가 반복하지 않는다. PR의 현행 hosted CI 결과와 실기기 수용을 분리한다.
+
+### 근거 파일 연결
+
+규범: [intend](../../intend.md), [spec](../../spec.md), [plan](../../plan.md), [UI](../design/ui-spec.md), [아트 방향](../design/art-direction.md), [최신 디자인 검증](../design/pro-skin-validation.md), [기존 자산 연구](pro-assets.md). 코드 참조는 efb0702 기준이고 #185 변경은 별도 구분했다.
+
+| 경계 | 직접 읽은 코드 |
+|---|---|
+| 재생·FLIP | [choreo](../../packages/web/src/anim/choreo.ts), [flip](../../packages/web/src/anim/flip.ts), [Playback](../../packages/web/src/game/playback.svelte.ts) |
+| 공개 뷰·표현 | [guest](../../packages/web/src/p2p/guest.svelte.ts), [Card](../../packages/web/src/ui/Card.svelte), [EventRail](../../packages/web/src/ui/EventRail.svelte), [표식 CSS](../../packages/web/src/styles/skin-marks.css) |
+| decode·빌드 | [평가 runtime](../../packages/web/src/pro-assets/runtime.ts), [Vite](../../packages/web/vite.config.ts), [bundle gate](../../packages/web/scripts/check-bundle.mjs) |
+| serving·출처 | [relay static](../../packages/relay-dev/src/static.ts), [Android serving](../../android/app/src/main/kotlin/com/kywoo26/p2pgostop/server/SmokeServer.kt), [skin manifest](../../packages/web/public/skin/manifest.json), [카드 고지](../../packages/web/public/cards/ATTRIBUTION.md) |
 
 ## 검증·결정 이력
 
-- 2026-09-30: 기준 efb0702의 native npm ci/build와 바이트 집계, 두 표적 경로/2 Chromium trace 완료; 제품추적파일 변경0.
-- 같은 날: #185의41f603c 병합·콜아웃큐 차이를 반영; 사용자제공 최신 검증수치를 본 연구 baseline과 분리.
-- 이번 추천은 A+디자인과정개선, 조건부B. spec/UI/자산/의존성 개정은 별도승인 전제이며 연구만으로 상태를 바꾸지 않음.
+- 2026-09-30: 기준 efb0702의 native npm ci/build와 바이트 집계, 두 표적 경로/2 Chromium trace 완료; 제품 추적 파일 변경0.
+- 같은 날: #185의41f603c 병합·콜아웃큐 차이를 반영; 사용자 제공 최신 검증 수치를 본 연구 baseline과 분리.
+- 이번 추천은 A+디자인 과정 개선, 조건부B. spec/UI/자산/의존성 개정은 별도 승인 전제이며 연구만으로 상태를 바꾸지 않음.
