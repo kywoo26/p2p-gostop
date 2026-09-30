@@ -1,0 +1,1076 @@
+{
+  "allowances": [
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/HotspotModelTest.kt",
+      "type": "network-address",
+      "line": 38,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/HotspotModelTest.kt",
+      "type": "network-address",
+      "line": 39,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/HotspotModelTest.kt",
+      "type": "network-address",
+      "line": 41,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/HotspotModelTest.kt",
+      "type": "network-address",
+      "line": 44,
+      "field": "network-address",
+      "sha256": "ccd066b5b6b321da2ca8710e3a1781a5fe685cc70eb371db7a1721789d83f184",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 15,
+      "field": "network-address",
+      "sha256": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 15,
+      "field": "network-address",
+      "sha256": "be839065345ae584e8759c74738517fcbe2c750076d813ca14ba981fa20e1f4e",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 16,
+      "field": "network-address",
+      "sha256": "be839065345ae584e8759c74738517fcbe2c750076d813ca14ba981fa20e1f4e",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 22,
+      "field": "network-address",
+      "sha256": "ccd066b5b6b321da2ca8710e3a1781a5fe685cc70eb371db7a1721789d83f184",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 23,
+      "field": "network-address",
+      "sha256": "36c6b97f66a9d4e2a0efe04ac0a1fc7f590983929583ab0b697ac6d813676374",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 26,
+      "field": "network-address",
+      "sha256": "36c6b97f66a9d4e2a0efe04ac0a1fc7f590983929583ab0b697ac6d813676374",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 31,
+      "field": "network-address",
+      "sha256": "bb466c99efaf56afc5efea8b5d3d024358b51c615d2d30dcf9cca5cba1109984",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 31,
+      "field": "network-address",
+      "sha256": "0f20a513c235ce40fb0259bebddc1d78ccef9e074d73d7dc04e909b978ae024c",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 32,
+      "field": "network-address",
+      "sha256": "0f20a513c235ce40fb0259bebddc1d78ccef9e074d73d7dc04e909b978ae024c",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 37,
+      "field": "network-address",
+      "sha256": "023f8d6b5360fec60225bd60d3f52fe18375414e7d3e19816e9ecb8ba22b78bc",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 37,
+      "field": "network-address",
+      "sha256": "1530e4211105b8c04166ab7d82c729f8fc6f145c98468619ef23cc797602c7ea",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 38,
+      "field": "network-address",
+      "sha256": "1530e4211105b8c04166ab7d82c729f8fc6f145c98468619ef23cc797602c7ea",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 45,
+      "field": "network-address",
+      "sha256": "7cf9ff0cc8db65d34de23f3dcf374a3ed4956a2f3d27feed7a5ec55bc5c3fd14",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 54,
+      "field": "network-address",
+      "sha256": "909678711af0d063fb00a40da19d3a41ca2f1de30d979af470ce045625223b99",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 54,
+      "field": "network-address",
+      "sha256": "d7c4af57261ce98c7a3623f16f720d9f54b5a50c1ac9aec518bbf2a477901ce9",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 54,
+      "field": "network-address",
+      "sha256": "842b949c6959da939d116c163ce37f979c7dbb8b4a23f1edf889e5b75852ddc0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 60,
+      "field": "network-address",
+      "sha256": "ccd066b5b6b321da2ca8710e3a1781a5fe685cc70eb371db7a1721789d83f184",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 60,
+      "field": "network-address",
+      "sha256": "296928e4dc24f9d003661ad375cca00789c28cb5a2ebb039f8ece268ee97a967",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 61,
+      "field": "network-address",
+      "sha256": "ccd066b5b6b321da2ca8710e3a1781a5fe685cc70eb371db7a1721789d83f184",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 66,
+      "field": "network-address",
+      "sha256": "f5047344122f0dee9974ba6761e61c6b8649e1f3968d13a635ebbf7be53a3a0d",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 67,
+      "field": "network-address",
+      "sha256": "f9863b6fa829fa6e80ffce0a30779b91c9affd96c0ee47f303c2c000b84a7b24",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 68,
+      "field": "network-address",
+      "sha256": "83c4c0b9921495fa577236bf0ce3115ba8f653920868334a43dc68ac19aea5b1",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 69,
+      "field": "network-address",
+      "sha256": "26bce1950e796083df3c9ee91fb342bc1efbc384781770f38561407c8551b555",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 70,
+      "field": "network-address",
+      "sha256": "fb0aa83bda811ab460a787d11daf554108b87eb5f11358361916b87db6f5c9ea",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 71,
+      "field": "network-address",
+      "sha256": "650c00d83c9cdd3aeb87c2c8cfa86c9978b6e670eb3493e2c8d074ec3d17386a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 72,
+      "field": "network-address",
+      "sha256": "9fee1dbd126b61ad5eb62f3d8f5e212f23c9b2e198dc972306821b4b2b9df745",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 79,
+      "field": "network-address",
+      "sha256": "48805b1485dc29bd78c4968cd36f3e957d689212e0f8e04dfd62a3a9f5515f74",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 79,
+      "field": "network-address",
+      "sha256": "c5eb5a4cc76a5cdb16e79864b9ccd26c3553f0c396d0a21bafb7be71c1efcd8c",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 79,
+      "field": "network-address",
+      "sha256": "87896ae09ba34a8a692ccb7441f5d0c9f59a6049f2726fc21d21b5ac576aa4e6",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 81,
+      "field": "network-address",
+      "sha256": "87896ae09ba34a8a692ccb7441f5d0c9f59a6049f2726fc21d21b5ac576aa4e6",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 81,
+      "field": "network-address",
+      "sha256": "c5eb5a4cc76a5cdb16e79864b9ccd26c3553f0c396d0a21bafb7be71c1efcd8c",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 81,
+      "field": "network-address",
+      "sha256": "48805b1485dc29bd78c4968cd36f3e957d689212e0f8e04dfd62a3a9f5515f74",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 88,
+      "field": "network-address",
+      "sha256": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 88,
+      "field": "network-address",
+      "sha256": "ed5a974ef604acf4e86f3505ed339a0a976a7c9b759d4a63159840c3d298e947",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 95,
+      "field": "network-address",
+      "sha256": "ed5a974ef604acf4e86f3505ed339a0a976a7c9b759d4a63159840c3d298e947",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 96,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 97,
+      "field": "network-address",
+      "sha256": "f1e107d847581839b81a36074af45aec4392f93555f8bbfd14b0a026b55fc822",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 100,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 105,
+      "field": "network-address",
+      "sha256": "f79335aacd830641ab10f2da134c37b507093b14e6d5d87b1bb78aca7515d694",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 105,
+      "field": "network-address",
+      "sha256": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 107,
+      "field": "network-address",
+      "sha256": "f79335aacd830641ab10f2da134c37b507093b14e6d5d87b1bb78aca7515d694",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 108,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 109,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 110,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 115,
+      "field": "network-address",
+      "sha256": "dec2a684c178cbccd31884e1827f69a240ea5809ac4f0cf07d726fac14ea2821",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 122,
+      "field": "network-address",
+      "sha256": "ba2d4e3e4953cfae5b141cb2fab3b272653cde1c143f57e794ed7163254b984f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 124,
+      "field": "network-address",
+      "sha256": "d6450d9a3944857a3fecea042c128cae7bcd03514e5d5ceb10dc944ffe68ea38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 129,
+      "field": "network-address",
+      "sha256": "dec2a684c178cbccd31884e1827f69a240ea5809ac4f0cf07d726fac14ea2821",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 129,
+      "field": "network-address",
+      "sha256": "ccd066b5b6b321da2ca8710e3a1781a5fe685cc70eb371db7a1721789d83f184",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/net/IpSelectorTest.kt",
+      "type": "network-address",
+      "line": 130,
+      "field": "network-address",
+      "sha256": "ccd066b5b6b321da2ca8710e3a1781a5fe685cc70eb371db7a1721789d83f184",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/qr/WifiQrTest.kt",
+      "type": "network-address",
+      "line": 44,
+      "field": "network-address",
+      "sha256": "be839065345ae584e8759c74738517fcbe2c750076d813ca14ba981fa20e1f4e",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/server/M4ServerTest.kt",
+      "type": "network-address",
+      "line": 146,
+      "field": "network-address",
+      "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/server/M4ServerTest.kt",
+      "type": "network-address",
+      "line": 157,
+      "field": "network-address",
+      "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "docs/protocol.md",
+      "type": "literal-credential",
+      "line": 323,
+      "field": "token",
+      "sha256": "71ab3eb77c329b1df1e625a715c9976422b3f140ac56e588c6421dc5e3d93b88",
+      "reason": "문자 그대로의 sample credential 프로토콜 설명"
+    },
+    {
+      "path": "docs/protocol.md",
+      "type": "literal-credential",
+      "line": 325,
+      "field": "token",
+      "sha256": "a9aef3e0a294d83b57cb194703e0e956b8df79f84b9fc831a273efe1b2fd284a",
+      "reason": "문자 그대로의 sample credential 프로토콜 설명"
+    },
+    {
+      "path": "docs/protocol.md",
+      "type": "literal-credential",
+      "line": 331,
+      "field": "token",
+      "sha256": "a9aef3e0a294d83b57cb194703e0e956b8df79f84b9fc831a273efe1b2fd284a",
+      "reason": "문자 그대로의 sample credential 프로토콜 설명"
+    },
+    {
+      "path": "docs/reviews/process-local-first.md",
+      "type": "network-address",
+      "line": 14,
+      "field": "network-address",
+      "sha256": "a3fbe876b99abf7560a3958436975de3ac938a9d7776f3c94651e288c69ff0e2",
+      "reason": "JDK 공식 패치 버전 표기; 네트워크 주소 아님"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 253,
+      "field": "secret",
+      "sha256": "51eceda299df3afa98686df58acf74b8d854efad6d2eee1260dda2482be3c6fe",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 473,
+      "field": "secret",
+      "sha256": "51eceda299df3afa98686df58acf74b8d854efad6d2eee1260dda2482be3c6fe",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 497,
+      "field": "secret",
+      "sha256": "51eceda299df3afa98686df58acf74b8d854efad6d2eee1260dda2482be3c6fe",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/relay-dev/test/public-auth.test.ts",
+      "type": "literal-credential",
+      "line": 53,
+      "field": "Authorization",
+      "sha256": "244a8de8d957650159ce5ecfa180bd8728b6e440404fca96defc57a02caa4af0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/relay-dev/test/public-net.test.ts",
+      "type": "literal-credential",
+      "line": 276,
+      "field": "token",
+      "sha256": "79a8fce86370c518ae598acd44942ab1471a159cdae9498bfe2af2ad863bbed1",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/relay-dev/test/public-net.test.ts",
+      "type": "literal-credential",
+      "line": 277,
+      "field": "token",
+      "sha256": "79a8fce86370c518ae598acd44942ab1471a159cdae9498bfe2af2ad863bbed1",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/relay-dev/test/public-net.test.ts",
+      "type": "literal-credential",
+      "line": 278,
+      "field": "token",
+      "sha256": "79a8fce86370c518ae598acd44942ab1471a159cdae9498bfe2af2ad863bbed1",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/relay-dev/test/relay-scenarios.json",
+      "type": "network-address",
+      "line": 118,
+      "field": "network-address",
+      "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/relay-dev/test/static.test.ts",
+      "type": "literal-credential",
+      "line": 30,
+      "field": "secret",
+      "sha256": "fd2cb544dd72aaa8b178b2504caad84bfab02c066a7471f6f362b876d053363e",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/e2e/p2p-screens.spec.ts",
+      "type": "network-address",
+      "line": 8,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/e2e/p2p.spec.ts",
+      "type": "invite-secret",
+      "line": 202,
+      "field": "invite-secret",
+      "sha256": "2043c7ae16000b68a8b0a8653dc8766e337ee48698541a60c2f391b9ba2d24fb",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/e2e/p2p.spec.ts",
+      "type": "invite-secret",
+      "line": 262,
+      "field": "invite-secret",
+      "sha256": "10e71f9551880d82696310a98e8a4c06590a1d12e43306fd987188ee7e087b3e",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/e2e/remote-guest.spec.ts",
+      "type": "literal-credential",
+      "line": 43,
+      "field": "token ",
+      "sha256": "eeb4213d0820f2b4a7cb95b254cf6d628cbd2032e7265c09027cced113757b54",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/e2e/remote-host.spec.ts",
+      "type": "literal-credential",
+      "line": 8,
+      "field": "secret ",
+      "sha256": "3620813544f2834b677fc7552200a34092733a14edab208627f529b28bd56c6e",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/e2e/remote-host.spec.ts",
+      "type": "literal-credential",
+      "line": 44,
+      "field": "hostToken",
+      "sha256": "b42d0e53d882978ec32445e143c360b0b91aa10a991406ad26faf9b2b699fd7f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/fixtures/diagnostics.json",
+      "type": "network-address",
+      "line": 9,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/fixtures/guest-join.json",
+      "type": "network-address",
+      "line": 5,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/fixtures/host-room.json",
+      "type": "network-address",
+      "line": 7,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/fixtures/host-room.json",
+      "type": "literal-credential",
+      "line": 6,
+      "field": "password",
+      "sha256": "0b1e3db61a4cc76076a6ea608b77daef4dff61c586fba1dc8bcd538090b41b57",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/public/oss/NOTICE.txt",
+      "type": "email",
+      "line": 88,
+      "field": "email",
+      "sha256": "bdf9ce3b6fad26286e88dc74fe508107913344140b3282382d6ee4c290e7175c",
+      "reason": "원저작자 라이선스 귀속 이메일 보존"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "network-address",
+      "line": 43,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "network-address",
+      "line": 74,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "network-address",
+      "line": 109,
+      "field": "network-address",
+      "sha256": "cb5f37b4762871e6bbeccee663cb332438340c469160c634566ecc7c7e01009f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "network-address",
+      "line": 143,
+      "field": "network-address",
+      "sha256": "f5bec2d3c85bceee10995c4bc372393f423c3c5b330ee1949937659d02e2f3ed",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "network-address",
+      "line": 148,
+      "field": "network-address",
+      "sha256": "f5bec2d3c85bceee10995c4bc372393f423c3c5b330ee1949937659d02e2f3ed",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "literal-credential",
+      "line": 42,
+      "field": "password",
+      "sha256": "32b68b693de279acf87ed656187a7dd750ae2a122cca8569114f175cc8e29d59",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "literal-credential",
+      "line": 73,
+      "field": "password",
+      "sha256": "32b68b693de279acf87ed656187a7dd750ae2a122cca8569114f175cc8e29d59",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/bridge/bridge.test.ts",
+      "type": "literal-credential",
+      "line": 109,
+      "field": "password",
+      "sha256": "5a36efc61e17950611df30bbd5f20705a1ef215d415d19bf019cb205339ec8aa",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/net/public-transport.node.test.ts",
+      "type": "invite-secret",
+      "line": 86,
+      "field": "invite-secret",
+      "sha256": "23af5e1e8db2da315ebdc93a64c4178bf176dc0af9c8503852554482ea0f4d9c",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/net/public-transport.node.test.ts",
+      "type": "literal-credential",
+      "line": 15,
+      "field": "token ",
+      "sha256": "9415a78210d340b3c1c4f4a8310ffa7365ca261ff8b657fc91e1c5fcde3ca7ca",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/net/public-transport.node.test.ts",
+      "type": "email",
+      "line": 84,
+      "field": "email",
+      "sha256": "dded8a46aab9bd29bc62aadd49ea69a6fe3fb670cd6c86ad7a2d41913eb9d4f6",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/net/ws-transport.node.test.ts",
+      "type": "network-address",
+      "line": 54,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/net/ws-transport.node.test.ts",
+      "type": "network-address",
+      "line": 59,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/net/ws-transport.node.test.ts",
+      "type": "network-address",
+      "line": 290,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-legacy-settled.json",
+      "type": "literal-credential",
+      "line": 66,
+      "field": "token",
+      "sha256": "69f44cbf70f60ca3eced573fd0c423ba52b08134d703d815baaed608e7009a4a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-legacy-settled.json",
+      "type": "literal-credential",
+      "line": 280,
+      "field": "secret",
+      "sha256": "096471f45a0ca5dfb9c40b595493ba442aa80bfce25a36e502dc104b05f05477",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-push-decision.json",
+      "type": "literal-credential",
+      "line": 72,
+      "field": "token",
+      "sha256": "69f44cbf70f60ca3eced573fd0c423ba52b08134d703d815baaed608e7009a4a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "network-address",
+      "line": 12,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "network-address",
+      "line": 14,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "network-address",
+      "line": 18,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "network-address",
+      "line": 19,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "network-address",
+      "line": 20,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "network-address",
+      "line": 27,
+      "field": "network-address",
+      "sha256": "0332a44c2d178be5927cb2615a915ecb2fd062d0ca17aade7a5bd09d3badc80a",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "invite-secret",
+      "line": 40,
+      "field": "invite-secret",
+      "sha256": "548f7ec476f92c4ef07b445765cd822b7c68594580a1eaedb64e888b717e097f",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "invite-secret",
+      "line": 45,
+      "field": "invite-secret",
+      "sha256": "716b11f1664174eebebc7f8f3d71788afa8eab38f4bddfc248187ff9e48614d2",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/p2p.test.ts",
+      "type": "literal-credential",
+      "line": 41,
+      "field": "token",
+      "sha256": "64f88343d6335d38f277856b829ff296e34d0a57bfdf4627fb5d4ade9fa9a3fd",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/remote.net.ts",
+      "type": "literal-credential",
+      "line": 490,
+      "field": "hostToken",
+      "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/remote.net.ts",
+      "type": "literal-credential",
+      "line": 524,
+      "field": "hostToken",
+      "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/remote.net.ts",
+      "type": "literal-credential",
+      "line": 555,
+      "field": "hostToken",
+      "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/remote.net.ts",
+      "type": "literal-credential",
+      "line": 574,
+      "field": "hostToken",
+      "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/remote.test.ts",
+      "type": "invite-secret",
+      "line": 56,
+      "field": "invite-secret",
+      "sha256": "c12c9c05fd7705b3e510f6d1bf3a2b93b0ecec66f50b67dfd60c021690331356",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/remote.test.ts",
+      "type": "literal-credential",
+      "line": 9,
+      "field": "token ",
+      "sha256": "eeb4213d0820f2b4a7cb95b254cf6d628cbd2032e7265c09027cced113757b54",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/wiring.test.ts",
+      "type": "literal-credential",
+      "line": 462,
+      "field": "token",
+      "sha256": "9d809894e7b68face05662af1c189ab3ddc3c87c0979af1a511701c6a1a9fdc0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/routes/GuestApp.remote.test.ts",
+      "type": "invite-secret",
+      "line": 124,
+      "field": "invite-secret",
+      "sha256": "662912ebf3f0e12c4a435984daa18cb32896fbdf7794eef00ec358105da14629",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/routes/GuestApp.remote.test.ts",
+      "type": "literal-credential",
+      "line": 145,
+      "field": "token",
+      "sha256": "ed8d805db5461b5c08754ada7391367702781b7cf92a8172f73cb86b370d4c57",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/routes/Settings.test.ts",
+      "type": "literal-credential",
+      "line": 17,
+      "field": "creationSecret",
+      "sha256": "25e975c8182073f6b9986d3133b1f91bf1b38ab0b779b160a2cdb48bc43021cf",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/ui/RemoteGuide.test.ts",
+      "type": "literal-credential",
+      "line": 177,
+      "field": "creationSecret",
+      "sha256": "0067847a357f9e225052d72fabcd1f25cb06866d8de8117f7eda3105e8e64a09",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "spec.md",
+      "type": "personal-path",
+      "line": 407,
+      "field": "personal-path",
+      "sha256": "f8e8de62586b3f89ef43ac3aa70cbce4f7f435ad9dc10d570f310b533b180b6d",
+      "reason": "Markdown 취소선 안 SSID/비밀번호 표현; 홈 경로 아님"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 377,
+      "field": "sessionToken",
+      "sha256": "4786ab29dbc1aac49c1fccd5c5b1887e6760acfcd7a9ad8a15df9b364c1242b0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 424,
+      "field": "sessionToken",
+      "sha256": "4786ab29dbc1aac49c1fccd5c5b1887e6760acfcd7a9ad8a15df9b364c1242b0",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 474,
+      "field": "guestSecret",
+      "sha256": "cb04177a38272dfaf04a13315a68f5327c5ab15f3aa86118d22cb9ad7b68ddda",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/protocol/test/vectors/wire.json",
+      "type": "literal-credential",
+      "line": 498,
+      "field": "guestSecret",
+      "sha256": "cb04177a38272dfaf04a13315a68f5327c5ab15f3aa86118d22cb9ad7b68ddda",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-legacy-settled.json",
+      "type": "literal-credential",
+      "line": 98,
+      "field": "hostSecret",
+      "sha256": "48f5906326b83b5d47d9c0dd228895a16fb4a4dd3869c0c7a4b4b00e0b758cb3",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-legacy-settled.json",
+      "type": "literal-credential",
+      "line": 101,
+      "field": "guestSecret",
+      "sha256": "5de160a5ccb3f439f6440e10bef59e55b470e1430c1e8c4671907ba24e249b38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-legacy-settled.json",
+      "type": "literal-credential",
+      "line": 281,
+      "field": "guestSecret",
+      "sha256": "5de160a5ccb3f439f6440e10bef59e55b470e1430c1e8c4671907ba24e249b38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-push-decision.json",
+      "type": "literal-credential",
+      "line": 94,
+      "field": "hostSecret",
+      "sha256": "48f5906326b83b5d47d9c0dd228895a16fb4a4dd3869c0c7a4b4b00e0b758cb3",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "packages/web/src/p2p/fixtures/host-v2-push-decision.json",
+      "type": "literal-credential",
+      "line": 97,
+      "field": "guestSecret",
+      "sha256": "5de160a5ccb3f439f6440e10bef59e55b470e1430c1e8c4671907ba24e249b38",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "personal-path",
+      "line": 25,
+      "field": "personal-path",
+      "sha256": "b55acfbe34ab2490e8413329fb9384e9ab0b5679656203e2a1905c213eb9a6dc",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "tailnet-host",
+      "line": 14,
+      "field": "tailnet-host",
+      "sha256": "7c094f785bf38ed0e436f29a76b97c2174c87c385e50b389e8cfb07144706da2",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "literal-credential",
+      "line": 16,
+      "field": "secret",
+      "sha256": "190dd5217f67f9e41042f7f277e62a69cbfd2cd43b68cc883f86f655e26aa724",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "privacy-audit.test.mjs",
+      "type": "literal-credential",
+      "line": 80,
+      "field": "secret",
+      "sha256": "0ff6289462a47efb1b4eb8071a8f6df2772ec9d195601ac6171d1131d981c657",
+      "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    }
+  ],
+  "pending": [
+    {
+      "path": "tools/relay/README.md",
+      "type": "personal-path",
+      "lines": [3, 43],
+      "reason": "#190 소유: main 잔존, 게시 9de79c2에서 해소. 추가 행에는 허용하지 않음; 병합 후 제거.",
+      "baseline": "664a181e4ab006a450e11f2111134272ac0ad3ef"
+    },
+    {
+      "path": "tools/relay/relay.ps1",
+      "type": "personal-path",
+      "lines": [5, 6],
+      "reason": "#190 소유: main 잔존, 게시 9de79c2에서 해소. 추가 행에는 허용하지 않음; 병합 후 제거.",
+      "baseline": "664a181e4ab006a450e11f2111134272ac0ad3ef"
+    }
+  ]
+}
