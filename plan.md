@@ -106,6 +106,8 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
+**#208 개인정보 잔존·재유입 감사 (NF-01·NF-RP-06):** Node 내장 API만 쓰는 추적 텍스트/PR 추가 행 검사와 합성 반례 테스트를 루트 lint에 연결한다. 신규 의존성·제품 상한은 추가하지 않는다. §1.9의 공개 검증 자료도 값 비노출·역할별 일반화를 적용한다. 범위·오탐·#190 소유 잔존·과거 이력/외부 미검증은 [감사 기록](docs/reviews/privacy-residue-audit.md)에 구분한다. 요구사항 완료 상태는 변경하지 않는다.
+
 **NF-09 CI 설치 경로:** Ubuntu 24.04 GitHub 러너의 기존 apt 미러 목록에서 공식 HTTPS archive/security를 Azure HTTP보다 우선한다(`.github/scripts/prefer-ubuntu-https.sh`, 미지원 형식은 무변경 실패). source·suite/component·Signed-By·신뢰 키·버전 핀·Playwright 공식 설치 명령과 20분 검증 상한은 보존하며, 호스트 설치는 기존 `tools/setup-host.sh`만 사용한다. 설치 지연 감소·전체 timing 완료는 hosted CI 측정 후 판정하고, 요구사항 완료 상태는 바꾸지 않는다.
 
 **RP-01~07 원격 확장(사용자 답변 반영, 최종 승인 대기):** §1.9·spec §13만 제안이며 이번 PR은 의존성/코드를 추가하지 않는다. 1순위는 기존 Node `ws`로 `relay-dev`의 방 인증/정적 서빙을 강화한 PC Docker 배포+기존 Tailscale Funnel. 로컬 개발 기본 모드는 보존하고 공개 모드는 명시적으로 켠다. DO 전환 시에만 `packages/relay-cloud`와 Wrangler/Workers 타입·테스트 도구 도입을 검토하며, Context7 공식 API 확인·정확한 버전·라이선스·3일 게시 조건을 이 절과 AGENTS 표에 기록한 뒤 추가한다. Android는 기존 WebView의 아웃바운드 WS를 우선 사용하여 Ktor client 의존성을 추가하지 않는다.
@@ -361,6 +363,8 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 
 경로 약어: E=`packages/engine`, A=`packages/ai`, P=`packages/protocol`, W=`packages/web`, S=`tools/sim`, K=`android/app/src/main/kotlin/com/kywoo26/p2pgostop`, KT=`android/app/src/test/kotlin/com/kywoo26/p2pgostop`. `src/`·`test/`·`e2e/` 경로는 각 접두사의 실제 파일이다. 실기기 열의 `—`는 순수 로직/자동 검증 범위, `미`는 현재 정식 UI·기기의 사람 검증 없음, `M0`는 [사람 제공 스모크 기록](docs/device-test/results.md)만 확인됨을 뜻한다. `M0`도 현재 게임 전체 통과는 아니다.
 
+**2026-10-01 좁은 시인성 실행 / FR-41·46~48·NF-08 / UX-H05·UX-A01:** spec 수치·공개 판정 변경 없이 `skin-marks.css`의 일반 황동 3px 단선/확정 청록 4px 이중선·정적 받침과 대응 바닥 외곽을 강화한다. 두 줄 전체 앞면·터치 크기를 위해 상태 들림은 선 두께 차이로 정정한다. 선택/초점·행동 그림·FLIP 회수/복귀를 보존하고 Board는 승인된 `floorHighlight` preview 조건 1줄만 수정한다(힌트 끔의 기존 보조 예고 잔존 결함, pending options/view.highlight 보존). 같은 실제 공개 scenario와 갤러리를 Chromium/WebKit 360/390/412에서 전후 캡처하고 색 대비·가림·입력·힌트/효과 독립성을 검사한다. #80/#115 전체 수용과 기존 부분·실기기 미검증 상태는 유지한다. 실행 결과는 [스킨 검증](docs/design/pro-skin-validation.md)의 해당 개선 절에만 추가한다.
+
 ### 기능 (FR)
 
 | ID    | 상태   | 코드·검증 근거                                                                                                                                                                                                            | 남은 항목·추적                                                                                                                   | 실기기 |
@@ -593,6 +597,8 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | 계약             | protocol           | Vitest(양쪽 역할)                                             | 매 커밋                                |
 | Android          | android            | JUnit + Ktor testApplication, Android Lint                    | 매 PR                                  |
 | 실기기           | 전체               | 사용자 + 절차서 + 로그 공유                                   | M0, M5, 릴리스                         |
+
+NP-10·NF-09 / #221(#219 CI 후속): `web/src/p2p/wiring.test.ts` 소유의 두 제한시간 시험은 무작위 선 고르기가 4수 안에 끝난다는 준비 가정을 정상 분배가 확인된 합성 난수 fixture로 대체하고 spy를 복원한다. 두 번 동월 반례는 합성 재현이며 CI 당시 seed는 미확정이다. 회귀는 Chromium·WebKit의 `preparing` 진입·기존 시간 단언과 시험 간 spy 복원을 확인한다(v0.3.3 목표).
 
 ---
 
