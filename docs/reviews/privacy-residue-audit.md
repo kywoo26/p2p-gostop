@@ -46,3 +46,7 @@ CI의 첫 검사기 HEAD는 합성 임시 저장소가 `GITHUB_BASE_REF=main`을
 SVG 좌표 구분 근거: [W3C SVG2 path 문법](https://www.w3.org/TR/SVG2/paths.html#PathDataBNF). 면제는 보수적인 명령·수치·인수 검증이며 전체 SVG 파서/일반 XML 면제가 아니다. 이 문법으로 입증하지 못한 입력은 새 후보로 검토한다. 기존 SVG 자산은 수정하지 않았다.
 
 #190 실제 병합 후속: main `8ad63483aff38e7d6f3c34e8ffc5c257139204c0`을 충돌 없는 merge commit으로 통합했다. 위 pending·병합 대기 문구는 당시 상태다. 현재 허용 목록에서 pending 위치 4곳을 제거했고, 통합 파일의 합성 tailnet 10곳은 기존 정확 경로·행·지문에 모두 일치한다. #190 소유 파일이나 예외 범위를 추가 수정하지 않았다. 최종 통합 HEAD의 CI와 같은 리뷰어의 P2·통합 diff 재검토는 별도 조건이며 #208 전체 완료가 아니다.
+
+잔여 SVG P2 후속: [독립 리뷰 5369752315](https://github.com/kywoo26/p2p-gostop/pull/213#pullrequestreview-5369752315)의 합성 6반례를 추가했다. CDATA 가짜 path·다른 요소명·접두 namespace와 M 뒤/숫자 사이 연속 쉼표·z 뒤 쉼표는 이전 구현에서 모두 면제됐고 수정 후 모두 network-address 후보로 검출된다. 이전 9개 테스트와 새 6개 반례를 구분하며 정상 SVG 좌표·단일 쉼표·SVG 기본 namespace 예시는 보존한다. 기존 추적 SVG 56개는 변경하지 않았고 검사 결과도 전후 동일하다.
+
+문맥 확인은 인용 속성을 포함한 완전한 태그·단일 root·닫는 태그 정합·정확 path 이름과 root 기본 SVG namespace에 한정한다. CDATA/DTD/추가 처리 명령·접두 namespace/하위 namespace 선언·입증하지 못한 구조는 자동 면제하지 않는다. 숫자끼리만 쉼표 하나를 허용하고 명령 앞뒤/마지막에는 공백만 허용한다. 이는 일반 XML/SVG 파서가 아닌 보수적인 좌표 면제 범위이며 새 의존성이나 포괄 허용 목록을 추가하지 않는다. [W3C XML CDATA 규정](https://www.w3.org/TR/xml/#sec-cdata-sect)과 위 SVG path 문법을 대조했다. 정확 허용 목록 145개·정상 fontconfig glob·기존 fixture·pending 0·비밀 경로 읽기 전 차단은 유지한다. 최종 SHA의 CI·같은 리뷰어 좁은 재검토는 별도 조건이며 과거 이력/외부 자료/바이너리/이미지 미검증 범위는 #208에 남는다.

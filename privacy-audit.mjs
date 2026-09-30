@@ -74,11 +74,15 @@ function validPathData(data) {
   ];
   if (!tokens.length || !/^[Mm]$/.test(tokens[0][0])) return false;
   let end = 0;
-  for (const token of tokens) {
-    if (!/^[\s,]*$/.test(data.slice(end, token.index))) return false;
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const betweenNumbers =
+      i > 0 && !/^[A-Za-z]$/.test(tokens[i - 1][0]) && !/^[A-Za-z]$/.test(token[0]);
+    const delimiter = betweenNumbers ? /^[ \t\r\n]*,?[ \t\r\n]*$/ : /^[ \t\r\n]*$/;
+    if (!delimiter.test(data.slice(end, token.index))) return false;
     end = token.index + token[0].length;
   }
-  if (!/^[\s,]*$/.test(data.slice(end))) return false;
+  if (!/^[ \t\r\n]*$/.test(data.slice(end))) return false;
   const arities = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 };
   for (let index = 0; index < tokens.length;) {
     const command = tokens[index++][0].toUpperCase();
@@ -107,17 +111,55 @@ function validPathData(data) {
 function svgCoordinateRanges(text, path) {
   if (!path.endsWith('.svg')) return [];
   // 주석을 공백으로 바꿔 위치를 유지하고 주석의 가짜 요소는 면제하지 않는다.
-  const markup = text.replace(/<!--[\s\S]*?-->/g, (comment) => comment.replace(/[^\n]/g, ' '));
-  if (!/^\s*(?:<\?xml[^>]*>\s*)?<svg\b[\s\S]*<\/svg>\s*$/i.test(markup)) return [];
+  const markup = text
+    .replace(/<!--[\s\S]*?-->/g, (comment) => comment.replace(/[^\n]/g, ' '))
+    .replace(/^\s*<\?xml[^>]*>\s*/, (declaration) => declaration.replace(/[^\n]/g, ' '));
+  // CDATA/DTD/처리 명령·접두 namespace 등 입증하지 않은 XML 문맥은 면제하지 않는다.
+  if (!/^\s*<svg(?=[\s>])[\s\S]*<\/svg>\s*$/.test(markup) || /<!|<\?/.test(markup)) return [];
   const ranges = [];
-  for (const element of markup.matchAll(/<path\b(?:[^>"']|"[^"]*"|'[^']*')*>/g)) {
-    for (const attr of element[0].matchAll(/([:\w-]+)\s*=\s*("[^"]*"|'[^']*')/g)) {
+  const stack = [];
+  let end = 0;
+  let rootSeen = false;
+  // 인용된 속성을 포함한 완전한 태그만 소비한다. 속성 안 가짜 태그는 요소가 아니다.
+  const tags =
+    /<\/?([A-Za-z_][\w.-]*)(?:\s+[A-Za-z_][\w:.-]*\s*=\s*(?:"[^"<]*"|'[^'<]*'))*\s*\/?>/g;
+  for (const element of markup.matchAll(tags)) {
+    if (markup.slice(end, element.index).includes('<')) return [];
+    end = element.index + element[0].length;
+    const closing = element[0].startsWith('</');
+    if (closing) {
+      if (!/^<\/[\w.-]+\s*>$/.test(element[0]) || stack.pop() !== element[1]) return [];
+      continue;
+    }
+    if (stack.length === 0) {
+      if (rootSeen || element[1] !== 'svg') return [];
+      rootSeen = true;
+    }
+    const attrs = [...element[0].matchAll(/([:\w-]+)\s*=\s*("[^"]*"|'[^']*')/g)];
+    if (new Set(attrs.map((attr) => attr[1])).size !== attrs.length) return [];
+    if (attrs.some((attr) => attr[1].includes(':'))) return [];
+    if (
+      attrs.some(
+        (attr) =>
+          attr[1].startsWith('xmlns') &&
+          !(
+            stack.length === 0 &&
+            element[1] === 'svg' &&
+            attr[1] === 'xmlns' &&
+            attr[2].slice(1, -1) === 'http://www.w3.org/2000/svg'
+          ),
+      )
+    )
+      return [];
+    if (!element[0].endsWith('/>')) stack.push(element[1]);
+    if (element[1] !== 'path') continue;
+    for (const attr of attrs) {
       if (attr[1] !== 'd' || !validPathData(attr[2].slice(1, -1))) continue;
       const start = element.index + attr.index + attr[0].indexOf(attr[2]) + 1;
       ranges.push([start, start + attr[2].length - 2]);
     }
   }
-  return ranges;
+  return stack.length || markup.slice(end).includes('<') ? [] : ranges;
 }
 
 // 허용은 파일·유형·합성 문자열 전체의 정확한 일치만. 테스트 파일 전체를 면제하지 않는다.

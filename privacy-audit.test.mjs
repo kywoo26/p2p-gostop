@@ -225,3 +225,22 @@ await test('추적 목록만 읽고 secret/ignored/symlink 내용을 열지 않�
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// 이전 9개 검사와 구분되는 잔여 P2 반례 6개. 고정 합성 좌표만 사용한다.
+for (const [name, markup] of [
+  ['CDATA 가짜 path', `<svg><![CDATA[<path d="M ${ip} 1z"/>]]></svg>`],
+  ['다른 element 이름', `<svg><path-note d="M ${ip} 1z"/></svg>`],
+  ['다른 namespace 이름', `<svg><path:note d="M ${ip} 1z"/></svg>`],
+  ['M 뒤 연속 쉼표', `<svg><path d="M,, ${ip} 1z"/></svg>`],
+  ['숫자 사이 연속 쉼표', `<svg><path d="M ${ip},,1z"/></svg>`],
+  ['z 뒤 쉼표', `<svg><path d="M ${ip} 1z,"/></svg>`],
+]) {
+  await test(`잔여 SVG P2: ${name}는 좌표로 면제하지 않는다`, () => {
+    const result = scanText(markup, 'drawing.svg');
+    assert.deepEqual(result.findings, [{ line: 1, type: 'network-address' }]);
+    assert.equal(result.allowed, 0);
+    const valid = `<svg xmlns="http://www.w3.org/2000/svg"><g><path d="M ${ip},1z"/></g></svg>`;
+    assert.equal(scanText(valid, 'drawing.svg').allowed, 1);
+    assert.equal(scanText(valid, 'drawing.svg').findings.length, 0);
+  });
+}
