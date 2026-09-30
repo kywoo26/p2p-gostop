@@ -15,7 +15,7 @@
     milestones = [],
   }: {
     banner?: (Banner & { readonly id?: number }) | null;
-    toast?: { readonly id: number; readonly text: string } | null;
+    toast?: { readonly id: number; readonly text: string; readonly fullText?: string } | null;
     actor?: string | null;
     blocked?: boolean;
     idle: string;
@@ -29,6 +29,7 @@
     }[];
   } = $props();
   let deferred = $state('');
+  let deferredFull = $state('');
   let latched = $state<(Banner & { readonly id?: number }) | null>(null);
   type Milestone = {
     readonly kind: 'jokbo';
@@ -90,10 +91,19 @@
   });
   $effect(() => {
     if (blocked && (shown || toast)) {
+      deferredFull = [
+        shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '',
+        toast?.fullText ?? toast?.text,
+      ]
+        .filter(Boolean)
+        .join(' · ');
       deferred = [shown ? `${shownActor ?? ''} ${shown.text}`.trim() : '', toast?.text]
         .filter(Boolean)
         .join(' · ');
-    } else if (!blocked && (shown || toast)) deferred = '';
+    } else if (!blocked && (shown || toast)) {
+      deferred = '';
+      deferredFull = '';
+    }
   });
 </script>
 
@@ -101,11 +111,17 @@
   <div class="event-rail" data-testid="event-rail">
     {#if shown}
       <EventBanner
+        fullText={`${shownActor ? `${shownActor} ` : ''}${shown.text}!`}
         kind={shown.kind}
         text={shown.text.split(' · ')[0] ?? shown.text}
         actor={shownActor}
       />
-    {:else}<p role="status" class:quiet={!toast && !deferred}>
+    {:else}<p
+        role="status"
+        aria-label={toast?.fullText ?? (deferredFull ? `${idle} · ${deferredFull}` : undefined)}
+        title={toast?.fullText}
+        class:quiet={!toast && !deferred}
+      >
         {toast?.text ?? (deferred ? `${idle} · ${deferred}` : idle)}
       </p>{/if}
   </div>

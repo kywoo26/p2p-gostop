@@ -403,6 +403,7 @@
     {#if current.solo !== null}
       <Game
         controller={current.solo}
+        soloDifficulty={current.solo.difficulty}
         menu={SOLO_MENU}
         onmenu={soloMenu}
         onend={() => endSolo(true)}
