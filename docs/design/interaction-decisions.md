@@ -202,5 +202,5 @@ H/F/C/U는 해당 달의 내 손패/바닥/양쪽 획득패/unseen 장수다. �
 ## 6. 검증 기록
 
 변경은 조사·결정 문서뿐이며 코드·자산·의존성은 수정하지 않는다. 상용 출처 확인·미확인 구분은 [조사](../research/interaction-conventions.md)에 유지한다.
-이전 head `79af467`에서 Docker npm ci/lint/check/test/test:browser/build/E2E/Android 전체 통과(브라우저 278, E2E 94 통과·4 건너뜀, dist 1187.2KiB/1536KiB·외부 URL 0). 리뷰도 같은 head에서 회귀 결과를 확인했다. 이번 문서 수정은 `export PATH=/home/k/.local/bin:$PATH` 후 개발 이미지 lint:fix·lint 및 git diff --check 통과. 31문항·16사례·27개 유지 이슈와 10개 not_planned 종료를 대조했다. 코드 불변이므로 전체 회귀 검사를 반복하지 않았다.
+이전 head `79af467`에서 Docker npm ci/lint/check/test/test:browser/build/E2E/Android 전체 통과(브라우저 278, E2E 94 통과·4 건너뜀, dist 1187.2KiB/1536KiB·외부 URL 0). 리뷰도 같은 head에서 회귀 결과를 확인했다. 이번 문서 수정은 `export PATH="$HOME/.local/bin:$PATH"` 후 개발 이미지 lint:fix·lint 및 git diff --check 통과. 31문항·16사례·27개 유지 이슈와 10개 not_planned 종료를 대조했다. 코드 불변이므로 전체 회귀 검사를 반복하지 않았다.
 실기기·음원 청취는 미실시. 기존 코드 검사 결과를 새 상호작용의 구현 완료로 기록하지 않는다.
