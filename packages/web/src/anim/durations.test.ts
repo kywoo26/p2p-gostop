@@ -8,6 +8,12 @@ const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}
 test('빠름·보통의 모든 이동·정지 토큰이 시간표와 같다', () => {
   const normalBlock = tokensCss.split(":root[data-speed='normal'] {")[1]?.split('}')[0] ?? '';
   for (const [key, ms] of Object.entries(DUR)) {
+    if (key === 'eventCallout') {
+      // 문구 읽기 시간은 즉시·동작 줄이기에서도 유지한다(UX-18).
+      expect(tokensCss).toContain(`--dur-event-callout: ${ms}ms;`);
+      expect(normalBlock).toContain(`--dur-event-callout: ${NORMAL_DUR.eventCallout}ms;`);
+      continue;
+    }
     expect(tokensCss).toContain(`--dur-${kebab(key)}: calc(${ms}ms * var(--dur-scale));`);
     expect(normalBlock).toContain(
       `--dur-${kebab(key)}: calc(${NORMAL_DUR[key as keyof typeof DUR]}ms * var(--dur-scale));`,

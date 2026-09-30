@@ -57,6 +57,12 @@
     confirmDelay?: boolean;
     banner?: (Banner & { readonly id?: number }) | null;
     toast?: { readonly id: number; readonly text: string } | null;
+    milestones?: readonly {
+      readonly id: number;
+      readonly round: number;
+      readonly seat: Seat;
+      readonly text: string;
+    }[];
     /** 이벤트 재생 중 (입력 잠금) */
     busy?: boolean;
     /** 상대(CPU)가 생각 중 */
@@ -91,6 +97,7 @@
     confirmDelay = false,
     banner = null,
     toast = null,
+    milestones = [],
     busy = false,
     thinking = false,
     turnMs = null,
@@ -411,6 +418,9 @@
         {banner}
         {toast}
         {actor}
+        round={view.round}
+        viewer={seat}
+        {milestones}
         blocked={selecting || view.canFlipOnly}
         idle={thinking
           ? '상대 차례 · 생각 중'

@@ -37,7 +37,11 @@ describe('시간 배율 (--dur-scale, spec 6.4)', () => {
   test('tokens.css의 --dur-*와 DUR 상수가 같다', () => {
     const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
     for (const [key, ms] of Object.entries(DUR)) {
-      expect(tokensCss).toContain(`--dur-${kebab(key)}: calc(${ms}ms * var(--dur-scale));`);
+      expect(tokensCss).toContain(
+        key === 'eventCallout'
+          ? `--dur-event-callout: ${ms}ms;`
+          : `--dur-${kebab(key)}: calc(${ms}ms * var(--dur-scale));`,
+      );
     }
   });
 
