@@ -1,6 +1,6 @@
 # 그래픽·애니메이션 현대화 로드맵
 
-> 연구 제안, 2026-09-30 확인. **규범 개정 승인이나 구현 완료 문서가 아니다.** 기준: `intend.md` → `spec.md` → `plan.md`, 최신 `docs/design/ui-spec.md`. 제품·자산·의존성 변경 없음.
+> 연구 제안, 2026-09-30 UTC(한국 시간10-01) 확인. **규범 개정 승인이나 구현 완료 문서가 아니다.** 기준: `intend.md` → `spec.md` → `plan.md`, 최신 `docs/design/ui-spec.md`. 제품·자산·의존성 변경 없음.
 
 ## 먼저 읽을 결론
 
@@ -120,6 +120,8 @@ Chromium 매칭 trace의 Layout 50회/4.095ms, UpdateLayoutTree 75회/6.683ms, P
 | [Pixi8.21.0](https://github.com/pixijs/pixijs/releases/tag/v8.21.0)(09-17), [Phaser4.2.1](https://github.com/phaserjs/phaser/releases/tag/v4.2.1)(07-09) | 2D sprite/배치 렌더링 vs scene/input/tween을 포함한 게임 framework | **현행 둘 다 금지.** 원 제공자 [Pixi MIT](https://github.com/pixijs/pixijs/blob/dev/LICENSE)·[Phaser MIT](https://github.com/phaserjs/phaser/blob/master/LICENSE.md) 고지 확인, 유료/NC 때문에 기각하는 것은 아님. Phaser를 과거3.x 정보만으로 평가하지 않음. 전면안 C의 대표만 비교, physics/scene loop가 필요 없는 턴제에 과잉일 가능성. 패키지 정확한 추가바이트·모바일 성능 미측정 |
 | [Threlte](https://threlte.xyz/), [MIT 고지](https://github.com/threlte/threlte/blob/main/LICENSE.md) | Svelte의 Three.js 3D scene 작성 | SSR/React 도입 없이도3D는 가능하지만 현재 카드/table의3D 필요가 입증되지 않음. geometry/light/material·텍스처·GPU·접근성 유지 비용이 큼. 신규 의존성 제안 승인 전 제외 |
 | [Rive pricing](https://www.rive.app/pricing) | 디자이너 state machine·vector motion, agent 기능 | 무료 editor 학습과 앱용 `.riv` export를 분리: 현재 export는 유료 Cadet부터. **무료 채택안 제외.** OSS runtime이 있다고 authoring/export까지 무료라고 쓰지 않음 |
+
+AI frontend 생성 서비스도 별도로 비교했다. [v0 공식 FAQ](https://v0.app/docs/faqs)는 Next.js/React/Tailwind/shadcn 중심의 전문성과 디자인 반복·코드 export를 설명하고, [현재 changelog](https://v0.app/changelog)에는 Svelte 관련 수정도 있다. Svelte가 전혀 불가능하다고 단정하지 않는다. [Lovable 공식 디자인 소개](https://lovable.dev/designers)는 시각 편집·React/Tailwind 작업을, [FAQ](https://docs.lovable.dev/introduction/faq)는 full-stack 생성·cloud/backend 연계를 설명한다. 이런 도구의 **시각 편집→즉시 preview→부분 수정** 과정은 참고할 가치가 있지만, 생성 결과를 이 앱에 붙이는 것은 금지 스택·cloud 경계·게임 상태/ARIA를 다시 감사하는 비용이 든다. 무료 한도 내 반복 가능성과 이 게임의 품질 개선은 미검증이므로 무료 채택안으로 추천하지 않는다. 외부 프로젝트/계정 연결이나 실제 앱 자료 업로드도 하지 않았다. 같은 반복 과정을 로컬 gallery·Penpot·짧은 디자인 brief로 먼저 구축하는 쪽을 추천한다.
 
 “스킬을 많이 넣으면 화면이 좋아진다”도 검증 대상이다. [WebDev-Skills-Bench 원 논문](https://arxiv.org/abs/2608.23067)(2026-08-24 preprint)은 31스킬/50프로젝트/4모델에서 주입 시 평균 완수율 저하·토큰 증가를 보고한다. 이 결과를 우리 Sol/Svelte의 효과 수치로 전용하지 않는다. 따라서 한 개의 짧은 프로젝트 brief와 스킬 없음 비교를 같은 fixture로 시행하고, 디자인 판정·수정횟수·접근성 실패·토큰/시간을 기록한다. stack에 맞지 않는 예제 묶음을 상시 주입하지 않는다.
 
