@@ -150,10 +150,16 @@ export function auditLayout() {
         .map((el) => el.offsetWidth)
     : [];
   const scales = [...new Set(cards.map((n) => Math.round(n * 100) / 100))];
+  const boardCard = board
+    ? parseFloat(getComputedStyle(board).getPropertyValue('--table-card')) || 48
+    : 48;
+  const captureCard = board
+    ? parseFloat(getComputedStyle(board).getPropertyValue('--capture-card')) || 32
+    : 32;
   for (const card of board?.querySelectorAll<HTMLElement>(
     '.hand .card, .floor .card, .captured-zone .card',
   ) ?? []) {
-    const expected = card.closest('.captured-zone') ? 32 : 48;
+    const expected = card.closest('.captured-zone') ? captureCard : boardCard;
     if (card.offsetWidth !== expected)
       issues.push(`card scale: ${card.offsetWidth}, expected ${expected}`);
   }
@@ -210,8 +216,8 @@ export function auditLayout() {
   }
   const grid = board?.querySelector('.floor')?.getBoundingClientRect();
   if (grid) {
-    const cw = Math.min(60, grid.width / 5),
-      ch = Math.min(48 / 0.614 + 12, grid.height / 3);
+    const cw = Math.min(boardCard * 1.25, grid.width / 5),
+      ch = Math.min(boardCard / 0.614 + boardCard / 4, grid.height / 3);
     const used = new Set<number>();
     for (const cell of floorCells) {
       const slot = Number(cell.dataset['floorSlot']),
@@ -252,12 +258,67 @@ export function auditLayout() {
     const ownCapture = board?.querySelector('.captured-zone.mine')?.getBoundingClientRect();
     const opponent = seatPanels[0]!.getBoundingClientRect();
     const own = seatPanels[1]!.getBoundingClientRect();
-    if (opponentCapture && opponent.top - opponentCapture.bottom < 5.5)
+    const sideLayout = getComputedStyle(board!).gridTemplateColumns.trim().split(/\s+/).length > 1;
+    if (!sideLayout && opponentCapture && opponent.top - opponentCapture.bottom < 5.5)
       issues.push('opponent summary gap');
-    if (ownCapture && ownCapture.top - own.bottom < 5.5) issues.push('own summary gap');
+    if (!sideLayout && ownCapture && ownCapture.top - own.bottom < 5.5)
+      issues.push('own summary gap');
     const firstHandCard = board?.querySelector('.hand .card')?.getBoundingClientRect();
-    if (ownCapture && firstHandCard && firstHandCard.top - ownCapture.bottom < 17.5)
+    if (!sideLayout && ownCapture && firstHandCard && firstHandCard.top - ownCapture.bottom < 17.5)
       issues.push('captured/hand separation');
+    if (sideLayout && opponentCapture && ownCapture && center) {
+      const minGap =
+        parseFloat(getComputedStyle(board!).getPropertyValue('--space-control-gap')) || 8;
+      const hand = board!.querySelector<HTMLElement>('.hand-zone')!;
+      const handRect = hand.getBoundingClientRect();
+      const checkGap = (name: string, distance: number) => {
+        if (distance < minGap - 0.5) issues.push(`wide region gap: ${name} ${distance}`);
+      };
+      checkGap('opponent hud/captured', opponentCapture.top - opponent.bottom);
+      checkGap('mine hud/captured', ownCapture.top - own.bottom);
+      checkGap('opponent hud/center', center.left - opponent.right);
+      checkGap('opponent captured/center', center.left - opponentCapture.right);
+      checkGap('center/mine hud', own.left - center.right);
+      checkGap('center/mine captured', ownCapture.left - center.right);
+      checkGap('center/hand', handRect.top - center.bottom);
+      const contains = (outer: DOMRect, inner: DOMRect) =>
+        inner.left >= outer.left - 0.5 &&
+        inner.right <= outer.right + 0.5 &&
+        inner.top >= outer.top - 0.5 &&
+        inner.bottom <= outer.bottom + 0.5;
+      const checkRegion = (name: string, zone: HTMLElement, selector: string) => {
+        const bounds = zone.getBoundingClientRect();
+        if (!contains(board!.getBoundingClientRect(), bounds))
+          issues.push(`wide region outside board: ${name}`);
+        for (const child of zone.querySelectorAll<HTMLElement>(selector)) {
+          if (visible(child) && !contains(bounds, child.getBoundingClientRect()))
+            issues.push(`wide region overflow: ${name} ${describe(child)}`);
+        }
+      };
+      checkRegion('opponent hud', seatPanels[0]!, '.seat-bar, .score-area, .balance');
+      checkRegion(
+        'opponent captured',
+        board!.querySelector('.captured-zone:not(.mine)')!,
+        '.captured, .group, .stack, .card',
+      );
+      checkRegion('center', board!.querySelector('.center')!, '.table, .floor, .group, .card');
+      checkRegion('mine hud', seatPanels[1]!, '.seat-bar, .score-area, .balance');
+      checkRegion(
+        'mine captured',
+        board!.querySelector('.captured-zone.mine')!,
+        '.captured, .group, .stack, .card',
+      );
+      checkRegion('hand', hand, '.hand, .row, .slot, .card');
+      if (
+        opponentCapture.left < opponent.left - 0.5 ||
+        opponentCapture.right > opponent.right + 0.5
+      )
+        issues.push('wide region column: opponent');
+      if (ownCapture.left < own.left - 0.5 || ownCapture.right > own.right + 0.5)
+        issues.push('wide region column: mine');
+      if (handRect.left < center.left - 0.5 || handRect.right > center.right + 0.5)
+        issues.push('wide region column: hand');
+    }
   }
   const floor = board?.querySelector('.floor')?.getBoundingClientRect();
   const centerError =
