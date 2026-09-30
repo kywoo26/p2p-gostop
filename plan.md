@@ -77,6 +77,8 @@ p2p-gostop/
 ├─ intend.md · spec.md · plan.md
 ```
 
+**#224 루트 구조 정리 계획 (NF-09·NF-01·NF-RP-06):** [위치 결정·실행 계획](docs/research/root-layout.md)을 따른다. 사용자 요청으로 공식 SDLC 가이드의 문서 home을 확인하고 이동 범위 판단·실행을 위임받았다. 구현 전 이 계획을 commit하고 SHA를 PR에 기록한다. 문서·검사 도구의 위치와 참조만 바꾸며 §3-2 요구사항 상태·제품 동작·버전 핀은 유지한다.
+
 ### 1.3 모듈 경계와 의존 방향
 
 `engine` ← `ai` ← `web`, `engine` ← `protocol` ← `web`, `relay-dev`는 `protocol`만. `android`는 어느 TS 패키지에도 의존하지 않고 빌드 산출물(`packages/web/dist`)만 `assets/web`으로 복사한다.
