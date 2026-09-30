@@ -141,5 +141,24 @@
         "manifestSha256": "c242c7b0916bc77c73447b227cabe5f1ddb1d15e777a1e2ef10d57957c6a62c9"
       }
     ]
+  },
+  "checkpointUpdate": {
+    "223": "8ccc9b9ee69e57c6ad89199a27269d7bc1c77a8f",
+    "syntheticTree": "8acab28614444211c71b04ed7ad559660fe81165",
+    "condition": "one necessary A/B rebuild after author-approved fixed product checkpoint; previous three-run basis retained",
+    "before": 1577487,
+    "after": 1577077,
+    "savedBytes": 410,
+    "remainingExcessBytes": 4213,
+    "previousCheckpointActualReductionBytes": 345
+  },
+  "hostedCi": {
+    "head": "e9145e14ba2dd895400704a77c153758a90e6522",
+    "run": 36776437869,
+    "syntheticMerge": "56df6d6ff1090417faaa3193c352c7ad56258943",
+    "conclusion": "success, 3/3",
+    "artifactRawBytes": 1572434,
+    "spareBytes": 430,
+    "condition": "main including PR218 + PR207 only; not PR223/225 cumulative gate"
   }
 }
