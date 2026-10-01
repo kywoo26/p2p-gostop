@@ -352,6 +352,9 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 - 최종 통합 재개: [#228 사용자 승인 기록](https://github.com/kywoo26/p2p-gostop/pull/228#issuecomment-5924715804)에 따라 main `a735bb345e16891d34d1982aafe9f5c178ba44f5`의 #227 metadata 절감/#230 BASE_URL/#228 정책·계측을 보존한다. 기존 raw1.5MiB 초과 기록은 당시 gate 실패 근거이며 새 raw gate 통과만으로 초기 응답·2초/100ms/60fps·실기기/AC-06을 완료로 승격하지 않는다. #225는 미포함, #200 착지는 별도 미구현이다. 기존 독립 리뷰5372077244·문서 후속5372117960 뒤 통합/충돌 diff만 같은 리뷰어에게 인계한다.
 
+- 승인 뒤 검증 기록: `63158d5`는 raw gate와 PR 필수 lint/check/Node563/browser950/build/Android를 통과했지만 표준 smoke409통과·19화면비교 실패·timing2미실행으로 병합을 보류했다. 실제 cue390의 고정 A/B는 Chromium400/WebKit597차이 픽셀의2실패→CSS translate 복원 `7be7065` 후 원테스트2통과였다. 주석 코퍼스 정정 `6378ee8`에서 손패 강조/입력6·이름 synthetic/info/저장3 후속까지9통과, 갤러리8은 화면비교 실패와 별도 axe/48·32px/가림0/선택ID 기하8통과를 분리했다. WebKit cue의 저장 이름/기준샷과 컴퓨터 표시 차이는 남은 픽셀 차이0 주장으로 확대하지 않는다.
+- 유한 기준샷 승인: 같은 독립 리뷰어가 갤러리 expected/actual/diff24장과 기하8·후속9를 검토한 뒤 root가 `gallery.spec.ts`의 board-390x844/430x932·target·gostop × 두 엔진8장만 승인했다. PNG 전용 `9335de8`의 디코딩 픽셀은 검토된 actual8과 동일하며 threshold/ARIA/다른PNG/제품은 불변이다. 문서 main `06612137` 통합 `e4f8707`도 제품 blob은 `6378ee8`과 같고 exact raw1,574,820B/75파일, 승인2,097,152B 대비 여유522,332B(63158보다56B 증가)다. SHA를 포함하는 빌드 식별자 때문에 manifest hash는 구분한다. 갱신 뒤 원 갤러리8 및 최종 동일 HEAD CI·재검토는 확인 중이며 과거 실패·AC-06/실기기 미검증·#200 미구현·기존 Mac44px 미달을 보존한다.
+
 ### #207 B207-2 예산 정의·gate 승인 상태 정합 (NF-03·AC-07·NF-RP-06)
 
 현재 계약: [PR #228 승인 기록](https://github.com/kywoo26/p2p-gostop/pull/228#issuecomment-5924715804)·[#207 상태 기록](https://github.com/kywoo26/p2p-gostop/issues/207#issuecomment-5924731961)를 확인했다. 사용자 승인 후 #228이 main `a735bb345e16891d34d1982aafe9f5c178ba44f5`에 병합돼 초기 필수 encoded response body **1,500,000 B(decimal MB)** / 모든 배포 파일 raw **2,097,152 B(2 MiB)**가 현행 규범이다. 2초/100ms/60fps·하위 자산 예산·전체 수용 조건은 유지한다. 이번 상태 문서 정정은 승인 근거 확인→현행 문구/주석 정제→링크·diff·privacy·lint 및 주석 제외 runtime 동등 확인으로 한정한다.
