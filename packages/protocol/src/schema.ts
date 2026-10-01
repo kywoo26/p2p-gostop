@@ -144,7 +144,7 @@ const boardSchema = z.object({
   eventSeq: nat,
   legal: z.array(actionSchema).check(z.maxLength(64)),
   firstPick: z.nullable(z.object({ poolSize: nat, taken: z.nullable(nat) })),
-  inFlight: z.object({ played: z.nullable(card), staged: cards }),
+  inFlight: z.object({ played: z.nullable(card), staged: cards, playTarget: z.nullable(card) }),
   goStop: z.nullable(
     z.object({
       points: z.number(),
@@ -286,6 +286,32 @@ export const guestSchema = z.union([
   z.object({ t: z.literal('timeoutGet'), round, from: nat }),
 ]);
 
+export const acceptedPlayTargetSchema = z.object({ seat, card, target: card, baseSeq: time });
+
+export const publicTargetCheckSchema = z.union([
+  z.object({ result: z.literal('verified'), scope: z.literal('complete') }),
+  z.object({ result: z.literal('unverifiable'), reason: z.literal(['noObservation', 'gap']) }),
+  z.object({
+    result: z.literal('conflict'),
+    reason: z.literal(['accepted', 'relations', 'observationLimit']),
+  }),
+]);
+
+export const publicTargetObservationSchema = z.object({
+  gap: z.boolean(),
+  overflowSeq: z.optional(time),
+  accepted: z.record(
+    z.string(),
+    z.array(acceptedPlayTargetSchema).check(z.minLength(1), z.maxLength(400)),
+  ),
+  relations: z.record(
+    z.string(),
+    z
+      .array(z.object({ played: z.nullable(card), playTarget: z.nullable(card) }))
+      .check(z.minLength(1), z.maxLength(400)),
+  ),
+});
+
 export const hostSchema = z.union([
   z.object({
     t: z.literal('welcome'),
@@ -316,6 +342,7 @@ export const hostSchema = z.union([
     from: nat,
     to: nat,
     list: z.array(event),
+    acceptedPlayTarget: z.optional(acceptedPlayTargetSchema),
     view: boardSchema,
     ledger: ledgerSummary,
     settlement: z.optional(settlement),

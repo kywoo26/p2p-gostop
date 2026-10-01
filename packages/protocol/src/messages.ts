@@ -1,7 +1,7 @@
 // NP-02: 호스트↔게스트 메시지 타입. 스키마는 schema.ts, 직렬화는 index.ts.
 import type { Action, EngineEvent, RoundOptions, RuleOptions, Seat } from '@p2p-gostop/engine';
 import type { LedgerSummary, SessionLedgerEntry } from './ledger.ts';
-import type { BoardView, SettlementView } from './view-types.ts';
+import type { AcceptedPlayTarget, BoardView, SettlementView } from './view-types.ts';
 
 export type Role = 'host' | 'guest';
 /** NP-02: 거부 코드 목록을 타입과 수신 스키마가 함께 사용한다. */
@@ -166,6 +166,8 @@ export type HostMessage =
     }
   | {
       readonly t: 'events';
+      /** 성공한 단일 live 전이만. resync 차분/스냅샷에는 없다. */
+      readonly acceptedPlayTarget?: AcceptedPlayTarget;
       readonly from: number;
       readonly to: number;
       readonly list: readonly EngineEvent[];

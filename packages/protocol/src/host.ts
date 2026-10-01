@@ -22,6 +22,8 @@ import {
   type Seat,
   type Settlement,
 } from '@p2p-gostop/engine';
+import { acceptedPlayTargetOf } from './view.ts';
+import type { AcceptedPlayTarget } from './view-types.ts';
 import { PROTOCOL_VERSION, byteLength, tryEncode, decode } from './codec.ts';
 import { commit, combineSeed, fromHex, toHex } from './crypto.ts';
 import {
@@ -734,6 +736,7 @@ export class HostSession {
     events: readonly EngineEvent[],
     requestId?: number,
     timeoutResult?: TimeoutResult,
+    acceptedPlayTarget?: AcceptedPlayTarget,
   ): void {
     if (this.state === null) return;
     if (events.length === 0) {
@@ -757,6 +760,7 @@ export class HostSession {
       status: this.status,
       decision: this.decisionClock,
       ...(timeoutResult ? { timeoutResult } : {}),
+      ...(acceptedPlayTarget ? { acceptedPlayTarget } : {}),
       ...(requestId === undefined ? {} : { requestId }),
     });
     if (!sent) this.snapshot(requestId);
@@ -908,6 +912,7 @@ export class HostSession {
     if (!legalActions(this.state, action.seat).some((a) => sameAction(a, action))) return false;
     const result = reduce(this.state, action);
     if (!result.ok) return false;
+    const accepted = acceptedPlayTargetOf(this.state.pending, action, this.seq);
     const oldCount = this.state.instantPayouts.length;
     this.unavailableSinceMs = null;
     this.decision = null;
@@ -915,7 +920,7 @@ export class HostSession {
     this.current.actions.push(action);
     for (const payout of this.state.instantPayouts.slice(oldCount))
       this.ledger = withInstantPayout(this.ledger, payout, this.rules);
-    this.publish(result.events, requestId, timeoutResult);
+    this.publish(result.events, requestId, timeoutResult, accepted);
     if (action.type === 'push') this.finishRound(requestId);
     else if (this.state.phase === 'end') this.endRound(requestId);
     return true;

@@ -129,7 +129,7 @@ describe('#13 판 사이 commit-reveal 핸드셰이크 복구', () => {
       expect(h.guest.seq).toBe(h.host.seq);
       expect(commitInvalid(h)).toBe(0);
       playRound(h, picker);
-      expect(h.guest.checks.at(-1)).toEqual({ round, result: 'verified' });
+      expect(h.guest.checks.at(-1)).toMatchObject({ round, result: 'verified' });
     });
 
   it('같은 판·같은 해시의 commitHost·revealGuestRequest 중복에는 같은 응답(새 난수 금지)', () => {
@@ -368,7 +368,7 @@ describe('#16 commit-reveal 검증은 게스트가 본 판과 묶인다', () => 
       expect(h.guest.seq).toBe(h.host.seq);
       playRound(h, picker);
       expect(commitInvalid(h)).toBe(0);
-      expect(h.guest.checks.at(-1)).toEqual(
+      expect(h.guest.checks.at(-1)).toMatchObject(
         restore
           ? { round: 1, result: 'verified' }
           : { round: 1, result: 'unverifiable', reason: 'noCommitment' },
@@ -377,7 +377,7 @@ describe('#16 commit-reveal 검증은 게스트가 본 판과 묶인다', () => 
       h.host.nextRound();
       h.link.flush();
       playRound(h, picker);
-      expect(h.guest.checks.at(-1)).toEqual({ round: 2, result: 'verified' });
+      expect(h.guest.checks.at(-1)).toMatchObject({ round: 2, result: 'verified' });
     }
   });
 
@@ -412,7 +412,7 @@ describe('#16 commit-reveal 검증은 게스트가 본 판과 묶인다', () => 
     h.link.flush();
     playRound(h, picker);
     expect(commitInvalid(h)).toBe(0);
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
   });
 });
 
@@ -483,8 +483,8 @@ describe('#16 재검토: revealHost를 빠뜨리거나 판을 건너뛰는 호�
           }
           // 판 번호를 뛰게 한 위조 판정은 그 판 번호로 남는다. 정직하게 이어 간 판은 따로 검증된다.
           const checks = h.guest.checks.map((c) => ({ ...c }));
-          expect(checks.filter((c) => c.result === 'verified' || 'reason' in c)).toEqual(
-            expect.arrayContaining(want),
+          expect(checks.filter((c) => c.result === 'verified' || 'reason' in c)).toMatchObject(
+            expect.arrayContaining(want.map((c) => expect.objectContaining(c))),
           );
           expect(refused.every(Boolean)).toBe(true);
           expect(checks.filter((c) => c.result === 'failed').length).toBe(
@@ -564,7 +564,7 @@ describe('재검토 중요 2: 소켓 인증 (NF-06, FR-07)', () => {
     expect(h.host.state).toBe(before.state);
     expect(JSON.stringify(h.host.toJSON())).toBe(before.json);
     // 토큰 없는 hello는 거절만 한다(환영·스냅샷 없음)
-    h.link.inject(0, encode({ t: 'hello', v: 3, name: '낯선 이', lastSeq: 0 }));
+    h.link.inject(0, encode({ t: 'hello', v: 4, name: '낯선 이', lastSeq: 0 }));
     h.link.deliver(nth(h.link, 0, 0));
     expect(h.link.queue.map((f) => frameType(f.raw))).toEqual(['reject']);
     expect(h.link.queue[0]!.raw).toContain('TOKEN_INVALID');
@@ -726,7 +726,7 @@ describe('#25 호스트 저장·복원', () => {
     expect(h.guest.view).toEqual(h.host.guestView());
     expect(h.guest.epoch).toBe(h.host.epoch);
     playRound(h, picker);
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     expect(ledgerBalanced(h.host)).toBe(true);
   });
 

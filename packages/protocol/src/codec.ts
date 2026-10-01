@@ -8,11 +8,12 @@ import type {
   DecisionClock,
   TimeoutResult,
 } from './messages.ts';
+import { validInFlightTarget } from './view.ts';
 import { isRelayFrame } from './relay.ts';
 import { guestSchema, headSchema, hostSchema } from './schema.ts';
 
-/** v3: 결정 시계·확인·초과 표식을 필수 계약으로 추가한다 (NP-10). */
-export const PROTOCOL_VERSION = 3;
+/** v4: 공개 수락 대상·현재 관계 (FR-14·NP-03/04). guest 저장 v3와 별개다. */
+export const PROTOCOL_VERSION = 4;
 /** NP-07: 개별 뷰(스냅샷)와 엔진 한 수 이벤트의 상한. */
 export const MAX_MESSAGE_BYTES = 16 * 1024;
 /** NP-09와 중계의 최종 UTF-8 프레임 상한. log·ledgerPage만 이 한도까지 쓴다. */
@@ -150,6 +151,18 @@ export function decode(raw: unknown, from: Role): ParseResult<Message> {
       message.t === 'events' &&
       (message.to !== message.from + message.list.length - 1 ||
         message.list.some((e, i) => e.seq !== message.from + i))
+    )
+      return { ok: false, reason: 'MALFORMED' };
+    if (
+      (message.t === 'events' || message.t === 'snapshot') &&
+      (!validInFlightTarget(message.view) ||
+        message.view.eventSeq !== (message.t === 'events' ? message.to : message.seq))
+    )
+      return { ok: false, reason: 'MALFORMED' };
+    if (
+      message.t === 'events' &&
+      message.acceptedPlayTarget &&
+      (message.list.length === 0 || message.acceptedPlayTarget.baseSeq !== message.from - 1)
     )
       return { ok: false, reason: 'MALFORMED' };
     return { ok: true, message };

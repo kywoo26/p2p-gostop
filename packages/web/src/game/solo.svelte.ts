@@ -1,3 +1,4 @@
+import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 // 혼자 연습 세션 (spec 2.5, FR-10~19, MN-01·02·05, AI-05, 6.3·6.4).
 // 엔진 + CPU + 원장을 이어 붙이는 오케스트레이터. 좌석 0 = 이 기기, 좌석 1 = CPU.
 // - 순수 세션 모델(session.ts)로 상태를 바꾸고, 바뀔 때마다 localStorage에 저장한다(MN-05).
@@ -278,7 +279,7 @@ export class SoloSession implements GameController {
       return false;
     }
     this.commitState(step.session);
-    this.enqueue(step.events, action, tapAt);
+    this.enqueue(step.events, action, tapAt, step.acceptedPlayTarget);
     return true;
   }
 
@@ -366,13 +367,30 @@ export class SoloSession implements GameController {
     }
   }
 
-  private enqueue(events: readonly EngineEvent[], action: Action | null, tapAt: number | null) {
+  private enqueue(
+    events: readonly EngineEvent[],
+    action: Action | null,
+    tapAt: number | null,
+    acceptedPlayTarget?: AcceptedPlayTarget,
+  ) {
     const s = this.state;
     const over = s.phase === 'roundOver' || s.phase === 'bankrupt';
     this.playback.enqueue(
       events.map((e) => redactEvent(e, ME)),
       this.boardOf(s),
-      { action, tapAt, settlement: over ? this.summary(s) : null },
+      {
+        action,
+        tapAt,
+        settlement: over ? this.summary(s) : null,
+        ...(acceptedPlayTarget
+          ? {
+              publicTarget: {
+                evidence: acceptedPlayTarget,
+                namespace: { mode: 'solo', round: s.game.round.number },
+              },
+            }
+          : {}),
+      },
     );
   }
 
@@ -465,6 +483,6 @@ export class SoloSession implements GameController {
       return;
     }
     this.commitState(step.session);
-    this.enqueue(step.events, null, null);
+    this.enqueue(step.events, null, null, step.acceptedPlayTarget);
   }
 }

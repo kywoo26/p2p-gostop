@@ -24,6 +24,8 @@ import {
   type Settlement,
 } from '@p2p-gostop/engine';
 
+import { acceptedPlayTargetOf, type AcceptedPlayTarget } from '@p2p-gostop/protocol';
+
 export interface SessionConfig {
   readonly preset: PresetId;
   /** 세션 시작 시 확정한 규칙 (FR-24: 세션 중 변경 불가) */
@@ -78,7 +80,12 @@ export interface SessionState {
 }
 
 export type SessionStep =
-  | { readonly ok: true; readonly session: SessionState; readonly events: readonly EngineEvent[] }
+  | {
+      readonly ok: true;
+      readonly session: SessionState;
+      readonly events: readonly EngineEvent[];
+      readonly acceptedPlayTarget?: AcceptedPlayTarget;
+    }
   | { readonly ok: false; readonly reason: RejectReason | 'notPlaying'; readonly message: string };
 
 /** 세션 시드와 판 번호로 셔플 시드를 만든다 (murmur3 finalizer 섞기) */
@@ -183,7 +190,17 @@ export function sessionAct(session: SessionState, action: Action): SessionStep {
     ledger,
     actions: [...session.actions, action],
   };
-  return { ok: true, session: closeRound(next, result.events), events: result.events };
+  const acceptedPlayTarget = acceptedPlayTargetOf(
+    session.game.pending,
+    action,
+    session.game.eventSeq,
+  );
+  return {
+    ok: true,
+    session: closeRound(next, result.events),
+    events: result.events,
+    ...(acceptedPlayTarget ? { acceptedPlayTarget } : {}),
+  };
 }
 
 /** 승자가 밀지 않고 이번 판 정산을 받는다. */

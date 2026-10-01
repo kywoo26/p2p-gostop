@@ -11,6 +11,7 @@ import {
   type ScoreBreakdown,
   type Seat,
 } from '@p2p-gostop/engine';
+import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 import { tick } from 'svelte';
 import { deal, planTurn, replay, skip, unskip, waitHold, type ReplayHost } from '../anim/choreo.ts';
 import { baseMs, durationMs, scaledMs } from '../anim/durations.ts';
@@ -41,7 +42,16 @@ export interface TurnTiming {
   readonly promptAfter: boolean;
 }
 
+/** 공개 ID 전달만. 기존 queue/reset generation에 속하며 geometry/재생 동작은 갖지 않는다. */
+export type PublicTargetTransition = {
+  readonly evidence: AcceptedPlayTarget;
+  readonly namespace:
+    | { readonly mode: 'solo'; readonly round: number }
+    | { readonly mode: 'p2p'; readonly round: number; readonly epoch: string };
+};
+
 export interface EnqueueOptions {
+  readonly publicTarget?: PublicTargetTransition;
   /** 이 묶음을 낸 보는 좌석의 액션 (시간 계측) */
   readonly action?: Action | null;
   /** 사람이 탭한 시각 (performance.now) */
@@ -51,6 +61,7 @@ export interface EnqueueOptions {
 }
 
 interface Batch {
+  readonly publicTarget: PublicTargetTransition | null;
   readonly enqueuedAt: number;
   readonly events: readonly EngineEvent[];
   readonly board: DisplayBoard;
@@ -182,6 +193,7 @@ export class Playback {
   enqueue(events: readonly EngineEvent[], board: BoardView, options: EnqueueOptions = {}): void {
     if (this.disposed) return;
     this.queue.push({
+      publicTarget: options.publicTarget ?? null,
       enqueuedAt: performance.now(),
       events,
       board: snap(board, board.inFlight),

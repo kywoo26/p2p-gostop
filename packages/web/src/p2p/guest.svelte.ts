@@ -1,3 +1,4 @@
+import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 // 게스트 모드 (spec 2.2·2.3·2.4, FR-04·05·30, NP-02~06·09, NF-04·05). 좌석 1 = 이 기기(iPhone Safari).
 // - protocol GuestSession(v3)이 hello·커밋 교환·순번·재동기화·공정성 검증을 맡는다. 호스트 이벤트는 이미 좌석 1로 가려져 있다.
 // - 화면은 솔로·호스트와 같은 재생 큐(Playback)로 이벤트 묶음을 재생하고 스냅샷으로 보정한다(spec 6.4). 게스트 화면은
@@ -372,6 +373,11 @@ export class GuestGame implements GameController {
     const round = this.settledRound;
     const check = this.checks.findLast((c) => c.round === round);
     if (check !== undefined) lines.push(`${round}판 ${CHECK_LABEL[check.result]}`);
+    if (check?.result === 'verified') {
+      if (check.publicTargets?.result === 'conflict') lines.push('선택 정보 불일치');
+      else if (check.publicTargets?.result === 'verified') lines.push('선택 정보 일치');
+      else lines.push('선택 정보 검증 불가 (관찰 기록 없음)');
+    }
     if (check?.result === 'verified' && check.time === 'verified') lines.push('시간 기록 일치');
     if (check?.result === 'verified' && check.time === 'unverifiable')
       lines.push('시간 검증 불가 (관찰 기록 없음)');
@@ -463,7 +469,7 @@ export class GuestGame implements GameController {
         break;
       case 'events':
         if (s.seq !== m.to || this.prevSeq >= m.to) break;
-        this.onEvents(m.list, m.view);
+        this.onEvents(m.list, m.view, s.acceptedPlayTarget ?? undefined);
         this.maybeSettled(m.view);
         break;
       case 'snapshot':
@@ -509,7 +515,11 @@ export class GuestGame implements GameController {
     }
   }
 
-  private onEvents(list: readonly EngineEvent[], view: BoardView): void {
+  private onEvents(
+    list: readonly EngineEvent[],
+    view: BoardView,
+    acceptedPlayTarget?: AcceptedPlayTarget,
+  ): void {
     if (list.some((e) => e.type === 'Dealt')) this.roundInstant = [];
     for (const e of list) if (e.type === 'InstantPayout') this.roundInstant.push(e);
     // 보낸 액션 뒤의 첫 묶음이 그 응답이다 (좌석 1은 자기 차례에만 보낸다). 탭→재생 끝 시간을 잰다(AC-06)
@@ -517,6 +527,14 @@ export class GuestGame implements GameController {
     this.playback.enqueue(list, view, {
       action: awaiting?.action ?? null,
       tapAt: awaiting?.tapAt ?? null,
+      ...(acceptedPlayTarget && this.session.epoch
+        ? {
+            publicTarget: {
+              evidence: acceptedPlayTarget,
+              namespace: { mode: 'p2p', epoch: this.session.epoch, round: view.round },
+            },
+          }
+        : {}),
     });
     this.awaiting = null;
     this.started = true;
