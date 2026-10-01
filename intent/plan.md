@@ -338,6 +338,13 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
+### #202 월 겹침 제안·격리 목업 (UX-05/06/H05/23~25·NF-03/08·AC-06/07)
+
+- 실행 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`. 사용자 개발 착수 승인에 따른 독립 담당이며 root가 #200과 공유 계약을 중재한다. 구체 노출율·선택UX·착지 오차·규범 개정은 승인 전이다. 요구사항 완료 상태는 바꾸지 않는다.
+- 1단계 소유는 [월 겹침 제안](../docs/design/month-stack-proposal.md) 단일 문서와 이 자기 실행 단위, 배포와 분리한 scratch 목업이다. A 독립 안정 셀/B 안정 월 앵커+겹침/C 고정12월 자리를 같은 공개 fixture에서 비교하고 위험·proposed spec delta를 Draft로 제출한다. 계획 commit→FF push→Refs #202 #200 Draft PR, 의미 있는 문서/목업 단계별 commit/push를 수행한다. 실제 계획 SHA는 PR 본문에 기록한다.
+- #223의 strict 무관0px/예외 최소 이동·두 행 손패 공간·same snapshotSeq 예약·resize 탐색0을 보존하는 최소 범위를 분석한다. 승인 뒤 후속 제품 소유는 Floor/floor-layout/전용 회귀다. #200 display/choreo/Playback 소비와 CardId 실제 rect/rotation/z/offset·선택·예약 수명·DOM 측정 시점을 root에게 제출한다. Game/Board/engine/protocol/schema/public asset 직접 변경은 없다.
+- 이번 단계는 문서와 합성 표적 검증만 수행하며 제품 full suite를 조기 반복하지 않는다. 제품 단계 필수 검증은 AGENTS §5, PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Android max-workers≤4다. raw2MiB/초기encoded1.5MB·성능·사람 실기기 수용은 별도이며 자동 PASS 승격0, 기준샷 자동 갱신/threshold 완화0이다. 현재 Node24.21.0 `npm ci` 성공, 목업·사용자 구체안 승인·제품 구현/수용 미완.
+
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
 
 - 소유: `game/records.ts`의 읽기 전용 예상 정산, `controller.ts`의 선택적 결과 확인 계약, `solo.svelte.ts`의 판/이벤트 순번별 보류, `Game.svelte`·`Settlement.svelte`와 직접 관련 browser/E2E. Board·Playback·엔진·프로토콜·저장 스키마는 기존 계약을 유지한다.
