@@ -401,6 +401,8 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 
 경로 약어: E=`packages/engine`, A=`packages/ai`, P=`packages/protocol`, W=`packages/web`, S=`tools/sim`, K=`android/app/src/main/kotlin/com/kywoo26/p2pgostop`, KT=`android/app/src/test/kotlin/com/kywoo26/p2pgostop`. `src/`·`test/`·`e2e/` 경로는 각 접두사의 실제 파일이다. 실기기 열의 `—`는 순수 로직/자동 검증 범위, `미`는 현재 정식 UI·기기의 사람 검증 없음, `M0`는 [사람 제공 스모크 기록](../docs/device-test/results.md)만 확인됨을 뜻한다. `M0`도 현재 게임 전체 통과는 아니다.
 
+**#229 / 버전 경로 벨 이미지 수정 실행계획 (FR-40·NF-03·NF-08):** root 수락 범위는 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`의 `W/src/ui/SeatBar.svelte` 벨 URL·직접 HTTP/decode E2E·이 검증행이다. 기존 `BASE_URL` 자산 관례로 root와 버전 prefix 모두 같은 번들 이미지를 읽게 한다. 순서: 계획 commit → root/버전 첫 게임의 Chromium/WebKit·host/guest 재현 → URL 최소 수정 → 200·decode·naturalWidth·장식 alt/ARIA·비가림·외부 요청0 및 필수 CI/raw1.5MiB 검증 → 독립 리뷰/root 인계. 서버 alias·CSS·이미지 품질·스키마·규칙·핀·의존성은 변경하지 않는다. 위험은 root에서만 통과하는 거짓 회귀이며 prefix 밖 요청에 404를 반환하는 격리 loopback HTTP fixture로 검출한다. 구현/검증 착수; PR 링크·최종 수치는 완료 시 이 행에 연결한다. #207 예산/성능·#228 첫 게임 측정과 실기기 #75는 별도이며 수치 완화나 실기기 PASS를 주장하지 않는다.
+
 **2026-10-01 좁은 시인성 실행 / FR-41·46~48·NF-08 / UX-H05·UX-A01:** spec 수치·공개 판정 변경 없이 `skin-marks.css`의 일반 황동 3px 단선/확정 청록 4px 이중선·정적 받침과 대응 바닥 외곽을 강화한다. 두 줄 전체 앞면·터치 크기를 위해 상태 들림은 선 두께 차이로 정정한다. 선택/초점·행동 그림·FLIP 회수/복귀를 보존하고 Board는 승인된 `floorHighlight` preview 조건 1줄만 수정한다(힌트 끔의 기존 보조 예고 잔존 결함, pending options/view.highlight 보존). 같은 실제 공개 scenario와 갤러리를 Chromium/WebKit 360/390/412에서 전후 캡처하고 색 대비·가림·입력·힌트/효과 독립성을 검사한다. #80/#115 전체 수용과 기존 부분·실기기 미검증 상태는 유지한다. 실행 결과는 [스킨 검증](../docs/design/pro-skin-validation.md)의 해당 개선 절에만 추가한다.
 
 ### 기능 (FR)
