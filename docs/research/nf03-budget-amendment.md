@@ -1,8 +1,10 @@
-# B207-2 예산 정의·gate 개정 초안 — Approval required
+# B207-2 예산 정의·gate — 정책 승인·병합, 전체 수용 미검증
 
-NF-03·AC-07·NF-RP-06 / plan B207-2. [#227 실측과 안전한410 B 최적화](ui-bundle-budget.md)를 바탕으로 사용자 최종 승인에 필요한 spec/gate diff를 준비한다. **이 Draft는 승인 요청안이며 main 규범·기능 PR·release에 상향을 적용할 권한이 아니다.** 준비 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`의 승인 전체 raw 한도는1,572,864 B(1.5MiB)다. 최초 Draft 계획 SHA는 `b72f9a48065192a421955e95822fb66af1c4783a`다.
+NF-03·AC-07·NF-RP-06 / plan B207-2. [PR #228 승인 기록](https://github.com/kywoo26/p2p-gostop/pull/228#issuecomment-5924715804)·[#207 상태 기록](https://github.com/kywoo26/p2p-gostop/issues/207#issuecomment-5924731961)에 따라 사용자 승인 후 #228이 main `a735bb345e16891d34d1982aafe9f5c178ba44f5`에 병합됐다. 현행 규범은 초기 필수 encoded HTTP body **1,500,000 B** / 전체 raw **2,097,152 B**, 기존2초·100ms·60fps 유지다. 이는 실기기/성능·최종 #223/#225 누적·NF-03/AC-07 및 #207 전체 수용·출하 승인이 아니다.
 
-| 회계 | 기존 승인/main | Draft의 승인 대상 제안 | 판정 방법 |
+아래는 [#227 실측과 안전한410 B 최적화](ui-bundle-budget.md)를 바탕으로 한 **당시 제안·계획·검증 기록**이다. 준비 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`의 당시 raw 한도1,572,864 B(1.5MiB), 최초 Draft 계획SHA `b72f9a48065192a421955e95822fb66af1c4783a`,4,213 B 초과·404 실패와 별도 #230 후보 관측은 그대로 보존한다. 아래 승인 전/Draft/main 표현은 당시 상태이며 현재 승인 상태를 뜻하지 않는다.
+
+| 회계 | 당시 승인/main | 당시 제안(현재 정책 승인) | 판정 방법 |
 |---|---|---|---|
 | 초기 필수 HTTP response body | NF-03/AC-07에1.5MB, 실제 build gate는 전체 raw1.5MiB로 섞여 있음 | **1,500,000 B(decimal 1.5MB)** | cold 각 역할의 정상 진입→필수 초기 선택·분배 재생 완료→첫 합법 입력 가능까지 실제 serving encoded body. HTML·JS/동적 chunk·해당 경로에 필요한 worker·CSS·font·SVG/이미지 포함 |
 | 전체 raw 웹 배포 | **1,572,864 B(1.5MiB)** | **2,097,152 B(2MiB)** | dist의 모든 파일 길이 합. license·metadata·숨김·지연 chunk·바이너리도 포함. 파일 제외 확대/압축 합계 대체/동적 예산 없음 |
@@ -72,7 +74,7 @@ B207-1의 guest 입력/fonts까지747,451 B는 첫 게임보다 앞선 하위 en
 
 카드/font 포함이고 P2P 경로에서 worker를 요청하지 않았다. 솔로 worker·전체 기능 누적·다른 셔플·장기 세션·배포 서버의 압축/cache·실기기/핫스팟·2초/100ms/60fps는 여전히 미검증이다. 후보의 첫 body가1,500,000 B 아래라는 관측은 이 경로에 한정하며 규범 상향 적용 권한이 아니다.
 
-## 사용자 승인 전에 필요한 판단
+## 당시 사용자 승인 전에 필요한 판단
 
 B207-1은 **대상 서버/기기/핫스팟 baseline·사람 최소3회·독립 리뷰 후 규범 결정**을 추천했다. 이번 Draft의 자동/desktop 근거는 그 사람 관측을 대신하지 않는다. Galaxy WebView·iPhone Safari cold 첫 게임, 원격/Funnel 실제 responseEncoding/cache·첫 paint·100ms·60fps·JS/decode/memory/전력과 전체 후속 세션은 아직 검증하지 않았다. 필수 이미지 경로의 별도 #230 후보 로컬 재관측은 위와 같으며 제품 독립 리뷰/통합 및 최종 누적/실기기 수용은 남아 있다.
 
@@ -80,7 +82,7 @@ B207-1은 **대상 서버/기기/핫스팟 baseline·사람 최소3회·독립 �
 
 **최종 사용자 결정 대상:** 초기 필수 encoded HTTP body1,500,000 B와 전체 raw2,097,152 B의 분리·spec/plan/ui-spec/gate 제안 diff를, 위 실기기/첫 게임/프레임 미검증 및 별도 출하 수용 조건을 유지하면서 승인할지 결정한다. 미관측이 해소되기 전 승인한다면 그것은 숫자/정의 정책 승인만이며 NF-03/AC-07 전체 수용·기능 PR 병합·v0.4.0 출시 승인이 아니다. 승인 대기 중에는 Draft 해제/merge/tag/release 또는 다른 PR의 cap 우회를 하지 않는다.
 
-## 재현·검증
+## 당시 재현·검증
 
 계획→제안 diff→검증을 고정한다. 새 checkout에서 `nvm use`/`npm ci` 후 표준 PR 필수 검사를 실행한다. `node --test packages/web/scripts/check-bundle.test.mjs`는 fixture만 생성하며 main artifact를 바꾸지 않는다. main gate 값은 `git show a31353a13fbeac0f33a74fb8bde72236d5cff853:packages/web/scripts/check-bundle.mjs`의1.5MiB로 별도 확인한다. 같은 불변 UI artifact에 old/proposed script를 별도 임시 디렉터리에서 읽기 전용으로 적용한 정확 결과가 위 A/B다.
 

@@ -64,7 +64,7 @@
 |---|---|
 | 폰트 | Pretendard 가변 WOFF2 ≤160KiB, 한 종만 번들. 이전703문자140.3KiB는 참고이며 최신 코퍼스로 재측정 |
 | 신규 자산·코드 | 폰트160 + 효과/아이콘12 + 소리48 + CSS/JS24 = 추가≤244KiB 계획 상한 |
-| 앱 전체 | B207-2 승인 대상 Draft: 전체 raw dist≤2,097,152 B(2MiB), 초기 필수 encoded HTTP body≤1,500,000 B를 별도 검사(spec NF-03·AC-07). 외부 요청0·기존 하위 자산 예산 유지. 기준1,034.0KiB + 추가244KiB는 과거 배분 기록이며 매 빌드 실제 누적 실측이 우선. main의 승인 규범은 사용자 승인 전1.5MiB 유지 |
+| 앱 전체 | B207-2 예산 정책 #228 승인·병합: 전체 raw dist≤2,097,152 B(2MiB), 초기 필수 encoded HTTP body≤1,500,000 B를 별도 검사(spec NF-03·AC-07). 외부 요청0·기존 하위 자산 예산 유지. 기준1,034.0KiB + 추가244KiB는 과거 배분 기록이며 매 빌드 실제 누적 실측이 우선. [승인 기록](https://github.com/kywoo26/p2p-gostop/pull/228#issuecomment-5924715804)은 예산 정책에 한정하며 실기기/성능·최종 #223/#225 누적·전체 수용은 미완 |
 | 스택 | scoped CSS/Svelte/WAAPI 유지, 신규 npm 의존성0. OFL subset 도구는 plan §1.8의 Docker 범위 |
 
 | 컴포넌트 | 필수 상태 | A 구현 계약 |
