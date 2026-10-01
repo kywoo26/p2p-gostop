@@ -1,0 +1,509 @@
+{
+  "run": "20261001T184342864Z",
+  "kind": "actual Game optional opt-in + actual Playback snapshot/controller fixture; default false; not complete solo/P2P or seeded fresh-deal proof",
+  "defaultEnabled": false,
+  "adoptedNorm": false,
+  "errors": [],
+  "results": [
+    {
+      "name": "normal",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "file": {
+        "path": "game-normal.png",
+        "bytes": 93478,
+        "sha256": "c23f95cce6389fec56b603157f919f29a5f74a1707fc2bcff87390730e7c614b",
+        "pngChunks": [
+          "IHDR",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IEND"
+        ]
+      },
+      "sameBeforeAfterCapture": true,
+      "first": {
+        "status": "placed",
+        "strategy": "scatter",
+        "searches": 7,
+        "exhausted": false,
+        "capacityPrunes": 0,
+        "elapsedHostMs": 2.311349000000064,
+        "relocated": 0
+      },
+      "frame": {
+        "round": 1,
+        "eventSeq": 50,
+        "expected": [3, 7, 12, 13, 15, 27, 38, 45, 48, 50],
+        "actual": [3, 7, 12, 13, 15, 27, 38, 45, 48, 50],
+        "idMatch": true,
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42,
+          "paintPadding": 1,
+          "obstacles": [
+            {
+              "x": 147,
+              "y": 87.6953125,
+              "width": 46,
+              "height": 72.390625
+            },
+            {
+              "x": 146,
+              "y": 86.6953125,
+              "width": 44,
+              "height": 70.390625
+            },
+            {
+              "x": 162.40625,
+              "y": 135.0859375,
+              "width": 25.59375,
+              "height": 20
+            }
+          ]
+        },
+        "strategy": "scatter",
+        "fits": "true",
+        "steadySearches": 0,
+        "maximumModelDOMError": 0.015267092853452624,
+        "minimumGroupPaintGap": 12.117993373437542,
+        "minimumDeckPaintGap": 12.113244524835892,
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "captureGroupGap": [
+          ["2px", "2px", "2px", "2px"],
+          ["2px", "2px", "2px", "2px"]
+        ],
+        "sizes": {
+          "floor": "42px",
+          "deck": "42px",
+          "hand": [48],
+          "captured": [32]
+        }
+      }
+    },
+    {
+      "name": "crowded",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "file": {
+        "path": "game-crowded.png",
+        "bytes": 102613,
+        "sha256": "8b130e6ac7e38bdda90f4713428b4f1d4052d726009faf6ca64c6ad4e756799f",
+        "pngChunks": [
+          "IHDR",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IEND"
+        ]
+      },
+      "sameBeforeAfterCapture": true,
+      "first": {
+        "status": "placed",
+        "strategy": "scatter",
+        "searches": 86,
+        "exhausted": false,
+        "capacityPrunes": 70,
+        "elapsedHostMs": 4.454411000000164,
+        "relocated": 0
+      },
+      "frame": {
+        "round": 3,
+        "eventSeq": 212,
+        "expected": [11, 12, 15, 18, 31, 32, 33, 34, 38, 40, 42, 46],
+        "actual": [11, 12, 15, 18, 31, 32, 33, 34, 38, 40, 42, 46],
+        "idMatch": true,
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42,
+          "paintPadding": 1,
+          "obstacles": [
+            {
+              "x": 147,
+              "y": 87.6953125,
+              "width": 46,
+              "height": 72.390625
+            },
+            {
+              "x": 146,
+              "y": 86.6953125,
+              "width": 44,
+              "height": 70.390625
+            },
+            {
+              "x": 161.40625,
+              "y": 135.0859375,
+              "width": 26.59375,
+              "height": 20
+            }
+          ]
+        },
+        "strategy": "scatter",
+        "fits": "true",
+        "steadySearches": 0,
+        "maximumModelDOMError": 0.015609537037562404,
+        "minimumGroupPaintGap": 12.124834996937409,
+        "minimumDeckPaintGap": 12.124124041437454,
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "captureGroupGap": [
+          ["2px", "2px", "2px", "2px"],
+          ["2px", "2px", "2px", "2px"]
+        ],
+        "sizes": {
+          "floor": "42px",
+          "deck": "42px",
+          "hand": [48],
+          "captured": [32]
+        }
+      }
+    },
+    {
+      "name": "twelve",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "file": null,
+      "sameBeforeAfterCapture": true,
+      "first": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 8193,
+        "exhausted": true,
+        "capacityPrunes": 7741,
+        "elapsedHostMs": 134.59365200000002,
+        "relocated": 0
+      },
+      "frame": {
+        "round": 2,
+        "eventSeq": 8,
+        "expected": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "actual": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "idMatch": true,
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42,
+          "paintPadding": 1,
+          "obstacles": [
+            {
+              "x": 147,
+              "y": 87.6953125,
+              "width": 46,
+              "height": 72.390625
+            },
+            {
+              "x": 146,
+              "y": 86.6953125,
+              "width": 44,
+              "height": 70.390625
+            },
+            {
+              "x": 162.40625,
+              "y": 135.0859375,
+              "width": 25.59375,
+              "height": 20
+            }
+          ]
+        },
+        "strategy": "boundary",
+        "fits": "true",
+        "steadySearches": 8193,
+        "maximumModelDOMError": 0.013283794788279124,
+        "minimumGroupPaintGap": 13.59375,
+        "minimumDeckPaintGap": 14.3046875,
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "captureGroupGap": [
+          ["2px", "2px", "2px", "2px"],
+          ["2px", "2px", "2px", "2px"]
+        ],
+        "sizes": {
+          "floor": "42px",
+          "deck": "42px",
+          "hand": [48],
+          "captured": []
+        }
+      }
+    },
+    {
+      "name": "twelve",
+      "viewport": {
+        "width": 390,
+        "height": 734
+      },
+      "file": {
+        "path": "game-twelve.png",
+        "bytes": 105637,
+        "sha256": "af9fb846438bb1144185e6e089038f59a21626212ae21c3f351a96369bde28ea",
+        "pngChunks": [
+          "IHDR",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IDAT",
+          "IEND"
+        ]
+      },
+      "sameBeforeAfterCapture": true,
+      "first": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 8193,
+        "exhausted": true,
+        "capacityPrunes": 7904,
+        "elapsedHostMs": 102.52753299999995,
+        "relocated": 0
+      },
+      "frame": {
+        "round": 2,
+        "eventSeq": 8,
+        "expected": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "actual": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "idMatch": true,
+        "bounds": {
+          "width": 366,
+          "height": 241.4375,
+          "cardWidth": 42,
+          "paintPadding": 1,
+          "obstacles": [
+            {
+              "x": 162,
+              "y": 86.5234375,
+              "width": 46,
+              "height": 72.390625
+            },
+            {
+              "x": 161,
+              "y": 85.5234375,
+              "width": 44,
+              "height": 70.390625
+            },
+            {
+              "x": 177.40625,
+              "y": 133.9140625,
+              "width": 25.59375,
+              "height": 20
+            }
+          ]
+        },
+        "strategy": "boundary",
+        "fits": "true",
+        "steadySearches": 8193,
+        "maximumModelDOMError": 0.013283794788279124,
+        "minimumGroupPaintGap": 13.125,
+        "minimumDeckPaintGap": 13.1328125,
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "captureGroupGap": [
+          ["2px", "2px", "2px", "2px"],
+          ["2px", "2px", "2px", "2px"]
+        ],
+        "sizes": {
+          "floor": "42px",
+          "deck": "42px",
+          "hand": [48],
+          "captured": []
+        }
+      }
+    },
+    {
+      "name": "twelve-resize-390-to-360",
+      "frame": {
+        "round": 2,
+        "eventSeq": 8,
+        "expected": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "actual": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "idMatch": true,
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42,
+          "paintPadding": 1,
+          "obstacles": [
+            {
+              "x": 147,
+              "y": 87.6953125,
+              "width": 46,
+              "height": 72.390625
+            },
+            {
+              "x": 146,
+              "y": 86.6953125,
+              "width": 44,
+              "height": 70.390625
+            },
+            {
+              "x": 162.40625,
+              "y": 135.0859375,
+              "width": 25.59375,
+              "height": 20
+            }
+          ]
+        },
+        "strategy": "scatter",
+        "fits": "true",
+        "steadySearches": 15,
+        "maximumModelDOMError": 0.014654296184616555,
+        "minimumGroupPaintGap": 12.125,
+        "minimumDeckPaintGap": 14.2890625,
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "captureGroupGap": [
+          ["2px", "2px", "2px", "2px"],
+          ["2px", "2px", "2px", "2px"]
+        ],
+        "sizes": {
+          "floor": "42px",
+          "deck": "42px",
+          "hand": [48],
+          "captured": []
+        }
+      }
+    }
+  ],
+  "popup": {
+    "open": true,
+    "originalMeasurementIDs": 0,
+    "candidates": [
+      {
+        "button": {
+          "x": 19,
+          "y": 237.109375,
+          "width": 157,
+          "height": 80.171875,
+          "top": 237.109375,
+          "right": 176,
+          "bottom": 317.28125,
+          "left": 19
+        },
+        "image": {
+          "x": 20,
+          "y": 238.109375,
+          "width": 48,
+          "height": 78.171875,
+          "top": 238.109375,
+          "right": 68,
+          "bottom": 316.28125,
+          "left": 20
+        }
+      },
+      {
+        "button": {
+          "x": 184,
+          "y": 237.109375,
+          "width": 157,
+          "height": 80.171875,
+          "top": 237.109375,
+          "right": 341,
+          "bottom": 317.28125,
+          "left": 184
+        },
+        "image": {
+          "x": 185,
+          "y": 238.109375,
+          "width": 48,
+          "height": 78.171875,
+          "top": 238.109375,
+          "right": 233,
+          "bottom": 316.28125,
+          "left": 185
+        }
+      }
+    ]
+  },
+  "verification": {
+    "targetedChromiumWebKit": 38,
+    "unhandled": 0,
+    "fullSuiteThisUnit": false,
+    "realDevice": false,
+    "performanceAccepted": false
+  },
+  "gates": [
+    "natural placement acceptance",
+    "unresolved fit states beyond bounded witness",
+    "synchronous UI cost and NF-03",
+    "beforepose/public-target integration",
+    "motion/P2P/OSSR/device/canonical/default enable"
+  ]
+}

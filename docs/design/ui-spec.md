@@ -44,9 +44,9 @@
 
 **UX-09.** 사용자 추가 레퍼런스 결정에 따라 고/스톱은 중앙 패널로 표시한다. 바닥 일부는 가리되 손패·획득패·제한시간은 유지한다. 제목은 “고 하시겠습니까?”, 예상 정산액을 그 아래, 왼쪽 스톱·오른쪽 다음 고 횟수 버튼을 둔다. 엔진이 제공한 피박/광박 위험을 함께 표시한다. 상시 획득패 스탬프의 추가 적용은 PA-06에서 제공 데이터와 비가림 검증을 전제로 추적한다. 선택 필수, 닫기 없음, 48px 버튼 두 개와 초점 순환을 유지한다. 바닥 대상 선택은 후보만 발광하고 나머지를 흐리게 하며 후보 카드에서 직접 탭한다. 상단 한 줄에 짧게 안내하고 별도 시트를 띄우지 않는다.
 
-> **#202 제품 Draft delta — UX-02/05/06/H05/08/09/24/25 (리뷰 전 미채택).** A 공유 pose와 최초 격자/비대칭 겹침은 기각된 역사다. [#235](https://github.com/kywoo26/p2p-gostop/pull/235)의 현재 opt-in은 각 원본 카드의 distinct pose·동일 append 간격·실제 footprint 예약과 연속 공간 배치다. 현재 독립 셀/앞면100%/직접 선택 규범을 자동 대체하지 않는다. 손패48px·획득32px·HUD·전역 토큰 유지, 바닥/덱44px는 사용자 축소 지시 후 비교 기준일 뿐 최종 수치 미채택이다.
+> **#202 제품 Draft delta — UX-02/05/06/H05/08/09/24/25 (리뷰 전 미채택).** A 공유 pose와 최초 격자/비대칭 겹침은 기각된 역사다. [#235](https://github.com/kywoo26/p2p-gostop/pull/235)의 현재 opt-in은 각 원본 카드의 distinct pose·동일 append 간격·실제 footprint 예약과 연속 공간 배치다. 현재 독립 셀/앞면100%/직접 선택 규범을 자동 대체하지 않는다. 손패48px·획득32px·HUD·전역 토큰 유지, 바닥/덱42px는 사용자 축소 지시 후 비교 기준일 뿐 최종 수치 미채택이다.
 >
-> 바닥2장은 구별,3+는 월 묶음과 증가한 층을 읽는다. bonus를 마지막 생성 월패 아래에 두는 뻑 presentation은 권위 배열/ID를 바꾸지 않는다. 원 CardId local pose, group origin, 선택 원본 beforepose와 이후 settled pose를 분리한다. 성장 때문에 기존 origin이 paint 장애물과 충돌하면 무관 월 고정 해부터 찾는다. 후보 미발견은 불가능 증명이 아니며 정상 placements로 반환하지 않는다. 실패 UX·최소 뻑/bonus 단서·전체 fit는 미완 gate다.
+> 바닥2장은 구별,3+는 월 묶음과 증가한 층을 읽는다. bonus를 마지막 생성 월패 아래에 두는 뻑 presentation은 권위 배열/ID를 바꾸지 않는다. 원 CardId local pose, group origin, 선택 원본 beforepose와 이후 settled pose를 분리한다. 성장 때문에 기존 origin이 paint 장애물과 충돌하면 무관 월 고정 해부터 찾는다. 후보 미발견은 불가능 증명이 아니며 정상 placements로 반환하지 않는다. 실패 UX·최소 뻑/bonus 단서·전체 fit는 미완 gate다. 정상/유효 이전 pose 우선 뒤에만 회전0° 경계 배치 증인을 검사한다. 원본 CardId별 distinct pose·local index·뻑 top을 유지하며 모든 paint/예약/영역 조건이 통과할 때만 반환한다. 이 긴급 grid 예외는 자연스러움 수용/보편 fallback 보장이 아니다. Game optional opt-in은 연결했으나 기본false다.
 >
 > 대상 선택은 원 options/CardId를 기존 native PromptPanel의 짧은 월 제목·전체48px 두 후보/최소48px 버튼으로 연결한다. 일시 바닥 가림만 허용하고 손패·점수를 유지한다. popup 복제에 원본 측정용 data-card-id를 부여하지 않고 기존 native dialog/Board inert/focus를 재사용한다. 별도 Floor focuslock/새 PromptPanel API는 없다.
 >

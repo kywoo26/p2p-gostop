@@ -1,6 +1,6 @@
 # 같은 월 겹침·선택 제안 (#202)
 
-상태: **#233 제안 인수·A 기각·상용 조사 뒤 첫 opt-in 제품 prototype도 사용자 시각 검토에서 거절. 현재 #235 실제 자동 배치 opt-in checkpoint. 기존 실패 근거 보존·기본 활성화0·정본 개정 미시행**. Refs [#202](https://github.com/kywoo26/p2p-gostop/issues/202), [#200](https://github.com/kywoo26/p2p-gostop/issues/200), [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233). UX-02/05/06/H05/23~25·NF-03/08·AC-06/07 / plan §1.6·§3-2. 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`; 계획 SHA `e67b767fe1d1781240117381223d6ef18d1e8b90`; 이전 제안 SHA `b11d3b88cd43d26b4aab62ffd90681af7efed30d`.
+상태: **#233 제안 인수·A 기각·상용 조사 뒤 첫 opt-in 제품 prototype도 사용자 시각 검토에서 거절. 현재 #235 실제 Game opt-in·자동 배치 checkpoint. 기존 실패 근거 보존·기본 활성화0·정본 개정 미시행**. Refs [#202](https://github.com/kywoo26/p2p-gostop/issues/202), [#200](https://github.com/kywoo26/p2p-gostop/issues/200), [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233). UX-02/05/06/H05/23~25·NF-03/08·AC-06/07 / plan §1.6·§3-2. 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`; 계획 SHA `e67b767fe1d1781240117381223d6ef18d1e8b90`; 이전 제안 SHA `b11d3b88cd43d26b4aab62ffd90681af7efed30d`.
 
 ## 1. 사용자 선택과 root 판단
 
@@ -310,3 +310,32 @@ held Enter→resize 또는 held Space→target 교체 뒤 keyup을 보내지 않
 변경 후 Board 전용 Chromium7+WebKit7=14통과/미처리0이며, 새 두 회귀는 keyup 없이 pointer 선택1·뒤 취소 키 click/repeat 추가 제출0·release 재사용0·이미 제출된 선택 보존을 확인했다. 이전22표적 전체 실행은 이전 head 근거로 남기고 이번 head에서 반복 실행했다고 쓰지 않는다. solver는 주석만 바꿨으며 후보/간격/기울기/지원 bounds/baseline/threshold는 그대로다. 새로운 실제판 그림을 만들거나 기존 immutable run/PNG를 덮어쓰지 않았다.
 
 비차단 관측: pair `[0,1]→[1]`의 surviving local offset을 보존하면서 footprint가 빈 prefix도 예약한다. 실제 single44×71.661px보다57×79.161px를 점유한다. 독립 리뷰의54×100 구성 반례는 지원 Board가 아니므로 실사용 차단 결함으로 확정하지 않는다. actual-footprint/예약 수명 후속과 함께 검토하고 이번 두 fix로 확대하지 않았다. capacity pruning의 한정 경계 대조는 반례 미관측이며 전체 완전성 증명은 아니다. 기본false·정본미채택·normal2×2/실패UX/최소단서/모션/전체 수용 gate는 유지한다. 새 head CI는 앞선 실패 및 component 결과와 별도로 PR에 기록한다.
+
+## 12. Game opt-in·actual footprint·긴급 경계 배치 checkpoint (기본false)
+
+`c155b061e89f27d81a00288a6e01054792e7afb1`의 두 리뷰 결함은 동일 head CI36903732478 3success 및 동일 리뷰어의 좁은 재검토에서 해소됐다. 이번 단위는 별도 후속이다. Game에는 optional monthStacks/defaultfalse/Board 전달3줄만 연결했고 controller/attach/metadata/Playback/choreo/engine/protocol은 편집하지 않았다. surviving 카드의 실제 paint union으로 빈 prefix를 제외하되 카드 index/local 위치·선택 ID·same-seq 삭제 예약은 그대로다.
+
+42px 비교에서 12월 구성은 처음 primary8193 뒤 DOM0이었다. 구성은 Scenario의 표준 카드 분배(10/10손패·8바닥·23덱·51고유ID)에서 실제 합법 play32→flip36, play40→flip44를 reduce한 결과이며 seed fresh deal 도달/전체 재생 증거가 아니다. 임의 round 필드를 권위로 만들지 않고 Scenario roundNumber2부터 만든다. 기존 회전 최대 paint 높이71.531569px로 3행 증인 최소242.844707px가 실제390 부모241.4375px보다1.407207px 높았다. 이것은 max-envelope 증인의 경계이며 모든 배치 불가능 증명이 아니다.
+
+획득행의18px는 heading16+gap2 실제 내용이다. 이를17px/gap1로 줄이는 작업은 root 정정에 따라 되돌렸고 최종 Board diff0·기존2px/행높이/글자·카운터·outline/획득32·손패48·popup48을 유지한다. 대신 primary 실패 때만 회전0°로 actual shape를 새로 계산한다. 같은 local index/append 순서·뻑 마지막 월패 top은 유지하고 과거 rotation을 이중 적용하지 않는다. 최대 높이70.403909px의 3행 증인은239.461726px이며 실제 덱 shadow·outline·현재 예약·모든 카드/영역/간격 검사를 다시 통과해야만 placed로 반환한다. 경계 슬롯은 현재 부모와 최대 실제 크기로 한 번 생성하고 유한 matching을 검증하며 fixture 좌표/더 작은 숫자/8192 예산 증액은 없다. 정상 scatter/이전 유효 pose가 우선이다. 이 긴급 grid는 자연스러운 배치 승인이나 보편적 안전 fallback 완료가 아니다. 두 경로 모두 실패하면 개발 failed/cells[]가 남고 기본 적용을 막는 제품 gate다.
+
+고정 run `20261001T184342864Z`의 [익명 JSON](month-stack-evidence/game-checkpoint.json)은 실제 Game+실제 Playback snapshot을 사용하는 fixture controller의 DOM, 같은 프레임 PNG/hash/원ID·paint 측정을 묶는다. 일반 solo/P2P controller/deal/replay·실기기 증거와 구분한다. scratch의 누락된 메뉴 그림 publicDir 문제로 엄격 decode가 실패한 캡처 시도도 보존했고, 기존 공개 자산을 로컬 제공한 뒤 모든 이미지 decode·5회 같은 DOM/rect RAF·캡처 전후 동일 검사로 새 run을 생성했다. 이후 override0이다.
+
+| 실제 fixture | 부모 bounds | 최초 primary 방문 / host 순수 함수 시간 | ID·교차·범위 | 월간 / 덱간 paint 여백 |
+| --- | --- | --- | --- | --- |
+| normal360×780, 뻑5 포함 | 336×243.78125 | 7 / 2.31ms | 10일치·0·0 | 12.118 / 12.113px |
+| crowded360×780 | 336×243.78125 | 86 / 4.45ms | 12일치·0·0 | 12.125 / 12.124px |
+| 12월360 fresh | 336×243.78125 | 8193 / 134.59ms | 12일치·0·0 | 13.594 / 14.305px |
+| 12월390 fresh | 366×241.4375 | 8193 / 102.53ms | 12일치·0·0 | 13.125 / 13.133px |
+
+정상/혼잡은 scatter 기울기를 유지하며 뻑5 top월패12, bonus중간이다. 12월은 긴급0° 행 배치다. 같은 run의390→360 resize는 필요한 재탐색 후 전체ID/paint 유효였으며 strict0 성공으로 쓰지 않는다. model→DOM 최대0.01561px, 모든 hand/HUD교차0, PNG metadata(text/EXIF)0을 확인했다. 초기 탐색 수치와 안정 후 searches0은 구분하고 Node host 시간은 실제 동기 UI호출/60fps/100ms 수용을 대신하지 않는다.
+
+![실제 Game opt-in normal fixture](month-stack-evidence/game-normal.png)
+
+![실제 Game opt-in crowded fixture](month-stack-evidence/game-crowded.png)
+
+![실제 Game opt-in 390 fresh12월 긴급 grid fixture](month-stack-evidence/game-twelve.png)
+
+표적 Chromium/WebKit38통과·미처리0은 footprint/presentation/성장·삭제예약/resize·기존 pointer 취소 및 keyup 없는 회복·Game 기본false·Game fresh12월·native 전체48px 선택→실제 reduce 수락→Playback 완료/예약 해제를 포함한다. 이 한 선택 재생을 #200 정확 beforepose·모든 연쇄선택/모션 수용으로 확대하지 않는다. check 오류0/경고0, font703/누락0. 전체suite/기준샷/threshold/새agent/seed행렬0, 새 CI는 이전c155 CI와 분리한다.
+
+다음 성능 작업은 이12월 한 경계에서 유효 witness를 먼저 확보하고 정상/유효 prior 우선과 제한 scatter 비용을 양립시키는 최소 후속이다. primary8193 소진 의존·실제 동기 UI시간을 분리해 개선하며 예산 증액/타이밍 assert 완화/새worker/dependency는 없다. 기본 활성화·canonical 최종채택·자연스러움·모든 실패UX/최소단서·beforepose/P2P·실기기/OSSR·NF-03 초기 encoded/모션은 남는다.

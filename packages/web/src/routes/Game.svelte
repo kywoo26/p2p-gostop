@@ -23,6 +23,7 @@
 
   interface Props {
     controller: GameController;
+    monthStacks?: boolean;
     soloDifficulty?: Difficulty;
     /** 메뉴 항목 (없으면 계속하기만) */
     menu?: readonly MenuItem[];
@@ -44,6 +45,7 @@
 
   let {
     controller,
+    monthStacks = false,
     soloDifficulty,
     menu = [],
     onmenu,
@@ -320,6 +322,7 @@
   <div class="board-wrap" inert={summary !== null || pushDecision != null || menuOpen || ended}>
     <Board
       view={pb.board}
+      {monthStacks}
       soloDifficulty={controller.mode === 'solo' ? soloDifficulty : undefined}
       soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
       {extras}

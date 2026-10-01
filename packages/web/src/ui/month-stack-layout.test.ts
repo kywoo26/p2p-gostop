@@ -212,3 +212,53 @@ test('pruning 경계는 명시적 유효 구성2·3·4개와 deck 분리 구성�
   const result = placed(layoutMonthFloor([floorGroup(1, [0]), floorGroup(2, [4])], split));
   safe(result.cells, split);
 });
+
+test('남은 카드의 빈 prefix는 footprint에서 빠지되 pose와 별도 삭제 예약은 유지한다', () => {
+  const initial = placed(layoutMonthFloor([floorGroup(1, [0, 1])], bounds));
+  const before = initial.cells[0]!;
+  const after = placed(layoutMonthFloor([floorGroup(1, [1])], bounds, initial)).cells[0]!;
+  expect(after.poses[0]).toEqual({ ...before.poses.find((p) => p.id === 1), z: 1 });
+  expect(after.footprint.width).toBeLessThan(before.footprint.width - 9);
+  expect(after.footprint.height).toBeLessThan(before.footprint.height - 4);
+  const next = placed(
+    layoutMonthFloor([floorGroup(1, [1]), floorGroup(2, [4])], bounds, initial, [before]),
+  );
+  expect(floorRectsOverlap(next.cells[1]!.footprint, before.footprint, 12)).toBe(false);
+  const noReservation = placed(
+    layoutMonthFloor([floorGroup(1, [1]), floorGroup(2, [4])], bounds, next),
+  );
+  safe(noReservation.cells);
+});
+
+test('실제42px 부모의 12월은 탐색 상한 뒤 검증된 경계 배치로 모든 ID를 보존한다', () => {
+  const groups = Array.from({ length: 12 }, (_, i) => floorGroup((i + 1) as 1, [i * 4]));
+  for (const [width, height, obstacleX, obstacleY] of [
+    [336, 243.78125, 147, 87.6953125],
+    [366, 241.4375, 162, 86.5234375],
+  ]) {
+    const current = {
+      width: width!,
+      height: height!,
+      cardWidth: 42,
+      paintPadding: 1,
+      obstacles: [{ x: obstacleX!, y: obstacleY!, width: 46, height: 72.390625 }],
+    };
+    const first = placed(layoutMonthFloor(groups, current));
+    expect(first.strategy).toBe('boundary');
+    expect(first.cells.every((c) => c.angle === 0 && c.poses.every((p) => p.angle === 0))).toBe(
+      true,
+    );
+    expect(first.searches).toBe(8193);
+    expect(first.exhausted).toBe(true);
+    safe(first.cells, current);
+    expect(first.cells.flatMap((c) => c.cards)).toEqual(groups.flatMap((g) => g.cards));
+    expect(placed(layoutMonthFloor([...groups].reverse(), current)).cells).toEqual(first.cells);
+    const reused = placed(layoutMonthFloor(groups, current, first));
+    expect(reused.searches).toBe(0);
+    expect(reused.strategy).toBe('boundary');
+    expect(reused.cells).toEqual(first.cells);
+    const impossible = layoutMonthFloor(groups, { ...current, height: 70 }, first);
+    expect(impossible.status).toBe('failed');
+    expect(impossible.cells).toEqual([]);
+  }
+});

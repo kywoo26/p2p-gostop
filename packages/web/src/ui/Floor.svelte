@@ -242,11 +242,12 @@
   aria-label={!monthStacks && options.length ? '먹을 바닥패 선택' : undefined}
   tabindex="-1"
   class="table"
-  style:--table-card={monthStacks ? '44px' : undefined}
-  style:--table-card-height={monthStacks ? 'calc(44px / 0.614)' : undefined}
+  style:--table-card={monthStacks ? '42px' : undefined}
+  style:--table-card-height={monthStacks ? 'calc(42px / 0.614)' : undefined}
   bind:this={table}
   data-floor-folded={layout.folded}
   data-floor-fits={monthStacks ? (monthLayout?.fits ?? false) : layout.fits}
+  data-floor-strategy={monthStacks ? monthLayout?.strategy : undefined}
   data-floor-searches={monthStacks ? monthLayout?.searches : undefined}
   data-floor-exhausted={monthStacks ? monthLayout?.exhausted : undefined}
   data-floor-model-bounds={monthStacks ? JSON.stringify(bounds) : undefined}
