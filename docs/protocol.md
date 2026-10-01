@@ -2,9 +2,9 @@
 
 근거: `intent/spec.md` NP-01~NP-10, FR-07·FR-14·FR-51~53, MN-01/02/05, NF-05/06 및 `intent/plan.md` 1.1·M4·§3-2. 이 문서는 `packages/protocol`(v3)과 `packages/relay-dev`, `packages/web/src/net`의 동작을 적는다. M4 리뷰(`docs/reviews/README.md`)와 MVP 감사 A-1의 수정 라운드(#12·#13·#15·#16·#23~#26)를 반영했다.
 
-전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 `PROTOCOL_VERSION = 3`이다. v2와 호환되지 않으며, 첫 hello의 버전이 다르면 호스트는 `VERSION_MISMATCH`와 새로고침 안내를 보낸다.
+전송은 로컬 `ws://<호스트>:17777/ws?role=host|guest`이고 JSON 텍스트 프레임만 쓴다. 모든 수신은 `decode`(zod/mini)로 검사하고, 검사를 통과한 **파싱 결과**(모르는 필드 제거)만 세션에 들어간다. 현재 이 구현 Draft의 `PROTOCOL_VERSION = 4`이다. v3 이하와 호환되지 않으며, 첫 hello의 버전이 다르면 호스트는 `VERSION_MISMATCH`와 새로고침 안내를 보낸다.
 
-§1~10의 기존 세션·중계 계약에 §11의 승인된 결정 타이머 계약을 더한 v3가 현행이다. 옛 저장본의 제한 끔 이관은 §11.4를 따른다.
+§1~10의 기존 세션·중계 계약에 §11의 결정 타이머와 아래 공개 대상 계약을 더한 v4 구현 Draft다. 배포/릴리스 승인은 별도다. 옛 저장본의 제한 끔 이관은 §11.4를 따른다.
 
 ## 1. 중계 계약 (Android `SmokeServer` RelayRoles = `relay-dev`)
 
@@ -31,14 +31,14 @@
 - 화면 복귀(`visibilitychange`·`pageshow`): 닫혀 있으면 곧바로 재접속. 열려 보이면 ping으로 확인하고 4초 안에 아무 프레임도 없으면 새 소켓(NF-05 5초 복귀).
 - 송신은 `tryEncode`로 상한을 먼저 검사하고 예외를 던지지 않는다. 연결 대기 중에는 `hello`를 마지막 것 하나만, `ping`은 쌓지 않는다.
 
-## 3. 메시지 (v2)
+## 3. 메시지 (v4)
 
 | 방향 | `t` | 필드 | 의미 |
 |---|---|---|---|
 | 게스트→호스트 | `hello` | `v,name,sessionToken?,lastSeq?,epoch?` | 최초 접속·토큰 재접속·마지막 수신 순번. 이름은 제어 문자 금지 |
 | 호스트→게스트 | `welcome` | `v,seat,sessionToken,rules,ledger,names,epoch,seq,status` | 좌석 1, 원장 **요약**, 호스트 세대(epoch)·현재 순번, 단계 |
 | 호스트→게스트 | `snapshot` | `seq,view,ledger,settlement?,status,requestId?` | 완전한 게스트 화면(BoardView) |
-| 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status,requestId?` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
+| 호스트→게스트 | `events` | `from,to,list,view,ledger,settlement?,status,requestId?,acceptedPlayTarget?` | 연속 이벤트(가림 적용)와 적용 뒤 화면 |
 | 호스트→게스트 | `status` | `seq,status,requestId?` | 화면은 그대로이고 단계·준비·파산 상태만 바뀜 |
 | 게스트→호스트 | `action` | `seq,payload,requestId?` | 보낸 시점의 마지막 수신 순번과 엔진 액션(여분 필드는 지워진다) |
 | 게스트→호스트 | `push` | `seq,requestId?` | settled에서 승자 게스트의 밀기 선택. 호스트는 `legalActions`로 재검사한다 |
@@ -279,7 +279,7 @@
 | 검증 한계 | commit-reveal은 호스트 실제 경과시간의 암호학적 증명이 아니다. 게스트 관찰이 보존된 구간은 deadline/확인 응답과 대조하고 결과의 `time=verified`를 별도로 기록한다. 소켓·렌더러 공백 또는 옛 저장본처럼 기록 없는 구간의 시각은 `time=unverifiable`로 구분하며 정상 시간 사용을 입증했다고 표시하지 않는다. 셔플/액션 검증과 시간 검증 결과를 분리 |
 | 이력 페이지·해시 | TimeoutResult를 actionIndex 오름차순으로 모은 정규 배열 `[epoch,round,decisionId,baseSeq,actionIndex,seat,toSeq,deadlineMs,confirmedAtMs,policy,action]`의 JSON UTF-8을 기존 순수 JS SHA-256으로 해시. action은 현행 wire 필드 순서로 정규화. count=0도 빈 배열 해시 명시. 판당 최대 400개(기존 actions 상한), 페이지 합·해시·관찰 기록을 모두 대조한다. 실시간 이력에 빈틈이 있으면 페이지 커서를 0부터 독립적으로 진행하고 actionIndex로 병합·정렬한다; 페이지 누락은 미완/복구, 성공 처리 금지 |
 | 다음 판·재접속 | snapshot/차분에 현재 clock 필수, 완료 결과 유실은 timeoutPage로 회복. 게스트는 직전 판 초과 이력 검증을 끝내기 전 새 commit에 응답하지 않음. 페이지 ack 감시는 round/from 기준, 기존 5초 응답 감시·백오프 재사용. 저장에는 현재/최근 판 관찰·초과 기록도 포함 |
-| v2/v3 wire | **PROTOCOL_VERSION=3**. 새 t는 v2 union에 없고, 추가 필드는 v2 파서가 지우므로 선택적 필드 추가만으로 호환 불가. hello 버전을 스키마 본문보다 먼저 검사해 VERSION_MISMATCH 안내. 구버전과 제한 켬으로 조용히 연결하거나 요청 필드 생략으로 우회 금지; 끔에서도 v3끼리 연결 |
+| v2/v3 wire | 결정 타이머 도입은 v3이며 현재 공개 대상 Draft는 **PROTOCOL_VERSION=4**다. 새 t는 v2 union에 없고, 추가 필드는 v2 파서가 지우므로 선택적 필드 추가만으로 호환 불가. hello 버전을 스키마 본문보다 먼저 검사해 VERSION_MISMATCH 안내. 구버전과 제한 켬으로 조용히 연결하거나 요청 필드 생략으로 우회 금지; 끔에서도 현재 wire4끼리 연결 |
 | 저장 버전 | wire와 별개인 `HostSessionState.v` 현행 1 및 게스트 저장 형식을 개정. v1에 타이머 이력이 없으면 제한 **끔**으로 명시 이관, 새 세션은 10초. 새 형식 필드 소실은 손상으로 거부. 새 저장에는 settings/key/잔여량/완료 표식/이력과 **resumeFloorUsed/recoveryGrantMs·lastHealthyMs의 시계 영역·확정 중단시각/사유** 포함; epoch 변경 시 과거 확인 무효. running 중 강제 종료로 저장 이후 소비량이 불명확하면 clockUnknown으로 입력 재개 금지. §11.3의 중단 확정/연속성 입증 때만 잔여량 재개 |
 | 크기·정보 경계 | NP-07 16KB 유지. 최대 actions·타이머 이력/재접속 snapshot 바이트 검증 필수. 최종 reveal도 초과하면 제한을 올리지 말고 별도 분할 계약을 먼저 확정. 수신 스키마는 시각·ID 상한, 상태별 null 조건·설정 일치·중복 key를 검증; 모든 신규 메시지는 소켓 인증 규칙 적용 |
 
@@ -304,7 +304,7 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 
 | 요청 | 자격·응답 |
 |---|---|
-| `GET /health` | `{relay:"p2p-gostop",ready:true,controlVersion:1,wireVersion:<PROTOCOL_VERSION>}`. 현재 게임 wire는 v3이다. 방·이름·토큰·PC 상세를 포함하지 않는다 |
+| `GET /health` | `{relay:"p2p-gostop",ready:true,controlVersion:1,wireVersion:<PROTOCOL_VERSION>}`. 현재 게임 wire Draft는 v4이다. 방·이름·토큰·PC 상세를 포함하지 않는다 |
 | `GET /version` | 현행 release/hash/path와 최대 2개 release의 wire·호환 표. 서로 다른 게임 wire는 플레이 호환으로 표시하지 않는다 |
 | `GET /` | 현행 `/r/<release>/<content-hash>/`로 302 |
 | `GET /r/<release>/<content-hash>/...` | 등록된 `web/dist`의 허용 파일만 제공. traversal·숨김 파일·설정 JSON·소스맵·심볼릭 링크는 제공하지 않는다 |
@@ -331,3 +331,21 @@ C01/C02의 별도 자동 실행 검증은 #110·#140과 합의하고 timeout으�
 `WS /join?code=<12자리 코드>&name=<닉네임>`는 게임 WS와 별도다. `name`은 선택 사항이다. 중계는 URL 디코딩 뒤 제어문자·개행(U+2028·U+2029 포함)을 제거하고, 연속된 유니코드 공백을 한 칸으로 합친 뒤 양끝 공백을 제거한다. 화면에 표시되는 문자 20자를 넘으면 잘라내고 잘린 결과 끝의 공백도 제거한다. 정리한 결과가 1~20자일 때만 메모리의 pending 레코드에 보관하고, 로그에는 남기지 않는다. 유효/무효/점유 코드 모두 먼저 `{"t":"relay-join-pending"}`을 받는다. 유효하고 빈 방이면 호스트에 `{"t":"relay-join-request","requestId":"...","nickname":"<정리한 닉네임>"}`를 보낸다(방당 최대 2건). `name`이 없거나 정리한 결과가 비면 `nickname` 필드를 생략한다. 호스트의 `relay-accept` 후 코드 참여자는 `{"t":"relay-accepted","roomId":"...","token":"<resumeToken>"}`을 받아 `/ws?role=guest&room=<roomId>`에 **새로 연결해 첫 프레임으로 인증**한다. 호스트가 `{"t":"relay-deny","requestId":"..."}`로 거절하면 중계는 pending을 정리하고 코드 참여자에 `{"t":"relay-join-denied"}`를 보낸 뒤 1000으로 닫는다. 수락·거절이 없으면 최대 60초 뒤 기존 `{"t":"relay-join-unavailable"}`로 끝난다. 호스트 수락 전에는 토큰·게임 내용을 코드 참여자에게 보내지 않는다. 존재/부재/점유 실패의 초기 응답은 같다.
 
 초대와 미참여 코드는 15분, 방은 생성 후 절대 6시간, host 단절은 10분에 만료된다. 공개 WS는 25초 ping·60초 무응답 종료, 인증 전 전체 8개/방당 2개, 인증 뒤 host 1개·guest 1개다. 방은 중계 메모리에만 있고 재시작하면 모두 사라진다.
+
+### 공개 대상·수락 전이 (FR-14·NP-02/03/04/06, #200)
+
+선행 [#234](https://github.com/kywoo26/p2p-gostop/pull/234)의 B 전체를 구현한다. `BoardView.inFlight.playTarget: CardId|null`은 현재 ctx의 이미 수락된 손패 대상을 공개 floor 원본으로 참조한다. 미선택/턴 완료는 null. `events.acceptedPlayTarget?: {seat,card,target,baseSeq}`는 성공한 단일 live 손패 대상 선택만 전달하며 host의 성공 reduce **이전** pending(source=play)·실제 action으로 생산한다. 기존 EngineEvent 배열·seq·eventDigest/viewDigest는 바꾸지 않는다. 이 정보는 수락 사실이며 Matched/Captured/PiStolen 결과·획득 확정이 아니다. geometry/DOM/다음 카드 정보는 포함하지 않는다.
+
+P2P baseSeq는 세션 seq=live from−1이다. 인증 welcome의 epoch와 성공 전 판 번호(envelope.view.round)에 귀속한다. 게스트는 직전 공개 pending의 seat/card/options·floor의 동일 월 원본·played·순번과 tuple의 모든 중복 필드를 대조한다. 남아 있는 현재 playTarget과도 대조하고 불일치는 MALFORMED로 전달하지 않는다. 즉시 resolve/따닥에서 ctx가 없어져도 live tuple은 유지된다. illegal/stale/paused는 증거0, 권위 timeout은 같은 성공 경계다. 동일 frame은 접촉 전이로 재전달하지 않고 상이한 중복 증거는 관찰에 보존한다.
+
+복구 snapshot은 현재 관계만 제공하고 과거 접촉을 재연하지 않는다. 여러 액션을 합친 resync events에는 전이 tuple을 생략한다. 바이트 상한 폴백도 현재 snapshot으로 수렴한다. 새 epoch/rollback은 옛 live 증거 수명을 끝내고 관찰을 기존 순번 정책과 같이 되감는다. 마지막 액션은 기존 판에 속하며 명시 다음 판 전이에서 이전 tuple을 재명명하지 않는다.
+
+솔로는 sessionAct 성공에서 같은 공개 tuple을 생산하고 수동/CPU/fallback/기존 자동 submit 모두 enqueue에 전달한다. baseSeq는 해당 판의 game.eventSeq이고 P2P seq와 공유하지 않는다. 웹 enqueue metadata는 `{evidence,namespace:{mode:'solo',round}|{mode:'p2p',round,epoch}}`이며 기존 queue/reset generation에 속한다. 초기/복원 뷰와 live metadata는 분리한다. 이번 Draft는 전달까지이고 재생 순서·착지 시각 효과/배지 UI는 별도다.
+
+**게스트 저장 v3 (wire4와 독립):** 최근2판 `observations[].publicTargets={gap,accepted,relations,overflowSeq?}`를 별도 보존한다. accepted는 baseSeq→공개4tuple 배열, relations는 eventSeq→`{played,playTarget}` 관계 배열이다. 동일 관찰은 멱등이며 상이 재수신/0-event 합법 복수 관계를 덮어쓰지 않고 기존 layouts Set와 같이 replay의 실제 seq별 관계 집합에 대조한다. 카드 ID/seq/판/필수 필드·한도는 validating reader가 검사한다. v1/v2는 새 영역 미관찰로 읽고 v3로 다시 저장할 때 빈 map/gap=true로 명시한다. 기존 호스트 v2는 seed/actions replay로 현재 관계를 재산출하며 이관하지 않는다. 탭 저장 key는 기존 것을 계속 사용한다.
+
+기존 verified/failed·기존 digest와 새 결과는 별개다. 성공 판의 `RoundCheck.publicTargets`는 `verified(scope:'complete')` / `unverifiable(reason:'gap'|'noObservation')` / `conflict(reason:'accepted'|'relations'|'observationLimit')`를 반환한다. 없는 옛 결과는 새 대상 검증 성공이 아니다. gap에서도 받은 모순은 conflict다. 빈 map은 verified가 아니고 완전 관측·선택 없음과 구분한다. 재접속/복원으로 잃은 전이 증거는 미관찰이다. 기존 checks100/observations2 보존 한도를 유지하며 새 공정성 UI를 추가하지 않는다. runtime은 exact duplicate를 dedup하고 판당 accepted 합계400/relations 합계401 샘플을 넘는 추가 관찰을 저장하지 않는다. reader도 같은 총량을 검사한다. 초과는 gap=true와 최초 overflowSeq를 보존해 observationLimit conflict로 분리한다. 기존 권위 현재 뷰 수렴은 유지하며 한도 초과를 새 검증 성공으로 만들지 않는다. 개인 데이터·미공개 손패/덱·프레임 복제·좌표를 새 영역에 저장하지 않는다.
+
+현재 웹 consumer 경계: `GuestGame.settlementNote`의 기존 셔플 공정성 문구와 시간 결과는 유지한다. 새 `check.publicTargets`는 같은 기존 note에 선택 정보 일치/불일치/검증 불가로 분리한다. 없는 옛 결과도 선택 정보 미관찰이며 false conflict로 만들지 않는다. 전용 배지/새 화면·wire/seq 숫자는 추가하지 않는다. 기존 verified와 새 conflict가 동시에 존재해도 셔플 검증 문구만 보이며 모순을 묵살하지 않는다.
+
+저장 reader invalid/truncation은 실패(null)이며 ticket load 자체는 기존 탭 key에서 원문을 덮어쓰거나 지우지 않는다. 다만 현행 호출자는 null restore로 새 세션을 생성할 수 있고 GuestGame.sync가 이후 현재 세션을 같은 key에 저장한다. 이 기존 재참가 경로는 손상 원문의 보존/백업을 보장하지 않으며 이번 Draft에서 새 저장소/백업 UI 정책을 도입하지 않는다. 직접 restore의 잘못된 v3는 constructor가 오류로 거부한다. 구store의 없는 영역은 빈 gap 관찰로 명시하여 기존 원문·기존 판검증을 보존한다. 구wire handshake VERSION_MISMATCH/새로고침 안내와 저장 데이터 처리 정책은 독립이다.

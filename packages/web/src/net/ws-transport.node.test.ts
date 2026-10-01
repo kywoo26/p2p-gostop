@@ -333,7 +333,11 @@ describe('WsTransport + 가짜 Android 중계 + 세션', () => {
       }
       expect(host.stage).not.toBe('playing');
       await until(() => guest.checks.length > 0, 'revealHost');
-      expect(guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+      expect(guest.checks.at(-1)).toEqual({
+        round: 1,
+        result: 'verified',
+        publicTargets: { result: 'unverifiable', reason: 'gap' },
+      });
       expect(tabs[0]!.state).toBe('stopped');
       expect(guest.errors.filter((e) => e !== 'STALE_SEQ')).toEqual([]);
     } finally {

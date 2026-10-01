@@ -69,7 +69,7 @@ export function emptyBoard(
     eventSeq: 0,
     legal: [],
     firstPick: null,
-    inFlight: { played: null, staged: [] },
+    inFlight: { played: null, staged: [], playTarget: null },
     goStop: null,
     bombMonths: [],
     canFlipOnly: false,

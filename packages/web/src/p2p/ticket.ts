@@ -1,6 +1,6 @@
 // 게스트 세션 토큰·이름은 메모리와 URL 프래그먼트에만 둔다 (spec MN-05: 게스트 origin은 세션마다 바뀌어 영속 저장을
 // 전제하지 않는다). 새로고침·탭 복원·같은 주소 재방문 때 같은 토큰으로 돌아온다.
-import type { GuestSessionState } from '@p2p-gostop/protocol';
+import { readGuestSessionState, type GuestSessionState } from '@p2p-gostop/protocol';
 
 /** URL 프래그먼트의 토큰·이름 (#g=<token>&n=<name>) */
 export interface GuestTicket {
@@ -60,9 +60,7 @@ export function loadGuestState(name: string): GuestSessionState | null {
     const raw = tabStorage()?.getItem(GUEST_STATE_KEY);
     if (!raw) return null;
     const value = JSON.parse(raw) as { name?: unknown; state?: GuestSessionState };
-    return value.name === name && (value.state?.v === 1 || value.state?.v === 2)
-      ? value.state
-      : null;
+    return value.name === name ? readGuestSessionState(value.state) : null;
   } catch {
     return null;
   }

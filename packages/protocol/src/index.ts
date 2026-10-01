@@ -12,6 +12,7 @@ export type * from './view-types.ts';
 export {
   HostSession,
   GuestSession,
+  readGuestSessionState,
   type HostSessionOptions,
   type HostSessionState,
   type GuestConnection,

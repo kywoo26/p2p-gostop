@@ -19,10 +19,10 @@ import {
   type Settlement,
 } from '@p2p-gostop/engine';
 import { combineSeed, commit, fromHex, sha256, toHex, utf8 } from './crypto.ts';
-import { toBoardView } from './view.ts';
+import { acceptedPlayTargetOf, toBoardView } from './view.ts';
 import { timeoutAction } from './timer-policy.ts';
 import type { DecisionKey, TimeoutResult, TimerSettings } from './messages.ts';
-import type { BoardView, SettlementView } from './view-types.ts';
+import type { AcceptedPlayTarget, BoardView, InFlight, SettlementView } from './view-types.ts';
 
 export interface Commitments {
   readonly host: string;
@@ -34,8 +34,24 @@ export interface Reveals {
 }
 
 /** 게스트가 한 판 동안 관찰한 것의 요약. 키는 세션 순번(문자열). JSON으로 저장할 수 있다 */
+export interface PublicTargetObservation {
+  readonly gap: boolean;
+  /** 관찰 계약 한도 초과는 덮어쓰지 않고 별도 모순으로 보존한다. */
+  readonly overflowSeq?: number;
+  /** 같은 baseSeq의 상이 재수신도 덮어쓰지 않아 모순 증거를 보존한다. */
+  readonly accepted: Readonly<Record<string, readonly AcceptedPlayTarget[]>>;
+  /** 0-event 액션의 합법 복수 관계를 잃지 않도록 기존 layouts Set처럼 대조한다. */
+  readonly relations: Readonly<Record<string, readonly Pick<InFlight, 'played' | 'playTarget'>[]>>;
+}
+export type PublicTargetCheck =
+  | { readonly result: 'verified'; readonly scope: 'complete' }
+  | { readonly result: 'unverifiable'; readonly reason: 'noObservation' | 'gap' }
+  | { readonly result: 'conflict'; readonly reason: 'accepted' | 'relations' | 'observationLimit' };
+
 export interface ObservedRound {
   readonly round: number;
+  /** guest 저장 v3의 별도 공개 관찰. 기존 digest에 포함하지 않는다. */
+  readonly publicTargets?: PublicTargetObservation;
   /** 순번 → 받은(가린) 이벤트 요약 */
   readonly events: Readonly<Record<string, string>>;
   /** 뷰의 eventSeq → 받은 뷰의 카드 배치 요약 */
@@ -79,7 +95,11 @@ export type VerifyFailure =
   /** 판 번호가 1보다 크게 뛰었다 */
   | 'roundSkip';
 export type VerifyResult =
-  | { readonly ok: true; readonly time?: 'verified' | 'unverifiable' }
+  | {
+      readonly ok: true;
+      readonly time?: 'verified' | 'unverifiable';
+      readonly publicTargets?: PublicTargetCheck;
+    }
   | { readonly ok: false; readonly reason: VerifyFailure };
 
 /** 키 순서와 무관한 JSON (파싱한 객체와 엔진 객체의 키 순서가 달라도 같은 요약이 나오게) */
@@ -282,11 +302,20 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
     let state = start.state;
     const events: EngineEvent[] = [...start.events];
     const layouts = new Map<number, Set<string>>();
+    const targetRelations = new Map<number, Set<string>>();
+    const acceptedTargets = new Map<number, AcceptedPlayTarget>();
     const record = () => {
       const seq = firstSeq + events.length - 1;
       const set = layouts.get(seq) ?? new Set<string>();
       set.add(stateDigest(state, viewer));
       layouts.set(seq, set);
+      const relation = toBoardView(playerView(state, viewer), {
+        names: ['', ''],
+        balances: [0, 0],
+      }).inFlight;
+      const targets = targetRelations.get(seq) ?? new Set<string>();
+      targets.add(canonical({ played: relation.played, playTarget: relation.playTarget }));
+      targetRelations.set(seq, targets);
     };
     record();
     const timeoutByIndex = new Map<number, TimeoutResult>();
@@ -323,6 +352,8 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
       }
       const result = reduce(state, action);
       if (!result.ok) return fail('replay');
+      const accepted = acceptedPlayTargetOf(state.pending, action, beforeSeq);
+      if (accepted) acceptedTargets.set(beforeSeq, accepted);
       state = result.state;
       events.push(...result.events);
       if (timed !== undefined && timed.toSeq !== firstSeq + events.length - 1)
@@ -344,7 +375,35 @@ export function checkRound(input: RoundCheckInput): VerifyResult {
       return fail('settlement');
     const time = checkTimeoutTime(timeouts, observed);
     if (time === 'conflict') return fail('actions');
-    return timeouts.length === 0 ? { ok: true } : { ok: true, time };
+    // 새 증거의 모순은 gap이 있어도 검출한다. 기존 verified/실패 이유는 변경하지 않는다.
+    const targetObservation = observed.publicTargets;
+    let publicTargets: PublicTargetCheck;
+    if (!targetObservation) publicTargets = { result: 'unverifiable', reason: 'noObservation' };
+    else if (targetObservation.overflowSeq !== undefined)
+      publicTargets = { result: 'conflict', reason: 'observationLimit' };
+    else if (
+      Object.entries(targetObservation.accepted).some(([key, values]) =>
+        values.some((value) => canonical(acceptedTargets.get(Number(key))) !== canonical(value)),
+      )
+    )
+      publicTargets = { result: 'conflict', reason: 'accepted' };
+    else if (
+      Object.entries(targetObservation.relations).some(([key, values]) =>
+        values.some((value) => !targetRelations.get(Number(key))?.has(canonical(value))),
+      )
+    )
+      publicTargets = { result: 'conflict', reason: 'relations' };
+    else if (targetObservation.gap) publicTargets = { result: 'unverifiable', reason: 'gap' };
+    else if (Object.keys(targetObservation.relations).length === 0)
+      publicTargets = { result: 'unverifiable', reason: 'noObservation' };
+    else if ([...acceptedTargets.keys()].some((key) => !targetObservation.accepted[String(key)]))
+      publicTargets = { result: 'unverifiable', reason: 'gap' };
+    else publicTargets = { result: 'verified', scope: 'complete' };
+    return {
+      ok: true,
+      ...(timeouts.length === 0 ? {} : { time }),
+      ...(targetObservation ? { publicTargets } : {}),
+    };
   } catch {
     return fail('replay');
   }

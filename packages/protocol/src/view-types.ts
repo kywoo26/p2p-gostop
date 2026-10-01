@@ -117,6 +117,8 @@ export interface FirstPickPrompt {
 export interface InFlight {
   readonly played: CardId | null;
   readonly staged: readonly CardId[];
+  /** 이미 수락된 손패의 공개 대상. 현재 턴이 끝나면 null. */
+  readonly playTarget: CardId | null;
 }
 
 /** 고/스톱 모달의 스톱 미리보기 분해 (FR-14, 엔진 stopPreview) */
@@ -319,4 +321,12 @@ export interface DiagnosticsView {
     readonly level: 'info' | 'warn' | 'error';
     readonly msg: string;
   }[];
+}
+
+/** 성공한 손패 대상 선택. baseSeq namespace는 운반하는 세션이 정한다. */
+export interface AcceptedPlayTarget {
+  readonly seat: Seat;
+  readonly card: CardId;
+  readonly target: CardId;
+  readonly baseSeq: number;
 }

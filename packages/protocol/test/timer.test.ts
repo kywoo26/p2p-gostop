@@ -135,8 +135,8 @@ it('관찰한 마감·확인과 다른 0ms 초과 기록은 digest가 맞아도 
     observed,
     timeoutResults: g.host.timeoutHistory,
   };
-  expect(checkRound(input)).toEqual({ ok: true, time: 'verified' });
-  expect(g.guest.checks.at(-1)).toEqual({
+  expect(checkRound(input)).toMatchObject({ ok: true, time: 'verified' });
+  expect(g.guest.checks.at(-1)).toMatchObject({
     round: reveal.round,
     result: 'verified',
     time: 'verified',
@@ -160,16 +160,16 @@ it('관찰한 마감·확인과 다른 0ms 초과 기록은 digest가 맞아도 
   });
   expect(
     checkRound({ ...input, observed: { ...observed, timing: { ...observed.timing!, acks: [] } } }),
-  ).toEqual({ ok: true, time: 'unverifiable' });
+  ).toMatchObject({ ok: true, time: 'unverifiable' });
   expect(
     checkRound({
       ...input,
       observed: { ...observed, timing: { ...observed.timing!, gap: true } },
       timeoutResults: afterAckWindow,
     }),
-  ).toEqual({ ok: true, time: 'unverifiable' });
+  ).toMatchObject({ ok: true, time: 'unverifiable' });
   const { timing: _lost, ...withoutTiming } = observed;
-  expect(checkRound({ ...input, observed: withoutTiming })).toEqual({
+  expect(checkRound({ ...input, observed: withoutTiming })).toMatchObject({
     ok: true,
     time: 'unverifiable',
   });

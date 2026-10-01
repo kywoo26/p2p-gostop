@@ -92,7 +92,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     const helloCount = h.gw.sent.filter((m) => m.t === 'hello').length;
     h.guest.push();
     expect(h.host.settlement?.pushed).toBe(true);
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     for (const at of [6_000, 11_000, 16_000, 61_000]) h.guest.advanceTime(at);
     expect(h.gw.sent.filter((m) => m.t === 'hello')).toHaveLength(helloCount);
     expect(h.gw.sent.filter((m) => m.t === 'push')).toHaveLength(1);
@@ -115,7 +115,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     expect(h.host.settlement?.nextPushes).toBe(1);
     expect(h.guest.settlement?.pushed).toBe(true);
     expect(h.guest.settlement?.forfeitedPoints).toBeGreaterThan(0);
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     expect(h.host.ledger.entries.every((entry) => entry.kind !== 'round')).toBe(true);
     expect(h.host.nextRound()).toBe(true);
     expect(h.host.state?.round.pushes).toBe(1);
@@ -129,7 +129,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     } else if (!h.host.acceptRound()) throw new Error('호스트 받기 거부');
     expect(h.host.settlement?.pushed).toBe(false);
     expect(h.guest.settlement?.steps.some((step) => step.origin === 'push')).toBe(true);
-    expect(h.guest.checks.at(-1)).toEqual({ round: 2, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 2, result: 'verified' });
   });
 
   it('fast-check: 합법 밀기 메시지만 수락하고 push 액션의 여분 필드는 제거한다', () => {
@@ -168,7 +168,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
       expect(h.host.seq).toBeGreaterThan(seq);
       expect(h.host.settlement?.pushed).toBe(true);
       expect(h.host.ledger.balances).toEqual(balances);
-      expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+      expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     }
     expect(guestWin).toBe(true);
   });
@@ -207,7 +207,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     expect(accepted).toBe(true);
     expect(h.host.settlement?.pushed).toBe(choice === 'push');
     expect(h.host.ledger.entries.some((entry) => entry.kind === 'round')).toBe(choice === 'accept');
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     expect(h.host.nextRound()).toBe(true);
   });
 
@@ -222,7 +222,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     expect(h.host.ledger.entries.some((entry) => entry.kind === 'round')).toBe(true);
     h.gw.reconnect();
     h.guest.rejoin();
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     expect(h.guest.errors).not.toContain('COMMIT_INVALID');
   });
 
@@ -250,7 +250,7 @@ describe('#29 밀기 경로와 #43 정산 계약', () => {
     expect(types.lastIndexOf('revealHost')).toBeLessThan(types.lastIndexOf('sessionEnd'));
     h.gw.reconnect();
     h.guest.rejoin();
-    expect(h.guest.checks.at(-1)).toEqual({ round: 1, result: 'verified' });
+    expect(h.guest.checks.at(-1)).toMatchObject({ round: 1, result: 'verified' });
     expect(h.guest.errors).not.toContain('COMMIT_INVALID');
   });
 });
@@ -344,7 +344,7 @@ describe('#44 판 무효', () => {
     expect(h.host.stage).toBe('handshake');
     h.gw.reconnect();
     h.guest.rejoin();
-    expect(h.guest.checks.at(-1)).toEqual({
+    expect(h.guest.checks.at(-1)).toMatchObject({
       round: 1,
       result: 'aborted',
       reason: '다음 판 전 부재',

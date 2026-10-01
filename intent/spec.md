@@ -215,7 +215,7 @@ RoundPhase:
 | ID | 우선 | 요구사항 |
 |---|---|---|
 | NP-01 | P0 | 전송: WebSocket over HTTP(핫스팟 내부 사설 IP, 평문). 메시지는 JSON. 향후 BLE로 교체 가능하도록 전송 인터페이스(`send/onMessage/onClose`)로 추상화. |
-| NP-02 | P0 | 호스트 권위. 게스트 → 호스트: `hello{name, sessionToken?}`, `action{seq, payload, requestId?}`, `ping`. 호스트 → 게스트: `welcome{seat, sessionToken, rules, ledger}`, `snapshot{view, requestId?}`, `events{from, list, requestId?}`, `reject{seq, reason, requestId?}`, `pong`. 게임 메시지의 원장은 요약(잔액·최근 항목)이고 전체 이력은 따로 요청한다. 판 사이 대기·파산·commit-reveal 메시지를 포함한 전체 목록은 docs/protocol.md 3장(v2). 요청별 응답 감시·재전송은 §5(#59), 웹 시계 연결은 #60 미완. |
+| NP-02 | P0 | 호스트 권위. 게스트 → 호스트: `hello{name, sessionToken?}`, `action{seq, payload, requestId?}`, `ping`. 호스트 → 게스트: `welcome{seat, sessionToken, rules, ledger}`, `snapshot{view, requestId?}`, `events{from, list, requestId?}`, `reject{seq, reason, requestId?}`, `pong`. 게임 메시지의 원장은 요약(잔액·최근 항목)이고 전체 이력은 따로 요청한다. 판 사이 대기·파산·commit-reveal 메시지를 포함한 전체 목록은 docs/protocol.md 3장(v4 구현 Draft). 요청별 응답 감시·재전송은 §5(#59), 웹 시계 연결은 #60 미완. |
 | NP-03 | P0 | 순번(seq)과 재동기화: 게스트는 마지막 수신 이벤트 순번을 기억하고 재접속 시 보낸다. 호스트는 차이만 보내거나 스냅샷을 다시 보낸다. |
 | NP-04 | P0 | 프로토콜 버전 필드. 불일치 시 게스트에 "호스트 앱 업데이트 필요" 또는 "페이지 새로고침" 안내. 웹 클라이언트는 호스트가 서빙하므로 오래 열린 페이지 등 구버전 클라이언트에서도 불일치할 수 있음. |
 | NP-05 | P1 | 하트비트: 게스트 ping 25초 간격. 호스트는 60초 무응답 시 끊김 처리. 배터리를 위해 더 잦게 하지 않는다. |
@@ -225,6 +225,10 @@ RoundPhase:
 | NP-09 | P0 | 게스트 → 호스트 `log{entries[]}` 메시지로 진단 로그 업로드(FR-30). 상한은 **UTF-8 바이트 기준**: 메시지 64KB, 줄당 2KB. 호스트는 게스트 로그를 **별도 버퍼**(256KB)에 보관해 호스트 진단 로그를 밀어내지 않는다. 게스트 측도 바이트 기준으로 잘라 보낸다. (M0 리뷰 L-1~L-3) |
 
 ---
+
+NP-02/03/04/06 · #200 공개 대상 계약 구현 Draft(선행 [#234](https://github.com/kywoo26/p2p-gostop/pull/234), Refs #202): 현재 `inFlight.playTarget`과 성공 live `acceptedPlayTarget{seat,card,target,baseSeq}`를 양 관찰자·솔로에 전달한다. 권위 수락 직전 공개 pending/실제 action을 생산 근거로 사용하고 중복 필드를 독립 대조한다. P2P epoch/세션 seq와 솔로 round/game seq는 구분한다. snapshot/resync는 현재 관계 수렴을 우선하고 과거 수락 접촉을 재연하지 않는다. 미공개 다음 카드/geometry·엔진 이벤트 재배열은 포함하지 않는다.
+
+wire4는 v3 이하에 명시 VERSION_MISMATCH를 반환한다. 게스트 저장 v3의 별도 공개 target 관찰은 기존 digest/verified와 분리하며 oldstore·gap은 미관찰, 실제 모순은 별도 conflict로 처리한다. 최근2판·checks100 한도는 유지한다. 자세한 필드·순번·복구·관찰 검증은 [프로토콜 공개 대상 계약](../docs/protocol.md)을 따른다. 이번 수락은 공개 계약/전달 Draft 구현 범위이며 배포·착지 시각 효과·#200 전체 완료 승인이 아니다.
 
 ### 5.1 P2P 결정 시계 개정안 (#123, 승인 전)
 
@@ -404,7 +408,7 @@ NF-08 개정 사유(사용자 결정 2026-09-30): 화투 사용자에게 월·�
 ### 11.2 결정·후속 범위
 | # | 항목 | 후보 | 비고 |
 |---|---|---|---|
-| Q1 | ~~SSID/비밀번호 지정 가능 여부~~ | **확정: 불가(무작위). 위치 권한 불필요, NEARBY_WIFI_DEVICES 사용** | FR-01 반영 |
+| Q1 | <del>SSID/비밀번호 지정 가능 여부</del> | **확정: 불가(무작위). 위치 권한 불필요, NEARBY_WIFI_DEVICES 사용** | FR-01 반영 |
 | Q2 | ~~인터넷 권한 없이 소켓 가능 여부~~ | **확정: INTERNET 권한 필요** | NP-08 반영 |
 | Q7 | ~~호스트 폰 제조사~~ | **확정: 삼성 Galaxy (One UI, Android 16)** → AC-00 통과, 실기기 결과 로그 참조 | |
 | Q3 | "뺏기 카드"를 Noriworks식 아이템 카드로도 확장할지 | 보너스 속성 모델로 시작, 아이템형은 P2 | rules 13-13 |

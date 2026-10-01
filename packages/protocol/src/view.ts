@@ -3,6 +3,8 @@
 // 호스트·게스트·솔로에서 같은 값이 되도록 이 파일이 단일 근거다. 어댑터와 같은 이름·시그니처도 함께 낸다(BoardMeta 등).
 import {
   getCard,
+  type Action,
+  type Pending,
   scoreCaptured,
   type CapturedPile,
   type CardId,
@@ -14,6 +16,7 @@ import {
   type Settlement,
 } from '@p2p-gostop/engine';
 import type {
+  AcceptedPlayTarget,
   BoardView,
   CapturedView,
   GoStopDetail,
@@ -136,7 +139,7 @@ function seatOf(
  */
 export function inFlightOf(view: PlayerView): InFlight {
   const ctx = view.ctx;
-  if (ctx === null) return { played: null, staged: [] };
+  if (ctx === null) return { played: null, staged: [], playTarget: null };
   const visible = new Set<CardId>(view.floor.flatMap((g) => g.cards));
   for (const s of view.seats) {
     const c = s.captured;
@@ -146,7 +149,12 @@ export function inFlightOf(view: PlayerView): InFlight {
   const staged = [...ctx.heldBonuses, ...(ctx.flipped === null ? [] : [ctx.flipped])].filter(
     (id) => !visible.has(id),
   );
-  return { played, staged };
+  const selected = ctx.playTarget;
+  const playTarget =
+    played !== null && selected !== null && view.floor.some((g) => g.cards.includes(selected))
+      ? selected
+      : null;
+  return { played, staged, playTarget };
 }
 
 function goStopOf(view: PlayerView): GoStopDetail | null {
@@ -337,3 +345,51 @@ export function toRecordRow(r: RecordInput): RecordRow {
 
 /** 애니메이션 타입의 단일 근거는 엔진 이벤트다. */
 export type ProtocolEvent = EngineEvent;
+
+/** 호출부가 reduce 성공을 확인한 뒤에만 생산한다. 클릭/계측/미래 이벤트를 사용하지 않는다. */
+export function acceptedPlayTargetOf(
+  pending: Pending | null,
+  action: Action,
+  baseSeq: number,
+): AcceptedPlayTarget | undefined {
+  if (
+    pending?.kind !== 'target' ||
+    pending.source !== 'play' ||
+    action.type !== 'chooseTarget' ||
+    pending.seat !== action.seat ||
+    !pending.options.includes(action.card)
+  )
+    return undefined;
+  return { seat: pending.seat, card: pending.card, target: action.card, baseSeq };
+}
+
+/** 수신 live 증거의 중복 필드를 직전 공개 pending/순번/월과 독립 대조한다. */
+export function matchesAcceptedPlayTarget(view: BoardView, evidence: AcceptedPlayTarget): boolean {
+  const p = view.pending;
+  const month = getCard(evidence.card).month;
+  return (
+    view.eventSeq === evidence.baseSeq &&
+    p?.kind === 'target' &&
+    p.source === 'play' &&
+    p.seat === evidence.seat &&
+    p.card === evidence.card &&
+    p.options.includes(evidence.target) &&
+    view.inFlight.played === evidence.card &&
+    month !== null &&
+    getCard(evidence.target).month === month &&
+    view.floor.some((g) => g.cards.includes(evidence.target))
+  );
+}
+
+/** snapshot 현재 관계는 공개 floor의 같은 월 원본만 참조한다. */
+export function validInFlightTarget(view: BoardView): boolean {
+  const { played, playTarget } = view.inFlight;
+  if (playTarget === null) return true;
+  return (
+    played !== null &&
+    getCard(played).month !== null &&
+    getCard(played).month === getCard(playTarget).month &&
+    view.floor.some((g) => g.cards.includes(playTarget)) &&
+    played !== playTarget
+  );
+}

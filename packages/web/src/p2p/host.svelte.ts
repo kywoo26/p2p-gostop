@@ -1,3 +1,4 @@
+import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 // 호스트 모드 (spec 2.1·2.3·2.4, FR-01~07·11, MN-01·02·05, NP-02~06). 좌석 0 = 이 기기, 좌석 1 = 원격 게스트.
 // - 로비: 게스트의 hello가 오면 그 이름으로 protocol HostSession(autoStart:false)을 만들어 welcome을 보낸다.
 //   규칙·금액·이름이 바뀌면 같은 토큰으로 세션을 다시 만들고 마지막 hello를 다시 넘겨 welcome을 새로 보낸다.
@@ -498,7 +499,7 @@ export class HostGame implements GameController {
   }
 
   private observe(m: HostMessage): void {
-    if (m.t === 'events') this.onEventsSent(m.list, m.to);
+    if (m.t === 'events') this.onEventsSent(m.list, m.to, m.acceptedPlayTarget);
     else if (m.t === 'snapshot') {
       this.seq = m.seq;
       this.enqueueBoard();
@@ -506,16 +507,29 @@ export class HostGame implements GameController {
   }
 
   /** 좌석 0이 볼 이벤트 묶음: 같은 액션을 reduce로 다시 계산한다(순수 함수라 결과가 같다). 분배는 보낸 목록 그대로 */
-  private onEventsSent(sent: readonly EngineEvent[], to: number): void {
+  private onEventsSent(
+    sent: readonly EngineEvent[],
+    to: number,
+    acceptedPlayTarget?: AcceptedPlayTarget,
+  ): void {
     const pending = this.pending;
     const events = hostEvents(sent, pending);
     const board = this.board();
     if (board === null) return;
+    const liveTarget = to > this.seq ? acceptedPlayTarget : undefined;
     this.seq = to;
     this.balances = [board.seats[0].balance, board.seats[1].balance];
     this.playback.enqueue(events, board, {
       action: pending?.mine ? pending.action : null,
       tapAt: pending?.mine ? pending.tapAt : null,
+      ...(liveTarget && this.session
+        ? {
+            publicTarget: {
+              evidence: liveTarget,
+              namespace: { mode: 'p2p', epoch: this.session.epoch, round: board.round },
+            },
+          }
+        : {}),
     });
   }
 
