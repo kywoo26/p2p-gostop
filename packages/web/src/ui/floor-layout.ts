@@ -248,7 +248,7 @@ export function projectFloor(
     fits &&= cellWidth >= stackWidth + 0.5;
     const x = left + (cellWidth - stackWidth) / 2;
     const y = top + (cellHeight - cardHeight) / 2;
-    // 흩뿌림은 CSS translate로 둬 기존 SVG 합성 경로를 보존한다.
+    // 흩뿌림은 CSS translate로 유지해 기존 SVG 합성 경로를 보존한다.
     const cell: FloorCell = { ...source, x, y, angle: 0, dx: 0, dy: 0 };
     // 선택 후보·과밀 스택은 회전하지 않는다. 일반 카드는 변환된 경계도 자기 셀 안에 둔다.
     if (cards.length > 1 || options.includes(cards[0]!)) return cell;
