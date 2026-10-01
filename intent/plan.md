@@ -338,6 +338,16 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
+### #202 월 겹침 제안·격리 목업 (UX-05/06/H05/23~25·NF-03/08·AC-06/07)
+
+- 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`, 계획 `e67b767fe1d1781240117381223d6ef18d1e8b90` FF push·[Draft #233](https://github.com/kywoo26/p2p-gostop/pull/233)·#202/#200 역링크 게시. 역사 구체안/증거 `2764e76409ab931401c979e58018d25d5bd32cc1`는 보존하며 요구사항 완료 상태는 바꾸지 않는다.
+- 최신 사용자 정정에 따라 2장 개별 구별과 3+ compact 월 묶음 인지를 분리한다. 모든 뒤 카드36/−24 반복·큰 fullfront2열·30,000후보는 최종안이 아니다. 간격 판단 위임과 popup/접촉빛/실제 Captured 강조/각짝 유지 동시출발의 사용자 선택은 유지한다.
+- [단일 제안](../docs/design/month-stack-proposal.md)의 이번 추천A는 첫 pair+3/4얇은 층·5장부터 공유 pose로 폭92px에서 멈춘다. 대안B는 더 좁지만200% 보너스 단서 넘침이 관측됐다. 총장수/뻑/묻힌 보너스 개수의 최소 단서는 proposed이며 새 배지 규범 시행0이다. 기존 PNG3은 역사, order-and-boundaries PNG/익명JSON만 좁게 갱신하고 scratch 원본을 보존한다.
+- 정지뻑 최대6·획득직전 표시7은 규칙/코드 근거와 구성 fixture2action 실행으로 구분하며 기존 실제5 seed1827/action9와 분리한다. 새 seed 도달/Playback PASS0. 역사11fit/5미발견·PromptPanel8/reset4·650stress는 새 compact 통합 증거가 아니다.
+- #223 같은 viewport strict 무관 CardId0px·손패6↔7/두 행·same-seq 예약을 보존한다. UX-02 선택 버튼 위치 고정을 기본으로 유지하고 필수 재배치의 gesture/키repeat·권위timeout/원격수락·beforepose 취소/보존/재활성화를 미승인 delta로 명시했다. 정본 개정/제품 기하·fit-fail/publictarget 계약이 차단 항목이다.
+- 후속 소유 설계는 Floor/layout/전용 시험, 필요시 기존 popup의 Board 최소 event/props/focus 접점이다. skin 전역높이/Hand/HUD/PromptPanel 새API/engine/protocol/display/Playback/choreo 편집0. [#234](https://github.com/kywoo26/p2p-gostop/pull/234)의 wire 필드 선취 없이 originalCardId→공유 대표 포함 현재 pose·round/seq 예약만 root 중재로 맞춘다. 독립 설계 리뷰→정본 개정→제품 연결 순서이며 새 후보/대형 행렬 연구는 중단한다.
+- 제품 변경0·정본 개정 미시행·기기/성능 PASS0. Node24.21.0 npm ci 완료; 이번은 문서/격리 표적만, 제품 full suite 반복0. 제품 단계 AGENTS §5·PLAYWRIGHT_PORT4258/workers≤4/timing직렬/Gradle≤4·raw2MiB/초기encoded1.5MB 별도·기준샷 갱신/threshold 완화0을 유지한다.
+
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
 
 - 소유: `game/records.ts`의 읽기 전용 예상 정산, `controller.ts`의 선택적 결과 확인 계약, `solo.svelte.ts`의 판/이벤트 순번별 보류, `Game.svelte`·`Settlement.svelte`와 직접 관련 browser/E2E. Board·Playback·엔진·프로토콜·저장 스키마는 기존 계약을 유지한다.
