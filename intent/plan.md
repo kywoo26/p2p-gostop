@@ -125,7 +125,7 @@ p2p-gostop/
 
 **A 시각 방향 확정(2026-09-29, VD-01~05 당시 배분/규범 기록; 새 제안은B207-2):** 사용자 채택에 따라 먹빛/한지색과 Pretendard Variable v1.3.9 로컬 OFL-1.1 WOFF2 서브셋 1종(≤160KiB)을 구현한다. 규범은 `docs/design/ui-spec.md` UX-11/13·§4.1, 비교/기각 기록은 `docs/design/art-direction.md#결정-이력`다. 신규 npm 의존성0, Tailwind·shadcn·Storybook·GSAP 금지 유지. 폰트160+효과/아이콘12+소리48+UI24=추가≤244KiB, 전체≤1.5MiB·외부 요청0. 공통 파이프라인 `docs/design/fonts/`는 Docker `python:3.12-slim`의 FontTools 4.61.1(MIT)·Brotli 1.2.0(MIT)로 최신 UI 코퍼스·해시·tnum/가변 축·용량·고지 원문을 검증한다. 호스트 설치·npm lock 변경 없음. 문서 규범→토큰/폰트→화면/HUD·#46/#47→사건/음향→통합 순서로 별도 PR, 각각 최신 main에서 분기한다.
 
-PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 그림을 일관된 먹선·황금/주홍 팔레트로 편집한 투명 PNG 원본2개를 고정한다. 개발 이미지의 기존 Pillow로 같은 여백의96px WebP 두 종(합계4,326 bytes)을 결정적으로 변환하고 카드 모서리22px 받침 안20px로 표시한다. npm/런타임 의존성0, 원본 SHA/결과 바이트 검증 및 출처·가공 내역은 assets-src/skin-icons와 skin/NOTICE. Phosphor SVG 검토안은 최종 화면에서 제외. NF-03 당시 전체1.5MiB gate 기록을 보존한다. 현재 승인/main과B207-2 Draft 제안은 위 실행 단위로 구분한다.
+PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 그림을 일관된 먹선·황금/주홍 팔레트로 편집한 투명 PNG 원본2개를 고정한다. 개발 이미지의 기존 Pillow로 같은 여백의96px WebP 두 종(합계4,326 bytes)을 결정적으로 변환하고 카드 모서리22px 받침 안20px로 표시한다. npm/런타임 의존성0, 원본 SHA/결과 바이트 검증 및 출처·가공 내역은 assets-src/skin-icons와 skin/NOTICE. Phosphor SVG 검토안은 최종 화면에서 제외. NF-03 당시 전체1.5MiB gate 기록을 보존한다. 현행 B207-2 예산 정책은 #228 승인·병합으로 적용되며 당시1.5MiB 기록과 구분한다.
 
 | 선택 | 이유·범위 |
 |---|---|
@@ -352,19 +352,21 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 - 최종 통합 재개: [#228 사용자 승인 기록](https://github.com/kywoo26/p2p-gostop/pull/228#issuecomment-5924715804)에 따라 main `a735bb345e16891d34d1982aafe9f5c178ba44f5`의 #227 metadata 절감/#230 BASE_URL/#228 정책·계측을 보존한다. 기존 raw1.5MiB 초과 기록은 당시 gate 실패 근거이며 새 raw gate 통과만으로 초기 응답·2초/100ms/60fps·실기기/AC-06을 완료로 승격하지 않는다. #225는 미포함, #200 착지는 별도 미구현이다. 기존 독립 리뷰5372077244·문서 후속5372117960 뒤 통합/충돌 diff만 같은 리뷰어에게 인계한다.
 
-### #207 B207-2 예산 정의·gate 개정 초안 (NF-03·AC-07·NF-RP-06)
+### #207 B207-2 예산 정의·gate 승인 상태 정합 (NF-03·AC-07·NF-RP-06)
 
-계획 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`에서 별도 Draft로 초기 필수 encoded response body **1,500,000 B(decimal MB)**와 모든 배포 파일 raw **2,097,152 B(2 MiB)**를 분리한 승인 대상 spec/gate diff를 준비한다. 현 main의 raw1,572,864 B 규범은 사용자 최종 승인·별도 병합 전 유지된다. 본 branch의 제안 검사 통과는 사용자 승인/출하/기능PR 통합이 아니다. 기존 실제 누적1,577,077 B·4,213 B 초과 실패를 보존한다.
+현재 계약: [PR #228 승인 기록](https://github.com/kywoo26/p2p-gostop/pull/228#issuecomment-5924715804)·[#207 상태 기록](https://github.com/kywoo26/p2p-gostop/issues/207#issuecomment-5924731961)를 확인했다. 사용자 승인 후 #228이 main `a735bb345e16891d34d1982aafe9f5c178ba44f5`에 병합돼 초기 필수 encoded response body **1,500,000 B(decimal MB)** / 모든 배포 파일 raw **2,097,152 B(2 MiB)**가 현행 규범이다. 2초/100ms/60fps·하위 자산 예산·전체 수용 조건은 유지한다. 이번 상태 문서 정정은 승인 근거 확인→현행 문구/주석 정제→링크·diff·privacy·lint 및 주석 제외 runtime 동등 확인으로 한정한다.
+
+당시 계획·준비 기록(아래 main/Draft/승인 대기는 #228 병합 전 상태): 계획 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`에서 별도 Draft로 초기 필수 encoded response body **1,500,000 B(decimal MB)**와 모든 배포 파일 raw **2,097,152 B(2 MiB)**를 분리한 승인 대상 spec/gate diff를 준비한다. 당시 main의 raw1,572,864 B 규범은 사용자 최종 승인·별도 병합 전 유지된다. 당시 branch의 제안 검사 통과는 사용자 승인/출하/기능PR 통합이 아니다. 기존 실제 누적1,577,077 B·4,213 B 초과 실패를 보존한다.
 
 소유는 해당 NF/AC 문단·필요 최소 ui-spec 참조·이 실행 단위/매트릭스, raw gate 상수와 경계/전체 파일 회계 검사, 비공개 loopback 실제 제품 요청 계측이다. UI/규칙/wire/저장/자산/ARIA/제품 guard와 기존 하위 자산 예산은 변경하지 않는다. 2초/100ms/60fps 목표는 별도 보존한다. 2MiB−1/정확/초과, 숨김/metadata/바이너리 포함 회계·외부 URL 반례를 확인하고 기존 고정 UI artifact에 old/proposed gate를 적용해 바이트 동일 A/B를 남긴다.
 
-현행 StaticSite와 기존 loopback LAN E2E 흐름으로 host/guest 로비→첫 게임 상호작용 가능, warm/후속 판 unique encoded body를 가능한 고정 합법 fixture로 Chromium/WebKit 각각3회 관측한다. 요청 집합·Content-Encoding/cache와 관측 endpoint를 명시하며 부재 worker 비용을0이라고 추정하지 않는다. 실패하면 ready를 꾸미지 않고 불가 이유/수용 미완을 기록한다. Galaxy/iPhone 핫스팟 baseline·JS parse/decode/frame/전력·사람 최소3회/독립 리뷰 후 규범 결정 추천과 사용자 최종 승인 대기를 노출한다. Draft 해제·merge/tag/release·원 UI cap 우회는 승인하지 않는다.
+당시 StaticSite와 기존 loopback LAN E2E 흐름으로 host/guest 로비→첫 게임 상호작용 가능, warm/후속 판 unique encoded body를 가능한 고정 합법 fixture로 Chromium/WebKit 각각3회 관측한다. 요청 집합·Content-Encoding/cache와 관측 endpoint를 명시하며 부재 worker 비용을0이라고 추정하지 않는다. 실패하면 ready를 꾸미지 않고 불가 이유/수용 미완을 기록한다. Galaxy/iPhone 핫스팟 baseline·JS parse/decode/frame/전력·사람 최소3회/독립 리뷰 후 규범 결정 추천과 사용자 최종 승인 대기를 노출한다. Draft 해제·merge/tag/release·원 UI cap 우회는 승인하지 않는다.
 
-B207-2 준비 결과: 동일 고정 UI artifact raw1,577,077 B/hash를 보존해 승인/main1,572,864 B gate exit1(4,213 B 초과)과 Draft2,097,152 B gate exit0(여유520,075 B)을 비교했다. 2MiB−1/정확/초과·전체 파일 회계·외부 URL 반례4검사 통과. 현행 StaticSite의 실제 host/guest 첫 판 흐름은 두 엔진 각 역할3회에서 root-absolute `/skin/bell-illustrated.webp`404/decode 실패로 미달이다. 부분 요청 host29/guest24·body 약0.97~1.06MB는 첫게임 수용 PASS가 아니며 후속/warm/솔로worker·기기 측정은 미완이다. [승인 대상 diff·정확 수치·미완](../docs/research/nf03-budget-amendment.md)을 독립 리뷰/사용자 최종 결정에 제출한다.
+B207-2 당시 준비 결과: 동일 고정 UI artifact raw1,577,077 B/hash를 보존해 당시 승인/main1,572,864 B gate exit1(4,213 B 초과)과 Draft2,097,152 B gate exit0(여유520,075 B)을 비교했다. 2MiB−1/정확/초과·전체 파일 회계·외부 URL 반례4검사 통과. 당시 StaticSite의 실제 host/guest 첫 판 흐름은 두 엔진 각 역할3회에서 root-absolute `/skin/bell-illustrated.webp`404/decode 실패로 미달이다. 부분 요청 host29/guest24·body 약0.97~1.06MB는 첫게임 수용 PASS가 아니며 후속/warm/솔로worker·기기 측정은 미완이다. [당시 승인 대상 diff·정확 수치·미완](../docs/research/nf03-budget-amendment.md)을 독립 리뷰/사용자 최종 결정에 제출한다.
 
 | 실행 단위 | 상태 | 근거 | 미완/승인 |
 |---|---|---|---|
-| B207-2 / NF-03·AC-07·NF-RP-06 | Draft 제안 diff·gate 반례·실제 first-game 실패 관측 준비 | 계획b72f9a4; raw/gate A/B 바이트 동일, partial 실제 요청3회×역할별 엔진; 로컬 필수 검사 | 사용자 최종 승인 전 main1.5MiB 유지, 실제 자산 경로/첫게임·후속·기기/프레임·독립 리뷰·정의/숫자 승인 대기 |
+| B207-2 / NF-03·AC-07·NF-RP-06 | 예산 정의·숫자 사용자 승인·#228 병합 완료 | 승인 기록·main a735bb3; 당시 계획b72f9a4·raw/gate A/B·404와 별도 #230 후보 재관측 보존 | 실기기/핫스팟·성능·솔로worker·최종 #223/#225 누적 통합·NF/AC 및 #207 전체 수용·출하 미완 |
 
 ### #207 누적 번들 실측·손실 없는 최적화 (NF-03·AC-07·NF-RP-06)
 
@@ -561,7 +563,7 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | AC-04 | 완료 | W/e2e/p2p.spec.ts “호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번 연속 · 게스트 끊김 후 토큰 복귀”, P/src/host.ts·guest.ts | 실제 핫스팟은 AC-08/09 | — |
 | AC-05 | 완료 | W/e2e/gallery.spec.ts 및 __screenshots__/gallery.spec.ts/*-webkit.png, p2p-screens.spec.ts | 현재 기준샷 회귀만 의미; 새 디자인 규범 완료는 아님 | — |
 | AC-06 | 부분 | W/src/anim/choreo.ts·durations.ts, W/e2e/solo.spec.ts timing·timing-fixtures.ts, PR #145 | P2P 단언·Galaxy 실측 #75(기존 #58·#70 통합); hosted WebKit 벽시계는 기록만 | 미 |
-| AC-07 | B207-2 개정 승인 대기 / 전송 수용 미검증 | W/scripts/check-bundle.mjs·직접 전체 raw 경계 검사, 실제 serving request fixture; 기존1.5MiB raw 구현 근거와 구분 | Draft 제안 raw2,097,152 B·초기 encoded1,500,000 B, main 규범은 승인 전1,572,864 B. hotspot/각 역할 초기 게임·후속/실기기/사용자 최종 승인 미완 | 미 |
+| AC-07 | B207-2 예산 정책 승인·병합 완료 / 전송·전체 수용 미검증 | W/scripts/check-bundle.mjs·직접 전체 raw 경계 검사·실제 serving request fixture, #228 승인 기록·main a735bb3 | 현행 raw2,097,152 B·초기 encoded1,500,000 B. 당시1.5MiB 구현·실패 자료 보존. hotspot/각 역할 초기 게임·후속/실기기/성능·최종 #223/#225 누적·전체 수용 승인 미완 | 미 |
 | AC-08 | 미검증 | K/HotspotService.kt, W/e2e/p2p.spec.ts는 대체 자동 검사; docs/device-test/results.md 현재 회차 없음 | Android 정식 UI 핫스팟→QR→1판 사람 검증 #75 | 미 |
 | AC-09 | 미검증 | W/src/p2p/link.ts·guest.svelte.ts, W/e2e/reconnect.spec.ts는 대체 자동 검사 | iPhone Safari 정식 UI1판·잠금복귀 #75 | 미 |
 | AC-10 | 부분 | A/src/money-defaults.ts, S/test/money-doc.test.ts·docs/money-model.md | 프리셋별 표본 수·최신 AI 기본값/도움말 정합 #67 | — |
@@ -747,10 +749,10 @@ AI 강도·모바일 시간 예산과 머니 재산정은 미완이다. 효과�
 
 ### PA-05~07 전문 스킨 구현 분할 (#104 이후)
 
-- **PA-05 / design/pro-skin**: #104 구조와 #166 제한시간 계약을 보존하고 Board·HUD·Home에 아트 디렉션을 적용한다. 사용자 확정 C/A/b안에 따라 SeatBar 마크업을 진영별로 재배치하고 공개 뷰의 스톱 예상액을 표시한다. PromptPanel의 WebKit 초점 순환 시점도 보완한다. 규칙·행동·`data-hand-*` 판정·`anim/*`·`--dur-*`는 변경하지 않는다. `public/skin`은 승인된 `public/pro`의 1x WebP 17개(재질4·홈1·초상12)와 행동 그림2개·manifest를 고른 ≤128KiB 하위 예산이다. 새 런타임 의존성0, uv Pillow12.3.0 파이프라인 재사용. 빌드는 Node `check-skin.mjs`로 manifest의 SHA-256·크기·추가/누락0·총128KiB를 검사한다. 원본·카드 해시 및 재생성 동일성은 개발 시 수동 `uv run packages/web/scripts/build-skin-assets.py --check`로 검증한다. 전체 dist gate는 NF-03·AC-07을 따른다(B207-2 Draft 제안2MiB, main은 사용자 승인 전1.5MiB). 큰 atlas·2x/3x·AVIF/오디오 이중 포맷은 평가 팩에 둔다.
+- **PA-05 / design/pro-skin**: #104 구조와 #166 제한시간 계약을 보존하고 Board·HUD·Home에 아트 디렉션을 적용한다. 사용자 확정 C/A/b안에 따라 SeatBar 마크업을 진영별로 재배치하고 공개 뷰의 스톱 예상액을 표시한다. PromptPanel의 WebKit 초점 순환 시점도 보완한다. 규칙·행동·`data-hand-*` 판정·`anim/*`·`--dur-*`는 변경하지 않는다. `public/skin`은 승인된 `public/pro`의 1x WebP 17개(재질4·홈1·초상12)와 행동 그림2개·manifest를 고른 ≤128KiB 하위 예산이다. 새 런타임 의존성0, uv Pillow12.3.0 파이프라인 재사용. 빌드는 Node `check-skin.mjs`로 manifest의 SHA-256·크기·추가/누락0·총128KiB를 검사한다. 원본·카드 해시 및 재생성 동일성은 개발 시 수동 `uv run packages/web/scripts/build-skin-assets.py --check`로 검증한다. 전체 dist gate는 NF-03·AC-07을 따른다(B207-2 예산 정책 #228 승인·병합: 전체 raw2,097,152 B / 초기 필수 encoded1,500,000 B). 큰 atlas·2x/3x·AVIF/오디오 이중 포맷은 평가 팩에 둔다.
 - **PA-06 / 사건 효과·음향**: 시각 분할 `design/event-effects`에서 사건·고·족보 1.2초 콜아웃을 구현하고, #171 내 HUD 뻑·흔들 숫자+도상을 검증한다(UX-09, NF-03/NF-08). 족보 완료는 재생된 `ScoreChanged.breakdown`만 사용하고 연속 완료를 예약 레일 큐에 보존한다. 중간 판 복원에서 초기 점수 분해가 없으면 첫 점수 사건을 기준선으로 삼는다(필요 필드·검증은 pro-skin-validation.md). 피박/광박 상시 스탬프는 진행 중 양쪽 위험·확정 필드가 공개 뷰에 없어 보류한다. 음향·진동은 PA-06b에서 다루고 설정 값은 읽기만 한다. EventRail 예약 공간·#86 시간표와 기존 진동 브리지·설정 스키마를 유지한다.
-- **PA-07 / 정산·설정·기록**: #100 정산 상태·고정 행동 및 Sol 설정 UI 결과에 같은 화조도/먹색 프레임을 적용. 각 분할은 KEEP-01~18·최소4화면·axe·픽셀 갱신 사유·접근성 전후·필수 검사로 검증한다. NF-03 개정 승인 대기 유지, 실기기·청취 결과는 사람이 제공한 것만 기록한다.
+- **PA-07 / 정산·설정·기록**: #100 정산 상태·고정 행동 및 Sol 설정 UI 결과에 같은 화조도/먹색 프레임을 적용. 각 분할은 KEEP-01~18·최소4화면·axe·픽셀 갱신 사유·접근성 전후·필수 검사로 검증한다. NF-03 예산 정책은 #228 승인·병합, 전체 수용은 미검증 유지, 실기기·청취 결과는 사람이 제공한 것만 기록한다.
 
-B207-2 독립 리뷰 후속: 최초 완료를 실제 활성 합법 손패/Board 재생 잠금·초기 선택 종료와 필수 HTTP/font/image 완료에 연결한다. 응답별 network encoded body 합과 익명 URL unique/cache를 분리하고 phase timeOrigin/startTime baseline으로 후속 navigation 재계수를 막는다. trial 예외도 단계·부분 표본을 저장해 exit1로 남긴다. 네 반례의 before/after와 정상 경계를 확인한 뒤 별도 #230 후보 artifact를 격리 조합해 재관측한다. 제품/자산/규칙/상한 숫자는 이 후속에서 바꾸지 않으며 종전404 자료와 승인 대기를 보존한다.
+B207-2 당시 독립 리뷰 후속 계획: 최초 완료를 실제 활성 합법 손패/Board 재생 잠금·초기 선택 종료와 필수 HTTP/font/image 완료에 연결한다. 응답별 network encoded body 합과 익명 URL unique/cache를 분리하고 phase timeOrigin/startTime baseline으로 후속 navigation 재계수를 막는다. trial 예외도 단계·부분 표본을 저장해 exit1로 남긴다. 네 반례의 before/after와 정상 경계를 확인한 뒤 별도 #230 후보 artifact를 격리 조합해 재관측한다. 제품/자산/규칙/상한 숫자는 이 후속에서 바꾸지 않으며 종전404 자료와 승인 대기를 보존한다.
 
-B207-2 리뷰 후속 결과: 네 계측 반례 C/W 각각 수정 전 실패→수정 후 통과, Node 정상/경계5검사 통과. 별도 #230 고정 후보294e150(readonly/main218+227+230,223225누적 아님)의 paired6회/30표본에서 cold host29/1,057,068 B·guest24/970,226 B, 추가판 host26/312,713 B·guest25/279,044 B, warm guest 새 network660 B를 양 엔진 각3회 관측했다. 후보 fixture 필수 HTTP/font/image·활성 합법 입력 완료이며 실제 기기/전 성능/전체 누적/정책 승인은 미완이다. 종전 누적4213 B 초과/404 자료를 보존하고 main1.5MiB·Draft 승인 대기를 유지한다.
+B207-2 당시 리뷰 후속 결과: 네 계측 반례 C/W 각각 수정 전 실패→수정 후 통과, Node 정상/경계5검사 통과. 별도 #230 고정 후보294e150(readonly/main218+227+230,223225누적 아님)의 paired6회/30표본에서 cold host29/1,057,068 B·guest24/970,226 B, 추가판 host26/312,713 B·guest25/279,044 B, warm guest 새 network660 B를 양 엔진 각3회 관측했다. 후보 fixture 필수 HTTP/font/image·활성 합법 입력 완료이며 당시 실제 기기/전 성능/전체 누적/정책 승인은 미완이었다. 당시 main1.5MiB·Draft 승인 대기와 종전 누적4213 B 초과/404 자료는 역사로 보존한다. 현재는 위 B207-2 상태처럼 정책만 승인·병합됐으며 실기기/성능·최종 누적·전체 수용은 미완이다.
