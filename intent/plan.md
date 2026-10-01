@@ -338,15 +338,15 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
-### #202 월 겹침 제안·격리 목업 (UX-05/06/H05/23~25·NF-03/08·AC-06/07)
+### #202 bounded Floor 제품 Draft (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
-- 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`, 계획 `e67b767fe1d1781240117381223d6ef18d1e8b90` FF push·[Draft #233](https://github.com/kywoo26/p2p-gostop/pull/233)·#202/#200 역링크 게시. 역사 구체안/증거 `2764e76409ab931401c979e58018d25d5bd32cc1`는 보존하며 요구사항 완료 상태는 바꾸지 않는다.
-- 최신 사용자 정정에 따라 2장 개별 구별과 3+ compact 월 묶음 인지를 분리한다. 모든 뒤 카드36/−24 반복·큰 fullfront2열·30,000후보는 최종안이 아니다. 간격 판단 위임과 popup/접촉빛/실제 Captured 강조/각짝 유지 동시출발의 사용자 선택은 유지한다.
-- [단일 제안](../docs/design/month-stack-proposal.md)의 이번 추천A는 첫 pair+3/4얇은 층·5장부터 공유 pose로 폭92px에서 멈춘다. 대안B는 더 좁지만200% 보너스 단서 넘침이 관측됐다. 총장수/뻑/묻힌 보너스 개수의 최소 단서는 proposed이며 새 배지 규범 시행0이다. 기존 PNG3은 역사, order-and-boundaries PNG/익명JSON만 좁게 갱신하고 scratch 원본을 보존한다.
-- 정지뻑 최대6·획득직전 표시7은 규칙/코드 근거와 구성 fixture2action 실행으로 구분하며 기존 실제5 seed1827/action9와 분리한다. 새 seed 도달/Playback PASS0. 역사11fit/5미발견·PromptPanel8/reset4·650stress는 새 compact 통합 증거가 아니다.
-- #223 같은 viewport strict 무관 CardId0px·손패6↔7/두 행·same-seq 예약을 보존한다. UX-02 선택 버튼 위치 고정을 기본으로 유지하고 필수 재배치의 gesture/키repeat·권위timeout/원격수락·beforepose 취소/보존/재활성화를 미승인 delta로 명시했다. 정본 개정/제품 기하·fit-fail/publictarget 계약이 차단 항목이다.
-- 후속 소유 설계는 Floor/layout/전용 시험, 필요시 기존 popup의 Board 최소 event/props/focus 접점이다. skin 전역높이/Hand/HUD/PromptPanel 새API/engine/protocol/display/Playback/choreo 편집0. [#234](https://github.com/kywoo26/p2p-gostop/pull/234)의 wire 필드 선취 없이 originalCardId→공유 대표 포함 현재 pose·round/seq 예약만 root 중재로 맞춘다. 독립 설계 리뷰→정본 개정→제품 연결 순서이며 새 후보/대형 행렬 연구는 중단한다.
-- 제품 변경0·정본 개정 미시행·기기/성능 PASS0. Node24.21.0 npm ci 완료; 이번은 문서/격리 표적만, 제품 full suite 반복0. 제품 단계 AGENTS §5·PLAYWRIGHT_PORT4258/workers≤4/timing직렬/Gradle≤4·raw2MiB/초기encoded1.5MB 별도·기준샷 갱신/threshold 완화0을 유지한다.
+- 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.
+- 사용자 실제 제품 Draft 착수 승인에 따라 계획 commit→일반 FF push→Refs #202 #200 Draft PR을 만들고 의미 있는 단계별 commit/push를 수행한다. 소유는 Floor/layout/전용 시험, 필요한 Board 최소 popup props/event/focus, spec 바닥 해당 절·ui-spec UX-02/05/06/선택 절·이 자기 단위다. Hand/HUD/전역skin/PromptPanel 새API/engine/protocol/display/Playback/choreo 편집0, 새 agent0이다.
+- 1단계: compact A의2장 구별/3+ bounded 묶음, 원 CardId→공유 pose,2장부터 cap footprint와 같은 seq holes/삭제 예약을 실제 Floor에 연결한다. 대표2/3/실제5/구성6/획득직전7·과밀월+덱·1→2/2→3·release/resize를 고정하고 실제 fit 실패 원인/안전 대응을 보고한다. 무관 CardId strict0px·두 손패 행 예산은 유지한다. 장수 증가 때 기존 카드/착지 anchor를 재정규화하지 않는다.
+- 2단계: 기존 native PromptPanel title/actions를 재사용해 원 direct target 선택을 교체한다. 공개 options의 원 ID/전체 후보48px·ARIA·단일 focus/inert를 보존한다. UX-02 위치 고정 우선, 불가피한 재배치는 pointer/keyheld 취소·권위 timeout/원격수락·focus/pose 수명 표적으로 검토하며 미승인 예외를 숨겨 활성화하지 않는다.
+- 200% 단서176.171875>157.4375 stress는 알려진 실패다. 단서 배치/표현은 한 번 좁게 재검토할 수 있으나 축소/누락/숨김/새 최소 지원 높이/영구 입력 잠금으로 봉합하지 않는다. 소유 범위 안에서 안전 fit이 불가하면 실제 최소 반례와 추가 소유 요청1건을 root에게 제출한다. #200 정확 접촉 beforepose와 settled slot·공개 관계 통합은 별도 미완으로 남긴다.
+- 정본의 현재 독립 셀/앞면100%·resize 탐색0과 이 Draft delta를 구분한다. 다음 제품 리뷰 전 정본 최종 채택/기기 PASS로 기록하지 않는다. 경미 UX-02 추적 메타는 이번 필요 문서 변경에 보완한다. 요구사항 전체 완료/Closes 금지다.
+- 진행 중 표적만, 새 큰 행렬/모든seed 탐색0. 제품 수정 뒤 최종 checkpoint에서 AGENTS §5 필수 lint/check/test/test:browser/build/e2e:smoke/Android3작업을 한 회 수행한다. PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0. 실기기/OSSR/성능은 사람 근거 전 PASS0이다. 현재 계획 단계·제품 작업/표적 검증 진행 예정이며 승인 완료로 표기하지 않는다.
 
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
 
