@@ -286,7 +286,7 @@ export const guestSchema = z.union([
   z.object({ t: z.literal('timeoutGet'), round, from: nat }),
 ]);
 
-export const acceptedPlayTargetSchema = z.object({ seat, card, target: card, baseSeq: time });
+const acceptedPlayTargetSchema = z.object({ seat, card, target: card, baseSeq: time });
 
 export const publicTargetCheckSchema = z.union([
   z.object({ result: z.literal('verified'), scope: z.literal('complete') }),
