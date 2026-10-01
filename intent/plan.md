@@ -340,11 +340,12 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ### #202 월 겹침 제안·격리 목업 (UX-05/06/H05/23~25·NF-03/08·AC-06/07)
 
-- 실행 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`. 사용자 개발 착수 승인에 따른 독립 담당이며 root가 #200과 공유 계약을 중재한다. 구체 노출율·선택UX·착지 오차·규범 개정은 승인 전이다. 요구사항 완료 상태는 바꾸지 않는다.
-- 1단계 소유는 [월 겹침 제안](../docs/design/month-stack-proposal.md) 단일 문서와 이 자기 실행 단위, 배포와 분리한 scratch 목업이다. A 독립 안정 셀/B 안정 월 앵커+겹침/C 고정12월 자리를 같은 공개 fixture에서 비교하고 위험·proposed spec delta를 Draft로 제출한다. 계획 commit→FF push→Refs #202 #200 Draft PR, 의미 있는 문서/목업 단계별 commit/push를 수행한다. 실제 계획 SHA는 PR 본문에 기록한다.
-- #223의 strict 무관0px/예외 최소 이동·두 행 손패 공간·same snapshotSeq 예약·resize 탐색0을 보존하는 최소 범위를 분석한다. 승인 뒤 후속 제품 소유는 Floor/floor-layout/전용 회귀다. #200 display/choreo/Playback 소비와 CardId 실제 rect/rotation/z/offset·선택·예약 수명·DOM 측정 시점을 root에게 제출한다. Game/Board/engine/protocol/schema/public asset 직접 변경은 없다.
-- 이번 단계는 문서와 합성 표적 검증만 수행하며 제품 full suite를 조기 반복하지 않는다. 제품 단계 필수 검증은 AGENTS §5, PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Android max-workers≤4다. raw2MiB/초기encoded1.5MB·성능·사람 실기기 수용은 별도이며 자동 PASS 승격0, 기준샷 자동 갱신/threshold 완화0이다. 현재 Node24.21.0 `npm ci` 성공, 목업·사용자 구체안 승인·제품 구현/수용 미완.
-- 계획 `e67b767fe1d1781240117381223d6ef18d1e8b90` FF push, [Draft PR #233](https://github.com/kywoo26/p2p-gostop/pull/233)·#202/#200 역링크 게시. 단일 셀 offset안·긴 안내37px scroll안 기각, 실제 stack footprint/덱 경계·#223 비용·고정12월 비교와 실제 합법2후보의 작은 높이200% **8표적** 관측을 [단일 제안](../docs/design/month-stack-proposal.md#9-작동-목업과-관측-2026-10-01)에 정리했다. 다른 월 두 짝은 각각 유지한 두 묶음이 실제 Captured 뒤 함께 출발하는 사용자 선택을 반영했고, 떨어질 때/먹을 때 빛은 미응답이다. 대표 PNG4장·격리 interactive entry 준비. #200 중간 공개 targetID·fit 실패/resize 예외·offset 도상 식별·popup 소유는 root 결정 전이며 제품·정본 변경0/규범·기기·성능 수용0이다.
+- 실행 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`, 계획 `e67b767fe1d1781240117381223d6ef18d1e8b90` FF push·[Draft #233](https://github.com/kywoo26/p2p-gostop/pull/233)·#202/#200 역링크 게시. 요구사항 완료 상태는 바꾸지 않는다.
+- 단일 [제안](../docs/design/month-stack-proposal.md)·이 자기 단위·허용된 대표PNG4/익명JSON만 소유한다. scratch 원본은 배포와 분리해 보존한다. 사용자 선택은 접촉 은은한 빛/실제 Captured 강조/각짝 유지 동시 출발 및 짧은 월 제목+두 후보 popup이다. 간격은 담당 판단 위임이며 root가36/−24·원순서/z/CardId·회전0을 권고 기준으로 수락했다. 수치 사용자 선택/전체 상태 식별 PASS로 쓰지 않는다.
+- single-cell overlay·긴 안내37px scroll안은 기각했다. 실제 footprint/가장자리 origin·strict 재투영 실패 시 viewport변경 한정 bounded 재탐색은 **개정안 추천**이다. 현 resize 탐색0과 전후 문구를 구분한다. 같은 viewport strict 무관 CardId0px·손패6↔7/두 행·same-seq 예약을 보존한다.2열 fullfront 예외는 fit되는 상태만 조건부 후보이며650스트레스 불가를 지원 임시3표본 전체로 일반화하지 않는다.
+- 원본 PromptPanel title/actions 재사용8조건+intro/outro reset4경계 관측과 실제 보너스5장뻑을 증거에 정리했다. 도상29/32/43 약점·제품 통합 기하·fit-fail 진행·중간 공개 target 계약은 차단/미검증으로 유지한다. 새 후보/전체 행렬 연구는 종료하고 독립 설계 리뷰→정본 개정→제품 연결 순서다.
+- root의 후속 diff 범위 설계 승인은 Floor/layout/전용 시험과 필요시 기존 popup의 Board 최소 event/props/focus 접점이다. skin전역높이/Hand/HUD/PromptPanel 새API 및 engine/protocol/display/Playback/choreo 편집0. public-match-target 담당과 CardId/pose/예약 버전은 root 중재로 맞춘다. 이번 제품변경0·정본 개정 미시행/기기·성능 PASS0이다.
+- Node24.21.0 npm ci 수행. 이번은 문서/격리 표적만이며 제품 full suite 반복0. 제품 단계 AGENTS §5·PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle max-workers≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0을 유지한다.
 
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
 

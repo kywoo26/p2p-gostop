@@ -1,0 +1,299 @@
+{
+  "status": "proposed; product unchanged; normative amendment not adopted",
+  "requirements": [
+    "UX-05",
+    "UX-06",
+    "UX-H05",
+    "UX-23",
+    "UX-24",
+    "UX-25",
+    "NF-03",
+    "NF-08",
+    "AC-06",
+    "AC-07"
+  ],
+  "planSHA": "e67b767fe1d1781240117381223d6ef18d1e8b90",
+  "priorProposalSHA": "b11d3b88cd43d26b4aab62ffd90681af7efed30d",
+  "acceptedInterview": {
+    "offsetJudgment": "delegated; no numeric option selected",
+    "popup": "short month title, two full candidates; temporary partial floor covering; hand and score visible",
+    "contact": "subtle light",
+    "captured": "stronger emphasis; separate pairs depart simultaneously",
+    "ppeok": "no capture emphasis or movement"
+  },
+  "recommendedPolicy": {
+    "dx": 36,
+    "dy": -24,
+    "rotation": 0,
+    "sourceOrderAndCardIdsPreserved": true,
+    "behindVisibleBands": {
+      "left": 36,
+      "bottom": 24
+    },
+    "geometricExposurePercent": 82.7,
+    "recognitionPass": false,
+    "rootRepresentativeReviewCompleted": true,
+    "weaknessReviewAndDeviceValidationPending": true
+  },
+  "weaknesses": [
+    "8월 새 세 마리 전체가 보이지 않음",
+    "9월 술잔 오른쪽 일부가 가려짐",
+    "11월 쌍피의 채워진 아래 면과 일반 피의 빈 면 구분: 실제 기기 명도 확인 필요"
+  ],
+  "reachable": {
+    "target2": {
+      "seed": 2,
+      "action": 9,
+      "candidates": [40, 42]
+    },
+    "ppeok3": {
+      "seed": 2,
+      "action": 2,
+      "cards": [33, 34, 32]
+    },
+    "bomb4": {
+      "seed": 9,
+      "action": 8,
+      "cards": [17, 16, 19, 18]
+    },
+    "ppeokBonus5": {
+      "seed": 1827,
+      "action": 9,
+      "cards": [13, 15, 12, 48, 50],
+      "captured": false
+    }
+  },
+  "geometry": {
+    "method": "scratch rectangle edge-candidate fresh packing; not product solver or optimality/stability proof",
+    "cases": 16,
+    "freshFits": 11,
+    "failedSearches": 5,
+    "fullFaceException": "proposed only: 2 columns; horizontal gap0; vertical gap2",
+    "heightCounterexample": {
+      "floorHeight": 157.4375,
+      "fourFullFacesHeight": 158.34375,
+      "fiveFullFacesHeight": 238.515625
+    },
+    "notFoundIsNotImpossibilityProof": true,
+    "supportedBonus5": [
+      {
+        "viewport": [430, 822],
+        "floor": [406, 285.78125],
+        "freshFits": true,
+        "crossings": 0,
+        "groupMode": "full-face-exception"
+      },
+      {
+        "viewport": [390, 734],
+        "floor": [366, 241.4375],
+        "freshFits": true,
+        "crossings": 0,
+        "groupMode": "full-face-exception"
+      },
+      {
+        "viewport": [360, 780],
+        "floor": [336, 243.78125],
+        "freshFits": true,
+        "crossings": 0,
+        "groupMode": "full-face-exception"
+      }
+    ]
+  },
+  "prompt": {
+    "method": "original PromptPanel/promptFocus, scratch Board budget/inert bridge; CSS text 200% model",
+    "resetCases": [
+      {
+        "engine": "chromium",
+        "kind": "intro-reset",
+        "dialogs": 0
+      },
+      {
+        "engine": "chromium",
+        "kind": "outro-reset",
+        "dialogs": 0
+      },
+      {
+        "engine": "webkit",
+        "kind": "intro-reset",
+        "dialogs": 0
+      },
+      {
+        "engine": "webkit",
+        "kind": "outro-reset",
+        "dialogs": 0
+      }
+    ],
+    "errors": 0,
+    "realBoardIntegration": false,
+    "testedCases": [
+      {
+        "engine": "chromium",
+        "height": "normal",
+        "textScale": 100,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "chromium",
+        "height": "normal",
+        "textScale": 200,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "chromium",
+        "height": "short",
+        "textScale": 100,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "chromium",
+        "height": "short",
+        "textScale": 200,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "webkit",
+        "height": "normal",
+        "textScale": 100,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "webkit",
+        "height": "normal",
+        "textScale": 200,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "webkit",
+        "height": "short",
+        "textScale": 100,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      },
+      {
+        "engine": "webkit",
+        "height": "short",
+        "textScale": 200,
+        "titleAndLabelsVisible": true,
+        "essentialScroll": false,
+        "handOverlap": 0,
+        "handFullyWithinBoard": true,
+        "canonicalIDs": [40, 42],
+        "selected": 40,
+        "escapeRetains": true,
+        "returnFocus": "손패36"
+      }
+    ],
+    "metrics": [
+      {
+        "profile": "normal",
+        "panel": [366, 225.4375],
+        "hitbox": [172, 78.171875],
+        "art": [48, 78.171875]
+      },
+      {
+        "profile": "short",
+        "panel": [336, 141.4375],
+        "hitbox": [157, 78.171875],
+        "art": [48, 78.171875]
+      }
+    ]
+  },
+  "unverified": [
+    "original Board menu/rotation/Android Back integration",
+    "OS screen reader",
+    "physical Safari and text zoom",
+    "same-seq reservations and resize stability",
+    "public intermediate target contract",
+    "P2P delay/restore/skip/reduced actual Playback",
+    "performance and serving budgets"
+  ],
+  "devicePass": 0,
+  "performancePass": 0,
+  "images": [
+    {
+      "file": "motifs.png",
+      "width": 1044,
+      "height": 1454,
+      "bytes": 372948,
+      "sha256": "9f27d61bf9a1e1770f8c13c02a828fd6a562bca4e271fa3aa38c9128b2ecea9f",
+      "chunkTypes": ["IDAT", "IEND", "IHDR"],
+      "metadataChunks": 0
+    },
+    {
+      "file": "order-and-boundaries.png",
+      "width": 975,
+      "height": 1730,
+      "bytes": 248599,
+      "sha256": "11653128744a7d94357331b8ca97d04e005e6718a416f5b289a00de75bcbdbed",
+      "chunkTypes": ["IDAT", "IEND", "IHDR"],
+      "metadataChunks": 0
+    },
+    {
+      "file": "footprint-and-fit-failure.png",
+      "width": 1140,
+      "height": 478,
+      "bytes": 174502,
+      "sha256": "cfb54243c6c5fa269c6dafe2d493621cb623edbf0c72a6d0d97d373d3062023c",
+      "chunkTypes": ["IDAT", "IEND", "IHDR"],
+      "metadataChunks": 0
+    },
+    {
+      "file": "prompt-reuse-small-200.png",
+      "width": 360,
+      "height": 651,
+      "bytes": 68566,
+      "sha256": "6617f9e1dcd53702dcd4480bbb45996208a990646e2dbfc98098679e4373bea7",
+      "chunkTypes": ["IDAT", "IEND", "IHDR"],
+      "metadataChunks": 0
+    }
+  ],
+  "license": "Derived card figures: CC-BY-SA-4.0; original bonus drawings CC0; see card ATTRIBUTION and LICENSE in repository"
+}
