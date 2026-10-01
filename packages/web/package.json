@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-skin.mjs && node scripts/check-font.mjs && vite build && node scripts/compact-metadata.mjs && node scripts/write-version.mjs && node --test scripts/oss-notices.test.mjs scripts/check-skin.test.mjs scripts/compact-metadata.test.mjs && node scripts/check-bundle.mjs",
+    "build": "node scripts/check-skin.mjs && node scripts/check-font.mjs && vite build && node scripts/compact-metadata.mjs && node scripts/write-version.mjs && node --test scripts/oss-notices.test.mjs scripts/check-skin.test.mjs scripts/compact-metadata.test.mjs scripts/check-bundle.test.mjs scripts/game-transfer-probe.test.mjs && node scripts/check-bundle.mjs",
     "oss:refresh": "vite build && node scripts/generate-oss-notices.mjs",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
