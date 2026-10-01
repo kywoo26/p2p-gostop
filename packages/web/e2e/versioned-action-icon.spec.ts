@@ -120,7 +120,7 @@ for (const mode of ['root', 'versioned'] as const) {
         const [host, guest] = pages;
         if (!host || !guest) throw new Error('fixture pages unavailable');
         const external: string[] = [];
-        const statuses: number[][] = [[], []];
+        const responses: { path: string; status: number }[][] = [[], []];
         pages.forEach((page, index) => {
           page.on('request', (request) => {
             if (new URL(request.url()).hostname !== '127.0.0.1') external.push('external request');
@@ -130,7 +130,10 @@ for (const mode of ['root', 'versioned'] as const) {
           });
           page.on('response', (response) => {
             if (new URL(response.url()).pathname.endsWith('/skin/bell-illustrated.webp'))
-              statuses[index]?.push(response.status());
+              responses[index]?.push({
+                path: new URL(response.url()).pathname,
+                status: response.status(),
+              });
           });
         });
         if (mode === 'versioned')
@@ -193,7 +196,9 @@ for (const mode of ['root', 'versioned'] as const) {
           });
           observations.push({
             role: index === 0 ? 'host' : 'guest',
-            statuses: statuses[index],
+            statuses: responses[index]
+              ?.filter((response) => response.path === observed.path)
+              .map((response) => response.status),
             ...observed,
           });
         }
