@@ -106,7 +106,27 @@ acceptedPlayTarget?: {
 
 현재 소유: 이 문서, plan §3-2의 #200 자기 단위, `protocol/test/public-match-target.test.ts`. 승인 뒤 후보 소유는 `protocol/src/{view,view-types,schema}.ts`의 해당 필드와 `messages.ts` events 구조·`host.ts` 성공 수락/publish·`guest.ts` 증거 수신/관찰, `verify.ts` 필요한 독립 대조·직접 protocol 시험이다. `codec.ts` 버전/의미 검증·`docs/protocol.md` 버전 정책·게스트 저장 형식 변경은 독립 리뷰에 포함한다. 이 후보가 승인 전 제품 diff 범위를 넓히지는 않는다.
 
-host/guest 웹 경계의 **공통 증거를 enqueue로 전달하는 최소 접점만** root의 별도 파일 인계가 필요하다. Playback/display/choreo 및 Board/Floor·geometry API는 현재 소유 밖이며 이 PR에서 수정하지 않는다. 현행 adapter·소비 타입과 최대 frame·fixture 영향은 해당 소유자가 확인한다.
+### 솔로 생산·전달 및 순번 namespace 인계 (독립 리뷰 P2 보완)
+
+[독립 COMMENT](https://github.com/kywoo26/p2p-gostop/pull/234#pullrequestreview-5380723146)의 유일 P2는 host/guest뿐 아니라 솔로의 성공 수락 전이 생산·전달도 후속 인계에 포함하라는 지적이다. 아래는 기준 소스 대조와 미완 인계 조건이며 솔로 제품·wire·저장 구현을 추가한 것이 아니다.
+
+공통 **현재 뷰 projection**과 **성공 전이 증거 생산/전달**은 다른 접점이다. [solo.svelte.ts:197](../../packages/web/src/game/solo.svelte.ts#L197)의 viewOf/boardOf는 [adapter.ts:55](../../packages/web/src/game/adapter.ts#L55)의 protocol toBoardView 호출로 이어져 B1 현재 관계를 공유할 수 있다. 그러나 즉시 resolve에서 ctx=null이면 projection만으로 소실된 선택 target을 만들 수 없다. HostSession만 변경해서 솔로의 전체 착지가 충족됐다고 하지 않는다.
+
+| 솔로 생산 경계 | 성공 귀속·공통 전달의 후속 조건 |
+|---|---|
+| 수동 `submit` ([273행](../../packages/web/src/game/solo.svelte.ts#L273)) | disposed/canAct/seat 검사→sessionAct 성공 확인→commitState→enqueue. 성공 전 prev.pending(source=play)의 공개 seat/card/options·실제 적용 action·판/순번을 확보해 수락 증거를 생산한 뒤 공통 consumer로 전달 |
+| CPU `runCpu` ([431행](../../packages/web/src/game/solo.svelte.ts#L431)) | 합법 AI 결정 또는 합법 fallback→disposed/generation 재검사→sessionAct 성공→commitState→enqueue. 이전 상태를 잃기 전에 수동과 같은 공개 증거를 생산. 오래된 generation/거절에는 증거0 |
+| 기존 자동 선택 | [AutoChoice callback](../../packages/web/src/game/solo.svelte.ts#L144)은 submit을 호출. [controller.ts:129](../../packages/web/src/game/controller.ts#L129)의 최신 round/eventSeq/합법 action 재검사 뒤 같은 성공 경계 사용. 자동 제출 예정값은 수락 증거가 아님 |
+
+[session.ts:161](../../packages/web/src/game/session.ts#L161)의 sessionAct는 phase 검사 및 reduce 성공 뒤 실제 action을 actions에 추가하고 events를 반환한다. 성공 전 pending/실제 action→증거→enqueue의 후보 생산점은 이 순수 성공 전이 또는 그 결과를 가진 호출부다. 공통 전이 projection을 sessionAct에서 부르는 안과 각 호출부가 같은 projection을 쓰는 안의 파일 소유/최소성은 후속 root 인계로 정한다. 수동·CPU·자동은 같은 성공 predicate와 공개 payload 의미를 사용하며 엔진 좌석은0/1이다. 생산자 종류를 엔진 seat 정체나 규칙 타입으로 추가하지 않는다. [현재 enqueue:369](../../packages/web/src/game/solo.svelte.ts#L369)의 action/tapAt은 계측용이고 CPU 호출은 action=null이므로 공통 수락 근거로 쓸 수 없다.
+
+**순번 namespace:** P2P HostSession.viewFor는 BoardView.eventSeq를 세션 전체 seq로 덮고 publish의 list seq도 같은 세션 순번이다. §4의 P2P baseSeq는 성공 수락 직전 session seq이며 live events.from−1이다. 솔로 boardOf는 game.eventSeq를 그대로 쓰고, engine newRound/blankDraft는 eventSeq0에서 시작하며 session.startNextRound는 새 game/round·actions=[]를 만든다. 솔로 local baseSeq는 같은 판의 이전 game.eventSeq로 다뤄야 한다. P2P의 from−1·welcome epoch·DecisionKey/timeout 정책을 솔로에 복제하지 않는다.
+
+전이 소속 판은 성공 전 game.round.number에 귀속하고 성공 결과/배치 판과 대조한다. 마지막 액션은 판을 끝내지만 판 번호를 바꾸지 않으며 다음 판 시작은 별도 전이다. 이후 BoardView.round로 옛 증거를 재명명하지 않는다. P2P epoch/rollback과 솔로 판별 seq 재사용을 구분하고, 모드/세션 수명·round·해당 seq namespace 및 기존 Playback generation에 맞춰 오래된 증거·좌표를 폐기한다. 새 솔로 epoch/저장 필드를 확정한 것은 아니다. 솔로 복원도 현재 game.ctx의 권위 관계로 수렴하며 저장된 액션이나 모션을 새 수락 전이로 재연하지 않는다. 솔로 재생용 전달과 게스트 commit-reveal 관찰 저장은 별개 범위다.
+
+**후속 root 소유 인계 미완:** `p2p/{host,guest}.svelte.ts`의 local observer/guest enqueue뿐 아니라 `game/solo.svelte.ts`의 submit/runCpu/공통 enqueue, 필요 시 `game/{session,adapter}.ts`의 성공 전이 projection·현재 뷰 보존 접점 및 직접 검증도 인계 후보로 포함한다. 동일 증거를 local observer·guest·solo consumer에 전달하고 중복 접촉을 막는 검증이 남는다. 솔로 좌석0/1 성공 수락·CPU fallback/오래된 generation·자동 선택 수락/거절·즉시 resolve/선택 연쇄·마지막 액션 후 명시 다음 판·복원은 후속 검증 조건이며 이번 실행 PASS가 아니다. 웹 adapter 파일 소유는 현재 확대하지 않는다. Playback/display/choreo 및 Board/Floor·geometry API도 현재 소유 밖이다.
+
+독립 리뷰가 인정한 것은 새 공개 정보의 필요성이다. §4의 네 필드 tuple은 자기 설명·대조가 쉬운 후보이며 필드별 최소성/최종 wire 채택은 미승인이다. 이전 공개 pending과 live from−1을 반드시 확보하는 target-only 모델, 첫 CardFlipped의 권위 target 확장과 EngineEvent/ProtocolEvent·eventDigest·replay/저장 관찰 호환 영향 비교는 후속 계약 선택에 남는다. 이 P2 인계 보완이 그 대안들을 기각하거나 필드/버전/저장 구현을 승인하지 않는다.
 
 root 결정은 최대2점이다. (1) 기존 이벤트 지연 표현의 한계와 B1/B 전체 중 이번 구현 계약/복구 수용 범위 선택. (2) 채택한 wire·관찰 저장/구버전 처리와 파일 인계를 독립 리뷰 후 확정. 사용자에게 같은 UX 질문·commit/push 승인을 다시 묻지 않는다.
 
