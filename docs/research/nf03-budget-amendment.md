@@ -1,6 +1,6 @@
 # B207-2 예산 정의·gate 개정 초안 — Approval required
 
-NF-03·AC-07·NF-RP-06 / plan B207-2. [#227 실측과 안전한410 B 최적화](ui-bundle-budget.md)를 바탕으로 사용자 최종 승인에 필요한 spec/gate diff를 준비한다. **이 Draft는 승인 요청안이며 main 규범·기능 PR·release에 상향을 적용할 권한이 아니다.** 현재 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`의 전체 raw 한도는1,572,864 B(1.5MiB)다. 최초 Draft 계획 SHA는 `b72f9a48065192a421955e95822fb66af1c4783a`다.
+NF-03·AC-07·NF-RP-06 / plan B207-2. [#227 실측과 안전한410 B 최적화](ui-bundle-budget.md)를 바탕으로 사용자 최종 승인에 필요한 spec/gate diff를 준비한다. **이 Draft는 승인 요청안이며 main 규범·기능 PR·release에 상향을 적용할 권한이 아니다.** 준비 기준 main `a31353a13fbeac0f33a74fb8bde72236d5cff853`의 승인 전체 raw 한도는1,572,864 B(1.5MiB)다. 최초 Draft 계획 SHA는 `b72f9a48065192a421955e95822fb66af1c4783a`다.
 
 | 회계 | 기존 승인/main | Draft의 승인 대상 제안 | 판정 방법 |
 |---|---|---|---|
@@ -27,7 +27,7 @@ MB=1,000,000 B, MiB=1,048,576 B. raw 후보는524,288 B 증가다. header·WS/HT
 
 B207-1의 guest 입력/fonts까지747,451 B는 첫 게임보다 앞선 하위 endpoint다. 이번에는 기존 LAN E2E의 실제 홈→방 열기→guest 이름/입장→로비→시작→초기 선 고르기→게임판 흐름을 private loopback **현행 StaticSite**와 개발 LAN relay fixture로 실행한다. 운영 relay/Funnel/Docker/secret/release clone은 사용하지 않는다. 시험 컨텍스트에서만 고정 entropy host101/guest201로 합법 셔플·초기 선 고르기를 재현하며 token·이름·WS payload·초대 URL은 출력하지 않는다. 실제 제품 버튼만 누르고 앱/엔진을 바꾸거나 ready를 주입하지 않는다. speed=instant는 기존 E2E 옵션이며 성능2초/100ms/60fps 측정은 아니다. routing으로 cache를 끄지 않고 loopback 외 연결은 도달 불가 proxy로 제한한다.
 
-현재 실제 versioned release 경로에서 **필수 행동 그림 `/skin/bell-illustrated.webp`가404**이며 이미지 naturalWidth0/decode 실패가 관측됐다. UI의 root-absolute skin URL과 versioned StaticSite 경계가 맞지 않는다. 이 PR에서 UI를 바꾸거나 서버 root alias를 붙여 성공으로 만들지 않는다. 따라서 첫 게임 전체 필수 자산 완료·warm 게임 reload·한 판 추가까지의 완전한 수용 계측은 **미완**이다. 부분 요청 body는 성공한 요청의 관측값일 뿐 첫 필수 전송 budget PASS가 아니다. Android root asset serving과 이 versioned 경로를 같은 관측으로 쓰지 않는다.
+최초 고정 누적 artifact의 실제 versioned release 경로에서는 **필수 행동 그림 `/skin/bell-illustrated.webp`가404**이며 이미지 naturalWidth0/decode 실패가 관측됐다. UI의 root-absolute skin URL과 versioned StaticSite 경계가 맞지 않는다. 이 PR에서 UI를 바꾸거나 서버 root alias를 붙여 성공으로 만들지 않는다. 이 최초 관측의 첫 게임 전체 필수 자산 완료·warm 게임 reload·한 판 추가 계측은 **미완**으로 보존한다. 부분 요청 body는 성공한 요청의 관측값일 뿐 첫 필수 전송 budget PASS가 아니다. Android root asset serving과 이 versioned 경로를 같은 관측으로 쓰지 않는다.
 
 [실제 paired3회×역할 교체3회 관측](bundle-budget-amendment/first-game-attempt.json)은 두 엔진·각 역할3표본씩이며 전부 필수 decode 실패로completeReady=false다. 손패10장·초기 선 고르기 없음·권위 seq3·실제 한쪽canAct=true의 첫 판에서 손패 입력 전에 기록했다. HTTP 응답은 모두identity다. 전체 완료된 첫 게임 전송량이라고 쓰지 않는 부분 관측은 아래와 같다.
 
@@ -42,9 +42,39 @@ B207-1의 guest 입력/fonts까지747,451 B는 첫 게임보다 앞선 하위 en
 
 측정 도구는 해당 자산 실패를 데이터의 completeReady=false와HTTP404로 남기고 exit1로 실패시킨다. 처음 합법 입력 endpoint 이전에는 초기 pickFirst만 선택하고 손패를 자동 플레이하지 않는다. 통과할 제품 checkpoint에서는 그 뒤 한 판을 실제 합법 버튼으로 진행해 다음 판/guest warm reload를 수집하도록 준비돼 있다. 이번 실패를 우회하거나 worker/후속 요청 비용을 추정하지 않는다. P2P에서 AI worker가 요청되지 않았더라도 솔로 첫 worker 수용이0 B라는 뜻이 아니다.
 
+## 독립 리뷰 계측 수정과 별도 #230 후보 재관측
+
+[독립 리뷰5373399266](https://github.com/kywoo26/p2p-gostop/pull/228#pullrequestreview-5373399266)의 네 반례를 수정했다. 최초 endpoint는 두 좌석의 손패10장·초기 선택 종료와 실제 활성 좌석의 Board `data-busy=false`·보이는 합법 손패 버튼 활성까지 기다린다. 상대 좌석의 입력 잠금은 풀지 않는다. 필수 HTTP 상태/requestfailed/미완 요청, font face error/loading, 이미지 decode와 응답별 timing 누락도 완료를 막는다. HTTP404와 requestfailed는 구분한다. `document.fonts.ready`만으로 실패 font를 성공 취급하지 않는다.
+
+실제 body 합은 phase의 **응답별** Resource Timing entry에서 network(`transferSize>0`) encoded body를 모두 더한다. query를 포함한 요청 URL은 내부에서만 식별하고 보고서에는 trial 안의 익명 `urlId`와 공개 pathname만 쓴다. HTTP에 전송되지 않는 fragment는 식별에서 제외한다. query별 응답·같은 URL 재전송을 모두 센 network 합과, 같은 URL 최대 관측 body를1개만 세는 unique 자산 합, cache/local(`transferSize=0`) 관측을 별도 필드로 기록한다. cache의 encodedBodySize와 Playwright received body 관측을 실제 재전송 합으로 쓰지 않는다. 각 phase의 timeOrigin/startTime baseline을 두고 후속 판에서 옛 navigation을 제외하며 reload의 새 navigation은 포함한다. timing이 없는 응답을0 B로 수용하지 않는다. 실패 trial은 익명 예외 종류·도달 phase·부분 표본을 저장하며 overall complete=false/exit1이다. 시작부터 새 보고서를 써 기존 성공 파일을 남기지 않는다.
+
+| 합성 반례(Chromium/WebKit 각각 동일) | 수정 전 동작 | 수정 후 |
+|---|---|---|
+| canAct=true/hand10/선택 DOM 없음/busy/손패 enabled0/CSS404 | 완료 true | endpoint false·필수 HTTP 실패 기록 |
+| no-store 800,000 B query2개+동일 URL 재전송1개 | pathname unique800,000 B | 실제 응답 합2,400,000 B·unique1,600,000 B |
+| 추가 요청0의 후속 phase | 옛 HTML526 B 재계수 | 0건/0 B; reload 새 HTML은 포함 |
+| navigation 예외 | 최종 write0회 | write1회·익명 실패/부분 표본·complete=false |
+
+이것은 계측 결함의 합성 회귀이며 실제 게임 성공/성능 자료가 아니다. 직접 Node 경계5검사와 양 엔진 브라우저 반례/정상 endpoint 검사를 통과했다. `node --test packages/web/scripts/game-transfer-probe.test.mjs`는 build에도 포함된다. `node --test packages/web/scripts/game-transfer-probe.browser.mjs`는 loopback4250을 전용으로 쓰므로 실제 fixture를 종료한 뒤 실행한다.
+
+이후 별도 #230 고정 후보 source **294e150cfe8d715ec7c4f1a0ca366670376c1b58**의 읽기 전용 artifact를 현행 StaticSite/개발 relay에서 재관측했다. manifest SHA-256 **cd91526360e15076f37db745041a8f937e31acff447c2d7089145dd43b113049**,75파일/raw **1,572,446 B**, wire3/version hash **9128a67ee6eb64af54ab8485f3577591986f077af245411248fcf7222b9eec72**다. **main218+227+230 후보이고 #223/#225 누적 artifact가 아니다.** 기존 누적1,577,077 B/4,213 B 초과 A/B와404 자료는 그대로 보존한다. #230 제품/자산을 이 PR에서 편집하거나 서버 alias를 붙이지 않았다. #230은 exact-head CI·독립 리뷰 후 main `36f59d401f5e4ead6169bad5db369fd9289fc726`에 병합됐다. 이 측정은 그 고정 source artifact의 관측이며 #228 예산 개정/전체 누적/출하 승인은 아니다.
+
+[재관측 자료](bundle-budget-amendment/first-game-294e150.json)는 paired6회·30표본(첫게임12/한판추가12/warm guest6)이며 양 엔진·각 역할3회다. 모든 필수 HTTP/font/image가 성공했고 첫 입력 전 active손패10버튼 활성/Board busyfalse·seq3, 추가판 seq96·rounds1을 관측했다. 보고서 complete=true는 이 desktop fixture의 계측 완료이며 요구사항/사용자 승인/실기기 PASS가 아니다. 모든 응답 Content-Encoding은identity다.
+
+| phase·역할 | 각 엔진의 실제 response 수 | network encoded body B | unique body B | 조건 |
+|---|---:|---:|---:|---|
+| cold 첫게임 host | 29 | **1,057,068** | 1,057,068 | Chromium/WebKit 각3회 동일 |
+| cold 첫게임 guest | 24 | **970,226** | 970,226 | Chromium/WebKit 각3회 동일 |
+| 한판 진행→다음판 host | 26 | **312,713** | 312,713 | 새 카드 등 후속 요청, 옛 HTML 제외 |
+| 한판 진행→다음판 guest | 25 | **279,044** | 279,044 | 같은 phase의 새 요청만 |
+| warm reload guest Chromium | 24 | **660** | 660 | cache/local23건, 원 encoded 관측951,399 B는 network 합 아님 |
+| warm reload guest WebKit | 23 | **660** | 660 | cache/local22건, encoded 관측0 B도 자산 부재/후속 비용0 증거 아님 |
+
+카드/font 포함이고 P2P 경로에서 worker를 요청하지 않았다. 솔로 worker·전체 기능 누적·다른 셔플·장기 세션·배포 서버의 압축/cache·실기기/핫스팟·2초/100ms/60fps는 여전히 미검증이다. 후보의 첫 body가1,500,000 B 아래라는 관측은 이 경로에 한정하며 규범 상향 적용 권한이 아니다.
+
 ## 사용자 승인 전에 필요한 판단
 
-B207-1은 **대상 서버/기기/핫스팟 baseline·사람 최소3회·독립 리뷰 후 규범 결정**을 추천했다. 이번 Draft의 자동/desktop 근거는 그 사람 관측을 대신하지 않는다. Galaxy WebView·iPhone Safari cold 첫 게임, 원격/Funnel 실제 responseEncoding/cache·첫 paint·100ms·60fps·JS/decode/memory/전력과 전체 후속 세션은 아직 검증하지 않았다. 필수 이미지 경로 실패도 별도 해결과 재관측이 필요하다.
+B207-1은 **대상 서버/기기/핫스팟 baseline·사람 최소3회·독립 리뷰 후 규범 결정**을 추천했다. 이번 Draft의 자동/desktop 근거는 그 사람 관측을 대신하지 않는다. Galaxy WebView·iPhone Safari cold 첫 게임, 원격/Funnel 실제 responseEncoding/cache·첫 paint·100ms·60fps·JS/decode/memory/전력과 전체 후속 세션은 아직 검증하지 않았다. 필수 이미지 경로의 별도 #230 후보 로컬 재관측은 위와 같으며 제품 독립 리뷰/통합 및 최종 누적/실기기 수용은 남아 있다.
 
 승인 옵션의 장점은 동일 시각 품질/문구/접근성을 보존하고 실제4213 B raw 통합 차단과 최초 전송 회계를 분리하는 것이다. 단점은 전체 배포 한도가33% 증가하며 더 큰 코드의 parse/메모리/프레임·첫 게임 전송이 자동 개선되지 않는다는 것이다. 승인 보류 시 main1.5MiB와 기존 기능 PR budget 차단을 유지하고 추가 품질 보존 절감/serving baseline을 진행한다.
 

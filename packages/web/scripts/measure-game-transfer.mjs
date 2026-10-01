@@ -1,13 +1,8 @@
-// B207-2: 고정 합법 입력으로 실제 로비→첫 판→다음 판. 성능/실기기 PASS 판정이 아니다.
+// B207-2: 실제 UI 흐름의 응답·단계를 기록한다. 성능/실기기 PASS 판정이 아니다.
 import { writeFile } from 'node:fs/promises';
 import { chromium, webkit } from 'playwright';
+import { firstGameReady, gameState, recordTrial, TransferProbe } from './game-transfer-probe.mjs';
 
-const [address, relayPort, output] = process.argv.slice(2);
-const base = new URL(address);
-if (base.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(base.hostname))
-  throw new Error('Only HTTP loopback fixture is allowed');
-if (!/^\d+$/.test(relayPort ?? '')) throw new Error('A local test relay port is required');
-const samples = [];
 function entropy(seed) {
   let value = seed;
   Object.defineProperty(crypto, 'getRandomValues', {
@@ -19,19 +14,6 @@ function entropy(seed) {
       return array;
     },
   });
-}
-function state() {
-  const root = globalThis.document.querySelector('[data-testid="match"]');
-  const enabled = root?.dataset.canAct === 'true';
-  const hand = globalThis.document.querySelectorAll('[aria-label="내 손패"] button');
-  return {
-    match: root !== null,
-    canAct: enabled,
-    hand: hand.length,
-    firstPickPending: globalThis.document.querySelector('[data-choice^="pick-"]') !== null,
-    rounds: Number(root?.dataset.roundsPlayed ?? 0),
-    seq: Number(root?.dataset.seq ?? 0),
-  };
 }
 function step(allowNext) {
   const doc = globalThis.document;
@@ -65,187 +47,161 @@ function initialStep() {
   if (doc.querySelector('[data-testid="match"]')?.dataset.canAct !== 'true') return;
   doc.querySelector('[data-choice^="pick-"]:not(:disabled)')?.click();
 }
-async function ready(page) {
-  const failed = await page.evaluate(async () => {
-    await globalThis.document.fonts.ready;
-    const images = [...globalThis.document.images];
-    return (
-      await Promise.all(
-        images.map(async (image) => {
-          try {
-            await image.decode();
-            return null;
-          } catch {
-            const url = new URL(image.currentSrc || image.src);
-            return {
-              path: url.protocol === 'data:' ? 'inline-data' : url.pathname,
-              complete: image.complete,
-              width: image.naturalWidth,
-              connected: image.isConnected,
-            };
-          }
-        }),
-      )
-    ).filter(Boolean);
-  });
-  return failed;
+
+const [address, relayPort, output] = process.argv.slice(2);
+const report = {
+  schema: 2,
+  complete: false,
+  condition:
+    'StaticSite/private loopback LAN relay; standard UI; deterministic crypto fixture host101/guest201; speed=instant; desktop no throttle; actual legal buttons; WS frames excluded',
+  trials: [],
+  samples: [],
+  failures: [],
+};
+async function save() {
+  report.complete =
+    report.failures.length === 0 &&
+    report.trials.length === 6 &&
+    report.trials.every((trial) => trial.complete) &&
+    report.samples.length === 30 &&
+    report.samples.every((sample) => sample.completeReady);
+  await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
 }
-async function collect(page, records, phase, engine, role, run) {
-  const imageFailures = await ready(page);
-  const timing = await page.evaluate(() =>
-    [
-      ...performance.getEntriesByType('navigation'),
-      ...performance.getEntriesByType('resource'),
-    ].map((entry) => ({
-      path: new URL(entry.name).pathname,
-      encodedBodySize: entry.encodedBodySize,
-      decodedBodySize: entry.decodedBodySize,
-      transferSize: entry.transferSize,
-    })),
-  );
-  const entries = timing.map((entry) => ({
-    ...entry,
-    path: entry.path.replace(base.pathname, ''),
-  }));
-  const unique = new Map();
-  for (const entry of entries)
-    if (entry.transferSize > 0) unique.set(entry.path, entry.encodedBodySize);
-  samples.push({
-    engine,
-    role,
-    run,
-    phase,
-    requestCount: records.length,
-    completeReady: imageFailures.length === 0,
-    imageFailures,
-    responses: [...records],
-    timing: entries,
-    networkUniqueEncodedBodySizeFromTiming: [...unique.values()].reduce((a, b) => a + b, 0),
-    state: await page.evaluate(state),
-  });
-  return imageFailures.length === 0;
-}
-for (const [hostEngine, guestEngine] of [
-  ['chromium', 'webkit'],
-  ['webkit', 'chromium'],
-]) {
-  const hostBrowser = await { chromium, webkit }[hostEngine].launch();
-  const guestBrowser = await { chromium, webkit }[guestEngine].launch();
-  try {
-    for (let run = 1; run <= 3; run++) {
-      const contexts = await Promise.all(
-        [hostBrowser, guestBrowser].map((browser) =>
-          browser.newContext({
-            viewport: { width: 412, height: 840 },
-            deviceScaleFactor: 3.5,
-            proxy: { server: 'http://127.0.0.1:9', bypass: '127.0.0.1,localhost' },
-          }),
-        ),
-      );
-      try {
-        const pages = await Promise.all(contexts.map((context) => context.newPage()));
-        const records = [[], []];
-        for (let i = 0; i < 2; i++) {
-          await pages[i].addInitScript(entropy, 101 + i * 100);
-          pages[i].on('response', (response) => {
-            const url = new URL(response.url());
-            if (url.origin !== base.origin) throw new Error('Unexpected non-fixture HTTP response');
-            const headers = response.headers();
-            records[i].push({
-              path: url.pathname.replace(base.pathname, ''),
-              status: response.status(),
-              encoding: headers['content-encoding'] ?? 'identity',
-              contentLength: Number(headers['content-length'] ?? 0),
-              cacheControl: headers['cache-control'] ?? '',
+try {
+  // 시작부터 새 실패 보고서를 쓴다. 이전 파일을 성공 결과로 남기지 않는다.
+  await save();
+  const base = new URL(address);
+  if (base.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(base.hostname))
+    throw new Error('Only HTTP loopback fixture is allowed');
+  if (!/^\d+$/.test(relayPort ?? '')) throw new Error('A local test relay port is required');
+  for (const [hostEngine, guestEngine] of [
+    ['chromium', 'webkit'],
+    ['webkit', 'chromium'],
+  ]) {
+    const browsers = [];
+    try {
+      browsers.push(await { chromium, webkit }[hostEngine].launch());
+      browsers.push(await { chromium, webkit }[guestEngine].launch());
+      for (let run = 1; run <= 3; run++) {
+        let contexts = [];
+        let probes = [];
+        const metadata = (i) => ({
+          engine: [hostEngine, guestEngine][i],
+          role: ['host', 'guest'][i],
+          run,
+        });
+        const capture = async (endpointReached) => {
+          const samples = await Promise.all(
+            probes.map(async (probe, i) => {
+              try {
+                return await probe.collect(metadata(i), endpointReached);
+              } catch {
+                return probe.partial(metadata(i));
+              }
+            }),
+          );
+          report.samples.push(...samples);
+          return samples.every((sample) => sample.completeReady);
+        };
+        await recordTrial(
+          report,
+          { hostEngine, guestEngine, run },
+          async (trial) => {
+            contexts = await Promise.all(
+              browsers.map((browser) =>
+                browser.newContext({
+                  viewport: { width: 412, height: 840 },
+                  deviceScaleFactor: 3.5,
+                  proxy: { server: 'http://127.0.0.1:9', bypass: '127.0.0.1,localhost' },
+                }),
+              ),
+            );
+            const pages = await Promise.all(contexts.map((context) => context.newPage()));
+            probes = pages.map((page) => new TransferProbe(page, base));
+            for (let i = 0; i < 2; i++) await pages[i].addInitScript(entropy, 101 + i * 100);
+            await Promise.all(probes.map((probe) => probe.begin('cold-first-game')));
+            const [host, guest] = pages;
+            const query = `?speed=instant&relay=127.0.0.1:${relayPort}`;
+            trial.phase = 'host-navigation';
+            await host.goto(`${address}${query}&role=host#/`);
+            await host.getByRole('button', { name: '핫스팟 대전' }).click();
+            trial.phase = 'guest-lobby';
+            await guest.goto(`${address}${query}&role=guest`);
+            await guest.getByRole('textbox', { name: '내 이름' }).fill('시험 참가자');
+            await guest.getByRole('button', { name: '입장', exact: true }).click();
+            await guest.getByTestId('lobby').waitFor();
+            await host.getByTestId('host-start').click();
+            await Promise.all(pages.map((page) => page.getByTestId('match').waitFor()));
+            trial.phase = 'first-game-endpoint';
+            let firstReady = false;
+            for (let attempt = 0; attempt < 2000; attempt++) {
+              if (
+                firstGameReady(await Promise.all(pages.map((page) => page.evaluate(gameState))))
+              ) {
+                firstReady = true;
+                break;
+              }
+              for (const page of pages) await page.evaluate(initialStep);
+              await host.waitForTimeout(20);
+            }
+            if (!firstReady) throw new Error('Actual first-game interaction was not reached');
+            if (!(await capture(true))) {
+              trial.failures.push({ reason: 'mandatory-readiness-failed' });
+              return false;
+            }
+            await Promise.all(probes.map((probe) => probe.begin('round-to-next-round')));
+            trial.phase = 'next-round-endpoint';
+            let nextReady = false;
+            for (let attempt = 0; attempt < 5000; attempt++) {
+              const states = await Promise.all(pages.map((page) => page.evaluate(gameState)));
+              if (states.every((s) => s.rounds >= 1) && firstGameReady(states)) {
+                nextReady = true;
+                break;
+              }
+              for (const page of pages) await page.evaluate(step, true);
+              await host.waitForTimeout(20);
+            }
+            if (!nextReady) throw new Error('Actual additional round was not reached');
+            if (!(await capture(true))) {
+              trial.failures.push({ reason: 'additional-round-readiness-failed' });
+              return false;
+            }
+            trial.phase = 'warm-reload-endpoint';
+            await probes[1].begin('warm-game-reload');
+            await guest.reload();
+            await guest.getByTestId('match').waitFor();
+            await guest.waitForFunction(() => {
+              const root = globalThis.document.querySelector('[data-testid="match"]');
+              const board = root?.querySelector('[data-testid="board"]');
+              return (
+                root?.dataset.phase === 'playing' &&
+                board?.querySelectorAll('[aria-label="내 손패"] button').length === 10 &&
+                !board.classList.contains('first-pick') &&
+                (root.dataset.canAct !== 'true' ||
+                  (board.dataset.busy === 'false' &&
+                    board.querySelector('[aria-label="내 손패"] button:not(:disabled)') !== null))
+              );
             });
-          });
-        }
-        const [host, guest] = pages;
-        const query = `?speed=instant&relay=127.0.0.1:${relayPort}`;
-        await host.goto(`${address}${query}&role=host#/`);
-        await host.getByRole('button', { name: '핫스팟 대전' }).click();
-        await guest.goto(`${address}${query}&role=guest`);
-        await guest.getByRole('textbox', { name: '내 이름' }).fill('시험 참가자');
-        await guest.getByRole('button', { name: '입장', exact: true }).click();
-        await guest.getByTestId('lobby').waitFor();
-        await host.getByTestId('host-start').click();
-        await Promise.all(pages.map((page) => page.getByTestId('match').waitFor()));
-        let firstReady = false;
-        for (let attempt = 0; attempt < 2000; attempt++) {
-          const states = await Promise.all(pages.map((page) => page.evaluate(state)));
-          if (
-            states.every((s) => s.hand > 0 && !s.firstPickPending) &&
-            states.some((s) => s.canAct)
-          ) {
-            firstReady = true;
-            break;
-          }
-          for (const page of pages) await page.evaluate(initialStep);
-          await host.waitForTimeout(20);
-        }
-        if (!firstReady) throw new Error('Actual first-game interaction was not reached');
-        const completed = [];
-        for (let i = 0; i < 2; i++) {
-          completed.push(
-            await collect(
-              pages[i],
-              records[i],
-              'cold-first-game-attempt',
-              [hostEngine, guestEngine][i],
-              ['host', 'guest'][i],
-              run,
-            ),
-          );
-          records[i].length = 0;
-          await pages[i].evaluate(() => performance.clearResourceTimings());
-        }
-        if (!completed.every(Boolean)) {
-          console.log(
-            `${hostEngine}/${guestEngine} run ${run}: mandatory image failure, no first-game acceptance`,
-          );
-          continue;
-        }
-        let nextReady = false;
-        for (let attempt = 0; attempt < 5000; attempt++) {
-          const states = await Promise.all(pages.map((page) => page.evaluate(state)));
-          if (states.every((s) => s.rounds >= 1 && s.hand > 0) && states.some((s) => s.canAct)) {
-            nextReady = true;
-            break;
-          }
-          for (const page of pages) await page.evaluate(step, true);
-          await host.waitForTimeout(20);
-        }
-        if (!nextReady) throw new Error('Actual additional round was not reached');
-        for (let i = 0; i < 2; i++) {
-          await collect(
-            pages[i],
-            records[i],
-            'round-to-next-round',
-            [hostEngine, guestEngine][i],
-            ['host', 'guest'][i],
-            run,
-          );
-          records[i].length = 0;
-        }
-        await guest.reload();
-        await guest.getByTestId('match').waitFor();
-        await guest.waitForFunction(
-          () => globalThis.document.querySelectorAll('[aria-label="내 손패"] button').length > 0,
+            const warm = await probes[1].collect(metadata(1), true);
+            report.samples.push(warm);
+            if (!warm.completeReady) trial.failures.push({ reason: 'warm-readiness-failed' });
+            return warm.completeReady;
+          },
+          () => capture(false),
+          save,
         );
-        await collect(guest, records[1], 'warm-game-reload', guestEngine, 'guest', run);
-        console.log(
-          `${hostEngine}/${guestEngine} run ${run}: actual first-game and next-round reached`,
-        );
-      } finally {
         await Promise.all(contexts.map((context) => context.close()));
       }
+    } finally {
+      await Promise.all(browsers.map((browser) => browser.close()));
     }
-  } finally {
-    await Promise.all([hostBrowser.close(), guestBrowser.close()]);
   }
+} catch (error) {
+  report.failures.push({
+    reason: 'probe-exception',
+    type: error?.name === 'TimeoutError' ? 'timeout' : 'error',
+  });
+} finally {
+  await save();
+  if (!report.complete) process.exitCode = 1;
 }
-await writeFile(
-  output,
-  `${JSON.stringify({ schema: 1, complete: samples.every((sample) => sample.completeReady), condition: 'StaticSite identity/private loopback LAN relay; standard UI; deterministic crypto fixture host101/guest201; speed=instant; desktop no throttle; actual legal buttons; WS frames excluded', samples }, null, 2)}\n`,
-);
-if (samples.some((sample) => !sample.completeReady)) process.exitCode = 1;
