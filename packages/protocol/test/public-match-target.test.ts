@@ -14,6 +14,7 @@ import {
   HostSession,
   GuestSession,
   createMemoryTransportPair,
+  createQueuedTransportPair,
   decode,
   toBoardView,
   byteLength,
@@ -363,6 +364,116 @@ it('live tuple의 seat/card/target/baseSeq와 현재 관계를 각각 대조하�
     expect(observer.acceptedPlayTarget).toBeNull();
   }
 });
+
+it.each(['drop', 'reorder'] as const)(
+  '이전 play frame %s 뒤 선택 수락은 live 재연 없이 snapshot 현재 관계로 수렴한다',
+  (mode) => {
+    const [hostWire, guestWire, link] = createQueuedTransportPair();
+    const host = new HostSession(hostWire, {
+      rules: PRESETS.standard,
+      names: meta.names,
+      random32: secrets(36),
+      dealer: 0,
+    });
+    const guest = new GuestSession(guestWire, { name: '좌석1', random32: secrets(456) });
+    const live: unknown[] = [];
+    guest.onChange((session) => {
+      if (session.acceptedPlayTarget !== null) live.push(session.acceptedPlayTarget);
+    });
+    guest.join();
+    link.flush();
+    expect(guest.seq).toBe(1);
+    expect(host.apply({ type: 'play', seat: 0, card: 7 })).toBe(true);
+    const played = link.queue.find((frame) => JSON.parse(frame.raw).t === 'events');
+    if (!played) throw new Error('play frame 없음');
+    if (mode === 'drop') link.drop(link.queue.indexOf(played));
+    expect(host.apply({ type: 'chooseTarget', seat: 0, card: 6 })).toBe(true);
+    const selected = link.queue.find(
+      (frame) => JSON.parse(frame.raw).t === 'events' && JSON.parse(frame.raw).to === 3,
+    );
+    if (!selected) throw new Error('선택 frame 없음');
+    link.deliver(link.queue.indexOf(selected));
+    expect(guest.seq).toBe(1);
+    expect(guest.errors).toEqual(['STALE_SEQ']);
+    expect(link.queue.some((frame) => JSON.parse(frame.raw).t === 'hello')).toBe(true);
+    // 순서 역전의 이전 frame은 snapshot 뒤에 배달해 현재 관계를 되돌리지 않는지도 확인한다.
+    if (mode === 'reorder') link.drop(link.queue.indexOf(played));
+    link.flush();
+    expect(host.seq).toBe(3);
+    expect(guest.seq).toBe(3);
+    expect(guest.view).toEqual(host.guestView());
+    expect(guest.view?.pending).toEqual({
+      kind: 'target',
+      seat: 0,
+      source: 'flip',
+      card: 29,
+      options: [28, 30],
+    });
+    expect(guest.view?.inFlight).toEqual({ played: 7, staged: [29], playTarget: 6 });
+    expect(guest.acceptedPlayTarget).toBeNull();
+    expect(live).toEqual([]);
+    const observation = guest.toJSON().observations.at(-1)?.publicTargets;
+    expect(observation?.gap).toBe(true);
+    expect(observation?.accepted['2']).toEqual([{ seat: 0, card: 7, target: 6, baseSeq: 2 }]);
+    const saved = JSON.stringify(guest.toJSON().observations);
+    link.inject(1, selected.raw);
+    if (mode === 'reorder') link.inject(1, played.raw);
+    link.flush();
+    expect(guest.seq).toBe(3);
+    expect(guest.view).toEqual(host.guestView());
+    expect(JSON.stringify(guest.toJSON().observations)).toBe(saved);
+    expect(live).toEqual([]);
+    expect(guest.errors).toEqual(['STALE_SEQ']);
+    guest.advanceTime(60_000);
+    link.flush();
+    expect(guest.seq).toBe(host.seq);
+    expect(guest.view?.inFlight.playTarget).toBe(6);
+    expect(live).toEqual([]);
+  },
+);
+
+it.each(['events', 'snapshot'] as const)(
+  '같은 seq %s의 상이 관계는 exact duplicate와 달리 보존되어 판 완료 뒤 conflict다',
+  (kind) => {
+    const g = game(0);
+    manual(g, { type: 'play', seat: 0, card: 7 });
+    manual(g, { type: 'chooseTarget', seat: 0, card: 6 });
+    const response = latestBoardMessage(g.hostWire.sent);
+    if (response.t !== 'events') throw new Error('events 없음');
+    const previousView = g.guest.view;
+    const saved = JSON.stringify(g.guest.toJSON().observations);
+    g.hostWire.send(response);
+    expect(JSON.stringify(g.guest.toJSON().observations)).toBe(saved);
+    const view = { ...response.view, inFlight: { ...response.view.inFlight, playTarget: 4 } };
+    if (kind === 'events') g.hostWire.send({ ...response, view });
+    else g.hostWire.send({ ...response, t: 'snapshot', seq: response.to, view });
+    expect(g.guest.seq).toBe(response.to);
+    expect(g.guest.view).toEqual(kind === 'events' ? previousView : view);
+    expect(g.guest.view === previousView).toBe(kind === 'events');
+    expect(
+      g.guest.toJSON().observations.at(-1)?.publicTargets?.relations[String(response.to)],
+    ).toEqual([
+      { played: 7, playTarget: 6 },
+      { played: 7, playTarget: 4 },
+    ]);
+    const observed = JSON.stringify(g.guest.toJSON().observations);
+    if (kind === 'events') g.hostWire.send({ ...response, view });
+    else g.hostWire.send({ ...response, t: 'snapshot', seq: response.to, view });
+    expect(JSON.stringify(g.guest.toJSON().observations)).toBe(observed);
+    const input = complete(g);
+    expect(g.guest.checks.at(-1)).toMatchObject({
+      result: 'verified',
+      publicTargets: { result: 'conflict', reason: 'relations' },
+    });
+    for (const gap of [false, true])
+      expect(
+        checkRound({
+          ...input,
+          observed: { ...input.observed, publicTargets: { ...input.observed.publicTargets!, gap } },
+        }),
+      ).toMatchObject({ ok: true, publicTargets: { result: 'conflict', reason: 'relations' } });
+  },
+);
 
 it('동일 live 재수신은 멱등, 상이 tuple은 보존되어 gap에서도 별도 conflict다', () => {
   const g = game(0);

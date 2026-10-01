@@ -845,19 +845,7 @@ export class GuestSession {
         (this.awaitingResync && !(m.t === 'events' && m.list.some((e) => e.type === 'Dealt')))
       )
         targets.gap = true;
-      const relation = { played: m.view.inFlight.played, playTarget: m.view.inFlight.playTarget };
-      const key = String(seq);
-      const relations = targets.relations[key] ?? [];
-      if (
-        !relations.some((r) => r.played === relation.played && r.playTarget === relation.playTarget)
-      ) {
-        if (Object.values(targets.relations).reduce((sum, values) => sum + values.length, 0) >= 401)
-          this.targetOverflow(targets, seq);
-        else {
-          relations.push(relation);
-          targets.relations[key] = relations;
-        }
-      }
+      this.observeRelation(observed, m.view, seq);
       if (m.t === 'events' && m.acceptedPlayTarget) {
         const evidence = m.acceptedPlayTarget;
         this.observeAccepted(observed, evidence);
@@ -865,6 +853,20 @@ export class GuestSession {
     }
     if (m.t === 'events' && observed)
       for (const event of m.list) observed.events[String(event.seq)] = eventDigest(event);
+  }
+  private observeRelation(observed: MutableObservation, view: BoardView, seq: number): void {
+    const targets = (observed.publicTargets ??= { gap: true, accepted: {}, relations: {} });
+    const relation = { played: view.inFlight.played, playTarget: view.inFlight.playTarget };
+    const key = String(seq);
+    const relations = targets.relations[key] ?? [];
+    if (relations.some((r) => r.played === relation.played && r.playTarget === relation.playTarget))
+      return;
+    if (Object.values(targets.relations).reduce((sum, values) => sum + values.length, 0) >= 401)
+      this.targetOverflow(targets, seq);
+    else {
+      relations.push(relation);
+      targets.relations[key] = relations;
+    }
   }
   private observeAccepted(
     observed: MutableObservation | undefined,
@@ -1125,6 +1127,23 @@ export class GuestSession {
         else this.applyStatus(m.status);
         break;
       case 'events':
+        if (m.to <= this.seq) {
+          // 이미 관찰한 seq의 재수신은 뷰/전이 적용과 별개로 상이 관계 증거를 보존한다.
+          const observed = this.observation(m.view.round);
+          if (observed?.publicTargets?.relations[String(m.to)])
+            this.observeRelation(observed, m.view, m.to);
+        }
+        if (m.to > this.seq && m.from !== this.seq + 1) {
+          // 누락된 직전 pending으로 live 수락을 판정하지 않는다. 받은 공개 증거는 남기고
+          // 접촉 전이는 재연하지 않은 채 기존 hello 복구로 현재 관계에 수렴한다.
+          if (m.acceptedPlayTarget)
+            this.observeAccepted(this.observation(m.view.round), m.acceptedPlayTarget);
+          this.acceptedPlayTarget = null;
+          this.markTimeGap();
+          this.error('STALE_SEQ');
+          this.join();
+          break;
+        }
         if (m.acceptedPlayTarget) {
           const evidence = m.acceptedPlayTarget;
           const old = this.observation(m.view.round)?.publicTargets?.accepted[
@@ -1151,13 +1170,6 @@ export class GuestSession {
         }
         if (m.to <= this.seq) {
           this.applyStatus(m.status);
-          break;
-        }
-        if (m.from !== this.seq + 1) {
-          // 빈틈: 토큰과 lastSeq로 다시 hello (호스트가 차분이나 스냅샷을 보낸다)
-          this.markTimeGap();
-          this.error('STALE_SEQ');
-          this.join();
           break;
         }
         this.accept(m, m.to);
