@@ -1,5 +1,5 @@
 // 번들 예산·외부 URL 검사 (spec NF-01·NF-03, AC-07, intent/plan.md 1.8 "위생"). 의존성 없음.
-// - NF-03: dist ≤1.5MiB. PRO_ASSET_REVIEW=1 평가 전용 빌드만 초과 허용.
+// - NF-03: dist ≤2MiB (B207-2 예산 정책 사용자 승인·#228 병합; 전체 수용은 별도). PRO_ASSET_REVIEW=1 평가 전용 빌드만 초과 허용.
 // - 외부 URL(http(s)/ws(s), localhost·127.0.0.1 제외) 0건.
 //   NP-RP-01: 사용자 설정 origin은 런타임 값이므로 번들 리터럴 허용 목록에 넣지 않는다.
 import { readdir, readFile, stat } from 'node:fs/promises';
@@ -9,7 +9,7 @@ import { PRO_ATTRIBUTION_URLS } from '../src/pro-assets/credits.ts';
 import { ATTRIBUTION_URLS } from '../src/cards/attribution.ts';
 import { FONT_ATTRIBUTION_URLS } from '../src/fonts/attribution.ts';
 
-const LIMIT_BYTES = 1.5 * 1024 * 1024;
+const LIMIT_BYTES = 2 * 1024 * 1024;
 const review = process.env['PRO_ASSET_REVIEW'] === '1';
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 

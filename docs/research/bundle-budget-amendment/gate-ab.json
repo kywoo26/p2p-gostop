@@ -1,0 +1,19 @@
+{
+  "artifactSource": "fixed UI synthetic 8acab28614444211c71b04ed7ad559660fe81165 plus metadata optimization e9145e14; immutable artifact; gate-only simulation not UI integration approval",
+  "results": {
+    "old-main": {
+      "exit": 1,
+      "rawBytes": 1577077,
+      "manifestSha256": "7e6741e9181268ae9f114e1dcc6d80ede285f035953192a2f1e386374fbd2284",
+      "gateBytes": 1572864,
+      "spareBytes": -4213
+    },
+    "draft": {
+      "exit": 0,
+      "rawBytes": 1577077,
+      "manifestSha256": "7e6741e9181268ae9f114e1dcc6d80ede285f035953192a2f1e386374fbd2284",
+      "gateBytes": 2097152,
+      "spareBytes": 520075
+    }
+  }
+}

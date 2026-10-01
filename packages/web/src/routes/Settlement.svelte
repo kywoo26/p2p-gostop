@@ -1,6 +1,8 @@
 <script lang="ts">
   // 정산 (spec 6.2, FR-18): 점수 분해 표, 배수 체인, 금액, 잔액 변화, 다음 판/종료.
   // 잔액 0이면 재충전(시작 잔액으로)·세션 종료를 묻는다(MN-02).
+  import type { Difficulty } from '@p2p-gostop/ai';
+  import { conciseSoloNotice, playerLabel } from '../game/player-labels.ts';
   import type { SettlementDisplay } from '../game/adapter.ts';
   import type { PendingRoundResult } from '../game/controller.ts';
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
@@ -12,6 +14,7 @@
     view: SettlementDisplay | null;
     pending?: PendingRoundResult | null;
     onacknowledge?: ((key: string) => void) | undefined;
+    soloDifficulty?: Difficulty | undefined;
     decision?: {
       readonly winner: boolean;
       readonly canPush: boolean;
@@ -42,6 +45,7 @@
     view,
     pending = null,
     onacknowledge,
+    soloDifficulty,
     decision = null,
     guest = false,
     onpush,
@@ -79,6 +83,11 @@
           ? `나가리${nextCarry !== null && nextCarry > 1 ? ` · 다음 판 ×${nextCarry}` : ''}`
           : `${view.names[view.winner]} 승리 · ${REASON_LABEL[view.reason]}`,
   );
+  const displayHeadline = $derived(
+    view !== null && soloDifficulty !== undefined
+      ? conciseSoloNotice(headline, view.names)
+      : headline,
+  );
   const baseTotal = $derived(view?.breakdown.reduce((sum, row) => sum + row.points, 0) ?? 0);
   /** 정산에 쓴 국진 위치 (rules S5: 승자는 점수 최대, 패자는 피박 회피 쪽) */
   const gukjin = $derived(
@@ -93,8 +102,14 @@
 </script>
 
 <Screen title={stage} back={null} scrollBody>
-  <p class="headline" data-testid="settlement-headline" tabindex="-1" bind:this={heading}>
-    {headline}
+  <p
+    class="headline"
+    data-testid="settlement-headline"
+    title={headline}
+    tabindex="-1"
+    bind:this={heading}
+  >
+    <span aria-hidden="true">{displayHeadline}</span><span class="sr-only">{headline}</span>
   </p>
 
   {#if pending}
@@ -200,7 +215,12 @@
         <tbody>
           {#each view.balances as balance, seat (seat)}
             <tr>
-              <th scope="row">{view.names[seat]}</th>
+              <th scope="row" aria-label={view.names[seat]} title={view.names[seat]}
+                >{playerLabel(
+                  view.names[seat as 0 | 1],
+                  soloDifficulty !== undefined && seat === 1,
+                )}</th
+              >
               <td class="num">{formatNumber(balance.before)}</td>
               <td class="num" data-testid={`balance-${seat}`}>{formatNumber(balance.after)}</td>
               <td class={['num', balance.after >= balance.before ? 'gain' : 'loss']}>
@@ -273,6 +293,14 @@
 </Screen>
 
 <style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .headline {
     margin: 0;
     padding-block: var(--space-2) var(--space-4);

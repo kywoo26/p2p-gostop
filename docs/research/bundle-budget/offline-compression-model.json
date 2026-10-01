@@ -1,0 +1,39 @@
+{
+  "definition": "sum of independently compressed files; NOT actual HTTP serving; headers/cache/transport excluded",
+  "manifestSha256": "9c18860fb6d9d9e638d141e34a7e55540c6b001e039b3d4308ec4dfa89635137",
+  "raw": 1577422,
+  "gzip": 705562,
+  "brotli": 638796,
+  "categories": {
+    "javascript": {
+      "raw": 582730,
+      "gzip": 188014,
+      "brotli": 157472
+    },
+    "css": {
+      "raw": 92182,
+      "gzip": 19597,
+      "brotli": 15855
+    },
+    "fonts": {
+      "raw": 144248,
+      "gzip": 144297,
+      "brotli": 144253
+    },
+    "cards": {
+      "raw": 620988,
+      "gzip": 253950,
+      "brotli": 224629
+    },
+    "metadata": {
+      "raw": 52470,
+      "gzip": 14747,
+      "brotli": 11759
+    },
+    "skin": {
+      "raw": 84804,
+      "gzip": 84957,
+      "brotli": 84828
+    }
+  }
+}

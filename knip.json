@@ -7,6 +7,7 @@
   "workspaces": {
     ".": {
       "entry": [
+        "tools/bundle/*.mjs",
         "tools/relay/check-static.ts",
         "tools/relay/create-credentials.ts",
         "tools/relay/write-qr.ts"

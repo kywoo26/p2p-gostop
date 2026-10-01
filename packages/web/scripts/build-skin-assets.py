@@ -45,7 +45,7 @@ outputs['NOTICE.md'] = ('# Hand action illustrations\n\nUser-provided bell and b
 records.append(dict(id='skin-notice', file='NOTICE.md', bytes=len(outputs['NOTICE.md']), sha256=hashlib.sha256(outputs['NOTICE.md']).hexdigest(), source='Project asset provenance', license='See NOTICE.md', changes='Reference rights notice.'))
 outputs['manifest.json'] = (json.dumps(records, ensure_ascii=False, indent=2) + '\n').encode()
 # Full provenance already ships at /pro/NOTICE.md and is displayed by License.
-assert sum(map(len, outputs.values())) <= 128 * 1024, 'Skin allocation exceeded; NF-03 remains 1.5 MiB'
+assert sum(map(len, outputs.values())) <= 128 * 1024, 'Skin allocation exceeded; NF-03 whole-artifact limit is separate'
 if check:
     assert set(p.name for p in OUT.iterdir()) == set(outputs), 'Unexpected/stale release assets'
     for name, data in outputs.items():

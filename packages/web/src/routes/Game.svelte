@@ -12,6 +12,7 @@
   // 게임판은 정산 중에도 마운트된 채로 둔다(다음 판 분배 애니메이션의 기준점, src/anim/choreo.ts).
   // 오른쪽 위 메뉴(이슈 #10)에서 계속·설정·홈·세션 종료(확인). Android Back은 메뉴를 연다/닫는다.
   // data-* 속성은 E2E 자동 플레이·원장 검사·턴 시간 계측(spec AC-04·AC-06)이 읽는다.
+  import type { Difficulty } from '@p2p-gostop/ai';
   import { tick, untrack } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import { automaticAction, type GameController } from '../game/controller.ts';
@@ -22,6 +23,7 @@
 
   interface Props {
     controller: GameController;
+    soloDifficulty?: Difficulty;
     /** 메뉴 항목 (없으면 계속하기만) */
     menu?: readonly MenuItem[];
     onmenu?: ((id: string) => void) | undefined;
@@ -42,6 +44,7 @@
 
   let {
     controller,
+    soloDifficulty,
     menu = [],
     onmenu,
     onend,
@@ -317,6 +320,7 @@
   <div class="board-wrap" inert={summary !== null || pushDecision != null || menuOpen || ended}>
     <Board
       view={pb.board}
+      soloDifficulty={controller.mode === 'solo' ? soloDifficulty : undefined}
       soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
       {extras}
       unit={settings.value.unit}
@@ -327,6 +331,7 @@
       toast={pb.toast}
       milestones={pb.milestones}
       busy={pb.busy || !controller.canAct}
+      playbackBusy={pb.busy}
       thinking={controller.thinking}
       turnMs={pb.lastTiming?.ms ?? null}
       {timerText}
@@ -379,6 +384,7 @@
     <div class="overlay" inert={menuOpen}>
       <Settlement
         view={summary?.view ?? null}
+        soloDifficulty={controller.mode === 'solo' ? soloDifficulty : undefined}
         instant={summary?.instant ?? []}
         nextCarry={summary?.nextCarry ?? null}
         decision={pushDecision}

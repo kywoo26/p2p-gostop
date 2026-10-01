@@ -6,6 +6,7 @@
   interface Props {
     who: '나' | '상대';
     name: string;
+    displayName?: string;
     score: number;
     goCount: number;
     balance: number;
@@ -24,6 +25,7 @@
   let {
     who,
     name,
+    displayName = name,
     score,
     goCount,
     balance,
@@ -48,7 +50,7 @@
     <h2 class="identity" title={name}>
       {#if who === '나' && dealer}<span class="dealer">선</span>{/if}
       <span class="who">{who}</span>
-      {#if name !== who}<span class="name">{name}</span>{/if}
+      {#if displayName !== who}<span class="name">{displayName}</span>{/if}
       {#if who === '나'}
         <span class="counters" role="img" aria-label={`뻑 ${ppeokCount}회, 흔들기 ${shakes}회`}>
           <span class="counter" aria-hidden="true" title={`뻑 ${ppeokCount}회`}>
@@ -60,7 +62,12 @@
             >{ppeokCount}
           </span>
           <span class="counter" aria-hidden="true" title={`흔들기 ${shakes}회`}
-            ><img src="/skin/bell-illustrated.webp" width="16" height="16" alt="" />{shakes}</span
+            ><img
+              src={`${import.meta.env.BASE_URL}skin/bell-illustrated.webp`}
+              width="16"
+              height="16"
+              alt=""
+            />{shakes}</span
           >
         </span>
       {/if}
