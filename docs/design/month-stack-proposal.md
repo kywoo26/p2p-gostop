@@ -6,7 +6,7 @@
 
 ## 1. 확정 의도와 미결
 
-사용자는 짝 위에 살짝 어긋나게 놓아 두 그림을 보이고, 짧게 강조한 뒤 함께 획득하는 경험을 원한다. 손패 짝과 뒤집기 짝의 순서가 읽혀야 하며, 일반 약0.5초 간격은 비교 제안이지 고정 wait 승인이 아니다. 이미 있는 같은 월 여러 장은 붙어 겹쳐 보이고, 법적 선택이 필요하면 popup을 선호한다.
+사용자는 짝 위에 살짝 어긋나게 놓아 두 그림을 보이고 함께 먹는 경험을 원한다. 후속 인터뷰에서 **다른 월 두 짝은 각각 짝을 유지한 두 묶음이 함께 출발해 획득 칸으로 이동**하기로 선택했다. 가운데 한 덩어리로 모으는 동작은 기본안이 아니다. 떨어질 때 살짝 빛/먹을 때 강한 빛과 겹쳐 놓기만/먹을 때만 빛의 비교는 미응답이며 색·강조를 확정하지 않는다. 손패 짝과 뒤집기 짝의 순서가 읽혀야 하며, 일반 약0.5초 간격은 비교 제안이지 고정 wait 승인이 아니다. 이미 있는 같은 월 여러 장은 붙어 겹쳐 보이고, 법적 선택이 필요하면 popup을 선호한다.
 
 미결은 실제 도상 식별에 충분한 offset·노출율, 팝업 위치·원본과 후보의 연결, #200 착지 허용 오차·회전·수명, 과밀시 예외다. 손패는48px·전체 앞면을 그대로 유지한다. 화면이 작다는 이유로 카드 축소·그림 절단·손패 가림·획득패 숨김을 채택하지 않는다.
 
@@ -28,7 +28,21 @@
 | B 제안 | 안정 월 앵커 + 개별 offset·공개 후보 팝업 | 기존 슬롯 수명/투영 분리를 재사용, 짝 연결 명확 | 그룹 footprint 예약이 필요; 노출로 도상 식별 불충분 가능; 선택UX 정본 개정 필요 |
 | C 비교 | 12월 고정 자리(덱 중앙 제외 14칸 중12칸) | 월 생성/소멸에도 다른 월 anchor 이동0, 단순 탐색 | 빈 월을 위해 공간 소비, 같은 월 폭이 한 셀보다 큼; 12칸 고정만으로4장/뻑/보너스/착지 공간 해결 안 됨 |
 
-B를 최소 후속 후보로 제안한다. 기존5×3·덱7번과 월 anchor 수명을 시작점으로 삼고 **카드 실제 회전 경계의 합집합**을 footprint로 예약한다. 단순히 모든 월을 한 셀로 합치면 이웃 월/덱과 충돌한다. 가능한 strict 배치를 먼저 찾고 불가능할 때만 현행 최소 재배치 비용을 적용한다. 새 그룹 비용은0, 남아 있는 같은 월의 card offset 재압축은 무관 월 이동과 별도로 기록한다. anchor 카드가 사라져도 group anchor는 유지한다. 방향 반전·방사형 확산은 비교 없이 채택하지 않는다.
+단일 셀에 offset만 덧대는 B 목업은 기각한다. **실제 footprint를 예약하는 B 후속 설계**를 최소 검토 후보로 제안한다. 기존5×3·덱7번과 월 anchor 수명을 시작점으로 삼고 **카드 실제 회전 경계를 포함하는 보수적 AABB**를 먼저 footprint로 예약하고, 정확 합집합 검사는 필요성·비용 확인 뒤 비교한다. 단순히 모든 월을 한 셀로 합치면 이웃 월/덱과 충돌한다. 가능한 strict 배치를 먼저 찾고 불가능할 때만 현행 최소 재배치 비용을 적용한다. 새 그룹 비용은0, 남아 있는 같은 월의 card offset 재압축은 무관 월 이동과 별도로 기록한다. anchor 카드가 사라져도 group anchor는 유지한다. 방향 반전·방사형 확산은 비교 없이 채택하지 않는다.
+
+### 5×3·덱7과 footprint의 최소 도형 근거
+
+5×3의14개 위치를 **anchor 후보 격자**로 유지할 수는 있지만, ‘14장까지 각 카드가 자기 독립 셀 안에 있고100% 보임’은 겹침과 동시에 보존할 수 없다. 개정 대상은 셀의 점유 의미와 바닥100% 규범이다. 덱7번은 후보에서 빼는 것에 더해 **실제 덱 rect와 group footprint의 교차0**을 검사해야 한다. 손패 두 행·48px·획득32px·부모 바닥 예산은 보존한다. 14개 월 anchor가 각각 독립적으로 항상 들어간다는 새 보장은 만들지 않는다.
+
+회전0·오른쪽 아래 offset의 n장 경계는 `(48+(n−1)dx) × (78.171875+(n−1)dy)`다. 390×734의 실측366×241.4375 영역에서 열 피치60/행 피치80.47917, slot6의 원 카드 x=99, 덱7의 x=159다. dx=12의2장은 x=159에서 덱과 맞닿지만3장은 x=171까지 늘어 **뒤 카드 하나와 덱이12×62.171875px 교차**한다. 셀6만 점유했다는 검사는 이를 놓친다. 왼쪽으로 뒤집으면 덱은 피할 수 있어도 slot5의 카드와 교차할 수 있다. 방향 반전은 자동 해답·승인안이 아니다.
+
+보수적 **축 정렬 bounding rect 전체 예약**을 최소 구현 후보로 잡으면 12월 각3장 스트레스의 예약 면적은 offset12/8→81,364.5px²,18/12→102,989.25px²,24/16→126,918px²다. 덱을 뺀 가용 면적은390×734에서84,613.875px²,360×650에서49,146.75px²다. 따라서 후자의3안과 전자의18/12·24/16은 면적만으로 이 예약 모형에서 불가능하다. 전자의12/8은 면적만으로 수용을 증명하지 못한다. 이 반례는 합성36장/rect 예약 한정이며 도달 가능한 정상 상태나 회전·실제 비직사각형 합집합까지 불가능하다는 증명이 아니다. 구체 과밀 fallback은 미승인이다.
+
+후속 알고리즘 제안은 먼저 기존 anchor/개별 카드 pose를 고정하고 변경 월의 추가·제거 footprint만 검사하는 것이다. 회전은 실제 네 모서리로 경계를 만들고 덱·타월·영역 밖과 교차하면 후보를 거절한다. strict 해가 없을 때만 #223의 **무관 CardId 이동 수→월 anchor 이동 수→격자 거리→결정적 동률** 비용을 쓴다. group 수로 첫 비용을 대체하지 않는다. 그룹별/카드별 이동 수·최대 이동px를 함께 보고하며, same viewport에서 손패6↔7 변화가 만든 무관 카드 이동은0이어야 한다.
+
+동월 증가시 남은 카드의 offset/z/angle을 보존하고 새 공개 카드 자리와 확대 footprint를 검사한다. 감소시 같은 snapshotSeq 재생 중에는 빈 offset과 제거 전 footprint를 예약해 즉시 압축하지 않는다. 최종seq/큐 종료 뒤 변경 월의 국소 압축도 별도 이동으로 기록한다. 동월 소멸→재등장·reset/복원은 기존 예약 수명과 원 CardId/round로 시작하며 추가 generation은 반례 전 도입하지 않는다. resize는 같은 논리 배치를 재투영해 카드별 경계를 다시 얻는다. 작은 새 viewport에서 경계가 맞지 않을 때 탐색0·교차0을 함께 만족하는지는 미증명이며, 승인 없이 무관 월 이동이나 축소로 해결하지 않는다. #200의 비행 경로/중간 pose 예약과 layout 점유 예약은 구별한다.
+
+12월 고정 자리 C는 anchor 선택 탐색을 없애지만 빈 월의 자리도 다른 월에 빌려주지 못한다. 실제 같은 viewport의2장 fixture에서 타월1쌍 교차했고, 폭탄4장/덱 경계는 고정으로 해결되지 않았다. footprint 방향/충돌/fallback 탐색은 여전히 필요하므로 총 탐색비용 우위는 미측정이다. B의 anchor 탐색 비용·정상 합법 상태의 수용률도 미측정이며 제품 solver를 작성하지 않았다. root는 **도상 식별 offset, anchor 후보/점유 규범 개정, fit 실패 예외, resize 안정성, popup 소유**를 한 묶음으로 결정해야 한다.
 
 최소 제품 변경은 승인 뒤 Floor/floor-layout/인접 전용 테스트다. Board/Game은 수정하지 않고 공개 options와 onchoose를 재사용한다. 팝업의 기존 메뉴·Android Back·확대 패널 연동에 새 접점이 필요하면 root에 근거를 제출하고 소유권을 먼저 조정한다. #200은 display/choreo/Playback의 착지 흐름을 소유하며 같은 파일 동시 수정은 하지 않는다. engine/protocol/schema/public asset 변경은 없다.
 
@@ -52,7 +66,7 @@ B를 최소 후속 후보로 제안한다. 기존5×3·덱7번과 월 anchor 수
 
 후보는 최소48px 폭·78.18px 전체 앞면과 후보 간8px 간격, 월·종류·먹기 이름, 실제 카드 ID를 유지한다. 바닥 원본은 비입력 상태로 남기고 popup 복제는 native `dialog` 아래에 둔다. 현재 choreo.measure가 `closest('dialog')`만 제외하므로 role=dialog만 쓰면 동일 ID의 복제 rect가 바닥 원본을 덮어쓸 위험이 있다. 새 선택ID/schema를 만들지 않는다.
 
-제목 초점→Tab/Shift+Tab 후보 순환→Enter/Space 1회 선택→popup 종료→실제 원본 CardId 착지/획득 순서다. 필수 선택 Escape dismiss는 없다. 초점 복귀는 원 제어가 유효하면 원 제어, 제거/잠금이면 남은 손패 또는 판 정보, 연속 선택이면 새 제목이다. 200%에서는 텍스트/후보 내부 스크롤과 동등 행동을 보장하고 팝업 자체를 손패 위에 무작정 덮지 않는다. 팝업 위치·핵심 정보 가림 예외는 UX-08/09/24의 별도 승인 대상이다.
+제목 초점→Tab/Shift+Tab 후보 순환→Enter/Space 1회 선택→popup 종료→실제 원본 CardId 착지/획득 순서다. 필수 선택 Escape dismiss는 없다. 초점 복귀는 원 제어가 유효하면 원 제어, 제거/잠금이면 남은 손패 또는 판 정보, 연속 선택이면 새 제목이다. 200%에서는 제목·전체 후보 그림·필요한 카드 이름을 스크롤 없이 보이는 안을 먼저 비교하고 팝업 자체를 손패 위에 무작정 덮지 않는다. 팝업 위치·핵심 정보 가림 예외는 UX-08/09/24의 별도 승인 대상이다.
 
 ## 6. #200 공유 계약 제안
 
@@ -60,9 +74,9 @@ B를 최소 후속 후보로 제안한다. 기존5×3·덱7번과 월 anchor 수
 |---|---|---|
 | ID | 원 CardId·round·현재 월 anchor, group identity 추가는 반례 후 판단 | target CardId와 event source(play/flip); DOM slot key와 논리 identity를 구분 |
 | 좌표 | group anchor, 각 카드 viewport rect/rotation/transform-origin/z-order/offset, footprint | 선택 **개별 카드**의 이동 전 실제 rect; group anchor나 popup rect로 대체 금지 |
-| 순서 | 기존 카드 offset/z 고정, 새 공개 카드의 landing offset은 별도 | 잠정 손패 접촉→덱 공개/접촉→실제 Matched 관계 강조→실제 Captured 획득 또는 Ppeok 잔류; 시각 단계와 실제 사건 순서를 구분, 임의wait 없음 |
+| 순서 | 기존 카드 offset/z 고정, 새 공개 카드의 landing offset은 별도 | 잠정 손패 접촉→덱 공개/접촉→실제 Matched의 짝 연결→실제 Captured 때 짝별 두 묶음 동시 이동 또는 Ppeok 잔류; 빛 표현 미결; 시각 단계와 실제 사건 순서를 구분, 임의wait 없음 |
 | 선택 | 공개 candidate CardId만, 비선택 자동 묶음, 원본과 popup 구분 | 확정 target의 원본 rect를 연결; 선택 전 후보 하나를 임의 확정하지 않음 |
-| 수명 | same-seq 중간 commit 예약, 최종 seq교체/queue해제 release, round/remount reset | skip/reset generation 무효화, snapshotSeq 점프·감소 reconcile, resize시 재측정 또는 현재 최종 투영 수렴 |
+| 수명 | same-seq 중간 commit 예약, 최종 seq교체/queue해제 release, round/remount reset | skip/reset 기존 재생 취소 토큰 무효화, snapshotSeq 점프·감소 reconcile, resize시 재측정 또는 현재 최종 투영 수렴 |
 | DOM | 원본 data-card-id 유일, popup 복제는 measure 제외, 제거 전 footprint 예약 | before measure→commit/tick→after measure; 제거 전 target 예약, 종료/취소 뒤 ghost·예약 회수 |
 
 월 소멸→재등장/round reset·복원/snapshot 중간 경계에서 CardId+round만으로 부족한 구체 반례는 아직 없다. group generation·새 stableID는 확정하지 않으며 반례가 있을 때 최소 상태로 정당화한다. DOM slot key 재사용으로 카드 instance가 교체되는 현상과 월 identity를 혼동하지 않는다. 착지 픽셀 허용·회전 유지/상쇄·DOM 레지스트리 도입 여부는 #200 측정 계약과 root 중재 후 정한다. 실제 transform이 적용된 AABB에 angle/노출offset을 다시 더해 중복 계산하지 않는다. #202는 레이아웃 정보만 제공한다. 기존 moved()의0.5px 판정값을 사용자 착지 오차 승인으로 전용하지 않는다. renderer 로컬 정보는 wire/저장 schema에 넣지 않는다. P2P 지연 중 같은 공개 스냅을 유지하고 늦게 온 이전 재생이 새 anchor·선택을 되살리지 않아야 한다.
@@ -121,15 +135,24 @@ B를 최소 후속 후보로 제안한다. 기존5×3·덱7번과 월 anchor 수
 
 도상 노출32.7/47.1/60.2%는 앞뒤 반전·1/2/3/4장 PNG로 비교 가능하다. 광/열끗/띠/피·보너스의 보호 도상을 사람이 읽었는지 확인한 결과는 없다. 4장/보너스 무더기에서 하나의 수평 offset만 키우는 해법은 덱/이웃과 충돌하며 ‘노출율이 높으니 식별 성공’으로 판정하지 않는다.
 
-### 팝업 후보의 축소
+### 실제2후보 popup 비교와 최소 diff 후보
 
-예비 무제한 중앙 popup의200%·긴 문구·3후보는 두 엔진에서462.171875px 높이, 손패180px 교차·board 초과였다. 이 실패 PNG를 보존하고 기각했다. 기존132row 해결 주장은 없다.
+engine 합법 진행 seed2/action9의 play41 뒤 pending target은 **11월 광40/피42** 두 후보이며 legalActions도 이 둘이었다. 일반 바닥3장/자연뻑은 자동 묶음이다. 앞선3후보 fixture는 법적 선택 증거가 없는 강건성 스트레스이며 기본 UX를 복잡하게 만드는 근거로 쓰지 않는다.
 
-후속 **바닥 실가용 영역 안 높이 제한 + 제목/설명 스크롤 + 후보 행동 고정** 목업은390×734에서366×225.4375px, 작은360×650에서336×141.4375px였다. 두 엔진 모두 손패 교차0/board 내부,3후보78.171875px 높이였다. 작은 높이의 설명 region은 client37px/scroll358px로 정보에 접근하려면 내부 스크롤이 필요하다. 글자200% CSS 모형이며 실제 Safari aA/Android textZoom 검증이 아니다. 제한된 제목 가시성·팝업이 가리는 비활성 원본·메뉴/필수 숫자·실기기 스크롤 사용성은 사용자/제품 수용 미완이다.
+실제2후보로 작은360×650과390×734, 짧은/긴 문구, Chromium/WebKit의 **8조건**만 비교했다. 200%는 CSS 글자 모형이다. 짧은안은 제목 ‘11월 먹을 패’·각 전체 그림48×78.171875·이름 ‘광/피’를 고정 표시하고 설명 문단을 생략한다. 작은 높이에서 popup336×141.4375, 후보 hitbox157×78.171875(그림과 별도), 제목40px·이름은 완전히 보였고 필수 정보 스크롤0·손패 교차0이었다.390×734에서는 popup366×225.4375·hitbox172×78.171875였다. 복제40/42는 dialog 아래, 원본 canonical ID 유일/inert·중앙hit·Tab40→Escape 유지→Enter40을 두 엔진에서 관측했다. 이는 픽셀/DOM 관측이며 도상 식별·OS 스크린리더 수용 PASS가 아니다.
 
-2후보 popup은 각48×78.171875px 그림/button·중앙hit·원본 inert·dialog 제외 후 canonical ID 유일을 관측했다. Tab→후보13, Escape 후 필수 선택 유지, Enter 선택ID13·창0, reset 새round/선택 해제·창0, 권위 결과를 흉내 낸 직접 timeout 입력 후 창0을 확인했다. 실제 호스트 timeout 경합·intro/outro·기존 promptFocus 재사용을 검증한 것은 아니다. synthetic coarse 잠금도 실제 기기 회전 수용이 아니다. 설명 region Tab/스크롤·제거 카드 후 초점·동일 포인터 연쇄·연속 선택/P2P 대기·restore·배경 전체 ARIA의 실제 통합은 후속 표적이다. 원본 prefix 외 숨은 손패/덱을 가져오지 않으며 목업 외부 요청 관측0, pageerror0이다.
+같은 실제2후보의 긴 안내안은 작은 높이에서 client37px/scroll358px로 제목이 잘렸다. 이 안은 필수 정보를 그 영역에만 맡기므로 기각한다. 예비 무제한200% 긴3후보 popup462.171875px·손패180px 교차 실패도 보존한다. ‘겹침0’만으로 constrained 안을 채택하지 않는다. popup 동안 비활성 바닥을 가리는 문제와 평상시 같은 월 카드가 서로 가리는 문제는 별개의 미승인 수용 항목이다.
 
-조건부 최소 접점 제안: 기존 PromptPanel의 단일 native dialog/promptFocus를 재사용하고, 제목도 기존 설명 region 안에서 스크롤하는 **target 전용 선택 옵션**과 고정 카드 행동 snippet을 비교한다. ChoicePrompt 전체 size 변경·획득32px 변경·새 focuslock·일괄 modal 교체는 하지 않는다. Floor는 기존 직접 target dialog/focus와 새로운 후보창을 동시에 열지 않아야 한다. 필요한 구체 diff 후보는 Floor의 target 표현 분기/현재 focus 활성 범위, PromptPanel의 target 한정 제목/설명 배치 옵션, 전용 wrapper CSS다. Board/skin에서 메뉴·회전/inert 연결이 불충분하면 그 근거를 root에 제출하며 현재 소유 예외는 없다. 바닥 비활성 원본을 popup이 가리는 예외는 UX-08/09 개정과 함께 검토한다.
+현재 PromptPanel의 고정 h2(14px/20px)·기존 actions snippet과 padding4px6px/gap2px를 짧은안 모형에 맞췄다. 200%의40px 제목+78.171875px 행동+2px gap+8px 세로 padding+2px border는130.171875px로141.4375px 안에 들어간다. 기본 두 후보에는 children/새 scrollTitle API가 필요 없다는 **정적 최소 diff 후보**다. 실제 컴포넌트 재사용 실행은 미검증이며 timer/메뉴/전체 배경 정보를 이 계산에서 해결했다고 주장하지 않는다.
+
+| 범위 | 조건부 후속 diff 후보 | 현재 소유 |
+|---|---|---|
+| Floor target 표현 | 기존 options/onchoose를 PromptPanel title/actions로 전달; 원본 직접선택 focus/dialog 활성과 popup을 한 번만 열기; 후보 CardId 유지 | 아직 제품 작성 없음 |
+| Floor 전용 wrapper/CSS | viewport별 floor 실가용 영역으로 popup bounds, 후보 그림48px·입력≥48px·8px 간격·필요 이름 | Floor 승인 뒤 후보 |
+| PromptPanel/ChoicePrompt | 기본안은 기존 title/actions 재사용, scrollTitle 새 API·관련 카드32px 변경 없음 | 제품 예외 미승인 |
+| Board/skin | 기존 promptlockchange/inert/회전/메뉴 연결을 재사용할 수 없는 구체 diff만 root에 소유 요청 | 직접 편집 금지 |
+
+기존 promptFocus/helper의 intro/outro, reset 중 취소·연속선택/P2P 늦은 결과·restore, 실제 authority timeout, 메뉴/Android Back, 회전 후 초점 및 OS 스크린리더는 후속 제품 표적이다. 목업의 직접 reset/가로 잠금/timeout 호출을 이 통합 검증으로 승격하지 않는다. 별도 Floor focuslock은 제안하지 않는다.
 
 ### 실제 사건 열로 연결한 비교
 
@@ -141,6 +164,12 @@ B를 최소 후속 후보로 제안한다. 기존5×3·덱7번과 월 anchor 수
 | 뻑 잔류 | 2·2 | Played→Flipped→Ppeok→InstantPayout; Captured0, 새획득0 |
 | 폭탄 | 9·8 | Bomb→Captured→PiStolen→Flipped→Placed→ScoreChanged×2; 실제 폭탄 새획득16/19/18/17 |
 
-팝업 선택 모형에는 가짜 Captured/권위 대상 필드를 추가하지 않았다. 일반 손패 접촉→덱 공개/접촉의 시각 landmark와 실제 resolve 사건 순서는 별도로 보여 준다. 손패/덱 두 번 선택의 중간 공개ID 부재는 미결이다. #200 summary 목적지 DOM 부재·연속 Matched 강조 우려와 actual before pose 측정 계약은 root의 착지 후속 소유이며 이 문서에 중복 상세 규범을 만들지 않는다.
+후속 인터뷰대로 두 짝은 [45,44]와[31,30]을 각각 유지한 채 **실제 Captured를 본 뒤 함께 출발**하는 작동 비교를 추가했다. 중앙 한 묶음으로 합치지 않으며 원 CardId/획득32px를 보존한다. 한 중간 프레임에서 두 묶음의 transform 동일, reset 뒤 이동 묶음 DOM0을 관측했으며 실제 Playback 취소 검증은 아니다. 목업의 이동시간은 시연값이고 AC-06/700ms 변경 승인이 아니다. 떨어질 때/먹을 때의 빛은 미응답이라 기본 시연에서 색 강조를 넣지 않았다. 팝업 선택 모형에는 가짜 Captured/권위 대상 필드를 추가하지 않았다. 손패를 짝 위에 놓기→덱 뒤집어 짝 위에 놓기의 시각 landmark와 실제 resolve 사건 순서는 별도로 보여 준다. 손패/덱 두 번 선택의 중간 공개ID 부재는 미결이다. #200 summary 목적지 DOM 부재·연속 Matched 강조 우려와 actual before pose 측정 계약은 root의 착지 후속 소유이며 이 문서에 중복 상세 규범을 만들지 않는다.
+
+### root 검토 entry와 대표4장
+
+격리 목업 entry는 승인 전 HTML, engine fixture 생성, 표적 probe와 공개 자산 복제다. 실행은 저장소에서 핀 Node를 선택하고 `node node_modules/vite/bin/vite.js '<SCRATCH_ENTRY_DIRECTORY>' --host '<LOOPBACK_HOST>' --port '<RESERVED_PREVIEW_PORT>' --strictPort`다. `<…>`는 실행 전 바꿀 자리표시자이며 네트워크/환경 원문은 공개 문서에 남기지 않는다. root에게 실제 로컬 entry와 실행값을 비공개 인계한다. scratch는 Git 추적/제품 배포에 포함하지 않으므로 PR 단독 checkout에서 실행 가능한 제품 산출물이라고 주장하지 않는다.
+
+대표 PNG는 `review-1-pair.png`(두 짝/실제 Captured 뒤 분리 동시 이동·offset3안), `review-2-ppeok.png`(뻑3장 잔류·offset3안), `review-3-bomb.png`(폭탄4장 공개·획득 전·offset3안), `review-4-small-200-two.png`(실제2후보·작은 높이200%) 네 장이다. offset12/8·18/12·24/16 및 순서 반전은 같은 entry에서 비교한다. 계산 노출율/교차/DOM 관측은 기록했으며 사람이 뒤 카드 종류를 읽을 수 있는지는 미판정이다. 첫 세 장은 주변 배치의 공간 수용 증거가 아니며, 네 번째 바닥도 실제 Board가 아닌 실측 크기 donor를 쓰는 합성 모형이다.
 
 AGENTS/RTK·관련 정본·ui-spec·규칙§12·이슈/#223 최종계약 읽기, Node24.21.0/npm11.19.0 npm ci·lint:fix·privacy 검사 및 whitespace 확인을 수행했다. Context7 callable 도구가 없어 목업 계측 API는 [Playwright 공식 Page](https://playwright.dev/docs/api/class-page)·[Browser](https://playwright.dev/docs/api/class-browser), [MDN dialog](https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement)·[rect](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect) 원문을 직접 조회했다. 새 dependency0이다. 제품 suite·intro/outro 실제 통합·초기 serving 전송·기기·식별/성능 수용은 미완이며 PASS0, 제품 변경0·규범 승인0이다.
