@@ -113,7 +113,7 @@
   const cells = $derived(
     compact
       ? layout.cells
-      : groups.map((group) => ({ ...group, slot: undefined, x: 0, y: 0, angle: 0 })),
+      : groups.map((group) => ({ ...group, slot: undefined, x: 0, y: 0, angle: 0, dx: 0, dy: 0 })),
   );
 </script>
 
@@ -154,6 +154,7 @@
         style:left={`${group.x}px`}
         style:top={`${group.y}px`}
         style:rotate={`${group.angle}deg`}
+        style:translate={`${group.dx}px ${group.dy}px`}
         data-floor-slot={group.slot}
         data-month={group.month}
         data-hand-link={handLinks[group.month]}

@@ -85,11 +85,13 @@ test('월별 연결·카드 보존·회전한 경계의 셀 내부 포함을 다
               cardHeight = 48 / 0.614;
             const w = width * Math.cos(angle) + cardHeight * Math.sin(angle);
             const h = cardHeight * Math.cos(angle) + width * Math.sin(angle);
-            const x = cell.x + width / 2,
-              y = cell.y + cardHeight / 2;
+            const x = cell.x + cell.dx + width / 2,
+              y = cell.y + cell.dy + cardHeight / 2;
+            expect(cell.x).toBe(left + (cw - width) / 2);
+            expect(cell.y).toBe(top + (ch - cardHeight) / 2);
             expect(Math.abs(cell.angle)).toBeLessThanOrEqual(4);
-            expect(Math.abs(cell.x - (left + (cw - width) / 2))).toBeLessThanOrEqual(3);
-            expect(Math.abs(cell.y - (top + (ch - cardHeight) / 2))).toBeLessThanOrEqual(3);
+            expect(Math.abs(cell.dx)).toBeLessThanOrEqual(3);
+            expect(Math.abs(cell.dy)).toBeLessThanOrEqual(3);
             expect(x - w / 2).toBeGreaterThanOrEqual(left);
             expect(x + w / 2).toBeLessThanOrEqual(left + cw);
             expect(y - h / 2).toBeGreaterThanOrEqual(top);

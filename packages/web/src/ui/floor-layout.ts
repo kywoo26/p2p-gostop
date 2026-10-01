@@ -8,6 +8,8 @@ export interface FloorCell extends FloorSlot {
   x: number;
   y: number;
   angle: number;
+  dx: number;
+  dy: number;
 }
 // 더미 좌/우 → 상/하 → 대각 → 바깥 열. 동일 입력은 동일 슬롯을 선택한다.
 const SLOT_ORDER = [6, 8, 2, 12, 1, 3, 11, 13, 5, 9, 0, 4, 10, 14];
@@ -246,7 +248,8 @@ export function projectFloor(
     fits &&= cellWidth >= stackWidth + 0.5;
     const x = left + (cellWidth - stackWidth) / 2;
     const y = top + (cellHeight - cardHeight) / 2;
-    const cell: FloorCell = { ...source, x, y, angle: 0 };
+    // 흩뿌림은 CSS translate로 둬 기존 SVG 합성 경로를 보존한다.
+    const cell: FloorCell = { ...source, x, y, angle: 0, dx: 0, dy: 0 };
     // 선택 후보·과밀 스택은 회전하지 않는다. 일반 카드는 변환된 경계도 자기 셀 안에 둔다.
     if (cards.length > 1 || options.includes(cards[0]!)) return cell;
     const id = cards[0]!;
@@ -259,7 +262,7 @@ export function projectFloor(
       const h = cardHeight * Math.cos(radians) + cardWidth * Math.sin(radians);
       if (w + 2 * Math.abs(dx) + 0.5 > cellWidth || h + 2 * Math.abs(dy) + 0.5 > cellHeight)
         continue;
-      return { ...cell, angle, x: x + dx, y: y + dy };
+      return { ...cell, angle, dx, dy };
     }
     return cell;
   });
