@@ -316,6 +316,12 @@ export interface MonthFloorBounds {
 }
 interface MonthFloorResult extends MonthFloorBounds {
   strategy: 'scatter' | 'boundary';
+  primaryLimit: number;
+  witnessSlots: number;
+  witnessCandidates: number;
+  witnessChecks: number;
+  witnessEdges: number;
+  witnessValid: boolean;
   searches: number;
   exhausted: boolean;
   reprojected: boolean;
@@ -541,6 +547,12 @@ export function layoutMonthFloor(
   // 예약은 호출자가 현재 bounds로 재투영한다. 이전 성공 배치 기준으로 이중 투영하지 않는다.
   const reservations = reserved;
   let capacityPrunes = 0;
+  let primaryLimit = STACK_SEARCH_LIMIT;
+  let witnessSlots = 0,
+    witnessCandidates = 0,
+    witnessChecks = 0,
+    witnessEdges = 0;
+  let witness: MonthFloorCell[] | null = null;
   let strategy: 'scatter' | 'boundary' = 'scatter';
   const result = (
     cells: MonthFloorCell[] | null,
@@ -548,7 +560,20 @@ export function layoutMonthFloor(
     exhausted: boolean,
     reprojected = false,
   ): MonthFloorLayout => {
-    const common = { ...bounds, strategy, searches, exhausted, reprojected, capacityPrunes };
+    const common = {
+      ...bounds,
+      strategy,
+      primaryLimit,
+      witnessSlots,
+      witnessCandidates,
+      witnessChecks,
+      witnessEdges,
+      witnessValid: witness !== null,
+      searches,
+      exhausted,
+      reprojected,
+      capacityPrunes,
+    };
     if (cells && validStacks(cells, bounds, reservations) && cells.length === groups.length)
       return {
         ...common,
@@ -608,6 +633,79 @@ export function layoutMonthFloor(
         a.shape.footprint.width * a.shape.footprint.height ||
       a.group.month - b.group.month,
   );
+  // 이전 유효 배치 뒤에 유한 배치를 먼저 검증한다. 성공할 때만 탐색 상한을 줄인다.
+  // 각 위치는 실제 카드·예약·더미 검사를 통과해야 한다. 이전 유효 배치가 먼저다.
+  {
+    const boundaryBlocks = blocks.map((b) => ({
+      ...b,
+      shape: monthShape(b.group, bounds, b.old, 0),
+    }));
+    const edge = STACK_EDGE + 0.000001;
+    const w = Math.max(...boundaryBlocks.map((b) => b.shape.footprint.width));
+    const h = Math.max(...boundaryBlocks.map((b) => b.shape.footprint.height));
+    const columns = Math.min(
+      boundaryBlocks.length,
+      Math.floor((bounds.width - 2 * edge + STACK_GAP) / (w + STACK_GAP)),
+    );
+    const rows = Math.min(
+      boundaryBlocks.length,
+      Math.floor((bounds.height - 2 * edge + STACK_GAP) / (h + STACK_GAP)),
+    );
+    const slots: { x: number; y: number }[] = [];
+    for (let row = 0; row < rows; row++)
+      for (let column = 0; column < columns; column++)
+        slots.push({
+          x: edge + (columns === 1 ? 0 : (column * (bounds.width - 2 * edge - w)) / (columns - 1)),
+          y: edge + (rows === 1 ? 0 : (row * (bounds.height - 2 * edge - h)) / (rows - 1)),
+        });
+    witnessSlots = slots.length;
+    const options = boundaryBlocks.map((b) =>
+      slots
+        .map((slot, at) => {
+          witnessCandidates++;
+          return {
+            at,
+            cell: stackCell(
+              b.group,
+              b.shape,
+              { x: slot.x - b.shape.footprint.x, y: slot.y - b.shape.footprint.y },
+              b.old?.slot ?? b.group.month - 1,
+            ),
+          };
+        })
+        .filter(({ cell }) => {
+          witnessChecks++;
+          return validStacks([cell], bounds, reservations);
+        }),
+    );
+    const assigned = new Map<number, { block: number; cell: MonthFloorCell }>();
+    const assign = (block: number, seen: Set<number>): boolean => {
+      for (const { at, cell } of options[block]!) {
+        witnessEdges++;
+        if (seen.has(at)) continue;
+        seen.add(at);
+        const occupied = assigned.get(at);
+        if (!occupied || assign(occupied.block, seen)) {
+          assigned.set(at, { block, cell });
+          return true;
+        }
+      }
+      return false;
+    };
+    const order = boundaryBlocks
+      .map((_, i) => i)
+      .sort(
+        (a, b) =>
+          options[a]!.length - options[b]!.length ||
+          boundaryBlocks[a]!.group.month - boundaryBlocks[b]!.group.month,
+      );
+    if (order.every((block) => assign(block, new Set()))) {
+      const cells = [...assigned.values()].map(({ cell }) => cell);
+      witnessChecks++;
+      if (validStacks(cells, bounds, reservations)) witness = cells;
+    }
+  }
+  if (witness) primaryLimit = 128;
   let searches = 0,
     exhausted = false;
   const found: { cells: MonthFloorCell[] | null } = { cells: null };
@@ -750,7 +848,7 @@ export function layoutMonthFloor(
     return capacity >= remaining.length;
   };
   const visit = (i: number, placed: MonthFloorCell[], strict: boolean): boolean => {
-    if (++searches > STACK_SEARCH_LIMIT) {
+    if (++searches > primaryLimit) {
       exhausted = true;
       return false;
     }
@@ -778,71 +876,9 @@ export function layoutMonthFloor(
   };
   visit(0, [], true);
   if (!found.cells && !exhausted) visit(0, [], false);
-  // 탐색 실패 뒤에도 실제 크기와 현재 영역으로 만든 유한 배치를 검사한다.
-  // 각 위치는 실제 카드·예약·더미 검사를 통과해야 한다. 이전 유효 배치가 먼저다.
-  if (!found.cells) {
-    const boundaryBlocks = blocks.map((b) => ({
-      ...b,
-      shape: monthShape(b.group, bounds, b.old, 0),
-    }));
-    const edge = STACK_EDGE + 0.000001;
-    const w = Math.max(...boundaryBlocks.map((b) => b.shape.footprint.width));
-    const h = Math.max(...boundaryBlocks.map((b) => b.shape.footprint.height));
-    const columns = Math.min(
-      boundaryBlocks.length,
-      Math.floor((bounds.width - 2 * edge + STACK_GAP) / (w + STACK_GAP)),
-    );
-    const rows = Math.min(
-      boundaryBlocks.length,
-      Math.floor((bounds.height - 2 * edge + STACK_GAP) / (h + STACK_GAP)),
-    );
-    const slots: { x: number; y: number }[] = [];
-    for (let row = 0; row < rows; row++)
-      for (let column = 0; column < columns; column++)
-        slots.push({
-          x: edge + (columns === 1 ? 0 : (column * (bounds.width - 2 * edge - w)) / (columns - 1)),
-          y: edge + (rows === 1 ? 0 : (row * (bounds.height - 2 * edge - h)) / (rows - 1)),
-        });
-    const options = boundaryBlocks.map((b) =>
-      slots
-        .map((slot, at) => ({
-          at,
-          cell: stackCell(
-            b.group,
-            b.shape,
-            { x: slot.x - b.shape.footprint.x, y: slot.y - b.shape.footprint.y },
-            b.old?.slot ?? b.group.month - 1,
-          ),
-        }))
-        .filter(({ cell }) => validStacks([cell], bounds, reservations)),
-    );
-    const assigned = new Map<number, { block: number; cell: MonthFloorCell }>();
-    const assign = (block: number, seen: Set<number>): boolean => {
-      for (const { at, cell } of options[block]!) {
-        if (seen.has(at)) continue;
-        seen.add(at);
-        const occupied = assigned.get(at);
-        if (!occupied || assign(occupied.block, seen)) {
-          assigned.set(at, { block, cell });
-          return true;
-        }
-      }
-      return false;
-    };
-    const order = boundaryBlocks
-      .map((_, i) => i)
-      .sort(
-        (a, b) =>
-          options[a]!.length - options[b]!.length ||
-          boundaryBlocks[a]!.group.month - boundaryBlocks[b]!.group.month,
-      );
-    if (order.every((block) => assign(block, new Set()))) {
-      const cells = [...assigned.values()].map(({ cell }) => cell);
-      if (validStacks(cells, bounds, reservations)) {
-        found.cells = cells;
-        strategy = 'boundary';
-      }
-    }
+  if (!found.cells && witness) {
+    found.cells = witness;
+    strategy = 'boundary';
   }
   // 후보 미발견은 불가능 증명이 아니다. 실패는 별도 상태이며 개발 진단만 그린다.
   return result(

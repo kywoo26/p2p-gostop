@@ -248,17 +248,80 @@ test('실제42px 부모의 12월은 탐색 상한 뒤 검증된 경계 배치로
     expect(first.cells.every((c) => c.angle === 0 && c.poses.every((p) => p.angle === 0))).toBe(
       true,
     );
-    expect(first.searches).toBe(8193);
+    expect(first.searches).toBe(129);
+    expect(first.primaryLimit).toBe(128);
+    expect(first.witnessValid).toBe(true);
+    expect(first.witnessSlots).toBeLessThanOrEqual(groups.length ** 2);
+    expect(first.witnessCandidates).toBe(groups.length * first.witnessSlots);
+    expect(first.witnessChecks).toBe(first.witnessCandidates + 1);
+    expect(first.witnessEdges).toBeLessThanOrEqual(groups.length ** 2 * first.witnessSlots);
     expect(first.exhausted).toBe(true);
     safe(first.cells, current);
     expect(first.cells.flatMap((c) => c.cards)).toEqual(groups.flatMap((g) => g.cards));
     expect(placed(layoutMonthFloor([...groups].reverse(), current)).cells).toEqual(first.cells);
     const reused = placed(layoutMonthFloor(groups, current, first));
     expect(reused.searches).toBe(0);
+    expect(reused.witnessCandidates).toBe(0);
+    expect(reused.witnessChecks).toBe(0);
     expect(reused.strategy).toBe('boundary');
     expect(reused.cells).toEqual(first.cells);
     const impossible = layoutMonthFloor(groups, { ...current, height: 70 }, first);
     expect(impossible.status).toBe('failed');
     expect(impossible.cells).toEqual([]);
   }
+});
+
+test('witness는 사용 중 삭제 예약을 건너뛰지 않고 없는 경우 기존 탐색 예산을 유지한다', () => {
+  const groups = Array.from({ length: 12 }, (_, i) => floorGroup((i + 1) as 1, [i * 4]));
+  const current = {
+    width: 336,
+    height: 243.78125,
+    cardWidth: 42,
+    paintPadding: 1,
+    obstacles: [{ x: 147, y: 87.6953125, width: 46, height: 72.390625 }],
+  };
+  const valid = placed(layoutMonthFloor(groups, current));
+  const reserved = {
+    ...valid.cells[0]!,
+    cards: [3],
+    footprint: { x: 2, y: 2, width: 332, height: 239.78125 },
+  };
+  const blocked = layoutMonthFloor(groups, current, valid, [reserved]);
+  expect(blocked.status).toBe('failed');
+  expect(blocked.witnessValid).toBe(false);
+  expect(blocked.primaryLimit).toBe(8192);
+  expect(blocked.cells).toEqual([]);
+  const recovered = placed(layoutMonthFloor(groups, current, valid));
+  expect(recovered.cells).toEqual(valid.cells);
+  expect(recovered.witnessCandidates).toBe(0);
+});
+
+// 합성51은 유한 비용 상한 probe다. 실제 합법 floor 도달/지원 Board fixture가 아니다.
+test('12월·51원본 합성 비용 상한에서 witness 슬롯·카드 pose 생성 수는 유한하다', () => {
+  const groups = Array.from({ length: 12 }, (_, i) =>
+    floorGroup(
+      (i + 1) as 1,
+      i === 11 ? [44, 45, 46, 47, 48, 49, 50] : [i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 3],
+    ),
+  );
+  const result = placed(
+    layoutMonthFloor(groups, {
+      width: 4096,
+      height: 4096,
+      cardWidth: 42,
+      paintPadding: 1,
+      obstacles: [],
+    }),
+  );
+  expect(result.witnessValid).toBe(true);
+  expect(result.witnessSlots).toBe(144);
+  expect(result.witnessCandidates).toBe(1728);
+  expect(result.witnessEdges).toBeLessThanOrEqual(12 ** 2 * 144);
+  expect(result.witnessSlots * groups.flatMap((g) => g.cards).length).toBe(7344);
+  expect(
+    result.cells
+      .flatMap((c) => c.poses)
+      .map((p) => p.id)
+      .sort((a, b) => a - b),
+  ).toEqual(Array.from({ length: 51 }, (_, i) => i));
 });

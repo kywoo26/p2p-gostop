@@ -55,6 +55,24 @@
   let table: HTMLElement;
   let bounds = $state<MonthFloorBounds>({ width: 0, height: 0, cardWidth: 48, obstacles: [] });
   let monthLayout = $state.raw<MonthFloorLayout>();
+  let monthLayoutCosts = $state.raw<
+    {
+      ms: number;
+      width: number;
+      height: number;
+      cardCount: number;
+      searches: number;
+      primaryLimit: number;
+      strategy: 'scatter' | 'boundary';
+      witnessSlots: number;
+      witnessCandidates: number;
+      witnessChecks: number;
+      witnessEdges: number;
+      witnessValid: boolean;
+      relocated: number;
+      fits: boolean;
+    }[]
+  >([]);
   let lastGoodMonthLayout: MonthFloorLayout | undefined;
   let monthReserved = $state.raw<MonthFloorCell[]>([]);
   let monthReservedBounds: MonthFloorBounds | undefined;
@@ -118,8 +136,10 @@
       deck = deckCount;
     if (!monthStacks) return;
     untrack(() => {
+      const started = import.meta.env.DEV ? performance.now() : 0;
       if (nextRound !== monthRound || deck > monthDeck) {
         monthLayout = undefined;
+        monthLayoutCosts = [];
         lastGoodMonthLayout = undefined;
         monthReserved = [];
       }
@@ -147,6 +167,29 @@
       monthRound = nextRound;
       monthDeck = deck;
       monthSeq = seq;
+      if (import.meta.env.DEV) {
+        const r = monthLayout;
+        const ms = performance.now() - started;
+        monthLayoutCosts = [
+          ...monthLayoutCosts.slice(-15),
+          {
+            ms,
+            width: size.width,
+            height: size.height,
+            cardCount: ids.size,
+            searches: r.searches,
+            primaryLimit: r.primaryLimit,
+            strategy: r.strategy,
+            witnessSlots: r.witnessSlots,
+            witnessCandidates: r.witnessCandidates,
+            witnessChecks: r.witnessChecks,
+            witnessEdges: r.witnessEdges,
+            witnessValid: r.witnessValid,
+            relocated: r.relocated,
+            fits: r.fits,
+          },
+        ];
+      }
     });
   });
   $effect(() => {
@@ -250,6 +293,9 @@
   data-floor-strategy={monthStacks ? monthLayout?.strategy : undefined}
   data-floor-searches={monthStacks ? monthLayout?.searches : undefined}
   data-floor-exhausted={monthStacks ? monthLayout?.exhausted : undefined}
+  data-floor-layout-costs={monthStacks && import.meta.env.DEV
+    ? JSON.stringify(monthLayoutCosts)
+    : undefined}
   data-floor-model-bounds={monthStacks ? JSON.stringify(bounds) : undefined}
   data-floor-relocated={monthStacks ? monthLayout?.relocated : undefined}
   data-floor-reserved={monthStacks ? monthReserved.length : undefined}
