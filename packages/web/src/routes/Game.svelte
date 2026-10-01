@@ -59,6 +59,15 @@
   }: Props = $props();
 
   const pb = $derived(controller.playback);
+  const pendingResult = $derived(controller.pendingRoundResult ?? null);
+  const summary = $derived(pb.settlement ?? pendingResult?.summary ?? null);
+  const pushDecision = $derived(
+    controller.mode === 'solo'
+      ? pendingResult?.acknowledged && pb.idle
+        ? controller.pushDecision
+        : null
+      : controller.pushDecision,
+  );
   const autoCandidate = $derived(automaticAction(pb.board));
   let root = $state<HTMLElement | null>(null);
 
@@ -308,10 +317,7 @@
   data-play-plans={playPlans}
 >
   <p class="timer-announcement" role="status">{timerAnnouncement}</p>
-  <div
-    class="board-wrap"
-    inert={pb.settlement !== null || controller.pushDecision != null || menuOpen || ended}
-  >
+  <div class="board-wrap" inert={summary !== null || pushDecision != null || menuOpen || ended}>
     <Board
       view={pb.board}
       soloDifficulty={controller.mode === 'solo' ? soloDifficulty : undefined}
@@ -374,14 +380,16 @@
         >기록 보기</button
       >
     </div>
-  {:else if pb.settlement || controller.pushDecision}
+  {:else if summary || pushDecision}
     <div class="overlay" inert={menuOpen}>
       <Settlement
-        view={pb.settlement?.view ?? null}
+        view={summary?.view ?? null}
         soloDifficulty={controller.mode === 'solo' ? soloDifficulty : undefined}
-        instant={pb.settlement?.instant ?? []}
-        nextCarry={pb.settlement?.nextCarry ?? null}
-        decision={controller.pushDecision}
+        instant={summary?.instant ?? []}
+        nextCarry={summary?.nextCarry ?? null}
+        decision={pushDecision}
+        pending={pendingResult}
+        onacknowledge={(key) => controller.acknowledgeRoundResult?.(key)}
         guest={controller.mode === 'guest'}
         onpush={(push) => controller.choosePush(push)}
         bankrupt={controller.bankrupt}

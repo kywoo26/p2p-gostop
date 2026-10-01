@@ -4,6 +4,7 @@
   import type { Difficulty } from '@p2p-gostop/ai';
   import { conciseSoloNotice, playerLabel } from '../game/player-labels.ts';
   import type { SettlementDisplay } from '../game/adapter.ts';
+  import type { PendingRoundResult } from '../game/controller.ts';
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
   import Screen from '../ui/Screen.svelte';
   import { REASON_LABEL, SCORE_LABEL, stepLabel } from '../ui/settle-labels.ts';
@@ -11,6 +12,8 @@
   interface Props {
     /** 국진 위치(gukjin)는 솔로 어댑터만 넣는다(프로토콜 뷰에는 아직 없다) */
     view: SettlementDisplay | null;
+    pending?: PendingRoundResult | null;
+    onacknowledge?: ((key: string) => void) | undefined;
     soloDifficulty?: Difficulty | undefined;
     decision?: {
       readonly winner: boolean;
@@ -40,6 +43,8 @@
 
   let {
     view,
+    pending = null,
+    onacknowledge,
     soloDifficulty,
     decision = null,
     guest = false,
@@ -55,6 +60,19 @@
     onrefill,
     onfresh,
   }: Props = $props();
+
+  let heading = $state<HTMLParagraphElement | null>(null);
+  let hadPendingResult = false;
+  const stage = $derived(pending ? (pending.acknowledged ? '받기·밀기 선택' : '판 결과') : '정산');
+  $effect(() => {
+    void stage;
+    const target = heading;
+    const focusResult = pending !== null || hadPendingResult;
+    hadPendingResult = pending !== null;
+    if (!focusResult || target === null) return;
+    // $effect는 DOM 갱신 뒤 실행된다. 추가 tick 없이 같은 전이에서 초점을 옮긴다.
+    if (target.isConnected && !target.closest('[inert]')) target.focus();
+  });
 
   const headline = $derived(
     view === null
@@ -83,10 +101,25 @@
   );
 </script>
 
-<Screen title="정산" back={null} scrollBody>
-  <p class="headline" data-testid="settlement-headline" title={headline}>
+<Screen title={stage} back={null} scrollBody>
+  <p
+    class="headline"
+    data-testid="settlement-headline"
+    title={headline}
+    tabindex="-1"
+    bind:this={heading}
+  >
     <span aria-hidden="true">{displayHeadline}</span><span class="sr-only">{headline}</span>
   </p>
+
+  {#if pending}
+    <p role="status" data-testid="pending-result-note">
+      {pending.acknowledged
+        ? '결과 확인 완료 · 받기·밀기 결정 대기'
+        : '결과를 확인한 뒤 받기·밀기를 진행합니다.'}
+      아직 정산되지 않았습니다.
+    </p>
+  {/if}
 
   {#if view?.pushed}
     <p class="push-result" data-testid="push-forfeit">
@@ -145,7 +178,7 @@
 
   {#if view && view.winner !== null}
     <section class="settlement-section amount-section" aria-labelledby="settle-amount">
-      <h2 id="settle-amount">금액</h2>
+      <h2 id="settle-amount">{pending ? '받을 경우 예상 금액' : '금액'}</h2>
       <p class="amount">
         {view.finalPoints}점 × {formatMoney(view.pointValue, view.unit)} =
         <strong>{formatMoney(view.amount, view.unit)}</strong>
@@ -167,7 +200,7 @@
     </section>
   {/if}
 
-  {#if view}
+  {#if view && !pending}
     <section class="settlement-section balance-section" aria-labelledby="settle-balance">
       <h2 id="settle-balance">잔액</h2>
       <table>
@@ -212,7 +245,14 @@
   {/if}
 
   {#snippet actions()}
-    {#if decision}
+    {#if pending && !pending.acknowledged}
+      <button
+        type="button"
+        class="button primary"
+        data-choice="acknowledge"
+        onclick={() => onacknowledge?.(pending!.key)}>결과 확인</button
+      >
+    {:else if decision}
       {#if decision.winner}
         <button
           type="button"
@@ -227,6 +267,8 @@
             onclick={() => onpush?.(true)}>밀기 · 다음 판 ×{decision.nextMultiplier}</button
           >{/if}
       {/if}
+    {:else if pending}
+      <p role="status">결정을 기다리는 중</p>
     {:else if ended}
       <button type="button" class="button primary" data-choice="fresh" onclick={() => onfresh?.()}
         >새로 참가</button
@@ -234,11 +276,11 @@
     {:else}
       <button type="button" class="button" data-choice="end" onclick={() => onend?.()}>종료</button>
     {/if}
-    {#if !decision && !ended && bankrupt}
+    {#if !pending && !decision && !ended && bankrupt}
       <button type="button" class="button primary" data-choice="refill" onclick={() => onrefill?.()}
         >재충전</button
       >
-    {:else if !decision && !ended}
+    {:else if !pending && !decision && !ended}
       <button
         type="button"
         class="button primary"

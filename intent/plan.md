@@ -330,13 +330,32 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 | engine 점수·표시 전달 | #212 좁은 확정 점수 갱신 → #205 현재 점수 구성/카드 근거 UI. 규칙 정본 §12·공개정보 경계 유지 |
 | 공용 E2E·갤러리·실기기 | 기능 담당 전용 검증 뒤 공용 기준샷 인계. Galaxy/iPhone 결과는 #75/#186 사람 회차만 기록; WebKit 자동 검사는 실기기 대체 아님 |
 
-미착수 backlog: #191~195 복구, #30 이탈 환급, #44 로비/기록/판무효, #62 미지원 규칙·설정, #66 AI 강도·#67 머니·#75 실기기·#117 음향은 미완 요구를 유지한다. 옛 .2-A~D/.3-A~D의 상세 인계·검증 이력은 [#152 당시 계획](https://github.com/kywoo26/p2p-gostop/pull/152)에 보존하며 현재 배정으로 재사용하지 않는다. #131 결과 인지·밀기와 #49 연출은 시안 수용 후 구현, 현재 미착수다. #202 동월 겹침·#204 32px 미만 축소·#207 예산·#49 음향의 spec 변경은 근거 리뷰/사용자 승인 gate이며 그 밖의 가능한 UI까지 막지 않는다.
+미착수 backlog: #191~195 복구, #30 이탈 환급, #44 로비/기록/판무효, #62 미지원 규칙·설정, #66 AI 강도·#67 머니·#75 실기기·#117 음향은 미완 요구를 유지한다. 옛 .2-A~D/.3-A~D의 상세 인계·검증 이력은 [#152 당시 계획](https://github.com/kywoo26/p2p-gostop/pull/152)에 보존하며 현재 배정으로 재사용하지 않는다. #131 솔로 결과 확인은 아래 PR #225의 좁은 구현·NF-03 누적 예산 검증으로 진행하며, P2P 결과 순서와 #49 연출은 별도 미완 범위로 유지한다. #202 동월 겹침·#204 32px 미만 축소·#207 예산·#49 음향의 spec 변경은 근거 리뷰/사용자 승인 gate이며 그 밖의 가능한 UI까지 막지 않는다.
 
 카드·UI 결정은 §9 D1·D2, 규범은 spec §6과 UI 규범이다. 작업은 워크트리·브랜치·PR로 격리하며 현재 사용자 배정 정책은 subagent `gpt-6.1-sol`만, effort low(기계적)/medium(일반 구현·리뷰)/high(경합·보안·설계)이다. 위임은 사용자 지시에 따른다. `.claude` frontmatter는 Claude 전용 도구 설정이며 이 운영 모델 정책의 정본이 아니다.
 
 ---
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
+
+### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
+
+- 소유: `game/records.ts`의 읽기 전용 예상 정산, `controller.ts`의 선택적 결과 확인 계약, `solo.svelte.ts`의 판/이벤트 순번별 보류, `Game.svelte`·`Settlement.svelte`와 직접 관련 browser/E2E. Board·Playback·엔진·프로토콜·저장 스키마는 기존 계약을 유지한다.
+- 순서: 종료 권위 상태 저장 → 최종 재생/스냅 완료 → 승패·종료 사유·점수·배수·받기 예상액 → 명시적 결과 확인 → 사람 받기/밀기 또는 CPU 결정 → 확정 정산 → 명시적 다음 판. 확인은 결정이나 다음 판 동의가 아니다. 예상 잔액을 확정 원장처럼 표시하지 않는다.
+- 위험: 권위 `pushDecision`의 선노출, CPU 즉시 응답, stale 확인/응답, 저장 복원, 이전 포인터/Enter 및 초점 전이. 결과 캐시는 판/최종 eventSeq에 묶고 재생 완료 전 공개하지 않으며 확인 전 결정 요청과 선택을 막는다. 임의 시간 지연은 추가하지 않는다.
+- 검증 계획: G1 마지막 패 자동 스톱과 수동 스톱의 실제 종료를 Chromium/WebKit에서 재현하고 수정 전 실패를 기록한다. 보통/빠름/동작 줄이기/스킵의 상태 순서, CPU 즉시 받기·밀기와 저장 복원, 확정 원장/기록 1회·명시 다음 판, host/guest 회귀를 검사한다. AGENTS §5 PR 필수 검사·개인정보16검사·현행 전체 raw2,097,152 B gate를 실행한다. 초기 필수 encoded body1,500,000 B·2초/100ms/60fps·실기기/OS 스크린리더 수용은 별도 미검증이다.
+
+- 후속 NF-03 단계: 기준 소스 `c0e9ed4`·main `2fc850f` 결합의 raw1,573,479B(615B 초과, main 대비 JS+2,774B·CSS+0B)를 보존하고, 이 PR 소유 제품의 중복 뷰 계산·정산 입력·결과 상태 표현을 기능 동일하게 줄인다. 문구·ARIA·재생/초점·확인/CPU/stale/dispose 계약과 번들 상한을 유지하며 같은 base 결합 빌드로 비교한다. #218/#223 누적 예산은 별도 남는다.
+
+- 후속 계측 결과: 같은 base 결합에서 중복 제거 후보 raw1,573,043B(기준 대비 −436B, JS578,060B·CSS92,063B)로 줄었으나 상한보다179B 큼. 단독 source raw1,571,587B의 통과를 누적 통과로 쓰지 않는다. 좌석0/1·일반/올인 잔액·원화의 예상/실제 정산 전체 뷰 동일성과 원본 미변경8검사, 전체 browser810·Node563·lint/check를 통과했다. 남은 예산은 추가 미세 축소 없이 #207 통합 최적화로 이어간다.
+
+| 범위 | 상태 | 코드·검증 근거 | 남은 검증 |
+|---|---|---|---|
+| FR-16·FR-53·UX-T05·U15·NF-08의 솔로 결과/밀기 순서 | 솔로 구현·최종 main 누적 로컬 필수 검사 통과 / 새 CI·독립 리뷰 대기 ([#225](https://github.com/kywoo26/p2p-gostop/pull/225)) | 수정 전 실제 자동/수동 스톱·저장 CPU Chromium/WebKit6실패 → 기본 수정6통과, 보강 결과 경계26통과. 후속 받기 버튼 초점→확정 정산 경계는 수정 전 Chromium/WebKit4실패(body 초점), 이전 결과 보류 여부를 기억하는 좁은 수정 뒤 결과 경계26통과. `solo-result.test.ts`는 재생·최종 스냅 키/큐·stale 확인/응답·이전 포인터/Enter·원장/기록 1회, `solo-result.spec.ts`는 4모드 실제 앱16검사. 기존 host/guest 회귀 포함 전체 browser802·Node563·lint/check·개인정보16·PR smoke400·web build·Android3작업 통과. 위 검증은 통합 전 소스 근거다. #226 main `2e90fed` 통합은 제품/직접 검사7파일의 blob을 그대로 보존했고 lint/privacy16/check 통과. 실제 raw1,573,043B/1,572,864B(179B 초과)·외부 요청0으로 build gate 실패. | 새 독립 리뷰·최종 게시 head CI, 초기 전송·실기기/OS 스크린리더. 전체 이슈 완료나 관련 NF/UX 전체 수용을 뜻하지 않는다. |
+
+- 최종 통합 실행(2026-10-01): clean 기준 #225 `a3acbb8df4b969046c6a4bd9cf97fe16db47b905`에서 root가 승인한 `git merge origin/main`만 적용한다(main `79cda4941bd481a132637f265773479d20b12602`). 충돌 소유는 이 #225 문단과 Game/Settlement다. #218 이름·난이도/저장·P2P·ARIA 원문, #223 Board playbackBusy/Floor round·snapshotSeq/두 손패 예산, #214 힌트, #227 metadata410 B, #230 BASE_URL, #228/#231 승인 정책·문구를 보존한다. 옛 합성 objects는 복사하지 않는다. 새 기능·최적화·자산/의존성·규칙·threshold·기준샷 갱신0. 단계 commit/FF push는 별도 root 명시 승인 뒤 진행하며 PR 병합은 root가 처리한다. npm ci 후 이 통합 head에서 lint/check/Node/browser/build/PR smoke(전용4254, workers≤4)/Android(≤4)를1회씩 검사한다. 실패는 작은 반례와 해결 범위를 먼저 보고하며 전체 suite 자동 반복0. 정확 raw·카테고리·파일별 SHA-256 manifest를 기록하고 개별 checkpoint/최종 누적·raw 통과/초기 전송 및 기기 미검증을 구별한다. Refs #131의 P2P 잔여는 유지한다.
+
+- 최종 로컬 검증: 병합 `392ea58986b5e0ce0cbae2340d8fc30a26c5ad61`(부모 a3acbb8 + main79cda494)에서 npm ci/lint(privacy16·findings0)/check(Svelte0오류·0경고)/Node563/browser984/web build/PR smoke446/Android3작업 모두 통과했다. 표준 smoke는4254·4workers·retry0이며 timing 프로젝트 직렬, 실제 솔로4모드16검사와 pending→settled 제목초점·Enter 새판 방지, main 이름/바닥/벨 회귀를 포함한다. Gradle은≤4이며 timing 마지막 부분과 시작이 겹쳐 이 표본으로 독립 성능 향상을 주장하지 않는다. 전체 수동 재실행·실패·필수 미실행0. 현재 최종 #223+#225 누적75파일 raw **1,577,145 B / 2,097,152 B**, 여유 **520,007 B**·외부URL0; JS582,453/CSS92,182/font144,248/cards620,988/skin84,804/metadata52,470 B다. 현재 #223 `248ba4c` 개별 보고1,574,820 B(#225미포함) 대비 실제 누적 차2,325 B이며 옛 a3acbb8/합성 source 수치와 구별한다. [정확 manifest·검증/보존 기록](../docs/research/bundle-budget/pr225-final-integration.json)은 explicit build와 smoke 내부 build의 bytes동일·BUILD_TIME/hash차이를 남긴다. main 대비 비소유 제품diff0, 기존 #225 직접7파일blob불변; 충돌 Game/Settlement만 두 승인 계약을 합쳤다. 후속 기록 전용 commit은 제품/검사blob을 보존하며 최종 게시SHA의 CI·새 독립 리뷰를 대기한다. 초기 필수 encoded body(솔로worker 포함)·2초/100ms/60fps·기기/스크린리더·NF/AC 전체 및 #131 P2P 잔여·출하는 미검증이며 이슈는 닫지 않는다.
 
 ### 바닥 슬롯 안정화 (#201, UX-06·UX-16·UX-17, NF-03·NF-08·AC-06)
 
