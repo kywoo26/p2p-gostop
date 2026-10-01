@@ -1,0 +1,155 @@
+{
+  "kind": "visual research prototypes; not Board/solver/OS zoom acceptance",
+  "floor": {
+    "viewport": [
+      360,
+      780
+    ],
+    "measuredHistoricalFloor": [
+      336,
+      243.78125
+    ]
+  },
+  "observations": [
+    {
+      "mode": "diagonal",
+      "normal": {
+        "cards": 10,
+        "outside": 0,
+        "deckOverlap": 0,
+        "groupPairOverlap": 0
+      },
+      "constructedCrowdedStress": {
+        "cards": 17,
+        "outside": 5,
+        "deckOverlap": 1,
+        "groupPairOverlap": 1
+      },
+      "meaning": "observed rectangle intersections only; no solver fit search or human readability PASS"
+    },
+    {
+      "mode": "bonusrow",
+      "normal": {
+        "cards": 10,
+        "outside": 0,
+        "deckOverlap": 0,
+        "groupPairOverlap": 0
+      },
+      "constructedCrowdedStress": {
+        "cards": 17,
+        "outside": 2,
+        "deckOverlap": 1,
+        "groupPairOverlap": 3
+      },
+      "meaning": "observed rectangle intersections only; no solver fit search or human readability PASS"
+    }
+  ],
+  "requirements": [
+    "UX-02",
+    "UX-05",
+    "UX-06",
+    "UX-H05",
+    "UX-23",
+    "UX-24",
+    "UX-25",
+    "NF-03",
+    "NF-08",
+    "AC-06",
+    "AC-07"
+  ],
+  "planSHA": "aaa36ec3bc025a666a37e2611d9e7779c2d24893",
+  "proposalAt233": "42a779f7faec5f2dfec94ff38ed60dab8e7c8fce",
+  "latestStatus": "A rejected after user visual review; product edits 0; current diagrams not accepted; proposed canonical deltas not adopted",
+  "sourceKind": "Official static gameplay guide images, not video frames or runtime tests",
+  "sources": [
+    {
+      "publisher": "NHN",
+      "url": "https://mgostop.hangame.com/guide/combine/03_02_contents.html",
+      "image": "https://hangame-images.toastoven.net/hangame/mgostop/gameguide/page/08_image_01.png",
+      "observed": "three distinct diagonal card edges; internal group kind not established"
+    },
+    {
+      "publisher": "NEOWIZ",
+      "url": "https://dl.gostop.pmang.cloud/gamerule/basicRule.md",
+      "image": "https://dl.gostop.pmang.cloud/upload/guide_mob_matgo_ppeok_250527.png",
+      "observed": "Ppeok three separate vertical edges; effect obscures precise transient four layout"
+    },
+    {
+      "publisher": "ZEMPOT",
+      "url": "https://static.winjoygame.com/v1/gostop_guide/dbmatgo/9.html",
+      "image": "https://static.winjoygame.com/v1/gostop_guide/img/dbmatgo/rule_02.jpg",
+      "observed": "separate two full target candidates"
+    }
+  ],
+  "unobserved": [
+    "commercial six or seven",
+    "buried bonus",
+    "crowded reachable layout policy",
+    "video timing",
+    "full card identity readability",
+    "actual Board integration",
+    "solver feasibility or impossibility",
+    "200% and device usability",
+    "beforepose and settled slot integration"
+  ],
+  "images": [
+    {
+      "file": "commercial-diagonal-review.png",
+      "bytes": 239771,
+      "sha256": "d5b0bd89e4405fce0177f1c94a5b97503f2bb2945a9b3668671f9dbe6d7445ca",
+      "pngChunks": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "file": "commercial-bonus-row-review.png",
+      "bytes": 239123,
+      "sha256": "71dbacf4204b1e1df7e6e20e0f97d889758d424f6b63b1eb74c3ee81b9a291a0",
+      "pngChunks": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ]
+    }
+  ],
+  "fixture": {
+    "normal": "seed1827/action9 public floor10 cards in6 groups; source fixture preserved; hand and HUD synthetic",
+    "crowded": "constructed17 cards /12 months with ppeok6 at forced anchors; reachability not proven; intersections do not prove all layouts impossible"
+  },
+  "prototypePose": {
+    "diagonal": {
+      "first": [
+        0,
+        0
+      ],
+      "second": [
+        24,
+        -12
+      ],
+      "subsequentDelta": [
+        10,
+        -4
+      ],
+      "sevenCardBounds": [
+        122,
+        110.171875
+      ]
+    },
+    "bonusrow": {
+      "naturalBase": "first0,0; second24,-12; third36,-18; transient monthly fourth48,-24",
+      "bonus": "0,66 /24,66 /48,66",
+      "steadySixHeight": 162.171875,
+      "transientSevenHeight": 168.171875
+    }
+  },
+  "checks": {
+    "productTestsRun": false,
+    "physicalDevicePass": 0,
+    "baselineChanges": 0,
+    "externalRuntimeAssets": 0,
+    "thirdPartyImagesCommitted": 0
+  },
+  "license": "Own diagrams with existing bundled cards CC BY-SA4.0 and bonusCC0. No commercial assets committed."
+}

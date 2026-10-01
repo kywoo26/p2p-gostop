@@ -1,6 +1,6 @@
 # 같은 월 겹침·선택 제안 (#202)
 
-상태: **최신 사용자 정정에 따른 compact revision·독립 리뷰 대기; 제품 변경0·정본 개정 미시행**. Refs [#202](https://github.com/kywoo26/p2p-gostop/issues/202), [#200](https://github.com/kywoo26/p2p-gostop/issues/200), [Draft #233](https://github.com/kywoo26/p2p-gostop/pull/233). UX-02/05/06/H05/23~25·NF-03/08·AC-06/07 / plan §1.6·§3-2. 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`; 계획 SHA `e67b767fe1d1781240117381223d6ef18d1e8b90`; 이전 제안 SHA `b11d3b88cd43d26b4aab62ffd90681af7efed30d`.
+상태: **#233 제안 문서 인수 뒤 사용자 시각 검토에서 A 기각·제품 작업 중단·상용 화면 조사 완료; 새 비교안은 미채택, 제품 변경0·정본 개정 미시행**. Refs [#202](https://github.com/kywoo26/p2p-gostop/issues/202), [#200](https://github.com/kywoo26/p2p-gostop/issues/200), [Draft #233](https://github.com/kywoo26/p2p-gostop/pull/233). UX-02/05/06/H05/23~25·NF-03/08·AC-06/07 / plan §1.6·§3-2. 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`; 계획 SHA `e67b767fe1d1781240117381223d6ef18d1e8b90`; 이전 제안 SHA `b11d3b88cd43d26b4aab62ffd90681af7efed30d`.
 
 ## 1. 사용자 선택과 root 판단
 
@@ -18,9 +18,9 @@
 
 #200 분석에서 Matched는 정확한 target/source를 가지지만 Played/Flipped는 target이 없었다. 손패 대상 선택 뒤 다른 월 뒤집기 대상 선택을 기다릴 때 앞선 playTarget은 engine ctx에만 있고 BoardView/inFlight에 없다. 로컬 클릭만으로 관찰자·복원에 정확한 착지를 보장하지 못한다. root의 별도 좁은 public-match-target 담당이 실제 합법 연쇄 선택 재현과 최소 공개 계약을 검토한다.[Draft #234](https://github.com/kywoo26/p2p-gostop/pull/234) `f7a17156bf939b7ebd91a14e1a381356184e6215`의현재관계전달안은독립리뷰대상이며필드/wire채택아니다.복구는과거모션재연보다현재관계수렴을우선한다. #202는 engine/protocol/display/Playback/choreo를 편집하지 않는다. 연속 Matched 강조 교체와 획득 summary 최근4장 밖 목적 DOM 부재는 정적 우려이며 실행 해결로 기록하지 않는다.
 
-## 3. 두 장 식별과3+ 묶음 인지의 분리
+## 3. 두 장 식별과3+ 묶음 인지의 분리 (42a779f 역사·현재 A 기각)
 
-**추천 A: 첫 두 카드의 구별 공간을 유지하고3·4장은 얇은 층,5장부터4번째 카드 위치를 공유하는 묶음.** 회전0·원 순서/z/CardId 유지, 중요한 카드를 임의로 앞에 옮기지 않는다. 두 장의36/−24는 역사 도상 비교를 출발점으로 쓰는 잠정치이며 모든 뒷장에 반복할 최종 규칙이 아니다.3+에서는 원 월 카드의 부분 그림·층·장수와 뻑/보너스 최소 단서로 묶음을 읽는다. 자동 묶음의 숨은 각각을 평시에 모두 식별시키려 하지 않는다.
+**당시 추천 A(현재 기각): 첫 두 카드의 구별 공간을 유지하고3·4장은 얇은 층,5장부터4번째 카드 위치를 공유하는 묶음.** 회전0·원 순서/z/CardId 유지, 중요한 카드를 임의로 앞에 옮기지 않는다. 두 장의36/−24는 역사 도상 비교를 출발점으로 쓰는 잠정치이며 모든 뒷장에 반복할 최종 규칙이 아니다.3+에서는 원 월 카드의 부분 그림·층·장수와 뻑/보너스 최소 단서로 묶음을 읽는다. 자동 묶음의 숨은 각각을 평시에 모두 식별시키려 하지 않는다.
 
 첫 카드의 **실제 원점**을(0,0)으로 잡은 append 예시는 다음이다. i는 원 순서0기준이며 새 규범 수치는 아직 미승인이다.
 
@@ -127,7 +127,7 @@ root가 승인한 **후속 diff 범위 설계**는 Floor/layout/전용 시험과
 
 originalCardId→현재pose매핑은숨은원본의공유대표pose까지포함하고round/snapshotSeq예약과맞춘다.특정wire필드선취0.공개관계가미확정이면target을추측하지않으며restore는현재pose/관계수렴을우선한다.P2P 지연/restore 때 이전 재생이 새 후보·anchor를 되살리지 않아야 한다. #202는 레이아웃 정보만 제공한다. transform AABB/angle/추가 offset 중복 계산0, 기존 moved0.5px는 착지 허용오차 사용자 승인 아님. 두 파일 소유를 겹치지 않고 공통값은 root가 중재한다.
 
-## 7. proposed spec/ui-spec delta (수정안)
+## 7. proposed spec/ui-spec delta (42a779f 역사·A 재검토 필요)
 
 | 정본·현재 기준                                              | 추천 개정 문구·승인 상태                                                                                                                                                                       |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -168,3 +168,44 @@ scratch 원본은 `.visual-source/month-stack/`에 보존한다. `index.html`은
 초기208px 가정720조건은 예비 모형으로만 보존했다. 교정된132조건은 single-cell overlay/12월 고정 자리 기각 근거다. 역사2764e의 후속은15개 fresh footprint 표적(10fit/5미발견)과 지원430×822의 동일5장뻑 **한 표적만** 추가했다.이11fit/5미발견 및650fullfront실패는 새compact정책의제품기하증거가아니다. 미발견과 불가능을 구분하고 무관0px/성능 최적성을 주장하지 않는다. 선택창 원본컴포넌트8조건+reset4경계역사관측은보존한다.이번추가는구성engine2action·작은A/B그림·동일2→3→6→7의survivorpose·단서100/200%뿐이며새seed탐색/큰행렬/제품suite없다. CSS200% 글자 모형은 실제 Safari zoom 아님. 빛의 후속 mock 수정은 시각 방향 시연이며 실제 Playback/reduced/취소 시험이 아니다.
 
 AGENTS/RTK·정본/ui-spec/규칙§12·관련 이슈/#223 계약 읽기와 Node24.21.0/npm11.19.0 npm ci를 수행했다. Context7 callable이 없어 [Playwright Page](https://playwright.dev/docs/api/class-page), [MDN dialog](https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement), [Svelte snippet](https://svelte.dev/docs/svelte/snippet)·[imperative API](https://svelte.dev/docs/svelte/imperative-component-api), [Vite config](https://vite.dev/config/)·[plugin config](https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/config.md)를 공식 원문으로 확인했다. 새 dependency0·외부 mock 요청0. 커밋 전 lint:fix/개인정보/whitespace 검사를 수행하며 제품 full suite는 이번 문서 단계에 반복하지 않는다.
+
+## 10. 상용 화면 관측·사용자 시각 검토 묶음 (A 기각 뒤, 미채택)
+
+### 현재 상태와 A 기각 원인
+
+#233의 `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 문서로 인수됐다. 그 뒤 실행계획 `aaa36ec3bc025a666a37e2611d9e7779c2d24893`의 변경5파일은 `intent/{plan,spec}.md`, `docs/design/{ui-spec,month-stack-proposal}.md`, `docs/design/month-stack-evidence/summary.json`이다. 제품 변경0이며 정본 안의 Draft delta도 미채택이다. 사용자에게 장수별 모형을 보여준 뒤 **여러 장이 한 장처럼 보인다**는 피드백을 받았다. A의 index3 이상은 모두 `(44,−32)`를 공유하므로5→6에 새 모서리/층이 생기지 않는다. 장수 문구는 이 형태 손실을 해결하지 못했다. §§3/4/7의 A는 역사로 보존하고 제품 작업을 중단했다. 단순 offset 미세 조정으로 방어하지 않는다.
+
+### 공식 출처와 직접 관측
+
+조사 범위는 맞고3곳이다. 공식 스토어 이미지21개와 한게임 가이드1개를 먼저 보았으나 대부분 광고 문구·캐릭터·합성 배경이 있었다. 홍보 화면을 실제 연속 동작 증거로 쓰지 않고 아래 공식 게임사 가이드의 플레이 화면을 직접 열었다. 아래는 **정적 가이드 화면**이며 영상 시각은 해당 없음이다. 현재 앱의 모든 상태/전환을 실행 확인한 것이 아니다. 상용 코드·규칙을 우리 엔진의 정답으로 채택하지 않는다.
+
+| 출처·관측 화면 | 직접 보이는 것 | 확인하지 못한 것 |
+| --- | --- | --- |
+| [한게임 신맞고 모바일 게임방 가이드](https://mgostop.hangame.com/guide/combine/03_02_contents.html), [원본 화면](https://hangame-images.toastoven.net/hangame/mgostop/gameguide/page/08_image_01.png) | 중앙덱 왼쪽의2월3장은 오른쪽·아래로 조금씩 어긋나 뒤의 두 카드 상단/왼쪽 테두리가 각각 남는다. 앞 패 매화, 중간 띠 일부, 뒤 모서리가 보인다. 획득 영역 장수 표시는 바닥 표시와 구분된다. | 이3장 묶음의 내부 상태가 뻑인지 초기 자연3인지, 늘어나는 과정,4+·묻힌 보너스 |
+| [피망 뉴맞고 기본 게임방법](https://dl.gostop.pmang.cloud/gamerule/basicRule.md), [뻑 화면](https://dl.gostop.pmang.cloud/upload/guide_mob_matgo_ppeok_250527.png), [따닥 화면](https://dl.gostop.pmang.cloud/upload/guide_mob_matgo_ddadak_250527.png) | 따닥 화면 왼쪽3월 두 장은 가로로 벌려 각 그림 일부를 남긴다. 뻑 화면 위쪽11월은 세 카드의 세로 가장자리와 그림 조각이 따로 보이며 큰 뻑 글자는 별도 효과다. 덱·타월·손패는 분리돼 있다. | 따닥4장 정확 좌표는 큰 효과가 가려 입증하지 못함. 뻑6/획득직전7·보너스 묻힘·선택창·과밀 재배치 |
+| [윈조이 대박맞고 공식 가이드](https://static.winjoygame.com/v1/gostop_guide/dbmatgo.html), [게임방 화면](https://static.winjoygame.com/v1/gostop_guide/dbmatgo/8.html), [선택 설명](https://static.winjoygame.com/v1/gostop_guide/dbmatgo/9.html), [선택 이미지](https://static.winjoygame.com/v1/gostop_guide/img/dbmatgo/rule_02.jpg) | 바닥3월 두 장은 대각선으로 어긋나 앞 광과 뒤 모서리가 보인다. 선택 이미지는 두 후보를 별도 창에서 나란히 전체 그림으로 보여준다. 설명은 바닥 동일월2장일 때 두 후보 중 선택한다고 명시한다. | popup 열림/닫힘 시간·focus/gesture/timeout 동작의 실행,3+·6/7·보너스·과밀 동작 |
+
+따라서 **4장 정확 겹침·상용6/7장·묻힌 보너스·도달 과밀의 배치 알고리즘은 이번 조사에서 미관측**이다. 관련 공식 영상의 실제 프레임을 확보하지 못했으며 영상 시간을 만들어 쓰지 않는다. 가이드 자산의 제작 시점/모바일·PC 세대 차이도 있으므로 현재 버전 모두가 같은 표현이라고 일반화하지 않는다. 공식 원본은 비교 인용용 로컬 scratch에만 보존하고 브랜드/그림을 제품이나 추적 자산에 편입하지 않는다. 원저작권은 NHN/NEOWIZ/ZEMPOT에 있다.
+
+### 관측에서 얻은 원칙과 우리 자산 비교 두 안
+
+관측으로부터의 **설계 추론**은 각 카드의 다른 가장자리·모서리와 앞 패 그림을 함께 남겨 묶음이 여러 장임을 읽게 한다는 것이다. 이것이 상용의 숨은 알고리즘을 알아냈다는 뜻은 아니다. 공간 상한은 우리 규칙§12의 정지6·획득직전7을 기준으로 설계할 수 있으나 같은 pose로 카드를 지우거나 숫자 문구만으로 층을 대체하지 않는다. 선택시에는 원 CardId의 전체 후보를 보여주는 기존 사용자 수락 방향을 유지한다.
+
+- **비교1, 대각 겹침:** 첫 두 카드 다음에도 각 카드를 다른 위치에 놓아 늘어난 층을 남긴다. 하나의 묶음으로 읽히고 세로 예산이 작아 root가 현재 검토 기준으로 추천했다. 임시 예시는 first `(0,0)`, second `(24,−12)`, 이후 append마다 `(10,−4)`이며7장 카드 bbox는122×110.171875px다. 수치/방향/도상 식별의 최종 사용자 수락은 아니다. 뒤 보너스의 숫자나 원 월 도상이 부분 가려질 수 있고 단서/200%·앞뒤 반전의 수용은 미검증이다.
+- **비교2, 월패+보너스 붙인 줄:** 월패와 보너스를 각각 눈에 보이는 카드 줄로 유지해 보너스 숫자를 더 보여준다. 세로 예약은6장162.171875px·획득직전7장168.171875px이고 두 묶음처럼 오인할 위험이 있다. 총 pose는 모두 다르고 원 순서/z/CardId를 유지한다. 초기 월패는 그대로 두며 보너스 추가/남은 월패 접촉은 append다. 새 보너스 종류/규칙/권위 필드를 만들지 않는다. 현재 대안이며 최종 추천/수락이 아니다.
+
+![비교1 대각 겹침과 정상/과밀 합성판](month-stack-evidence/commercial-diagonal-review.png)
+
+![비교2 월패/보너스 줄과 정상/과밀 합성판](month-stack-evidence/commercial-bonus-row-review.png)
+
+두 도판의2장 일반·3장 뻑 예시와4~6장 뻑3+보너스 구성은 구분한다.7은 정지 floor7이 아니라6에 남은 월패가 붙은 획득직전 transient다. 상용 화면에서 이를 확인했다는 뜻은 아니다. 우리 합법 경계의 기존 정적/구성 실행 근거는 §3에 보존한다. 두 안의 첫 두 패와 늘어난 층은 보이지만 모든 종류를 충분히 읽는다는 사람 수용 판정은 아직 없다.
+
+### 모형 관측과 안전 경계
+
+부모 예산은 역사 실제 실측360×780의 floor336×243.78125px를 참고했다. **실제 Board 제품 screenshot이 아닌 합성 모형**이며 손패/HUD도 합성이다. 정상 모형 floor의10개 CardId/6월group는 기존seed1827/action9 공개 fixture 그대로이고, 임시 anchor의 한 배치에서 두 안 모두 rectangle상 floor 초과0·덱 교차0·타group pair 교차0이었다. 이는 한 모형 배치 관측이며 실제 Board/solver fit·안정성·실기기 PASS가 아니다.
+
+오른쪽17패는12월 전부+뻑6을 정해진 위치에 강제로 놓은 **미도달 합성 stress**다. 대각 안은 floor 초과5·덱 교차1·타group pair 교차1, 별도 줄 안은2/1/3이었다. 현재 위치가 충돌한다는 관측이며 모든 배치 불가능·solver 미발견·상용도 불가능이라는 증거가 아니다. 강제 배치·축소·가림을 안전 fallback으로 채택하지 않는다. 이 두 안 외 변형/대형 행렬/새seed 탐색 없이 사용자에게 현재 검토 묶음을 보여준다.
+
+원본 scratch의 `research/review.html?mode=diagonal|bonusrow`와 `research/sources-review.html`은 기존 격리 Vite4258에서 재현한다. 실행은 저장소 루트에서 `source "$HOME/.nvm/nvm.sh"`, `nvm use` 후 `node node_modules/vite/bin/vite.js .visual-source/month-stack --host 127.0.0.1 --port 4258 --strictPort`다. `$HOME`은 호스트 환경변수이며 치환 자리표시자가 아니다. 이미 해당 포트가 실행 중이면 서버를 중복 실행하지 않는다. 원본 html/51개 카드/광고 이미지/log는 추적하지 않고 자체 자산 도판2개와 익명 [관측 JSON](month-stack-evidence/commercial-observations.json)만 추가했다.
+
+제품 진입 전 미결은 사용자 시각 검토, 실제 Floor/Board footprint/FIFO·same-seq 예약,1→2/2→3 기존 pose·resize/UX-02 gesture 수명,도달 과밀 최소 반례,200%/작은 높이 실패 대응과 #200 beforepose/settled 분리 통합이다. 현재 원 CardId→pose 관계는 유지할 요구이며 특정 wire 필드를 선취하지 않는다. 실기기/OSSR/모션 성능 PASS0·제품 suite 미실행·baseline 변경0이다. privacy의 앞선1finding은 기존 취소선 표현의 홈 경로 오탐이었다. 원문 재출력 없이 해당1줄을동일의미 HTML취소선으로 바꾼 뒤 finding0을 별도로 확인했다. 앞선 실패와 이후 성공을 혼동하지 않는다.
