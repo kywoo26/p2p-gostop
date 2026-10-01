@@ -327,7 +327,13 @@ it('wire4/v3 handshake는 필드 검사보다 먼저 명시 VERSION_MISMATCH다'
 });
 
 it('live tuple의 seat/card/target/baseSeq와 현재 관계를 각각 대조하고 거절한다', () => {
-  for (const patch of [{ seat: 1 }, { card: 4 }, { target: 28 }, { baseSeq: 0 }, { target: 4 }]) {
+  for (const patch of [
+    { seat: 1 },
+    { card: 4 },
+    { target: 28 },
+    { baseSeq: 0 },
+    { target: 4 },
+  ] as const) {
     const g = game(0);
     manual(g, { type: 'play', seat: 0, card: 7 });
     const saved = viaJson(g.guest.toJSON());

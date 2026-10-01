@@ -42,7 +42,7 @@ export interface TurnTiming {
   readonly promptAfter: boolean;
 }
 
-/** 공개 ID 전달만. 기존 queue/reset generation에 속하며 geometry/재생 동작은 갖지 않는다. */
+/** 공개 ID 전달만. 기존 queue/reset generation에 속하며 geometry/재생 동작은 없다. */
 export type PublicTargetTransition = {
   readonly evidence: AcceptedPlayTarget;
   readonly namespace:
