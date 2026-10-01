@@ -500,7 +500,9 @@
   $effect(() => {
     const key = targetKey;
     if (!monthStacks || !key || !root) return;
-    const wrapper = root.querySelector<HTMLElement>('.floor-target');
+    const wrapper = [...root.querySelectorAll<HTMLElement>('.floor-target')].find(
+      (candidate) => candidate.dataset['targetKey'] === key,
+    );
     if (!wrapper) return;
     let before = '';
     const check = () => {
@@ -628,7 +630,7 @@
     {#if monthStacks && pending?.kind === 'target'}
       {#key `${view.round}:${view.eventSeq}:${pending.source}:${pending.card}:${pending.options.join(',')}`}
         {@const promptKey = targetKey}
-        <div class="floor-target" data-testid="floor-target">
+        <div class="floor-target" data-testid="floor-target" data-target-key={promptKey}>
           <PromptPanel title={`${getCard(pending.options[0]!).month}월 먹을 패`}>
             {#snippet actions()}
               <div class="floor-target-choices">
