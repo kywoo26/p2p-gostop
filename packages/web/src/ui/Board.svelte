@@ -414,7 +414,7 @@
     width: number;
     height: number;
   } | null = null;
-  let targetRelease: { key: string; card: CardId } | null = null;
+  let targetRelease: { source: 'pointer' | 'keyboard'; key: string; card: CardId } | null = null;
   let heldTargetKey: string | null = null;
   let cancelledTargetKey = false;
   function cancelTarget() {
@@ -451,7 +451,7 @@
       e.clientY >= r.top &&
       e.clientY <= r.bottom
     )
-      targetRelease = { key, card };
+      targetRelease = { source: 'pointer', key, card };
   }
   function targetKeyDown(e: KeyboardEvent, key: string, card: CardId) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -461,29 +461,30 @@
     }
     heldTargetKey = e.key;
     // Enter의 native click은 currentTarget의 키 입력과 같은 후보만 소비한다.
-    targetRelease = { key, card };
+    targetRelease = { source: 'keyboard', key, card };
   }
   function targetKeyUp(e: KeyboardEvent) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (cancelledTargetKey) {
       e.preventDefault();
-      targetRelease = null;
+      if (targetRelease?.source === 'keyboard') targetRelease = null;
     }
     heldTargetKey = null;
     cancelledTargetKey = false;
   }
   function chooseTarget(e: MouseEvent, key: string, card: CardId) {
     const p = targetRelease;
-    targetRelease = null;
+    const pointerClick = e.detail > 0;
     if (
       key !== targetKey ||
       landscape ||
       pending?.kind !== 'target' ||
       !pending.options.includes(card) ||
-      (e.detail > 0 && (!p || p.key !== key || p.card !== card)) ||
-      cancelledTargetKey
+      (pointerClick && (p?.source !== 'pointer' || p.key !== key || p.card !== card)) ||
+      (!pointerClick && (cancelledTargetKey || p?.source === 'pointer'))
     )
       return;
+    targetRelease = null;
     act({ type: 'chooseTarget', seat, card });
   }
   $effect(() => {

@@ -208,3 +208,45 @@ test('NotFoundError는 늦은 up/click을 취소하고 실제 pointer 재입력�
   expect(submitted).toHaveBeenCalledTimes(1); // 이미 상위로 제출된 선택을 rollback하지 않는다.
   again.mockRestore();
 });
+
+for (const [key, trigger] of [
+  ['Enter', 'resize'],
+  [' ', 'target'],
+] as const) {
+  test(`keyup 없는 ${key === ' ' ? 'Space' : key} 취소 뒤 새 pointer는 회복하고 취소 키 click/repeat는 차단한다 (${trigger})`, async () => {
+    await page.viewport(360, 780);
+    const submitted = vi.fn();
+    const screen = await render(Board, {
+      view: fixtures.board.states.target,
+      monthStacks: true,
+      onaction: submitted,
+    });
+    await settle();
+    const button = () =>
+      screen.container.querySelector<HTMLButtonElement>('[data-choice="target-32"]')!;
+    button().dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
+    if (trigger === 'resize') await page.viewport(390, 780);
+    else await screen.rerender({ view: { ...fixtures.board.states.target, eventSeq: 111 } });
+    await settle();
+    const repeat = () =>
+      button().dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key, repeat: true }),
+      );
+    const keyClick = () =>
+      button().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+    expect(repeat()).toBe(false);
+    keyClick();
+    expect(submitted).not.toHaveBeenCalled();
+    // keyup을 보내지 않는다. provider 실제 pointerdown/capture/up/click만으로 회복해야 한다.
+    await userEvent.click(button());
+    expect(submitted).toHaveBeenCalledExactlyOnceWith(
+      { type: 'chooseTarget', seat: 0, card: 32 },
+      expect.any(Number),
+    );
+    expect(repeat()).toBe(false);
+    keyClick();
+    expect(submitted).toHaveBeenCalledTimes(1);
+    button().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    expect(submitted).toHaveBeenCalledTimes(1); // release를 재사용하지 않는다. 제출된 선택도 취소하지 않는다.
+  });
+}

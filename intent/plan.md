@@ -350,6 +350,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 - 2단계: 기존 native PromptPanel title/actions를 재사용해 원 direct target 선택을 교체한다. 공개 options의 원 ID/전체 후보48px·ARIA·단일 focus/inert를 보존한다. UX-02 위치 고정 우선, 불가피한 재배치는 pointer/keyheld 취소·권위 timeout/원격수락·focus/pose 수명 표적으로 검토하며 미승인 예외를 숨겨 활성화하지 않는다.
 - 200% 단서176.171875>157.4375 stress는 알려진 실패다. 단서 배치/표현은 한 번 좁게 재검토할 수 있으나 축소/누락/숨김/새 최소 지원 높이/영구 입력 잠금으로 봉합하지 않는다. 소유 범위 안에서 안전 fit이 불가하면 실제 최소 반례와 추가 소유 요청1건을 root에게 제출한다. #200 정확 접촉 beforepose와 settled slot·공개 관계 통합은 별도 미완으로 남긴다.
 - 정본의 현재 독립 셀/앞면100%·resize 탐색0과 이 Draft delta를 구분한다. 다음 제품 리뷰 전 정본 최종 채택/기기 PASS로 기록하지 않는다. 경미 UX-02 추적 메타는 이번 필요 문서 변경에 보완한다. 요구사항 전체 완료/Closes 금지다.
+- 독립 리뷰 후속: exact53443613의 CI36898053439는 새 주석6자 폰트 누락으로 build/양E2E webServer 실패·Android 미실행이었다. UI/폰트/gate 변경 없이 주석만 corpus 안의 표현으로 바꿔 local build 통과. held Enter/Space 취소 뒤 keyup 없는 pointer 회복4건 수정 전 실패를 확인하고 release source 분리 뒤 Board14표적 통과/미처리0. 새 head CI와 이전22component 결과는 분리한다. surviving 빈 prefix footprint 관측은 지원 Board 반례가 아니므로 후속 수명 과제로 남기고 이번 수정 범위를 늘리지 않는다.
 - 진행 중 표적만, 새 큰 행렬/모든seed 탐색0. 제품 수정 뒤 최종 checkpoint에서 AGENTS §5 필수 lint/check/test/test:browser/build/e2e:smoke/Android3작업을 한 회 수행한다. PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0. 실기기/OSSR/성능은 사람 근거 전 PASS0이다. 현재는 opt-in 구현 checkpoint이며 정본 전체 승인 완료로 표기하지 않는다.
 
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)

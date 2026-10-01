@@ -304,7 +304,7 @@ export interface MonthFloorCell extends FloorGroupView {
   localHeight: number;
   poses: FloorCardPose[];
   actual: FloorRect;
-  /** 외곽선까지 포함한 현재 묶음. 모든 두 장을7장 크기로 예약하지 않는다. */
+  /** 표시 선까지 포함한 현재 묶음. 모든 두 장을7장 크기로 예약하지 않는다. */
   footprint: FloorRect;
 }
 export interface MonthFloorBounds {
@@ -367,7 +367,7 @@ const inside = (r: FloorRect, bounds: MonthFloorBounds) =>
   r.x + r.width <= bounds.width - STACK_EDGE &&
   r.y + r.height <= bounds.height - STACK_EDGE;
 
-/** E1/B2 저장 순서는 시간순이 아니다. 마지막 월패 밑에 직전에 뒤집힌 보너스를 끼운다. */
+/** E1/B2 저장 순서는 시간순이 아니다. 마지막 월패 아래에 직전에 뒤집힌 보너스를 배치한다. */
 export function floorPresentationOrder(group: FloorGroupView): CardId[] {
   const ids = [...group.cards];
   if (group.kind !== 'ppeok') return ids;
@@ -505,7 +505,7 @@ export function projectMonthFloorReservations(
   );
 }
 
-/** 격자/fixture 좌표 대신 현재 영역·장애물의 경계와 결정적 비정렬 후보를 사용한다. */
+/** 격자/fixture 좌표 대신 현재 영역·장애 영역의 경계와 결정적 비정렬 후보를 사용한다. */
 export function layoutMonthFloor(
   groups: readonly FloorGroupView[],
   bounds: MonthFloorBounds,
@@ -585,7 +585,7 @@ export function layoutMonthFloor(
     );
     if (validStacks(projected, bounds, reservations)) return result(projected, 0, false, resized);
   }
-  // 무관 월은 먼저 고정해 변경 월의 공간 탐색이 그 자리를 훔치지 못하게 한다.
+  // 무관 월은 먼저 고정해 변경 월의 공간 탐색이 그 자리를 차지하지 않게 한다.
   blocks.sort(
     (a, b) =>
       Number(!!b.old && sameCards(b.old.cards, b.group.cards)) -
@@ -670,8 +670,8 @@ export function layoutMonthFloor(
         return da - db || a.y - b.y || a.x - b.x;
       });
   };
-  // 현재 장애물 뒤의 최대 빈 사각형을 덮개로 만든다. 겹치는 덮개는 용량을 과대평가할 뿐
-  // 유효 해를 잘라내지 않는다. 최소 묶음 크기의 origin 격자당 하나만 들어갈 수 있는 상한이다.
+  // 현재 장애 영역 뒤의 최대 빈 사각형을 덮개로 만든다. 겹치는 덮개는 용량을 과대평가할 뿐
+  // 유효 해를 잘라내지 않는다. 최소 묶음 크기의 origin 격자당 하나만 배치할 수 있는 상한이다.
   const capacityEnough = (i: number, placed: readonly MonthFloorCell[]) => {
     if (i === blocks.length) return true;
     let regions: FloorRect[] = [

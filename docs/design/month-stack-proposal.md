@@ -300,3 +300,13 @@ deck 측정에서 computed outline-width3px이더라도 outline-style:none은 �
 입력 NotFoundError만 active gesture/release를 취소한다. 늦은 pointerup/click은 선택을 제출하지 않고 새 실제 pointer 입력은 정상 선택하며 이미 제출된 선택은 rollback하지 않는다. 합성 dispatchEvent는 browser active pointer를 만들지 않는 시험 한계가 있고, provider 실제 click 경로를 별도로 검증했다. 무관 예외는 rethrow한다. pointercancel·resize·old candidate·held Enter repeat·native dialog 후보48px/원 data-card-id 중복0도 전용 표적이다.
 
 잔여 gate: 정상 시각 자연스러움 수용, 비strict #223 전역 최소 이동 비용, 실패 UX/최소 뻑·bonus 단서, 좁은 높이/200%에서 전체 필요한 정보 fit, UX-02 원격수락/timeout/focus/pose 수명, #200 정확 beforepose→settled·Game 기본 적용/기존 분기 정리·P2P·모션·실기기/OSSR·성능·NF-03 예산. 필수 전체suite는 제품 최종 checkpoint에 한 번 수행하며 이번 단계에서 미실행이다. baseline/threshold 변경0·새seed/큰 행렬0·기본 적용0·정본 최종 채택0이다.
+
+### 53443613 독립 리뷰의 두 지적 후속 (제품 gate 유지)
+
+[CI36898053439](https://github.com/kywoo26/p2p-gostop/actions/runs/36898053439)는 exact `53443613a65efd26af0e47b4d1ed84d566ce80e0`에서 폰트 검사 `폰트 코퍼스/CSS 누락: 곽밑끼물훔갈`로 build와 양E2E webServer가 실패했고 Android는 미실행이었다. 앞선 component 통과를 이 build 이후 검증 성공으로 쓰지 않는다. 같은 로컬 build 실패 원문은 scratch에 보존했다. floor-layout의 해당 주석6줄 표현만 기존 corpus 문자로 바꿨으며 UI 문구·폰트 corpus/CSS/자산·gate는 그대로다. 변경 뒤 폰트140.9KiB/UI문자703/누락0, 전체 web build 및 내장16시험 통과, artifact75파일1553.4KiB/2048KiB였다. 초기 encoded1.5MB·실기기 성능을 이 raw 결과로 대신하지 않는다.
+
+held Enter→resize 또는 held Space→target 교체 뒤 keyup을 보내지 않는 새 회귀를 먼저 적용하자 양 브라우저4건 모두 실제 pointer 제출0으로 실패했다. 기존 cancelledTargetKey가 모든 click을 막은 재현이다. 후속은 targetRelease에 pointer/keyboard source를 분리한다. detail1 click은 현재 후보의 검증된 pointer release만 소비하고 취소 키 플래그로 막지 않는다. 취소 키의 detail0 click/repeat는 계속 막으며 pointer release도 소비하지 않는다. 취소 키의 keyup 역시 keyboard release만 취소한다. NotFoundError의 좁은 catch와 기존 수락 권위는 바꾸지 않는다.
+
+변경 후 Board 전용 Chromium7+WebKit7=14통과/미처리0이며, 새 두 회귀는 keyup 없이 pointer 선택1·뒤 취소 키 click/repeat 추가 제출0·release 재사용0·이미 제출된 선택 보존을 확인했다. 이전22표적 전체 실행은 이전 head 근거로 남기고 이번 head에서 반복 실행했다고 쓰지 않는다. solver는 주석만 바꿨으며 후보/간격/기울기/지원 bounds/baseline/threshold는 그대로다. 새로운 실제판 그림을 만들거나 기존 immutable run/PNG를 덮어쓰지 않았다.
+
+비차단 관측: pair `[0,1]→[1]`의 surviving local offset을 보존하면서 footprint가 빈 prefix도 예약한다. 실제 single44×71.661px보다57×79.161px를 점유한다. 독립 리뷰의54×100 구성 반례는 지원 Board가 아니므로 실사용 차단 결함으로 확정하지 않는다. actual-footprint/예약 수명 후속과 함께 검토하고 이번 두 fix로 확대하지 않았다. capacity pruning의 한정 경계 대조는 반례 미관측이며 전체 완전성 증명은 아니다. 기본false·정본미채택·normal2×2/실패UX/최소단서/모션/전체 수용 gate는 유지한다. 새 head CI는 앞선 실패 및 component 결과와 별도로 PR에 기록한다.
