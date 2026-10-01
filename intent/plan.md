@@ -338,15 +338,16 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
-### #202 상용 화면 조사·제품 Draft 중단 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
+### #202 대각 월 묶음 제품 Draft 재개 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.
 - 사용자 실제 제품 Draft 착수 승인에 따라 계획 commit→일반 FF push→Refs #202 #200 Draft PR을 만들고 의미 있는 단계별 commit/push를 수행한다. 소유는 Floor/layout/전용 시험, 필요한 Board 최소 popup props/event/focus, spec 바닥 해당 절·ui-spec UX-02/05/06/선택 절·이 자기 단위다. Hand/HUD/전역skin/PromptPanel 새API/engine/protocol/display/Playback/choreo 편집0, 새 agent0이다.
-- 현재 단계: 사용자 시각 검토에서 compact A가 여러 장을 한 장처럼 보이게 해 기각됐다. `aaa36ec3bc025a666a37e2611d9e7779c2d24893`의 5파일 실행계획은 역사로 보존하고 제품 편집0을 유지한다. 공식 피망/한게임/윈조이 가이드 화면을 직접 비교하고 관측/추론·6/7 미관측을 구분한다. 기존 자산 비교는 두 안과 실제 360폭 부모 예산을 참고한 합성 정상/과밀 모형으로 제한하며 사용자 시각 검토 전 수치/단서를 채택하지 않는다.
+- 현재 단계: 사용자 “그래 진행해봐”와 root의 기존 소유 재개 승인으로 비교1 대각 겹침을 실제 Floor에 연결한다. shared-pose A 기각은 유지하고 모든 카드의 distinct pose·원 순서/z/CardId를 보존한다. 수치/정본 전체 수락으로 확대하지 않는다. 상용 조사 head `a2ff9af9417a84825a36f7bb883f505e8856f452`와 계획 `aaa36ec3bc025a666a37e2611d9e7779c2d24893`는 역사로 보존한다. main `4a62c95fd1633371e2bf4ee5b4296eeaaa1ae440`만 clean merge했다.
+- 첫 bounded checkpoint: Floor에 카드별 local pose·실제 footprint·same-seq 삭제 예약/FIFO 해제를 연결하고 기존 합법 boundary/보너스5·구성6/획득직전7 표적으로 검증한다. 기존 PromptPanel/native title/actions·단일 focus 잠금을 재사용해 두 후보 전체48px 선택을 연결한다. 실제 Board 제품 컴포넌트의 정상/혼잡 fixture 대표샷2개와 입력/resize 안정성·fit 실패를 보고하며 제품 수용 PASS는 별도다.
 - 2단계: 기존 native PromptPanel title/actions를 재사용해 원 direct target 선택을 교체한다. 공개 options의 원 ID/전체 후보48px·ARIA·단일 focus/inert를 보존한다. UX-02 위치 고정 우선, 불가피한 재배치는 pointer/keyheld 취소·권위 timeout/원격수락·focus/pose 수명 표적으로 검토하며 미승인 예외를 숨겨 활성화하지 않는다.
 - 200% 단서176.171875>157.4375 stress는 알려진 실패다. 단서 배치/표현은 한 번 좁게 재검토할 수 있으나 축소/누락/숨김/새 최소 지원 높이/영구 입력 잠금으로 봉합하지 않는다. 소유 범위 안에서 안전 fit이 불가하면 실제 최소 반례와 추가 소유 요청1건을 root에게 제출한다. #200 정확 접촉 beforepose와 settled slot·공개 관계 통합은 별도 미완으로 남긴다.
 - 정본의 현재 독립 셀/앞면100%·resize 탐색0과 이 Draft delta를 구분한다. 다음 제품 리뷰 전 정본 최종 채택/기기 PASS로 기록하지 않는다. 경미 UX-02 추적 메타는 이번 필요 문서 변경에 보완한다. 요구사항 전체 완료/Closes 금지다.
-- 진행 중 표적만, 새 큰 행렬/모든seed 탐색0. 제품 수정 뒤 최종 checkpoint에서 AGENTS §5 필수 lint/check/test/test:browser/build/e2e:smoke/Android3작업을 한 회 수행한다. PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0. 실기기/OSSR/성능은 사람 근거 전 PASS0이다. 현재 제품 작업 중단·상용 화면 조사 단계이며 승인 완료로 표기하지 않는다.
+- 진행 중 표적만, 새 큰 행렬/모든seed 탐색0. 제품 수정 뒤 최종 checkpoint에서 AGENTS §5 필수 lint/check/test/test:browser/build/e2e:smoke/Android3작업을 한 회 수행한다. PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0. 실기기/OSSR/성능은 사람 근거 전 PASS0이다. 현재 첫 제품 checkpoint 진행이며 정본 전체 승인 완료로 표기하지 않는다.
 
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
 
