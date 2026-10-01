@@ -41,6 +41,13 @@ test('14장은 독립 셀, 15장부터만 같은 월 스택을 허용하고 후�
   expect(result.folded).toBe(true);
   for (const id of [0, 1])
     expect(result.cells.find((c) => c.cards.includes(id))?.cards).toEqual([id]);
+  const maximum = groups(Array(12).fill(3));
+  const crowded = floorLayout(maximum, [0, 1], 336, 244, 48);
+  expect(crowded.conflict).toBe(false);
+  expect(floorLayout([...maximum].reverse(), [0, 1], 336, 244, 48)).toEqual(crowded);
+  expect(crowded.cells.flatMap((c) => c.cards).sort((a, b) => a - b)).toEqual(
+    maximum.flatMap((g) => g.cards),
+  );
 });
 
 test('월별 연결·카드 보존·회전한 경계의 셀 내부 포함을 다양한 바닥에서 보장한다', () => {
@@ -80,6 +87,8 @@ test('월별 연결·카드 보존·회전한 경계의 셀 내부 포함을 다
             const h = cardHeight * Math.cos(angle) + width * Math.sin(angle);
             const x = cell.x + cell.dx + width / 2,
               y = cell.y + cell.dy + cardHeight / 2;
+            expect(cell.x).toBe(left + (cw - width) / 2);
+            expect(cell.y).toBe(top + (ch - cardHeight) / 2);
             expect(Math.abs(cell.angle)).toBeLessThanOrEqual(4);
             expect(Math.abs(cell.dx)).toBeLessThanOrEqual(3);
             expect(Math.abs(cell.dy)).toBeLessThanOrEqual(3);
@@ -108,4 +117,39 @@ test('월별 연결·카드 보존·회전한 경계의 셀 내부 포함을 다
     ),
     { numRuns: 200 },
   );
+});
+
+// 시간에 따른 계약은 같은 입력 결정성 검사와 분리한다.
+test('한 월 확장·첫 카드 제거·뻑·폭탄에도 무관 카드와 월 앵커를 유지한다', () => {
+  const input = groups([1, 1, 1]);
+  let previous = floorLayout(input, [], 300, 243.76, 48).cells;
+  for (const cards of [[4, 5], [5], [5, 6, 7]]) {
+    const next = input.map((g) =>
+      g.month === 2
+        ? { ...g, cards, kind: cards.length === 3 ? ('ppeok' as const) : ('loose' as const) }
+        : g,
+    );
+    const result = floorLayout(next, [], 300, 243.76, 48, previous);
+    expect(result.conflict).toBe(false);
+    for (const id of [0, 8])
+      expect(result.cells.find((c) => c.cards.includes(id))?.slot).toBe(
+        previous.find((c) => c.cards.includes(id))?.slot,
+      );
+    expect(result.cells.find((c) => c.month === 2)?.anchor).toBe(8);
+    previous = result.cells;
+  }
+});
+
+test('제거된 셀은 예약 중 사용하지 않고 해제 뒤 새 월의 빈자리로 쓴다', () => {
+  const input = groups([1, 1, 1]);
+  const old = floorLayout(input, [], 300, 243.76, 48).cells;
+  const kept = old.filter((c) => c.month !== 1);
+  const next = [
+    ...input.filter((g) => g.month !== 1),
+    { month: 4 as const, cards: [12], kind: 'loose' as const, owner: null },
+  ];
+  const reserved = floorLayout(next, [], 300, 243.76, 48, kept, [6]);
+  expect(reserved.cells.find((c) => c.month === 4)?.slot).not.toBe(6);
+  const released = floorLayout(next, [], 300, 243.76, 48, kept);
+  expect(released.cells.find((c) => c.month === 4)?.slot).toBe(6);
 });

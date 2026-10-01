@@ -5,10 +5,15 @@
   import Card from './Card.svelte';
   import { cardLabel } from './cards.ts';
   import { promptFocus } from './prompt-focus.ts';
-  import { floorLayout } from './floor-layout.ts';
+  import { assignFloor, projectFloor } from './floor-layout.ts';
+  import type { FloorSlot } from './floor-layout.ts';
+  import { untrack } from 'svelte';
 
   interface Props {
     compact?: boolean;
+    round?: number;
+    playbackBusy?: boolean;
+    snapshotSeq?: number;
     options?: readonly CardId[];
     onchoose?: (id: CardId) => void;
     groups: readonly FloorGroupView[];
@@ -23,6 +28,9 @@
 
   let {
     compact = false,
+    round = 0,
+    playbackBusy = false,
+    snapshotSeq = 0,
     options = [],
     onchoose,
     groups,
@@ -33,6 +41,53 @@
   }: Props = $props();
   let table: HTMLElement;
   let bounds = $state({ width: 0, height: 0, cardWidth: 48 });
+  let placed = $state.raw<FloorSlot[]>([]);
+  let reserved: FloorSlot[] = [];
+  let lastRound: number | undefined;
+  let lastDeck = 0;
+  let lastCards = '';
+  let lastOptions = '';
+  let lastSnapshotSeq: number | undefined;
+  // 중간 commit은 seq를 유지한다. 묶음 최종 스냅 또는 큐 해제에서 예약을 푼다.
+  $effect.pre(() => {
+    const input = groups,
+      candidates = options,
+      playing = playbackBusy,
+      nextRound = round,
+      deck = deckCount,
+      seq = snapshotSeq;
+    untrack(() => {
+      if (nextRound !== lastRound || deck > lastDeck) {
+        placed = [];
+        reserved = [];
+        lastCards = '';
+      }
+      const ids = new Set(input.flatMap((group) => group.cards));
+      const removed = (cell: FloorSlot) => cell.cards.every((id) => !ids.has(id));
+      reserved = reserved.filter(removed);
+      if (playing && seq === lastSnapshotSeq) reserved.push(...placed.filter(removed));
+      else reserved = [];
+      const cardsKey = [...ids].sort((a, b) => a - b).join(',');
+      const optionsKey = [...candidates].sort((a, b) => a - b).join(',');
+      if (cardsKey !== lastCards || (ids.size > 14 && optionsKey !== lastOptions))
+        placed = assignFloor(
+          input,
+          candidates,
+          placed,
+          reserved.map((cell) => cell.slot),
+        ).cells;
+      else
+        placed = placed.map((cell) => {
+          const group = input.find((group) => group.month === cell.month)!;
+          return { ...cell, kind: group.kind, owner: group.owner };
+        });
+      lastCards = cardsKey;
+      lastOptions = optionsKey;
+      lastRound = nextRound;
+      lastDeck = deck;
+      lastSnapshotSeq = seq;
+    });
+  });
   $effect(() => {
     const update = () => {
       const rect = table.getBoundingClientRect();
@@ -53,7 +108,7 @@
     return () => focus.destroy();
   });
   const layout = $derived(
-    floorLayout(groups, options, bounds.width, bounds.height, bounds.cardWidth),
+    projectFloor(placed, options, bounds.width, bounds.height, bounds.cardWidth),
   );
   const cells = $derived(
     compact
@@ -93,13 +148,13 @@
     </div>
   </div>
   <ul class="floor" aria-label="바닥">
-    {#each cells as group (group.cards[0])}
+    {#each cells as group (compact ? group.slot : group.month)}
       <li
         class={['group', `kind-${group.kind}`]}
         style:left={`${group.x}px`}
         style:top={`${group.y}px`}
-        style:rotate={`${group.angle ?? 0}deg`}
-        style:translate={`${group.dx ?? 0}px ${group.dy ?? 0}px`}
+        style:rotate={`${group.angle}deg`}
+        style:translate={`${group.dx}px ${group.dy}px`}
         data-floor-slot={group.slot}
         data-month={group.month}
         data-hand-link={handLinks[group.month]}

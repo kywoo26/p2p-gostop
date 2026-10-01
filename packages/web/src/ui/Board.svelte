@@ -67,8 +67,10 @@
       readonly seat: Seat;
       readonly text: string;
     }[];
-    /** 이벤트 재생 중 (입력 잠금) */
+    /** 재생 또는 권위 입력 대기 (입력 잠금) */
     busy?: boolean;
+    /** 실제 재생 큐 수명. 바닥 슬롯 해제는 입력 잠금과 분리한다. */
+    playbackBusy?: boolean;
     /** 상대(CPU)가 생각 중 */
     thinking?: boolean;
     /** 마지막 탭→턴 종료 시간 ms (spec AC-06 계측, E2E가 읽는다) */
@@ -104,6 +106,7 @@
     toast = null,
     milestones = [],
     busy = false,
+    playbackBusy = false,
     thinking = false,
     turnMs = null,
     timerText = null,
@@ -432,7 +435,7 @@
     {
       'hud-expanded': expandedHud,
       selecting,
-      'two-hands': (me.hand?.length ?? 0) > 6,
+      'two-hands': pickFirst === null,
       'first-pick': pickFirst !== null,
       'go-stop': pending?.kind === 'goStop',
     },
@@ -488,6 +491,9 @@
   <div class="center">
     <Floor
       compact
+      round={view.round}
+      {playbackBusy}
+      snapshotSeq={view.eventSeq}
       groups={view.floor}
       options={pending?.kind === 'target' ? pending.options : []}
       onchoose={(card) => act({ type: 'chooseTarget', seat, card })}

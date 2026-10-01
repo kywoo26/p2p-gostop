@@ -325,6 +325,7 @@
       toast={pb.toast}
       milestones={pb.milestones}
       busy={pb.busy || !controller.canAct}
+      playbackBusy={pb.busy}
       thinking={controller.thinking}
       turnMs={pb.lastTiming?.ms ?? null}
       {timerText}
