@@ -275,13 +275,13 @@ RoundPhase:
 
 #### #202 제품 Draft의 바닥 개정안 (UX-02/05/06/H05/24/25, 리뷰 전 미채택)
 
-선행 [#233](https://github.com/kywoo26/p2p-gostop/pull/233)의 compact 제안을 실제 Floor에 연결하려던 Draft이며 A 기각으로 현재 제품 작업은 중단됐다. 위 독립 셀/전면100%가 현재 정본이며 아래 delta는 이 제품 단위 리뷰 전 시행 규범으로 치환하지 않는다.
+선행 [#233](https://github.com/kywoo26/p2p-gostop/pull/233)의 A는 기각된 역사다. [제품 Draft #235](https://github.com/kywoo26/p2p-gostop/pull/235)는 사용자 후속 지시에 따라 동일 간격 포개기·월별 실제 footprint를 사용하는 opt-in 구현을 검토한다. 위 독립 셀/전면100%가 현재 정본이며 아래 delta는 리뷰 전 시행 규범으로 치환하지 않는다.
 
-- 손패48px·전면100%·두 행, 획득32px·HUD 예산은 유지한다. 바닥2장은 서로 구별할 노출,3+는 월 묶음·장수/뻑/묻힌 보너스 최소 단서로 읽는다. 원 순서/z/CardId·회전0을 보존한다.4층 뒤 공유 pose로 증가를 멈추는 compact A는 사용자 시각 검토에서 여러 장 형태를 잃어 기각됐다. 제품 작업은 중단하고 공식 상용 화면과 미채택 비교 모형을 준비한다.
-- 원 CardId마다 실제 pose를 제공하며 월 anchor와 선택원본 beforepose·새 카드 settled slot을 구분한다. 숨은 후보도 권위 options를 따라 popup에서 전체48px 그림을 보여준다. 평시 압축으로 대상 선택을 재판정하지 않는다.
-- 5×3/중앙7은 선호 anchor 후보, 실제 카드/단서 footprint와 deck/타월/바깥 경계 교차0을 검사한다. strict 가능시 무관 CardId0px·같은 seq 삭제 예약·최종 release/round/reset 수명을 보존한다. viewport 변경의 strict 재투영 실패 재탐색과 선택 재배치는 별도 delta/표적 검증 대상이다.
-- 짧은 월 제목+기존 PromptPanel 전체 두 후보는 바닥 일부를 잠시 덮을 수 있고 손패·점수는 보존한다. 선택 버튼 위치 고정은 기본이다. fit 실패를 카드 축소·누락·숨김·새 지원 높이 하향·영구 입력 잠금으로 성공 처리하지 않는다.
-- 정지 뻑 최대6/획득직전 표시7과 실제 Captured 시점의 획득을 구분한다. 접촉/획득 모션과 #200 공개 target 계약의 미결은 layout 시험 통과로 수용하지 않는다.
+- 손패48px·전면100%·두 행·HUD는 유지한다. 바닥/덱48px 고정과 획득32px는 사용자 지시로 축소 개정 검토 대상이다. 현재 비교 기준은 바닥/덱44px·획득32px이며 최종 수치가 아니다. popup 전체 후보48px/최소48px 버튼을 유지한다. 모든 월 카드에 서로 다른 pose와 동일 append 간격을 제공하고, 일반2장에7장 공간을 예약하지 않는다. 자연스러운 월별 분산은 시각 수용 조건이며 겹침0만으로 충족되지 않는다.
+- 권위 배열과 CardId는 불변이다. 뻑 저장 배열의 마지막 생성 월패 아래에 앞서 뒤집힌 bonus를 표시하고, 회수 월패는 위로 append한다. presentation의 local 위치/angle/z, 월 origin, 선택 원본 beforepose와 settled pose는 별개다. 묶음 성장이 기존 영역을 벗어나면 원본 local pose와 무관 월 고정 해를 우선하며 실제 재배치·motion은 별도 검증한다.
+- 개정 후보는 기존5×3 선호를 대신해 실측 bounds·paint 장애물·같은 seq 제거 예약 안의 결정적 연속 공간 후보를 사용한다. strict 유효시 무관 CardId0px·손패6↔7 바닥0px·최종 release/round/reset 수명을 보존한다. resize strict 재투영 실패 시 제한 재탐색(현 prototype8192 방문 상한), #223 최소 이동 비용 및 UX-02 위치고정 예외는 미채택 검증 대상이다.
+- 원 options/CardId를 기존 native PromptPanel의 짧은 월 제목+전체 두 후보에 연결한다. 바닥 일부를 잠시 덮고 손패·점수는 보존한다. 후보 복제에는 측정용 data-card-id를 쓰지 않는다. 위치 변경/권위교체/종료 포인터는 미수락 gesture만 취소하고 수락된 선택은 되돌리지 않는다. focus/권위 timeout·P2P 통합은 별도 gate다.
+- 정지 뻑 최대6/획득직전 표시7과 actual Captured를 구분한다. failed/cells[]는 개발 진단 모델이며 카드 없는 사용자 판을 허용하는 fallback이 아니다. 필요한 모든 ID를 안전하게 표시·조작할 수 없는 실패 UX와 최소 뻑/bonus 단서는 미완이다. 임의 누락/클리핑/영구 입력 잠금/지원 높이 하향으로 성공 처리하지 않는다. 현재 defaultfalse이며 실제 Game 연결·정본 채택·모션·기기 수용은 별도다.
 
 ### 6.3 상호작용 규칙
 - 내 차례가 아니면 손패는 흐리게. 내 차례가 되면 합법 카드가 살짝 떠오르고, 카드를 누르고 있으면 먹게 될 바닥 카드가 강조된다.

@@ -31,6 +31,7 @@
   import ChoicePrompt from './ChoicePrompt.svelte';
   import EventRail from './EventRail.svelte';
   import Floor from './Floor.svelte';
+  import PromptPanel from './PromptPanel.svelte';
   import GoStopModal from './GoStopModal.svelte';
   import Hand from './Hand.svelte';
   import type { HandVisualGroup } from './hand-visual.ts';
@@ -55,6 +56,8 @@
     handVisualGroups?: readonly HandVisualGroup[];
     /** 솔로 판 기록은 실제 보조 표식이 화면에 올라온 뒤 이 경로로 갱신한다. */
     onhintdisplayed?: ((level: HintLevel) => void) | undefined;
+    /** #202 첫 실제 Board checkpoint 전용. 일반 경로 전환은 후속 리뷰 대상. */
+    monthStacks?: boolean;
     unit?: MoneyUnit;
     perPoint?: number;
     roundChanges?: readonly [number, number];
@@ -99,6 +102,7 @@
     extras = null,
     handVisualGroups = [],
     onhintdisplayed,
+    monthStacks = false,
     unit = '냥',
     perPoint = settings.value.perPoint,
     confirmDelay = false,
@@ -398,6 +402,121 @@
     return (me.hand ?? []).filter((id) => getCard(id).month === month);
   }
 
+  const targetKey = $derived(
+    pending?.kind === 'target'
+      ? `${view.round}:${view.eventSeq}:${pending.source}:${pending.card}:${pending.options.join(',')}`
+      : '',
+  );
+  let targetPress: {
+    pointer: number;
+    key: string;
+    card: CardId;
+    width: number;
+    height: number;
+  } | null = null;
+  let targetRelease: { key: string; card: CardId } | null = null;
+  let heldTargetKey: string | null = null;
+  let cancelledTargetKey = false;
+  function cancelTarget() {
+    targetPress = null;
+    targetRelease = null;
+  }
+  function startTarget(e: PointerEvent, key: string, card: CardId) {
+    const button = e.currentTarget as HTMLElement;
+    cancelTarget();
+    if (key !== targetKey || e.button !== 0 || landscape) return;
+    targetPress = { pointer: e.pointerId, key, card, width: innerWidth, height: innerHeight };
+    try {
+      button.setPointerCapture(e.pointerId);
+    } catch (error) {
+      if (!(error instanceof DOMException) || error.name !== 'NotFoundError') throw error;
+      // 이미 끝난 포인터는 이후 up/click으로 후보를 제출하지 않는다. 수락된 액션은 건드리지 않는다.
+      cancelTarget();
+    }
+  }
+  function finishTarget(e: PointerEvent, key: string, card: CardId) {
+    const p = targetPress;
+    targetPress = null;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    if (
+      p &&
+      p.pointer === e.pointerId &&
+      p.key === key &&
+      p.card === card &&
+      key === targetKey &&
+      p.width === innerWidth &&
+      p.height === innerHeight &&
+      e.clientX >= r.left &&
+      e.clientX <= r.right &&
+      e.clientY >= r.top &&
+      e.clientY <= r.bottom
+    )
+      targetRelease = { key, card };
+  }
+  function targetKeyDown(e: KeyboardEvent, key: string, card: CardId) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.repeat || cancelledTargetKey || key !== targetKey || landscape) {
+      e.preventDefault();
+      return;
+    }
+    heldTargetKey = e.key;
+    // Enter의 native click은 currentTarget의 키 입력과 같은 후보만 소비한다.
+    targetRelease = { key, card };
+  }
+  function targetKeyUp(e: KeyboardEvent) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (cancelledTargetKey) {
+      e.preventDefault();
+      targetRelease = null;
+    }
+    heldTargetKey = null;
+    cancelledTargetKey = false;
+  }
+  function chooseTarget(e: MouseEvent, key: string, card: CardId) {
+    const p = targetRelease;
+    targetRelease = null;
+    if (
+      key !== targetKey ||
+      landscape ||
+      pending?.kind !== 'target' ||
+      !pending.options.includes(card) ||
+      (e.detail > 0 && (!p || p.key !== key || p.card !== card)) ||
+      cancelledTargetKey
+    )
+      return;
+    act({ type: 'chooseTarget', seat, card });
+  }
+  $effect(() => {
+    void targetKey;
+    void landscape;
+    cancelTarget();
+    if (heldTargetKey) cancelledTargetKey = true;
+  });
+  function resizeTarget() {
+    cancelTarget();
+    if (heldTargetKey) cancelledTargetKey = true;
+  }
+  $effect(() => {
+    const key = targetKey;
+    if (!monthStacks || !key || !root) return;
+    const wrapper = root.querySelector<HTMLElement>('.floor-target');
+    if (!wrapper) return;
+    let before = '';
+    const check = () => {
+      const next = [...wrapper.querySelectorAll('button')]
+        .map((b) => {
+          const r = b.getBoundingClientRect();
+          return `${r.x}:${r.y}:${r.width}:${r.height}`;
+        })
+        .join('|');
+      if (before && before !== next) resizeTarget();
+      before = next;
+    };
+    const observer = new ResizeObserver(check);
+    observer.observe(wrapper);
+    check();
+    return () => observer.disconnect();
+  });
   let skipPress: { id: number; x: number; y: number } | null = null;
   function emptyFloor(target: EventTarget | null) {
     return (
@@ -428,6 +547,8 @@
     onskip?.();
   }
 </script>
+
+<svelte:window onresize={resizeTarget} onkeyup={targetKeyUp} onpointercancel={cancelTarget} />
 
 <section
   class={[
@@ -488,9 +609,10 @@
     </div>
   </div>
 
-  <div class="center">
+  <div class="center" class:monthStacks>
     <Floor
       compact
+      {monthStacks}
       round={view.round}
       {playbackBusy}
       snapshotSeq={view.eventSeq}
@@ -502,6 +624,36 @@
       highlight={floorHighlight}
       staging={view.staging ?? []}
     />
+    {#if monthStacks && pending?.kind === 'target'}
+      {#key `${view.round}:${view.eventSeq}:${pending.source}:${pending.card}:${pending.options.join(',')}`}
+        {@const promptKey = targetKey}
+        <div class="floor-target" data-testid="floor-target">
+          <PromptPanel title={`${getCard(pending.options[0]!).month}월 먹을 패`}>
+            {#snippet actions()}
+              <div class="floor-target-choices">
+                {#each pending.options as card (card)}
+                  <button
+                    type="button"
+                    data-choice={`target-${card}`}
+                    data-candidate-id={card}
+                    aria-label={cardLabel(card)}
+                    onpointerdown={(e) => startTarget(e, promptKey, card)}
+                    onpointerup={(e) => finishTarget(e, promptKey, card)}
+                    onpointercancel={cancelTarget}
+                    onkeydown={(e) => targetKeyDown(e, promptKey, card)}
+                    onkeyup={targetKeyUp}
+                    onclick={(e) => chooseTarget(e, promptKey, card)}
+                  >
+                    <img src={cardSrc(card)} alt="" draggable="false" />
+                    <span>{cardLabel(card).replace(/^\d+월 /, '')}</span>
+                  </button>
+                {/each}
+              </div>
+            {/snippet}
+          </PromptPanel>
+        </div>
+      {/key}
+    {/if}
   </div>
   <div
     class="decision-area"
@@ -709,6 +861,48 @@
 </section>
 
 <style>
+  .center.monthStacks {
+    position: relative;
+  }
+  .floor-target {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    max-height: calc(100% - 16px);
+    z-index: var(--z-prompt);
+  }
+  .floor-target :global(.prompt) {
+    height: auto;
+  }
+  .floor-target-choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .floor-target-choices button {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+    font: inherit;
+  }
+  .floor-target-choices img {
+    width: var(--table-card);
+    height: var(--table-card-height);
+    flex: none;
+  }
+  .floor-target-choices span {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
   .board {
     --hud-height: var(--hud-height-compact);
     --hud-extra-height: calc(var(--hud-height-expanded) - var(--hud-height));

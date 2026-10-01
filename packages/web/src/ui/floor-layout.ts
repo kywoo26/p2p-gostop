@@ -1,5 +1,6 @@
 // UX-06: 중앙 더미(7번)를 비운 5×3 격자. 같은 월은 인접 셀, 흩뿌림은 셀 내부만 사용한다.
 import type { CardId, FloorGroupView } from '../lib/view-types.ts';
+import { getCard } from '@p2p-gostop/engine';
 export interface FloorSlot extends FloorGroupView {
   slot: number;
   anchor: number;
@@ -271,4 +272,502 @@ export function projectFloor(
     fits: cells.length === 0 || fits,
     folded: cells.some((cell) => cell.cards.length > 1),
   };
+}
+
+/** #202 opt-in 검토: 원본/저장 배열·그림의 층·영역 소유를 분리한다. */
+export interface FloorRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface FloorCardPose extends FloorRect {
+  id: CardId;
+  index: number;
+  angle: number;
+  z: number;
+  /** DOM에는 회전 전 local 좌표를 적용한다. x/y/width/height는 실제 회전 AABB다. */
+  localX: number;
+  localY: number;
+}
+export interface MonthFloorCell extends FloorGroupView {
+  /** 과거 격자 좌표가 아닌 내부 영역 표식. 원본·월 identity나 DOM key가 아니다. */
+  slot: number;
+  anchor: number;
+  x: number;
+  y: number;
+  angle: number;
+  dx: 0;
+  dy: 0;
+  origin: { x: number; y: number };
+  localWidth: number;
+  localHeight: number;
+  poses: FloorCardPose[];
+  actual: FloorRect;
+  /** 외곽선까지 포함한 현재 묶음. 모든 두 장을7장 크기로 예약하지 않는다. */
+  footprint: FloorRect;
+}
+export interface MonthFloorBounds {
+  width: number;
+  height: number;
+  cardWidth: number;
+  obstacles: readonly FloorRect[];
+  paintPadding?: number;
+}
+interface MonthFloorResult extends MonthFloorBounds {
+  searches: number;
+  exhausted: boolean;
+  reprojected: boolean;
+  relocated: number;
+  capacityPrunes: number;
+}
+export interface MonthFloorPlaced extends MonthFloorResult {
+  status: 'placed';
+  fits: true;
+  cells: MonthFloorCell[];
+}
+export interface MonthFloorFailed extends MonthFloorResult {
+  status: 'failed';
+  fits: false;
+  /** 실패의 임의 좌표는 placement/후속 anchor로 전달하지 않는다. */
+  cells: [];
+  failure: { reason: 'unmeasured' | 'not-found' | 'budget'; cardIds: CardId[] };
+}
+export type MonthFloorLayout = MonthFloorPlaced | MonthFloorFailed;
+const STACK_SEARCH_LIMIT = 8192;
+const STACK_GAP = 12.125;
+const STACK_EDGE = 2;
+export const floorRectsOverlap = (a: FloorRect, b: FloorRect, gap = 0) =>
+  a.x < b.x + b.width + gap &&
+  a.x + a.width + gap > b.x &&
+  a.y < b.y + b.height + gap &&
+  a.y + a.height + gap > b.y;
+const shifted = (r: FloorRect, x: number, y: number): FloorRect => ({
+  ...r,
+  x: r.x + x,
+  y: r.y + y,
+});
+const union = (rects: readonly FloorRect[]): FloorRect => {
+  const x = Math.min(...rects.map((r) => r.x)),
+    y = Math.min(...rects.map((r) => r.y));
+  return {
+    x,
+    y,
+    width: Math.max(...rects.map((r) => r.x + r.width)) - x,
+    height: Math.max(...rects.map((r) => r.y + r.height)) - y,
+  };
+};
+const sameCards = (a: readonly CardId[], b: readonly CardId[]) =>
+  a.length === b.length && a.every((id) => b.includes(id));
+const sameInstance = (a: FloorGroupView, b: FloorGroupView) =>
+  a.month === b.month && a.cards.some((id) => b.cards.includes(id));
+const inside = (r: FloorRect, bounds: MonthFloorBounds) =>
+  r.x >= STACK_EDGE &&
+  r.y >= STACK_EDGE &&
+  r.x + r.width <= bounds.width - STACK_EDGE &&
+  r.y + r.height <= bounds.height - STACK_EDGE;
+
+/** E1/B2 저장 순서는 시간순이 아니다. 마지막 월패 밑에 직전에 뒤집힌 보너스를 끼운다. */
+export function floorPresentationOrder(group: FloorGroupView): CardId[] {
+  const ids = [...group.cards];
+  if (group.kind !== 'ppeok') return ids;
+  const monthly = ids.filter((id) => getCard(id).kind !== 'bonus');
+  const final = monthly[2];
+  if (final === undefined) return ids;
+  const at = ids.indexOf(final),
+    tail = ids.slice(at + 1);
+  return [
+    ...ids.slice(0, at),
+    ...tail.filter((id) => getCard(id).kind === 'bonus'),
+    final,
+    ...tail.filter((id) => getCard(id).kind !== 'bonus'),
+  ];
+}
+const rotateRect = (r: FloorRect, angle: number): FloorRect => {
+  const radians = (angle * Math.PI) / 180,
+    cos = Math.cos(radians),
+    sin = Math.sin(radians);
+  const points = [
+    [r.x, r.y],
+    [r.x + r.width, r.y],
+    [r.x, r.y + r.height],
+    [r.x + r.width, r.y + r.height],
+  ].map(([x, y]) => ({ x: x! * cos - y! * sin, y: x! * sin + y! * cos }));
+  const x = Math.min(...points.map((p) => p.x)),
+    y = Math.min(...points.map((p) => p.y));
+  return {
+    x,
+    y,
+    width: Math.max(...points.map((p) => p.x)) - x,
+    height: Math.max(...points.map((p) => p.y)) - y,
+  };
+};
+function monthShape(group: FloorGroupView, bounds: MonthFloorBounds, previous?: MonthFloorCell) {
+  const width = bounds.cardWidth,
+    height = width / 0.614,
+    scale = width / 48;
+  const angle = previous?.angle ?? (((group.cards[0]! * 5 + 3) % 7) - 3) / 2;
+  let next = previous ? Math.max(...previous.poses.map((p) => p.index)) + 1 : 0;
+  const indices = new Map<CardId, number>(previous?.poses.map((p) => [p.id, p.index]) ?? []);
+  for (const id of floorPresentationOrder(group)) if (!indices.has(id)) indices.set(id, next++);
+  const visual = floorPresentationOrder(group);
+  const poses: FloorCardPose[] = group.cards.map((id) => {
+    const index = indices.get(id)!,
+      localX = index * 12 * scale,
+      localY = index * 6 * scale;
+    return {
+      ...rotateRect({ x: localX, y: localY, width, height }, angle),
+      id,
+      index,
+      localX,
+      localY,
+      angle,
+      z: visual.indexOf(id) + 1,
+    };
+  });
+  const actual = union(poses),
+    localWidth = width + Math.max(...poses.map((p) => p.localX)),
+    localHeight = height + Math.max(...poses.map((p) => p.localY));
+  const padding = bounds.paintPadding ?? 1;
+  const footprint = rotateRect(
+    {
+      x: -padding,
+      y: -padding,
+      width: localWidth + 2 * padding,
+      height: localHeight + 2 * padding,
+    },
+    angle,
+  );
+  return { poses, actual, footprint, angle, localWidth, localHeight };
+}
+function stackCell(
+  group: FloorGroupView,
+  shape: ReturnType<typeof monthShape>,
+  origin: { x: number; y: number },
+  slot: number,
+): MonthFloorCell {
+  return {
+    ...group,
+    slot,
+    anchor: slot,
+    x: origin.x,
+    y: origin.y,
+    angle: shape.angle,
+    dx: 0,
+    dy: 0,
+    origin,
+    localWidth: shape.localWidth,
+    localHeight: shape.localHeight,
+    footprint: shifted(shape.footprint, origin.x, origin.y),
+    actual: shifted(shape.actual, origin.x, origin.y),
+    poses: shape.poses.map((p) => ({ ...p, x: p.x + origin.x, y: p.y + origin.y })),
+  };
+}
+const validStacks = (
+  cells: readonly MonthFloorCell[],
+  bounds: MonthFloorBounds,
+  reserved: readonly MonthFloorCell[],
+) =>
+  cells.every(
+    (c, i) =>
+      inside(c.footprint, bounds) &&
+      !bounds.obstacles.some((b) => floorRectsOverlap(c.footprint, b, STACK_GAP)) &&
+      !cells.slice(i + 1).some((b) => floorRectsOverlap(c.footprint, b.footprint, STACK_GAP)) &&
+      !reserved.some(
+        (r) => !sameInstance(c, r) && floorRectsOverlap(c.footprint, r.footprint, STACK_GAP),
+      ),
+  );
+const fraction = (index: number, base: number) => {
+  let value = 0,
+    weight = 1 / base;
+  for (let n = index; n > 0; n = Math.floor(n / base)) {
+    value += (n % base) * weight;
+    weight /= base;
+  }
+  return value;
+};
+
+/** 예약 자체의 측정 좌표계를 사용한다. 마지막 성공 배치와 수명이 다를 수 있다. */
+export function projectMonthFloorReservations(
+  cells: readonly MonthFloorCell[],
+  from: MonthFloorBounds,
+  to: MonthFloorBounds,
+): MonthFloorCell[] {
+  if (from.width === to.width && from.height === to.height && from.cardWidth === to.cardWidth)
+    return [...cells];
+  return cells.map((cell) =>
+    stackCell(
+      cell,
+      monthShape(cell, to, cell),
+      { x: (cell.origin.x * to.width) / from.width, y: (cell.origin.y * to.height) / from.height },
+      cell.slot,
+    ),
+  );
+}
+
+/** 격자/fixture 좌표 대신 현재 영역·장애물의 경계와 결정적 비정렬 후보를 사용한다. */
+export function layoutMonthFloor(
+  groups: readonly FloorGroupView[],
+  bounds: MonthFloorBounds,
+  previous?: MonthFloorLayout,
+  reserved: readonly MonthFloorCell[] = [],
+): MonthFloorLayout {
+  const prior = previous?.fits ? previous.cells : [];
+  const resized =
+    !!previous &&
+    (previous.width !== bounds.width ||
+      previous.height !== bounds.height ||
+      previous.cardWidth !== bounds.cardWidth);
+  const oldFor = (g: FloorGroupView) => prior.find((c) => sameInstance(g, c));
+  const preferred = (g: FloorGroupView) => {
+    const old = oldFor(g);
+    return old
+      ? {
+          x: old.origin.x * (resized ? bounds.width / previous!.width : 1),
+          y: old.origin.y * (resized ? bounds.height / previous!.height : 1),
+        }
+      : undefined;
+  };
+  // 예약은 호출자가 현재 bounds로 재투영한다. 이전 성공 배치 기준으로 이중 투영하지 않는다.
+  const reservations = reserved;
+  let capacityPrunes = 0;
+  const result = (
+    cells: MonthFloorCell[] | null,
+    searches: number,
+    exhausted: boolean,
+    reprojected = false,
+  ): MonthFloorLayout => {
+    const common = { ...bounds, searches, exhausted, reprojected, capacityPrunes };
+    if (cells && validStacks(cells, bounds, reservations) && cells.length === groups.length)
+      return {
+        ...common,
+        status: 'placed',
+        fits: true,
+        cells,
+        relocated: cells.filter((c) => {
+          const wanted = preferred(c),
+            old = oldFor(c);
+          return (
+            !!old &&
+            sameCards(old.cards, c.cards) &&
+            !!wanted &&
+            (c.origin.x !== wanted.x || c.origin.y !== wanted.y)
+          );
+        }).length,
+      };
+    return {
+      ...common,
+      status: 'failed',
+      fits: false,
+      cells: [],
+      relocated: 0,
+      failure: {
+        reason:
+          bounds.width <= 0 || bounds.height <= 0
+            ? 'unmeasured'
+            : exhausted
+              ? 'budget'
+              : 'not-found',
+        cardIds: groups.flatMap((g) => g.cards),
+      },
+    };
+  };
+  if (!groups.length) return result([], 0, false);
+  if (bounds.width <= 0 || bounds.height <= 0) return result(null, 0, false);
+  const blocks = groups.map((group) => ({
+    group,
+    old: oldFor(group),
+    shape: monthShape(group, bounds, oldFor(group)),
+  }));
+  if (blocks.every((b) => b.old)) {
+    const projected = blocks.map((b) =>
+      stackCell(b.group, b.shape, preferred(b.group)!, b.old!.slot),
+    );
+    if (validStacks(projected, bounds, reservations)) return result(projected, 0, false, resized);
+  }
+  // 무관 월은 먼저 고정해 변경 월의 공간 탐색이 그 자리를 훔치지 못하게 한다.
+  blocks.sort(
+    (a, b) =>
+      Number(!!b.old && sameCards(b.old.cards, b.group.cards)) -
+        Number(!!a.old && sameCards(a.old.cards, a.group.cards)) ||
+      b.shape.footprint.width * b.shape.footprint.height -
+        a.shape.footprint.width * a.shape.footprint.height ||
+      a.group.month - b.group.month,
+  );
+  let searches = 0,
+    exhausted = false;
+  const found: { cells: MonthFloorCell[] | null } = { cells: null };
+  const candidates = (
+    block: (typeof blocks)[number],
+    placed: readonly MonthFloorCell[],
+    strict: boolean,
+  ) => {
+    const { group, old, shape } = block,
+      local = shape.footprint,
+      wanted = preferred(group);
+    const blockers = [
+      ...bounds.obstacles,
+      ...placed.map((c) => c.footprint),
+      ...reservations.filter((r) => !sameInstance(r, group)).map((r) => r.footprint),
+    ];
+    const origins: { x: number; y: number }[] = [];
+    if (wanted) origins.push(wanted);
+    if (!strict || !old || !sameCards(old.cards, group.cards)) {
+      const loX = STACK_EDGE - local.x,
+        loY = STACK_EDGE - local.y,
+        hiX = bounds.width - STACK_EDGE - local.width - local.x,
+        hiY = bounds.height - STACK_EDGE - local.height - local.y;
+      const seed = group.month * 7 + group.cards[0]!;
+      for (let i = 1; i <= 96; i++)
+        origins.push({
+          x: loX + fraction(i + seed, 2) * (hiX - loX),
+          y: loY + fraction(i + seed, 3) * (hiY - loY),
+        });
+      const xs = new Set([
+        loX,
+        hiX,
+        ...blockers.flatMap((r) => [
+          r.x - STACK_GAP - local.width - local.x,
+          r.x + r.width + STACK_GAP - local.x,
+        ]),
+      ]);
+      const ys = new Set([
+        loY,
+        hiY,
+        ...blockers.flatMap((r) => [
+          r.y - STACK_GAP - local.height - local.y,
+          r.y + r.height + STACK_GAP - local.y,
+        ]),
+      ]);
+      for (const x of xs) for (const y of ys) origins.push({ x, y });
+    }
+    const angle = ((group.month * 0.61803398875) % 1) * Math.PI * 2;
+    const ideal = {
+      x:
+        bounds.width / 2 +
+        ((Math.cos(angle) * (bounds.width - local.width)) / 2) * 0.88 -
+        local.width / 2 -
+        local.x,
+      y:
+        bounds.height / 2 +
+        ((Math.sin(angle) * (bounds.height - local.height)) / 2) * 0.88 -
+        local.height / 2 -
+        local.y,
+    };
+    const seen = new Set<string>();
+    return origins
+      .filter((p) => {
+        const key = `${p.x}:${p.y}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        const rect = shifted(local, p.x, p.y);
+        return inside(rect, bounds) && !blockers.some((b) => floorRectsOverlap(rect, b, STACK_GAP));
+      })
+      .sort((a, b) => {
+        const reference = wanted ?? ideal;
+        const da = Math.hypot(a.x - reference.x, a.y - reference.y),
+          db = Math.hypot(b.x - reference.x, b.y - reference.y);
+        return da - db || a.y - b.y || a.x - b.x;
+      });
+  };
+  // 현재 장애물 뒤의 최대 빈 사각형을 덮개로 만든다. 겹치는 덮개는 용량을 과대평가할 뿐
+  // 유효 해를 잘라내지 않는다. 최소 묶음 크기의 origin 격자당 하나만 들어갈 수 있는 상한이다.
+  const capacityEnough = (i: number, placed: readonly MonthFloorCell[]) => {
+    if (i === blocks.length) return true;
+    let regions: FloorRect[] = [
+      {
+        x: STACK_EDGE,
+        y: STACK_EDGE,
+        width: bounds.width - 2 * STACK_EDGE,
+        height: bounds.height - 2 * STACK_EDGE,
+      },
+    ];
+    const blockers = [
+      ...bounds.obstacles,
+      ...placed.map((c) => c.footprint),
+      ...reservations
+        .filter((r) => !blocks.slice(i).some((b) => sameInstance(b.group, r)))
+        .map((c) => c.footprint),
+    ];
+    for (const source of blockers) {
+      const obstacle = {
+        x: source.x - STACK_GAP,
+        y: source.y - STACK_GAP,
+        width: source.width + 2 * STACK_GAP,
+        height: source.height + 2 * STACK_GAP,
+      };
+      const split = regions.flatMap((r) => {
+        if (!floorRectsOverlap(r, obstacle)) return [r];
+        const out: FloorRect[] = [];
+        const left = Math.min(r.x + r.width, obstacle.x),
+          right = Math.max(r.x, obstacle.x + obstacle.width),
+          top = Math.min(r.y + r.height, obstacle.y),
+          bottom = Math.max(r.y, obstacle.y + obstacle.height);
+        if (left > r.x) out.push({ ...r, width: left - r.x });
+        if (right < r.x + r.width) out.push({ ...r, x: right, width: r.x + r.width - right });
+        if (top > r.y) out.push({ ...r, height: top - r.y });
+        if (bottom < r.y + r.height) out.push({ ...r, y: bottom, height: r.y + r.height - bottom });
+        return out;
+      });
+      regions = split.filter(
+        (r, at) =>
+          !split.some(
+            (other, j) =>
+              j !== at &&
+              other.x <= r.x &&
+              other.y <= r.y &&
+              other.x + other.width >= r.x + r.width &&
+              other.y + other.height >= r.y + r.height &&
+              (j < at || other.width > r.width || other.height > r.height),
+          ),
+      );
+    }
+    const remaining = blocks.slice(i),
+      w = Math.min(...remaining.map((b) => b.shape.footprint.width)),
+      h = Math.min(...remaining.map((b) => b.shape.footprint.height));
+    // 각 카드가 어느 덮개 하나 안에 완전히 든다. 서로 겹친 덮개도 합산해 보수적 상한만 쓴다.
+    const capacity = regions.reduce(
+      (n, r) =>
+        n +
+        Math.max(0, Math.floor((r.width + STACK_GAP) / (w + STACK_GAP))) *
+          Math.max(0, Math.floor((r.height + STACK_GAP) / (h + STACK_GAP))),
+      0,
+    );
+    return capacity >= remaining.length;
+  };
+  const visit = (i: number, placed: MonthFloorCell[], strict: boolean): boolean => {
+    if (++searches > STACK_SEARCH_LIMIT) {
+      exhausted = true;
+      return false;
+    }
+    if (i === blocks.length) {
+      found.cells = placed;
+      return true;
+    }
+    if (!capacityEnough(i, placed)) {
+      capacityPrunes++;
+      return false;
+    }
+    const b = blocks[i]!;
+    for (const origin of candidates(b, placed, strict)) {
+      if (
+        visit(
+          i + 1,
+          [...placed, stackCell(b.group, b.shape, origin, b.old?.slot ?? b.group.month - 1)],
+          strict,
+        )
+      )
+        return true;
+      if (exhausted) return false;
+    }
+    return false;
+  };
+  visit(0, [], true);
+  if (!found.cells && !exhausted) visit(0, [], false);
+  // 후보 미발견은 불가능 증명이 아니다. 실패는 별도 상태이며 개발 진단만 그린다.
+  return result(
+    found.cells ? found.cells.sort((a, b) => a.month - b.month) : null,
+    searches,
+    exhausted,
+  );
 }

@@ -338,16 +338,19 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
-### #202 대각 월 묶음 제품 Draft 재개 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
+### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.
 - 사용자 실제 제품 Draft 착수 승인에 따라 계획 commit→일반 FF push→Refs #202 #200 Draft PR을 만들고 의미 있는 단계별 commit/push를 수행한다. 소유는 Floor/layout/전용 시험, 필요한 Board 최소 popup props/event/focus, spec 바닥 해당 절·ui-spec UX-02/05/06/선택 절·이 자기 단위다. Hand/HUD/전역skin/PromptPanel 새API/engine/protocol/display/Playback/choreo 편집0, 새 agent0이다.
-- 현재 단계: 사용자 “그래 진행해봐”와 root의 기존 소유 재개 승인으로 비교1 대각 겹침을 실제 Floor에 연결한다. shared-pose A 기각은 유지하고 모든 카드의 distinct pose·원 순서/z/CardId를 보존한다. 수치/정본 전체 수락으로 확대하지 않는다. 상용 조사 head `a2ff9af9417a84825a36f7bb883f505e8856f452`와 계획 `aaa36ec3bc025a666a37e2611d9e7779c2d24893`는 역사로 보존한다. main `4a62c95fd1633371e2bf4ee5b4296eeaaa1ae440`만 clean merge했다.
-- 첫 bounded checkpoint: Floor에 카드별 local pose·실제 footprint·same-seq 삭제 예약/FIFO 해제를 연결하고 기존 합법 boundary/보너스5·구성6/획득직전7 표적으로 검증한다. 기존 PromptPanel/native title/actions·단일 focus 잠금을 재사용해 두 후보 전체48px 선택을 연결한다. 실제 Board 제품 컴포넌트의 정상/혼잡 fixture 대표샷2개와 입력/resize 안정성·fit 실패를 보고하며 제품 수용 PASS는 별도다.
+- 현재 단계: [Draft #235](https://github.com/kywoo26/p2p-gostop/pull/235)에 Floor/layout·Board 최소 popup·전용 시험을 연결한 opt-in checkpoint. A 공유 pose/격자 선호/비대칭 겹침은 기각 역사로 보존한다. clean main `4a62c95fd1633371e2bf4ee5b4296eeaaa1ae440`만 통합했다. same-frame 고정 run `20261001T165412510Z`는 normal10패/6월·crowded12패/8월 모두 실제 DOM 타월교차0/범위0이며 사용자 시각 완료 판정이 아니다.
+- 구현: 월별 실제 footprint·카드마다 동일 append offset·결정적 연속 공간 후보를 사용한다. 같은 두 fixture는 수동 override 없이 actual Board를 캡처했다. 최초 탐색9/23방문·capacity pruning2/14, 안정 후 재사용0을 구분하며 성능 PASS로 쓰지 않는다. 실패/cells[]와 성공 placement를 타입상 분리해 임의 좌상단 fallback을 후속 anchor로 소비하지 않는다. 상세 근거/한계와 그림은 proposal §11 한 곳에 둔다.
+- 저장 배열과 그림의 층을 분리: seed1827/action9 실제 재실행·display.applyEvent에서 저장 뻑5 `[13,15,12,48,50]`, 실제 발생 `Played15→Flipped48→50→12→Ppeok`를 확인했다. 시각 back→front는 `[13,15,48,50,12]`로 마지막 월패가 맨 위이며 CardId/권위 배열은 바꾸지 않는다. 구성 뻑6/회수7 transient/회수 중 새 보너스의 별도 staging·Captured는 좁은 실행 근거이며 전체 Playback/실기기 수용과 구분한다. 맨 위 보너스였던 이전 PNG는 기각 근거로 보존한다.
+- 전용 회귀 checkpoint: 이전4 fitfail/미처리 pointer4와 새 결과를 분리한다. Chromium/WebKit 전용22표적 통과·미처리0, web check 오류0/경고0. 기존 origin이 덱 paint와 충돌하는2→6에서는 변경 월 settled 재배치가 필요하며 local pose/무관 월 고정을 검증한다. 현재 기본false·정본미채택. 정상 오른쪽 단패4의2×2 시각, #223 비strict 전역 최소비용, 제품 실패 UX/최소 뻑·bonus 단서, #200 beforepose/P2P·Game 적용·모션/실기기는 미완이다.
+- 크기 비교 기준: floor/덱44px·획득32px·중앙336×243.78125px·손패/popup48px를 유지한다. 실제 변환 DOM AABB에 회전된1px outline을 확장한 보수적 paint 여백은 월간 normal12.121/crowded12.121px·덱간12.116/12.130px다. 정적 측정이며 강조/이동 비가림이나 실기기 PASS가 아니다. 획득28px 비교의 중앙+13.03125px는 역사로 보존하고 현재 제품에서는 활성화하지 않는다.
 - 2단계: 기존 native PromptPanel title/actions를 재사용해 원 direct target 선택을 교체한다. 공개 options의 원 ID/전체 후보48px·ARIA·단일 focus/inert를 보존한다. UX-02 위치 고정 우선, 불가피한 재배치는 pointer/keyheld 취소·권위 timeout/원격수락·focus/pose 수명 표적으로 검토하며 미승인 예외를 숨겨 활성화하지 않는다.
 - 200% 단서176.171875>157.4375 stress는 알려진 실패다. 단서 배치/표현은 한 번 좁게 재검토할 수 있으나 축소/누락/숨김/새 최소 지원 높이/영구 입력 잠금으로 봉합하지 않는다. 소유 범위 안에서 안전 fit이 불가하면 실제 최소 반례와 추가 소유 요청1건을 root에게 제출한다. #200 정확 접촉 beforepose와 settled slot·공개 관계 통합은 별도 미완으로 남긴다.
 - 정본의 현재 독립 셀/앞면100%·resize 탐색0과 이 Draft delta를 구분한다. 다음 제품 리뷰 전 정본 최종 채택/기기 PASS로 기록하지 않는다. 경미 UX-02 추적 메타는 이번 필요 문서 변경에 보완한다. 요구사항 전체 완료/Closes 금지다.
-- 진행 중 표적만, 새 큰 행렬/모든seed 탐색0. 제품 수정 뒤 최종 checkpoint에서 AGENTS §5 필수 lint/check/test/test:browser/build/e2e:smoke/Android3작업을 한 회 수행한다. PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0. 실기기/OSSR/성능은 사람 근거 전 PASS0이다. 현재 첫 제품 checkpoint 진행이며 정본 전체 승인 완료로 표기하지 않는다.
+- 진행 중 표적만, 새 큰 행렬/모든seed 탐색0. 제품 수정 뒤 최종 checkpoint에서 AGENTS §5 필수 lint/check/test/test:browser/build/e2e:smoke/Android3작업을 한 회 수행한다. PLAYWRIGHT_PORT=4258·workers≤4·timing직렬·Gradle≤4, raw2MiB/초기encoded1.5MB 별도 계측·기준샷 자동갱신/threshold완화0. 실기기/OSSR/성능은 사람 근거 전 PASS0이다. 현재는 opt-in 구현 checkpoint이며 정본 전체 승인 완료로 표기하지 않는다.
 
 ### 솔로 종료 결과 확인 (#131, FR-16·FR-53·UX-T05·U15·NF-08)
 

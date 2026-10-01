@@ -5,12 +5,24 @@
   import Card from './Card.svelte';
   import { cardLabel } from './cards.ts';
   import { promptFocus } from './prompt-focus.ts';
-  import { assignFloor, projectFloor } from './floor-layout.ts';
-  import type { FloorSlot } from './floor-layout.ts';
+  import {
+    assignFloor,
+    projectFloor,
+    layoutMonthFloor,
+    projectMonthFloorReservations,
+  } from './floor-layout.ts';
+  import type {
+    FloorSlot,
+    MonthFloorBounds,
+    MonthFloorCell,
+    MonthFloorLayout,
+  } from './floor-layout.ts';
   import { untrack } from 'svelte';
 
   interface Props {
     compact?: boolean;
+    /** #202 실제 Board 검토용. 일반 적용은 별도 리뷰 뒤 전환한다. */
+    monthStacks?: boolean;
     round?: number;
     playbackBusy?: boolean;
     snapshotSeq?: number;
@@ -28,6 +40,7 @@
 
   let {
     compact = false,
+    monthStacks = false,
     round = 0,
     playbackBusy = false,
     snapshotSeq = 0,
@@ -40,7 +53,14 @@
     handLinks = {},
   }: Props = $props();
   let table: HTMLElement;
-  let bounds = $state({ width: 0, height: 0, cardWidth: 48 });
+  let bounds = $state<MonthFloorBounds>({ width: 0, height: 0, cardWidth: 48, obstacles: [] });
+  let monthLayout = $state.raw<MonthFloorLayout>();
+  let lastGoodMonthLayout: MonthFloorLayout | undefined;
+  let monthReserved = $state.raw<MonthFloorCell[]>([]);
+  let monthReservedBounds: MonthFloorBounds | undefined;
+  let monthRound: number | undefined;
+  let monthDeck = 0;
+  let monthSeq: number | undefined;
   let placed = $state.raw<FloorSlot[]>([]);
   let reserved: FloorSlot[] = [];
   let lastRound: number | undefined;
@@ -57,6 +77,7 @@
       deck = deckCount,
       seq = snapshotSeq;
     untrack(() => {
+      if (monthStacks) return;
       if (nextRound !== lastRound || deck > lastDeck) {
         placed = [];
         reserved = [];
@@ -88,22 +109,110 @@
       lastSnapshotSeq = seq;
     });
   });
+  $effect.pre(() => {
+    const input = groups,
+      size = bounds,
+      playing = playbackBusy,
+      nextRound = round,
+      seq = snapshotSeq,
+      deck = deckCount;
+    if (!monthStacks) return;
+    untrack(() => {
+      if (nextRound !== monthRound || deck > monthDeck) {
+        monthLayout = undefined;
+        lastGoodMonthLayout = undefined;
+        monthReserved = [];
+      }
+      if (!playing || seq !== monthSeq) monthReserved = [];
+      const ids = new Set(input.flatMap((g) => g.cards));
+      if (playing && seq === monthSeq) {
+        for (const cell of monthLayout?.cells ?? []) {
+          if (!cell.cards.some((id) => !ids.has(id))) continue;
+          if (
+            !monthReserved.some(
+              (r) =>
+                r.origin.x === cell.origin.x &&
+                r.origin.y === cell.origin.y &&
+                r.cards.join(',') === cell.cards.join(','),
+            )
+          )
+            monthReserved = [...monthReserved, cell];
+        }
+      }
+      if (monthReserved.length && monthReservedBounds)
+        monthReserved = projectMonthFloorReservations(monthReserved, monthReservedBounds, size);
+      monthReservedBounds = size;
+      monthLayout = layoutMonthFloor(input, size, lastGoodMonthLayout, monthReserved);
+      if (monthLayout.fits) lastGoodMonthLayout = monthLayout;
+      monthRound = nextRound;
+      monthDeck = deck;
+      monthSeq = seq;
+    });
+  });
   $effect(() => {
+    void staging;
+    void groups;
+    const paintRect = (el: Element, origin: DOMRect) => {
+      const r = el.getBoundingClientRect(),
+        style = getComputedStyle(el);
+      const outline =
+        style.outlineStyle === 'none' || style.outlineStyle === 'hidden'
+          ? 0
+          : parseFloat(style.outlineWidth) || 0;
+      let left = outline,
+        right = outline,
+        top = outline,
+        bottom = outline;
+      // computed box-shadow의 px 오프셋·blur·spread를 보수적으로 포함한다. 색의 숫자는 px가 아니다.
+      const pixels = [...style.boxShadow.matchAll(/(-?[\d.]+)px/g)].map((m) => Number(m[1]));
+      for (let i = 0; i + 3 < pixels.length; i += 4) {
+        const x = pixels[i]!,
+          y = pixels[i + 1]!,
+          halo = Math.max(0, pixels[i + 2]! + pixels[i + 3]!);
+        left = Math.max(left, halo - x);
+        right = Math.max(right, halo + x);
+        top = Math.max(top, halo - y);
+        bottom = Math.max(bottom, halo + y);
+      }
+      return {
+        x: r.x - origin.x - left,
+        y: r.y - origin.y - top,
+        width: r.width + left + right,
+        height: r.height + top + bottom,
+      };
+    };
     const update = () => {
       const rect = table.getBoundingClientRect();
-      bounds = {
+      const measured: MonthFloorBounds = {
         width: rect.width,
         height: rect.height,
         cardWidth: parseFloat(getComputedStyle(table).getPropertyValue('--card-w-m')) || 48,
+        paintPadding:
+          parseFloat(getComputedStyle(table.querySelector('.card') ?? table).outlineWidth) || 1,
+        obstacles: monthStacks
+          ? [
+              ...table.querySelectorAll(
+                '.deck .card, .deck-stack, .deck-count, .compact-ppeok, .staging .card',
+              ),
+            ]
+              .filter((el) => {
+                const r = el.getBoundingClientRect();
+                return r.width > 0 && r.height > 0;
+              })
+              .map((el) => paintRect(el, rect))
+          : [],
       };
+      if (JSON.stringify(measured) !== JSON.stringify(untrack(() => bounds))) bounds = measured;
     };
     const observer = new ResizeObserver(update);
     observer.observe(table);
+    const deck = table.querySelector('.deck-area');
+    if (deck) observer.observe(deck);
     update();
     return () => observer.disconnect();
   });
   $effect(() => {
-    if (!options.length || !table) return;
+    if (monthStacks || !options.length || !table) return;
     const focus = promptFocus(table);
     return () => focus.destroy();
   });
@@ -111,21 +220,41 @@
     projectFloor(placed, options, bounds.width, bounds.height, bounds.cardWidth),
   );
   const cells = $derived(
-    compact
-      ? layout.cells
-      : groups.map((group) => ({ ...group, slot: undefined, x: 0, y: 0, angle: 0, dx: 0, dy: 0 })),
+    monthStacks
+      ? (monthLayout?.cells ?? [])
+      : compact
+        ? layout.cells
+        : groups.map((group) => ({
+            ...group,
+            slot: undefined,
+            x: 0,
+            y: 0,
+            angle: 0,
+            dx: 0,
+            dy: 0,
+          })),
   );
 </script>
 
 <div
-  role={options.length ? 'dialog' : 'group'}
-  aria-modal={options.length ? true : undefined}
-  aria-label={options.length ? '먹을 바닥패 선택' : undefined}
+  role={!monthStacks && options.length ? 'dialog' : 'group'}
+  aria-modal={!monthStacks && options.length ? true : undefined}
+  aria-label={!monthStacks && options.length ? '먹을 바닥패 선택' : undefined}
   tabindex="-1"
   class="table"
+  style:--table-card={monthStacks ? '44px' : undefined}
+  style:--table-card-height={monthStacks ? 'calc(44px / 0.614)' : undefined}
   bind:this={table}
   data-floor-folded={layout.folded}
-  data-floor-fits={layout.fits}
+  data-floor-fits={monthStacks ? (monthLayout?.fits ?? false) : layout.fits}
+  data-floor-searches={monthStacks ? monthLayout?.searches : undefined}
+  data-floor-exhausted={monthStacks ? monthLayout?.exhausted : undefined}
+  data-floor-model-bounds={monthStacks ? JSON.stringify(bounds) : undefined}
+  data-floor-relocated={monthStacks ? monthLayout?.relocated : undefined}
+  data-floor-reserved={monthStacks ? monthReserved.length : undefined}
+  data-floor-round={round}
+  data-floor-snapshot-seq={snapshotSeq}
+  class:monthStacks
   class:compact
   class:choosing={options.length > 0}
 >
@@ -147,21 +276,53 @@
       {/each}
     </div>
   </div>
+  {#if monthStacks && monthLayout?.status === 'failed' && monthLayout.failure.reason !== 'unmeasured'}
+    <p class="layout-diagnostic" role="status">
+      개발 배치 검토 실패 · {monthLayout.failure.reason === 'budget'
+        ? '탐색 상한'
+        : '후보 미발견'}<br />미배치 카드 ID: {monthLayout.failure.cardIds.join(', ')}
+    </p>
+  {/if}
   <ul class="floor" aria-label="바닥">
-    {#each cells as group (compact ? group.slot : group.month)}
+    {#each cells as group (monthStacks ? group.month : compact ? group.slot : group.month)}
+      {@const stack = monthStacks
+        ? monthLayout?.cells.find((cell) => cell.month === group.month)
+        : undefined}
       <li
         class={['group', `kind-${group.kind}`]}
         style:left={`${group.x}px`}
+        style:width={stack ? `${stack.localWidth}px` : undefined}
+        style:height={stack ? `${stack.localHeight}px` : undefined}
         style:top={`${group.y}px`}
         style:rotate={`${group.angle}deg`}
         style:translate={`${group.dx}px ${group.dy}px`}
         data-floor-slot={group.slot}
+        data-floor-model-footprint={stack ? JSON.stringify(stack.footprint) : undefined}
         data-month={group.month}
         data-hand-link={handLinks[group.month]}
         aria-label={`${group.month}월 ${group.cards.length}장${group.kind === 'loose' ? '' : ' 뻑'}${handLinks[group.month] === 'bomb' ? ', 손패 폭탄 후보의 짝' : handLinks[group.month] === 'chongtong' ? ', 손패 총통 후보의 짝' : ''}`}
       >
         {#each group.cards as id (id)}
-          {#if options.includes(id)}
+          {#if stack}
+            {@const pose = stack.poses.find((p) => p.id === id)!}
+            <span
+              class="stack-card"
+              style:left={`${pose.localX}px`}
+              style:top={`${pose.localY}px`}
+              style:z-index={pose.z}
+              data-floor-pose-index={pose.index}
+              data-floor-model-pose={JSON.stringify(pose)}
+            >
+              <Card
+                {id}
+                size="m"
+                flippable
+                highlight={highlight.includes(id)}
+                dimmed={options.length > 0}
+                marks={false}
+              />
+            </span>
+          {:else if options.includes(id)}
             <button
               type="button"
               class="floor-choice"
@@ -191,6 +352,24 @@
 </div>
 
 <style>
+  .layout-diagnostic {
+    position: absolute;
+    inset: 8px;
+    margin: 0;
+    z-index: 3;
+    background: var(--color-surface-raised);
+    padding: 8px;
+    font-size: 14px;
+  }
+  .stack-card {
+    position: absolute;
+    width: var(--card-w-m);
+    height: var(--card-h-m);
+  }
+  .monthStacks .group {
+    outline: none;
+    transform-origin: 0 0;
+  }
   .floor-choice {
     padding: 0;
     border: 0;
