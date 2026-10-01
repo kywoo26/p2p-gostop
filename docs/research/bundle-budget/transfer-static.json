@@ -1,0 +1,804 @@
+{
+  "schema": 1,
+  "condition": "desktop-loopback-guest-name-input-and-fonts-ready; no-throttle; fresh-context then same-context reload",
+  "samples": [
+    {
+      "engine": "chromium",
+      "run": 1,
+      "phase": "cold-entry",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 748651,
+      "networkEncodedBodySizeFromTiming": 747451,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 512450
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "run": 1,
+      "phase": "warm-reload",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 960,
+      "networkEncodedBodySizeFromTiming": 660,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "run": 2,
+      "phase": "cold-entry",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 748651,
+      "networkEncodedBodySizeFromTiming": 747451,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 512450
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "run": 2,
+      "phase": "warm-reload",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 960,
+      "networkEncodedBodySizeFromTiming": 660,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "run": 3,
+      "phase": "cold-entry",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 748651,
+      "networkEncodedBodySizeFromTiming": 747451,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 512450
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "run": 3,
+      "phase": "warm-reload",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 960,
+      "networkEncodedBodySizeFromTiming": 660,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "run": 1,
+      "phase": "cold-entry",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 748651,
+      "networkEncodedBodySizeFromTiming": 747451,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 512450
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "run": 1,
+      "phase": "warm-reload",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 660,
+      "decodedBodySize": 660,
+      "transferSize": 960,
+      "networkEncodedBodySizeFromTiming": 660,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "run": 2,
+      "phase": "cold-entry",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 748651,
+      "networkEncodedBodySizeFromTiming": 747451,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 512450
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "run": 2,
+      "phase": "warm-reload",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 660,
+      "decodedBodySize": 660,
+      "transferSize": 960,
+      "networkEncodedBodySizeFromTiming": 660,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 0
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "run": 3,
+      "phase": "cold-entry",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 747451,
+      "decodedBodySize": 747451,
+      "transferSize": 748651,
+      "networkEncodedBodySizeFromTiming": 747451,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 512150,
+          "decodedBodySize": 512150,
+          "transferSize": 512450
+        },
+        {
+          "kind": "resource",
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "run": 3,
+      "phase": "warm-reload",
+      "externalRequests": 0,
+      "requests": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-DlUllIso.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 512150,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "encodedBodySize": 660,
+      "decodedBodySize": 660,
+      "transferSize": 960,
+      "networkEncodedBodySizeFromTiming": 660,
+      "timing": [
+        {
+          "kind": "navigation",
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-DlUllIso.js",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 0
+        },
+        {
+          "kind": "resource",
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 0
+        }
+      ]
+    }
+  ]
+}

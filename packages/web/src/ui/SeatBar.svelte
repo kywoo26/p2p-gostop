@@ -62,7 +62,12 @@
             >{ppeokCount}
           </span>
           <span class="counter" aria-hidden="true" title={`흔들기 ${shakes}회`}
-            ><img src="/skin/bell-illustrated.webp" width="16" height="16" alt="" />{shakes}</span
+            ><img
+              src={`${import.meta.env.BASE_URL}skin/bell-illustrated.webp`}
+              width="16"
+              height="16"
+              alt=""
+            />{shakes}</span
           >
         </span>
       {/if}

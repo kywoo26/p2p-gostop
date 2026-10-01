@@ -1,0 +1,1817 @@
+{
+  "schema": 1,
+  "complete": false,
+  "condition": "StaticSite identity/private loopback LAN relay; standard UI; deterministic crypto fixture host101/guest201; speed=instant; desktop no throttle; actual legal buttons; WS frames excluded",
+  "samples": [
+    {
+      "engine": "chromium",
+      "role": "host",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 511805,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/0.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11066,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/28.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2208,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/felt-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 14090,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/wood-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11032,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/key-art-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 54482,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/gold-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 874,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/back.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2007,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "status": 404,
+          "encoding": "identity",
+          "contentLength": 0,
+          "cacheControl": ""
+        },
+        {
+          "path": "cards/33.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15623,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/34.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15348,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/35.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15326,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/4.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 16893,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/6.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 14675,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/25.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11337,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/20.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 22848,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/31.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 639,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/13.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 10036,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/43.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 7334,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/3.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 4445,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/27.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 8684,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/45.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 16954,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/36.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 23948,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/39.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11777,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/23.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 10256,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/14.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 9953,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "timing": [
+        {
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "encodedBodySize": 511805,
+          "decodedBodySize": 511805,
+          "transferSize": 512105
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        },
+        {
+          "path": "cards/0.svg",
+          "encodedBodySize": 11066,
+          "decodedBodySize": 11066,
+          "transferSize": 11366
+        },
+        {
+          "path": "cards/28.svg",
+          "encodedBodySize": 2208,
+          "decodedBodySize": 2208,
+          "transferSize": 2508
+        },
+        {
+          "path": "skin/felt-1x.webp",
+          "encodedBodySize": 14090,
+          "decodedBodySize": 14090,
+          "transferSize": 14390
+        },
+        {
+          "path": "skin/wood-1x.webp",
+          "encodedBodySize": 11032,
+          "decodedBodySize": 11032,
+          "transferSize": 11332
+        },
+        {
+          "path": "skin/key-art-1x.webp",
+          "encodedBodySize": 54482,
+          "decodedBodySize": 54482,
+          "transferSize": 54782
+        },
+        {
+          "path": "skin/gold-1x.webp",
+          "encodedBodySize": 874,
+          "decodedBodySize": 874,
+          "transferSize": 1174
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 300
+        },
+        {
+          "path": "cards/back.svg",
+          "encodedBodySize": 2007,
+          "decodedBodySize": 2007,
+          "transferSize": 2307
+        },
+        {
+          "path": "cards/33.svg",
+          "encodedBodySize": 15623,
+          "decodedBodySize": 15623,
+          "transferSize": 15923
+        },
+        {
+          "path": "cards/34.svg",
+          "encodedBodySize": 15348,
+          "decodedBodySize": 15348,
+          "transferSize": 15648
+        },
+        {
+          "path": "cards/35.svg",
+          "encodedBodySize": 15326,
+          "decodedBodySize": 15326,
+          "transferSize": 15626
+        },
+        {
+          "path": "cards/4.svg",
+          "encodedBodySize": 16893,
+          "decodedBodySize": 16893,
+          "transferSize": 17193
+        },
+        {
+          "path": "cards/6.svg",
+          "encodedBodySize": 14675,
+          "decodedBodySize": 14675,
+          "transferSize": 14975
+        },
+        {
+          "path": "cards/25.svg",
+          "encodedBodySize": 11337,
+          "decodedBodySize": 11337,
+          "transferSize": 11637
+        },
+        {
+          "path": "cards/31.svg",
+          "encodedBodySize": 639,
+          "decodedBodySize": 639,
+          "transferSize": 939
+        },
+        {
+          "path": "cards/43.svg",
+          "encodedBodySize": 7334,
+          "decodedBodySize": 7334,
+          "transferSize": 7634
+        },
+        {
+          "path": "cards/27.svg",
+          "encodedBodySize": 8684,
+          "decodedBodySize": 8684,
+          "transferSize": 8984
+        },
+        {
+          "path": "cards/36.svg",
+          "encodedBodySize": 23948,
+          "decodedBodySize": 23948,
+          "transferSize": 24248
+        },
+        {
+          "path": "cards/39.svg",
+          "encodedBodySize": 11777,
+          "decodedBodySize": 11777,
+          "transferSize": 12077
+        },
+        {
+          "path": "cards/20.svg",
+          "encodedBodySize": 22848,
+          "decodedBodySize": 22848,
+          "transferSize": 23148
+        },
+        {
+          "path": "cards/13.svg",
+          "encodedBodySize": 10036,
+          "decodedBodySize": 10036,
+          "transferSize": 10336
+        },
+        {
+          "path": "cards/3.svg",
+          "encodedBodySize": 4445,
+          "decodedBodySize": 4445,
+          "transferSize": 4745
+        },
+        {
+          "path": "cards/45.svg",
+          "encodedBodySize": 16954,
+          "decodedBodySize": 16954,
+          "transferSize": 17254
+        },
+        {
+          "path": "cards/23.svg",
+          "encodedBodySize": 10256,
+          "decodedBodySize": 10256,
+          "transferSize": 10556
+        },
+        {
+          "path": "cards/14.svg",
+          "encodedBodySize": 9953,
+          "decodedBodySize": 9953,
+          "transferSize": 10253
+        }
+      ],
+      "networkUniqueEncodedBodySizeFromTiming": 1058941,
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      }
+    },
+    {
+      "engine": "webkit",
+      "role": "guest",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 511805,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/back.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2007,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "status": 404,
+          "encoding": "identity",
+          "contentLength": 0,
+          "cacheControl": ""
+        },
+        {
+          "path": "cards/33.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15623,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/34.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15348,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/35.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15326,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/4.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 16893,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/6.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 14675,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/25.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11337,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/27.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 8684,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/0.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11066,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/32.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 21136,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/38.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11492,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/41.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 8424,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/48.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 1917,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/49.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2216,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/8.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 28235,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/17.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 9107,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/18.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 7689,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/21.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 10792,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/22.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 13026,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "timing": [
+        {
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "encodedBodySize": 511805,
+          "decodedBodySize": 511805,
+          "transferSize": 512105
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "encodedBodySize": 5,
+          "decodedBodySize": 0,
+          "transferSize": 305
+        },
+        {
+          "path": "cards/back.svg",
+          "encodedBodySize": 2007,
+          "decodedBodySize": 2007,
+          "transferSize": 2307
+        },
+        {
+          "path": "cards/33.svg",
+          "encodedBodySize": 15623,
+          "decodedBodySize": 15623,
+          "transferSize": 15923
+        },
+        {
+          "path": "cards/34.svg",
+          "encodedBodySize": 15348,
+          "decodedBodySize": 15348,
+          "transferSize": 15648
+        },
+        {
+          "path": "cards/35.svg",
+          "encodedBodySize": 15326,
+          "decodedBodySize": 15326,
+          "transferSize": 15626
+        },
+        {
+          "path": "cards/4.svg",
+          "encodedBodySize": 16893,
+          "decodedBodySize": 16893,
+          "transferSize": 17193
+        },
+        {
+          "path": "cards/6.svg",
+          "encodedBodySize": 14675,
+          "decodedBodySize": 14675,
+          "transferSize": 14975
+        },
+        {
+          "path": "cards/25.svg",
+          "encodedBodySize": 11337,
+          "decodedBodySize": 11337,
+          "transferSize": 11637
+        },
+        {
+          "path": "cards/27.svg",
+          "encodedBodySize": 8684,
+          "decodedBodySize": 8684,
+          "transferSize": 8984
+        },
+        {
+          "path": "cards/0.svg",
+          "encodedBodySize": 11066,
+          "decodedBodySize": 11066,
+          "transferSize": 11366
+        },
+        {
+          "path": "cards/48.svg",
+          "encodedBodySize": 1917,
+          "decodedBodySize": 1917,
+          "transferSize": 2217
+        },
+        {
+          "path": "cards/49.svg",
+          "encodedBodySize": 2216,
+          "decodedBodySize": 2216,
+          "transferSize": 2516
+        },
+        {
+          "path": "cards/38.svg",
+          "encodedBodySize": 11492,
+          "decodedBodySize": 11492,
+          "transferSize": 11792
+        },
+        {
+          "path": "cards/41.svg",
+          "encodedBodySize": 8424,
+          "decodedBodySize": 8424,
+          "transferSize": 8724
+        },
+        {
+          "path": "cards/32.svg",
+          "encodedBodySize": 21136,
+          "decodedBodySize": 21136,
+          "transferSize": 21436
+        },
+        {
+          "path": "cards/17.svg",
+          "encodedBodySize": 9107,
+          "decodedBodySize": 9107,
+          "transferSize": 9407
+        },
+        {
+          "path": "cards/8.svg",
+          "encodedBodySize": 28235,
+          "decodedBodySize": 28235,
+          "transferSize": 28535
+        },
+        {
+          "path": "cards/18.svg",
+          "encodedBodySize": 7689,
+          "decodedBodySize": 7689,
+          "transferSize": 7989
+        },
+        {
+          "path": "cards/21.svg",
+          "encodedBodySize": 10792,
+          "decodedBodySize": 10792,
+          "transferSize": 11092
+        },
+        {
+          "path": "cards/22.svg",
+          "encodedBodySize": 13026,
+          "decodedBodySize": 13026,
+          "transferSize": 13326
+        }
+      ],
+      "networkUniqueEncodedBodySizeFromTiming": 972104,
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      }
+    },
+    {
+      "engine": "webkit",
+      "role": "host",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 511805,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/0.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11066,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/28.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2208,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/felt-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 14090,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/wood-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11032,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/key-art-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 54482,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "skin/gold-1x.webp",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 874,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/back.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2007,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "status": 404,
+          "encoding": "identity",
+          "contentLength": 0,
+          "cacheControl": ""
+        },
+        {
+          "path": "cards/33.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15623,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/34.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15348,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/35.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15326,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/4.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 16893,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/6.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 14675,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/25.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11337,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/27.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 8684,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/31.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 639,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/36.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 23948,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/39.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11777,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/43.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 7334,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/45.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 16954,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/3.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 4445,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/13.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 10036,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/14.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 9953,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/20.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 22848,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/23.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 10256,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "timing": [
+        {
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "encodedBodySize": 511805,
+          "decodedBodySize": 511805,
+          "transferSize": 512105
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        },
+        {
+          "path": "cards/0.svg",
+          "encodedBodySize": 11066,
+          "decodedBodySize": 11066,
+          "transferSize": 11366
+        },
+        {
+          "path": "cards/28.svg",
+          "encodedBodySize": 2208,
+          "decodedBodySize": 2208,
+          "transferSize": 2508
+        },
+        {
+          "path": "skin/felt-1x.webp",
+          "encodedBodySize": 14090,
+          "decodedBodySize": 14090,
+          "transferSize": 14390
+        },
+        {
+          "path": "skin/wood-1x.webp",
+          "encodedBodySize": 11032,
+          "decodedBodySize": 11032,
+          "transferSize": 11332
+        },
+        {
+          "path": "skin/gold-1x.webp",
+          "encodedBodySize": 874,
+          "decodedBodySize": 874,
+          "transferSize": 1174
+        },
+        {
+          "path": "skin/key-art-1x.webp",
+          "encodedBodySize": 54482,
+          "decodedBodySize": 54482,
+          "transferSize": 54782
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "encodedBodySize": 5,
+          "decodedBodySize": 0,
+          "transferSize": 305
+        },
+        {
+          "path": "cards/back.svg",
+          "encodedBodySize": 2007,
+          "decodedBodySize": 2007,
+          "transferSize": 2307
+        },
+        {
+          "path": "cards/33.svg",
+          "encodedBodySize": 15623,
+          "decodedBodySize": 15623,
+          "transferSize": 15923
+        },
+        {
+          "path": "cards/34.svg",
+          "encodedBodySize": 15348,
+          "decodedBodySize": 15348,
+          "transferSize": 15648
+        },
+        {
+          "path": "cards/35.svg",
+          "encodedBodySize": 15326,
+          "decodedBodySize": 15326,
+          "transferSize": 15626
+        },
+        {
+          "path": "cards/4.svg",
+          "encodedBodySize": 16893,
+          "decodedBodySize": 16893,
+          "transferSize": 17193
+        },
+        {
+          "path": "cards/6.svg",
+          "encodedBodySize": 14675,
+          "decodedBodySize": 14675,
+          "transferSize": 14975
+        },
+        {
+          "path": "cards/25.svg",
+          "encodedBodySize": 11337,
+          "decodedBodySize": 11337,
+          "transferSize": 11637
+        },
+        {
+          "path": "cards/27.svg",
+          "encodedBodySize": 8684,
+          "decodedBodySize": 8684,
+          "transferSize": 8984
+        },
+        {
+          "path": "cards/31.svg",
+          "encodedBodySize": 639,
+          "decodedBodySize": 639,
+          "transferSize": 939
+        },
+        {
+          "path": "cards/39.svg",
+          "encodedBodySize": 11777,
+          "decodedBodySize": 11777,
+          "transferSize": 12077
+        },
+        {
+          "path": "cards/36.svg",
+          "encodedBodySize": 23948,
+          "decodedBodySize": 23948,
+          "transferSize": 24248
+        },
+        {
+          "path": "cards/43.svg",
+          "encodedBodySize": 7334,
+          "decodedBodySize": 7334,
+          "transferSize": 7634
+        },
+        {
+          "path": "cards/45.svg",
+          "encodedBodySize": 16954,
+          "decodedBodySize": 16954,
+          "transferSize": 17254
+        },
+        {
+          "path": "cards/3.svg",
+          "encodedBodySize": 4445,
+          "decodedBodySize": 4445,
+          "transferSize": 4745
+        },
+        {
+          "path": "cards/13.svg",
+          "encodedBodySize": 10036,
+          "decodedBodySize": 10036,
+          "transferSize": 10336
+        },
+        {
+          "path": "cards/14.svg",
+          "encodedBodySize": 9953,
+          "decodedBodySize": 9953,
+          "transferSize": 10253
+        },
+        {
+          "path": "cards/23.svg",
+          "encodedBodySize": 10256,
+          "decodedBodySize": 10256,
+          "transferSize": 10556
+        },
+        {
+          "path": "cards/20.svg",
+          "encodedBodySize": 22848,
+          "decodedBodySize": 22848,
+          "transferSize": 23148
+        }
+      ],
+      "networkUniqueEncodedBodySizeFromTiming": 1058946,
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      }
+    },
+    {
+      "engine": "chromium",
+      "role": "guest",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "responses": [
+        {
+          "path": "",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 660,
+          "cacheControl": "no-store"
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 90393,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 511805,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 144248,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/back.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2007,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "status": 404,
+          "encoding": "identity",
+          "contentLength": 0,
+          "cacheControl": ""
+        },
+        {
+          "path": "cards/33.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15623,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/34.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15348,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/35.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 15326,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/4.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 16893,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/6.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 14675,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/25.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11337,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/27.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 8684,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/0.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11066,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/41.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 8424,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/32.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 21136,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/48.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 1917,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/38.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 11492,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/49.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 2216,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/22.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 13026,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/17.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 9107,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/18.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 7689,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/8.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 28235,
+          "cacheControl": "public, max-age=31536000, immutable"
+        },
+        {
+          "path": "cards/21.svg",
+          "status": 200,
+          "encoding": "identity",
+          "contentLength": 10792,
+          "cacheControl": "public, max-age=31536000, immutable"
+        }
+      ],
+      "timing": [
+        {
+          "path": "",
+          "encodedBodySize": 660,
+          "decodedBodySize": 660,
+          "transferSize": 960
+        },
+        {
+          "path": "assets/index-j7acpkPC.js",
+          "encodedBodySize": 511805,
+          "decodedBodySize": 511805,
+          "transferSize": 512105
+        },
+        {
+          "path": "assets/index-cpasDLac.css",
+          "encodedBodySize": 90393,
+          "decodedBodySize": 90393,
+          "transferSize": 90693
+        },
+        {
+          "path": "assets/GostopSans-4PIrYIai.woff2",
+          "encodedBodySize": 144248,
+          "decodedBodySize": 144248,
+          "transferSize": 144548
+        },
+        {
+          "path": "cards/back.svg",
+          "encodedBodySize": 2007,
+          "decodedBodySize": 2007,
+          "transferSize": 2307
+        },
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "encodedBodySize": 0,
+          "decodedBodySize": 0,
+          "transferSize": 300
+        },
+        {
+          "path": "cards/33.svg",
+          "encodedBodySize": 15623,
+          "decodedBodySize": 15623,
+          "transferSize": 15923
+        },
+        {
+          "path": "cards/34.svg",
+          "encodedBodySize": 15348,
+          "decodedBodySize": 15348,
+          "transferSize": 15648
+        },
+        {
+          "path": "cards/35.svg",
+          "encodedBodySize": 15326,
+          "decodedBodySize": 15326,
+          "transferSize": 15626
+        },
+        {
+          "path": "cards/4.svg",
+          "encodedBodySize": 16893,
+          "decodedBodySize": 16893,
+          "transferSize": 17193
+        },
+        {
+          "path": "cards/6.svg",
+          "encodedBodySize": 14675,
+          "decodedBodySize": 14675,
+          "transferSize": 14975
+        },
+        {
+          "path": "cards/25.svg",
+          "encodedBodySize": 11337,
+          "decodedBodySize": 11337,
+          "transferSize": 11637
+        },
+        {
+          "path": "cards/27.svg",
+          "encodedBodySize": 8684,
+          "decodedBodySize": 8684,
+          "transferSize": 8984
+        },
+        {
+          "path": "cards/0.svg",
+          "encodedBodySize": 11066,
+          "decodedBodySize": 11066,
+          "transferSize": 11366
+        },
+        {
+          "path": "cards/41.svg",
+          "encodedBodySize": 8424,
+          "decodedBodySize": 8424,
+          "transferSize": 8724
+        },
+        {
+          "path": "cards/32.svg",
+          "encodedBodySize": 21136,
+          "decodedBodySize": 21136,
+          "transferSize": 21436
+        },
+        {
+          "path": "cards/48.svg",
+          "encodedBodySize": 1917,
+          "decodedBodySize": 1917,
+          "transferSize": 2217
+        },
+        {
+          "path": "cards/38.svg",
+          "encodedBodySize": 11492,
+          "decodedBodySize": 11492,
+          "transferSize": 11792
+        },
+        {
+          "path": "cards/49.svg",
+          "encodedBodySize": 2216,
+          "decodedBodySize": 2216,
+          "transferSize": 2516
+        },
+        {
+          "path": "cards/17.svg",
+          "encodedBodySize": 9107,
+          "decodedBodySize": 9107,
+          "transferSize": 9407
+        },
+        {
+          "path": "cards/18.svg",
+          "encodedBodySize": 7689,
+          "decodedBodySize": 7689,
+          "transferSize": 7989
+        },
+        {
+          "path": "cards/8.svg",
+          "encodedBodySize": 28235,
+          "decodedBodySize": 28235,
+          "transferSize": 28535
+        },
+        {
+          "path": "cards/21.svg",
+          "encodedBodySize": 10792,
+          "decodedBodySize": 10792,
+          "transferSize": 11092
+        },
+        {
+          "path": "cards/22.svg",
+          "encodedBodySize": 13026,
+          "decodedBodySize": 13026,
+          "transferSize": 13326
+        }
+      ],
+      "networkUniqueEncodedBodySizeFromTiming": 972099,
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      }
+    }
+  ],
+  "trials": [
+    {
+      "engine": "chromium",
+      "role": "host",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "networkUniqueEncodedBodySizeFromTiming": 1058941,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "7429cc1efe41bb3bdfd5a2532ebf909b9464b4596139b75cfeb57e30c34e88ac"
+    },
+    {
+      "engine": "webkit",
+      "role": "guest",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "networkUniqueEncodedBodySizeFromTiming": 972104,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "c7efb441a85668193e7d5618e01e3a440285ea83d70f170961e12747a6c2ed44"
+    },
+    {
+      "engine": "chromium",
+      "role": "host",
+      "run": 2,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "networkUniqueEncodedBodySizeFromTiming": 1058941,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "9ce2754e947248a69fa73d1e564136bf8e937b980e87074672905d0f3003282b"
+    },
+    {
+      "engine": "webkit",
+      "role": "guest",
+      "run": 2,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "networkUniqueEncodedBodySizeFromTiming": 972104,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "f3ef25153ebdaae283c9efcbc14861151b93800bd52ec604e6bc57c89a3fec7b"
+    },
+    {
+      "engine": "chromium",
+      "role": "host",
+      "run": 3,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "networkUniqueEncodedBodySizeFromTiming": 1058941,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "8210aaef8625f9d855d542b74be8315398dc7936db0d0221636a583c31c4382c"
+    },
+    {
+      "engine": "webkit",
+      "role": "guest",
+      "run": 3,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "networkUniqueEncodedBodySizeFromTiming": 972104,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "ae76a4ed4a1591bfb3abf470b4913d346978d4cd9e9b894b9a86b185294cc4bf"
+    },
+    {
+      "engine": "webkit",
+      "role": "host",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "networkUniqueEncodedBodySizeFromTiming": 1058946,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "83eac68d92657803ace67575d099e2dfb4ec24fb6a1a4153311b4be4c8cb84cf"
+    },
+    {
+      "engine": "chromium",
+      "role": "guest",
+      "run": 1,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "networkUniqueEncodedBodySizeFromTiming": 972099,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "c0ba81cda9be957fd512e85ba268a79d6063f643d21d642b28103c916724891a"
+    },
+    {
+      "engine": "webkit",
+      "role": "host",
+      "run": 2,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "networkUniqueEncodedBodySizeFromTiming": 1058946,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "390777ca599162001f1a27cf46434a981c07b19af78542f7b589442b87f14552"
+    },
+    {
+      "engine": "chromium",
+      "role": "guest",
+      "run": 2,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "networkUniqueEncodedBodySizeFromTiming": 972099,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "1931852b9b0c8156f49a8dba73d58d610eb27270668e635e0b43c6667c8bcfcf"
+    },
+    {
+      "engine": "webkit",
+      "role": "host",
+      "run": 3,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 29,
+      "networkUniqueEncodedBodySizeFromTiming": 1058946,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": true,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "a8c31db7dde0ed8c89bdcc384e22805302917adeb426058ed1b18ef989a70d33"
+    },
+    {
+      "engine": "chromium",
+      "role": "guest",
+      "run": 3,
+      "phase": "cold-first-game-attempt",
+      "requestCount": 24,
+      "networkUniqueEncodedBodySizeFromTiming": 972099,
+      "completeReady": false,
+      "imageFailures": [
+        {
+          "path": "/skin/bell-illustrated.webp",
+          "complete": true,
+          "width": 0,
+          "connected": true
+        }
+      ],
+      "state": {
+        "match": true,
+        "canAct": false,
+        "hand": 10,
+        "firstPickPending": false,
+        "rounds": 0,
+        "seq": 3
+      },
+      "fullSampleSha256": "366a1218351d1a267eb05c14ec37cac824c78ffb3e3803083fa87996c61ac985"
+    }
+  ],
+  "accounting": "one complete response/timing sample per engine/role; all three trials retain counts, readiness/errors and original sample hash; no acceptance PASS",
+  "originalObservationSha256": "dd80a16a4827770d780f89f2de9a21f86b0a6cf09b538fe3ee73da6efc808d20"
+}
