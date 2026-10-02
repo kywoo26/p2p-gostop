@@ -100,3 +100,20 @@ test('staging 전용 shadow를 새 부모의 카드 paint에 중복 적용하지
     getComputedStyle(root.querySelector<HTMLElement>('[data-motion-card-id="30"]')!).boxShadow,
   ).toBe('none');
 });
+
+test('관계 후보 실패와 incoming DOM 부재는 새 target 원본을 숨겨 두지 않는다', () => {
+  const table = stage();
+  const target = card(table, 8, 160, 180);
+  expect(scene.contactPose(8, 10)).toBeUndefined();
+  expect(target.style.visibility).toBe('');
+  expect(scene.has(8)).toBe(false);
+  expect(root.querySelector('[data-landing-scene]')).toBeNull();
+  card(table, 10, 160, 260);
+  const hud = document.createElement('div');
+  hud.className = 'hud';
+  hud.style.cssText = 'position:absolute;inset:0;';
+  table.append(hud);
+  scene.placeContact(10, 8);
+  expect(target.style.visibility).toBe('');
+  expect(root.querySelector('[data-landing-scene]')).toBeNull();
+});

@@ -113,14 +113,17 @@ export class LandingScene {
 
   /** 복원/빈 snapshot은 현재 관계로 즉시 맞추고 과거 관계를 재생하지 않는다. */
   placeContact(card: CardId, target: CardId): void {
+    const keptTarget = this.has(target);
     const to = this.contactPose(target, card);
     if (to === undefined) return;
     const held = this.reserve(card);
-    if (held !== undefined) {
-      held.el.style.width = `${to.width}px`;
-      held.el.style.height = `${to.height}px`;
-      this.place(held, to);
+    if (held === undefined) {
+      if (!keptTarget) this.release([target]);
+      return;
     }
+    held.el.style.width = `${to.width}px`;
+    held.el.style.height = `${to.height}px`;
+    this.place(held, to);
   }
 
   settle(ids: readonly CardId[], duration: number): Animation[] {
@@ -228,6 +231,7 @@ export class LandingScene {
 
   /** 실제 선택 원본의 예약 pose. append/top/월 anchor는 사용하지 않는다. */
   contactPose(target: CardId, incoming?: CardId): CardPose | undefined {
+    const keptTarget = this.has(target);
     const targetCard = this.reserve(target);
     if (targetCard === undefined) return undefined;
     const pose = targetCard.pose;
@@ -267,6 +271,10 @@ export class LandingScene {
       this.root.querySelector<HTMLElement>('.table') ?? this.root
     ).getBoundingClientRect();
     const incomingEl = incoming === undefined ? undefined : this.reserve(incoming);
+    if (incoming !== undefined && incomingEl === undefined) {
+      if (!keptTarget) this.release([target]);
+      return undefined;
+    }
     const outset = incomingEl?.outset ?? targetCard.outset;
     const radians = (pose.angle * Math.PI) / 180;
     // 유한 방향·감소 후보. 두 그림이 보이는 비율을 남기고 원 target은 이동시키지 않는다.
@@ -307,6 +315,7 @@ export class LandingScene {
     }
     // 안전 후보가 없으면 공개 settled 표현으로 제한한다. 침범 offset을 강제하지 않는다.
     if (incoming !== undefined) this.release([incoming]);
+    if (!keptTarget) this.release([target]);
     return undefined;
   }
 

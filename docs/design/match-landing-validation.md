@@ -19,7 +19,7 @@ fixture는 `newRound`의 seeded 분배에서 합법 `sessionAct` history를 거�
 
 정상: seed1/dealer1, 이전 합법 seat1 play1 뒤 seat0 play10. 이벤트는 seq7 CardPlayed10 → 8 CardFlipped30 → 9 Matched[10,8] → 10 Matched[30,31] → 11 Captured[8,10,31,30] → 12 ScoreChanged. 합성 play-match-flip 순서가 아니다.
 
-Chromium source run 관측(단위 px/ms, 시연 후보의 관측값):
+Chromium(Pixel7, 실제 CSS viewport412×839) source run 관측(단위 px/ms, 시연 후보의 관측값). WebKit(iPhone15,393×659)과 기하 조건이 다르므로 동일 viewport 비교가 아니다:
 
 | 단계 | 입력 이후 t | CardId / 실제 x,y | counter |
 |---|---:|---|---|
@@ -36,7 +36,7 @@ Chromium source run 관측(단위 px/ms, 시연 후보의 관측값):
 
 같은 seed/action의 실제 48px scene, viewport393×659. 접촉 전에 target31=(232.5,172.765625,48,78.171875), 다른 월 card4=(232.5,228.234375,48,78.171875)다. 본래 원본 두 카드의 AABB부터 y 방향 **22.703125px** 교차한다. incoming이 새로 만든 교차와 구별한다. table=(12,184.109375,369,166.4375)이므로 원 target의 top이 table top보다11.34375px 위다. 더미=(172.5,228.16145,48,78.17186), hand top478.65625, mine HUD top356.546875를 동일 before 관측에서 확보했다.
 
-유한 후보는 이 before target을 이동하지 않고 검사한다. 위 방향은 table 상단, 아래 방향은 card4 paint, 왼쪽 방향은 월8/예약 손패 및 더미, 오른쪽 대각은 상단 또는 card4 때문에 거절된다. 축 방향·감소 후보도 이 조건에서 접촉을 만들지 못했다. 장애물별 정확 paint와 후보별 기각 기록은 후속 최소 자료로 보강한다. 현재 실제 W 정상은 약한 접촉 부재로 FAIL을 유지한다. 안전 후보 부재를 사용자 UX 수용으로 처리하지 않는다.
+유한 후보는 이 before target을 이동하지 않고 검사한다. 위 방향은 table 상단, 아래 방향은 card4 paint, 왼쪽 방향은 월8/예약 손패 및 더미, 오른쪽 대각은 상단 또는 card4 때문에 거절된다. 축 방향·감소 후보도 이 조건에서 접촉을 만들지 못했다. 장애물별 정확 paint와 후보별 기각 기록은 후속 최소 자료로 보강한다. 현재 실제 W 정상은 약한 접촉 부재로 FAIL을 유지한다. 원head strong frame에서는 incoming30과 다른 월8의 pose가 완전히 같았고, 실제 획득 강조가 타월 관계로 읽힐 수 있는 미해결 영향도 있다. 후보 부재/부분 예약이 이후 강조·획득 출발을 오염하는지는 별도 후속 대조 대상이다. 약한 빛 부재만의 실패로 축소하지 않는다. 안전 후보 부재를 사용자 UX 수용으로 처리하지 않는다.
 
 ## 세 안의 비교 범위
 
@@ -55,3 +55,13 @@ Chromium source run 관측(단위 px/ms, 시연 후보의 관측값):
 - 실제 landing E2E(port4262, workers2): Chromium 정상·뻑 및 WebKit 뻑 **3PASS**, WebKit 정상 **1FAIL**. 후속 W 최소 관측 workers1: 뻑1PASS/정상1FAIL. 영상과 C/W frames.json을 root에게 우선 공유·보존했다. root는 자료 존재를 확인했고 영상 직접 재생 검토는 아직이다.
 - lint:fix 완료, 필수 전체 lint/check/Node/browser/build/smoke/Android는 최종 의미 있는 제품 head에서 한 회로 모을 예정. E2E 준비 build gate는 통과했지만 전체 suite/CI 통과로 대체하지 않는다.
 - 미완: 실제42 동일 장면, W 안전 후보 부재, 선택 두 연쇄/즉시 resolve·따닥, 뻑 회수/별도 bonus, summary 최근4 밖, resize/reduced/skip/reset/dispose/홈 이탈의 ghost 수명 직접 회귀, 최종 필수 suite/동일 head CI/독립 리뷰. 기기·0.5초 시각 인지·전체 성능/NF/AC·병합·출하는 미완이다.
+
+## 독립 P1: 복원 직후 부분 예약/원본 숨김 (후속 수정)
+
+[원212cf5af 독립 COMMENT](https://github.com/kywoo26/p2p-gostop/pull/237#pullrequestreview-5387221822)의 P1은 위 W 공간 제약/strong 타월 pose와 별도다. 합법 tuple `[3839809690,1129524092,3832060461,2933933213]`, dealer0 → play7 → choose6 → flip29의 후보[28,30] 대기를 실제 SoloSession 저장으로 이어했다. 첫 attach의 빈 pump finally가 Floor 초기 commit 전에 정적 관계를 예약했다. 이후 canonical6는 정상 위치로 바뀌었지만 예약 pose가 그대로여서 원본hidden/ghostx=-12/incoming7없음이 지속됐다. 리뷰어의 초기 비계측 화면·reserve 호출 stack·후속 explicit tick3회 유지·홈 이탈 정리0 자료를 root와 공유·보존했다. 8rAF는 관측 대기이며 DOM 안정화의 증명이 아니다.
+
+수정은 복원/빈 pump의 정적 관계 수렴을 기존 Svelte commit 이후로 옮긴다. root/기존 Playback generation/current/busy로 취소를 검사한다. 임의 sleep/rAF retry·새 generation·Floor/Board 편집은 없다. 안전 후보 또는 incoming DOM이 없어 새 관계를 만들지 못하면 새 target 예약도 해제해 원본 visibility를 복원한다. 이미 예약한 유효 active before pose를 매번 canonical 재측정으로 덮지 않는다.
+
+직접 회귀 `landing-recovery.spec.ts`는 실제 이어하기 → 원본/ghost/후보 관측 → 실제 메뉴·홈 → 다시 이어하기 → choose28 확정 → 모션 마감이다. 수정 전 C412×839/W393×659 모두 target만 남아2FAIL. 수정 후 C는 canonical6와 ghost6가 모두 `(179.33197,225.65543,53.33606,81.32977)`, incoming7 존재/과거 빛 재생0이다. W는 canonical6 `(172.5,172.765625,48,78.171875)` 원본visible, target/incoming ghost없음으로 안전 제한한다. 기존 공간 제약으로 offset 관계를 만들었다는 뜻이 아니다. 홈 → 복원 → 실제 선택 확정/scene 정리까지 C/W2PASS. 첫 후속 실행에서 복원 검사는 통과했으나 홈 버튼의 테스트 selector가 달라 timeout2였고 selector를 실제 `game-menu`로 고쳤다. 제품 기준이나 좌표 기대값을 완화하지 않았다.
+
+landing 원본 복원/실패 예약 unit와 기존 reset/skip 표적 browser62PASS, web check0오류0경고다. 이 P1 수용만으로 W strong 동일 pose·42 통합·다른 특수 경로·전체 suite 완료를 주장하지 않는다. 원head CI36947040919 실패와 단계별 browser 통과를 구별한다. 수정 full SHA/새 CI 및 독립 delta 재검토는 PR/root 인계에서 기록한다.

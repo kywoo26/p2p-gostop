@@ -194,11 +194,7 @@ export class Playback {
       this.landing = new LandingScene(root);
     }
     this.host = { root };
-    const generation = this.generation;
-    void tick().then(() => {
-      if (generation === this.generation && this.host?.root === root && !this.busy)
-        this.convergeContact();
-    });
+    this.scheduleContactConvergence();
     void this.pump();
   }
 
@@ -237,10 +233,7 @@ export class Playback {
     this.milestones = [];
     this.settlement = settlement;
     this.skipped = false;
-    const generation = this.generation;
-    void tick().then(() => {
-      if (generation === this.generation && !this.disposed && !this.busy) this.convergeContact();
-    });
+    this.scheduleContactConvergence();
   }
 
   /** 남은 애니메이션을 즉시 끝낸다 (spec 6.3 "화면을 탭하면 즉시 완료") */
@@ -269,6 +262,22 @@ export class Playback {
     this.bannerTimer = null;
     this.banner = null;
     this.clearToast();
+  }
+
+  /** 초기 Floor 효과/commit이 끝나기 전의 pose는 복원 관계로 확정하지 않는다. */
+  private scheduleContactConvergence(): void {
+    const generation = this.generation,
+      root = this.host?.root;
+    if (root === undefined) return;
+    void tick().then(() => {
+      if (
+        !this.disposed &&
+        generation === this.generation &&
+        this.host?.root === root &&
+        !this.busy
+      )
+        this.convergeContact();
+    });
   }
 
   private convergeContact(): void {
@@ -333,7 +342,7 @@ export class Playback {
       this.pumping = false;
       this.busy = false;
       if (this.host !== null) unskip(this.host.root);
-      if (!this.disposed) this.convergeContact();
+      if (!this.disposed) this.scheduleContactConvergence();
     }
     if (!this.disposed && this.idle) this.onIdle?.(wasSkipped);
   }

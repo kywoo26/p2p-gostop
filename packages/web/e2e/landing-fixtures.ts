@@ -58,3 +58,28 @@ export function ppeokLandingSave() {
     events: result.events,
   };
 }
+
+export function restoredLandingSave() {
+  let session = {
+    ...createSession({
+      preset: 'standard',
+      rules: PRESETS.standard,
+      perPoint: 100,
+      startBalance: 100_000,
+      names: ['좌석0', '좌석1'],
+      seed: 1,
+    }).session,
+    game: newRound(PRESETS.standard, [3839809690, 1129524092, 3832060461, 2933933213], {
+      dealer: 0,
+    }).state,
+  };
+  for (const action of [
+    { type: 'play', seat: 0, card: 7 },
+    { type: 'chooseTarget', seat: 0, card: 6 },
+  ] as const) {
+    const result = sessionAct(session, action);
+    if (!result.ok) throw new Error(result.message);
+    session = result.session;
+  }
+  return { version: 1 as const, difficulty: 'easy' as const, session };
+}
