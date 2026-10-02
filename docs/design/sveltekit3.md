@@ -147,7 +147,13 @@ P0L·P2 URL 텍스트 수정의 독립 검토와 `3445540` CI 성공을 인수�
 
 전체 lint·check(0 errors/0 warnings, knip 포함)와 좁은 Home component 4개도 통과했다. OSS 추가로 이동한 clsx 원저작자 귀속 email의 기존 privacy 허용 지문은 그대로 두고 행 번호 88→99만 맞췄다. 새 allowlist 종류·값이나 gate 완화는 없다.
 
-현재 checkpoint의 미완은 전체 필수 suite/31초 RP07·정산·Playback·focus/오류 상세 회귀/host·guest 최종 body/실기기 수용이다. controller/engine 일부는 root에 여전히 eager이므로 추가 경계 분리 이득은 다음 단위에서 측정한다. CI 기본 3일 gate는 두 핀이 모두 72시간을 넘는 **2026-10-04 17:22:34.593Z**까지 유지한다. 독립 검토·main/배포 완료로 표시하지 않는다.
+현재 checkpoint의 미완은 전체 필수 suite/31초 RP07·정산·Playback·focus/오류 상세 회귀/host·guest 최종 body/실기기 수용이다. controller/engine 일부는 root에 여전히 eager이므로 추가 경계 분리 이득은 다음 단위에서 측정한다. CI 기본 `min-release-age=3` 설정은 유지한다. 두 핀의 72시간 경과는 **2026-10-04 17:22:34.593Z**이나 그 전에 CI 설치가 불가능하다는 예측은 아래 실제 관측으로 정정한다. 독립 검토·main/배포 완료로 표시하지 않는다.
+
+### P1-F1 검사 정합·CI 관측 정정
+
+exact f700에서 root Node `npm test -- --maxWorkers=4`는 37파일/589 PASS, web 직접 workspace `npm exec -w packages/web -- vitest run --maxWorkers=4`는 118파일/1098 중1096 PASS·License C/W2 FAIL이었다. 별도 CI 36995301348도 C/W 각각548 PASS·License1 FAIL이다. 고지 실제 집합6은 맞지만 테스트의 옛4 기대값을 놓친 결함이며 기대값만 실제 client6에 맞춘다. Vitest browser 실행에서 실제 href는 `/oss/NOTICE.txt`였으므로 기존 기대값을 보존한다. 생산 빌드의 BASE_URL 치환 결과를 dev 테스트 환경으로 전용하지 않는다. 생산 `./oss/NOTICE.txt`와 혼동한 첫 좁은 실행은 href 2 FAIL이었으며 원인을 분리 보존했다. 생산 root/prefix 상대 링크는 실제 UI 경로 검사에서 검증한다. 이미지/임계값/누락 허용으로 완화하지 않는다. f700 실패와 수정 뒤 좁은 C/W 두 case PASS는 분리한다. 실행 source는 f700+이 기대집합 수정이며 `npm exec -w packages/web -- vitest run src/routes/License.test.ts --maxWorkers=4`만 실행했다.
+
+CI 세 잡의 기본 `npm ci`는 모두 성공했고 Android 묶음도 성공했다. `.npmrc`와 workflow를 변경하거나 CI 예외를 추가한 결과가 아니다. 따라서 “72시간 이전 일반 CI 설치 불가” 예측을 철회한다. [공식 설정](https://docs.npmjs.com/cli/v11/using-npm/config/#min-release-age)의 연령 제한은 npm tree 해석 필터다. 설치된 npm 11.19.0의 `ci.js`는 잠긴 virtual tree를 읽어 검증하고, Arborist의 유효 기존 edge는 재해석 없이 재사용한다. `#fetchManifest`에서만 적용하는 `before`/release-age 선택 필터를 모든 frozen-lock 재설치의 차단 검사로 확대해서는 안 된다. 이번 CI 관측을 모든 npm/lock 상태의 미래 보장으로도 확대하지 않는다. 게시 시각/72시간 계산, 정확 lock 사전 감사와 새 버전 도입의 명령 단위 예외 절차는 계속 유지하며 정책을 해제하지 않는다.
 
 ## 이행·되돌리기
 
