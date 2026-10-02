@@ -1,6 +1,7 @@
 {
   "status": "compact revision proposed; historical measurements retained; product unchanged; normative amendment not adopted",
   "requirements": [
+    "UX-02",
     "UX-05",
     "UX-06",
     "UX-H05",

@@ -1,0 +1,105 @@
+{
+  "requirements": ["UX-02", "UX-06", "UX-24", "NF-08", "AC-06"],
+  "baseSha": "25615dc21a34ea30715afca765c60e7c8e30536b",
+  "scope": "Separate input follow-up; no geometry, gap, perf, baseline, wire, Android or default activation changes.",
+  "ciBefore": {
+    "run": 36911717207,
+    "status": "completed",
+    "conclusion": "failure",
+    "chromium": "success",
+    "webkit": {
+      "componentPassed": 512,
+      "componentFailed": 1,
+      "failingTest": "Board.month-stack.test.ts:162",
+      "e2e": "skipped"
+    },
+    "android": {
+      "tests": 90,
+      "failed": 1,
+      "test": "M4ServerTest: relay closes binary input with 1003",
+      "exception": "TimeoutCancellationException",
+      "sourceChanged": false,
+      "cause": "not established; independent root diagnosis"
+    }
+  },
+  "testIdentityDiagnosis": {
+    "run": "20261001T191631815Z",
+    "engine": "WebKit",
+    "path": "actual Game opt-in fixture snapshot, not a full controller/deal replay",
+    "oldKey": "3:214:play:34:32,33",
+    "currentKey": "3:111:play:34:32,33",
+    "oldKeydown": "rejected; held key null",
+    "subsequentQuery": "returns new element after outgoing element removal",
+    "currentDetailZero": "accepted as existing no-gesture accessibility activation",
+    "submittedCard": 32,
+    "interpretation": "Deterministic reproduction of the same assertion mechanism; not acceptance of a cancelled gesture on the same current button. Original CI event-delivery trace unavailable."
+  },
+  "productObserverDiagnosis": {
+    "before": "First .floor-target query reobserves outgoing old-key wrapper during keyed popup overlap.",
+    "after": "data-target-key preserves each keyed wrapper identity; observer selects current targetKey only.",
+    "beforeTargetedWebKit": {
+      "passed": 7,
+      "failed": 1,
+      "failure": "Observer registration expected current wrapper but received outgoing wrapper; identifying attribute only was present for the before probe."
+    },
+    "afterTargetedWebKit": {
+      "passed": 8,
+      "failed": 0
+    },
+    "separateFromTestIdentity": true
+  },
+  "sameElementTrace": {
+    "run": "20261001T192504414Z",
+    "sameCurrentElement": true,
+    "currentKey": "3:111:play:34:32,33",
+    "initialNonInert": true,
+    "events": [
+      "current-key Enter down accepted; held Enter",
+      "keyboard release token for current key/card32",
+      "actual viewport resize 390 to 360 delivered",
+      "cancelTarget clears release; cancelled key true",
+      "same current button detail0 click rejected",
+      "same current button repeat rejected"
+    ],
+    "submittedCard": null,
+    "instrumentation": "Temporary DEV handler/event/rect traces preserved in scratch and removed from committed product and tests."
+  },
+  "regressions": [
+    "Current-key, non-inert button is found by DOM mutation condition and kept as the identical element through resize/click; actual resize delivery is awaited.",
+    "Outgoing and current wrappers coexist: old observer disconnects; only current wrapper is newly observed; outgoing key/click submit zero.",
+    "Current-wrapper width changes without a window resize: real ResizeObserver rect-change delivery precedes cancelled click/repeat check.",
+    "No active gesture: current accessibility detail0 activation remains accepted.",
+    "Cancelled Enter/Space without keyup: new validated provider pointer recovers once; cancelled keyboard click/repeat and pointer release reuse submit zero.",
+    "Current target replacement rejects old-key input and preserves new validated pointer recovery.",
+    "NotFoundError, no authority rollback and actual Game chooseTarget/Playback completion regressions preserved."
+  ],
+  "validation": {
+    "boardBrowsers": {
+      "chromium": 8,
+      "webkit": 8,
+      "unhandled": 0
+    },
+    "gameBrowsersSeparateRun": {
+      "chromium": 4,
+      "webkit": 4,
+      "unhandled": 0
+    },
+    "webCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "font": {
+      "uiChars": 703,
+      "missing": 0
+    },
+    "fullSuiteRepeated": false,
+    "testRetryOrFixedSleep": false,
+    "newHeadCi": "pending after push"
+  },
+  "gates": [
+    "Opt-in/defaultfalse remains.",
+    "Current CI Android failure independently unresolved by this input change.",
+    "New-head CI and same-session independent review pending.",
+    "Naturalness, emergency grid visual acceptance, all failure UX, canonical adoption, exact beforepose/P2P/motion, full acceptance/device/performance/release remain incomplete."
+  ]
+}

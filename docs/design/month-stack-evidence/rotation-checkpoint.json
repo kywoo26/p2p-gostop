@@ -1,0 +1,65 @@
+{
+  "requirements": ["UX-02", "UX-05", "UX-06", "NF-08"],
+  "baseSha": "067aef3e277051b2a7a1cc3a35c0490e3d05380a",
+  "before": {
+    "immutableFullSuite": {
+      "e2ePass": 412,
+      "e2eFail": 32,
+      "timingNotRun": 2
+    },
+    "rotation": "Original floor-slots135 failed in Chromium/WebKit: six floor DOM IDs became [] behind coarse landscape cover. Later portrait and size assertions were not executed.",
+    "diagnosticRun": "20261002T010406020Z",
+    "bounds": {
+      "portrait": [336, 245.84375],
+      "landscape": [756, 0]
+    },
+    "separateRestoreObservation": "Return to positive portrait bounds restored the current six IDs; this was not evidence of original test reaching restoration."
+  },
+  "implementation": "Board passes coarse-landscape suspension to Floor. Measurements while suspended or nonpositive do not replace the last positive logical canvas. Current groups/round/seq/deck still reconcile against that canvas. Active fit is false while suspended/unmeasured; positive active fit failures are not frozen to old IDs. Positive measurement resumes through ResizeObserver.",
+  "after": {
+    "componentTarget": {
+      "chromium": 1,
+      "webkit": 1,
+      "skipped": 16,
+      "unhandled": 0
+    },
+    "allBoardTests": {
+      "chromium": 9,
+      "webkit": 9,
+      "unhandled": 0
+    },
+    "originalCoarseE2e": {
+      "chromium": "failed at145 old floor/hand48 width assertion",
+      "webkit": "failed at145 old floor/hand48 width assertion",
+      "passedBoundary": [
+        "cover visible",
+        "hand inputs disabled",
+        "same six IDs while covered at135",
+        "cover removed",
+        "hand inputs restored",
+        "same six IDs after portrait at142"
+      ],
+      "notRunAfter145": ["captured32 check"],
+      "testSourceChanged": false
+    },
+    "checks": {
+      "webErrors": 0,
+      "webWarnings": 0,
+      "fontUiCharacters": 703,
+      "fontMissing": 0
+    }
+  },
+  "lifetimeCoverage": [
+    "current authority removal while suspended removes old ID and retains same-seq reservation",
+    "queue idle/skip completion releases reservation",
+    "round/deck/seq reset replaces all IDs without ghosts",
+    "positive resumed bounds are measured and current IDs revalidated",
+    "generic positive invalid42x20 bounds still fail with cells[] rather than old-ID freeze"
+  ],
+  "remaining": [
+    "Positive-height fit failures and legal12month18ID counterexample remain release gates.",
+    "Dynamic staging obstacle causes unrelated model movement; settled display reservation and motion paint require separate #237 shared contract.",
+    "Old48/grid E2E audit alignment is a separate change; screenshot baselines unchanged.",
+    "No complete device/P2P/WAAPI or universal fit acceptance."
+  ]
+}

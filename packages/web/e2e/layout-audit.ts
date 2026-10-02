@@ -105,6 +105,7 @@ export function auditLayout() {
     }
   }
   const board = document.querySelector<HTMLElement>('.board');
+  const monthly = !!board?.classList.contains('monthStacks');
   for (const el of elements) {
     const r = el.getBoundingClientRect(),
       s = getComputedStyle(el);
@@ -159,7 +160,11 @@ export function auditLayout() {
   for (const card of board?.querySelectorAll<HTMLElement>(
     '.hand .card, .floor .card, .captured-zone .card',
   ) ?? []) {
-    const expected = card.closest('.captured-zone') ? captureCard : boardCard;
+    const expected = card.closest('.captured-zone')
+      ? captureCard
+      : monthly && card.closest('.floor')
+        ? 42
+        : boardCard;
     if (card.offsetWidth !== expected)
       issues.push(`card scale: ${card.offsetWidth}, expected ${expected}`);
   }
@@ -184,7 +189,7 @@ export function auditLayout() {
   if (exposure.some((n) => n < 1 - 0.001)) issues.push(`hand exposure: ${Math.min(...exposure)}`);
   const floorCells = [...document.querySelectorAll<HTMLElement>('.floor .group')];
   const monthGaps: number[] = [];
-  for (const cell of floorCells) {
+  for (const cell of monthly ? [] : floorCells) {
     const peers = floorCells.filter(
       (other) => other !== cell && other.dataset['month'] === cell.dataset['month'],
     );
@@ -215,7 +220,7 @@ export function auditLayout() {
       issues.push(`month separated: ${cell.dataset['month']}`);
   }
   const grid = board?.querySelector('.floor')?.getBoundingClientRect();
-  if (grid) {
+  if (grid && !monthly) {
     const cw = Math.min(boardCard * 1.25, grid.width / 5),
       ch = Math.min(boardCard / 0.614 + boardCard / 4, grid.height / 3);
     const used = new Set<number>();
@@ -234,6 +239,91 @@ export function auditLayout() {
         r.bottom > top + ch + 0.5
       )
         issues.push(`floor outside cell: ${slot}`);
+    }
+  }
+  // 월 포개기는 같은 월 안에서만 허용한다. 이전5×3 셀 검사 대신 실제 원본을 검사한다.
+  if (monthly && grid) {
+    const ids = new Set<string>();
+    const actualPaint = floorCells.map((cell) => {
+      const cards = [...cell.querySelectorAll<HTMLElement>('[data-card-id]')];
+      const expected = Number(cell.getAttribute('aria-label')?.match(/월 (\d+)장/)?.[1]);
+      if (!cards.length || cards.length !== expected)
+        issues.push(`floor group count: ${cell.dataset['month']} ${cards.length}/${expected}`);
+      const rotation = ((Number.parseFloat(getComputedStyle(cell).rotate) || 0) * Math.PI) / 180;
+      const rects = cards.map((card) => {
+        const id = card.dataset['cardId']!,
+          rect = card.getBoundingClientRect(),
+          style = getComputedStyle(card),
+          padding =
+            (Number.parseFloat(style.outlineWidth) +
+              Math.max(0, Number.parseFloat(style.outlineOffset))) *
+            (Math.abs(Math.cos(rotation)) + Math.abs(Math.sin(rotation)));
+        if (ids.has(id)) issues.push(`duplicate floor id: ${id}`);
+        ids.add(id);
+        const wrapper = card.closest<HTMLElement>('.stack-card');
+        if (!wrapper || rect.width <= 0 || rect.height <= 0)
+          issues.push(`floor original rect: ${id}`);
+        if (wrapper) {
+          const pose = JSON.parse(wrapper.dataset['floorModelPose']!);
+          if (String(pose.id) !== id) issues.push(`floor pose id: ${id}`);
+        }
+        return new DOMRect(
+          rect.x - padding,
+          rect.y - padding,
+          rect.width + 2 * padding,
+          rect.height + 2 * padding,
+        );
+      });
+      if (!rects.length) return new DOMRect();
+      const left = Math.min(...rects.map((r) => r.left)),
+        top = Math.min(...rects.map((r) => r.top));
+      const paint = new DOMRect(
+        left,
+        top,
+        Math.max(...rects.map((r) => r.right)) - left,
+        Math.max(...rects.map((r) => r.bottom)) - top,
+      );
+      if (
+        paint.left < grid.left ||
+        paint.right > grid.right ||
+        paint.top < grid.top ||
+        paint.bottom > grid.bottom
+      )
+        issues.push(`floor paint outside: ${cell.dataset['month']}`);
+      return paint;
+    });
+    const table = board!.querySelector<HTMLElement>('.table')!;
+    const origin = table.getBoundingClientRect();
+    const bounds = JSON.parse(table.dataset['floorModelBounds']!);
+    if (table.dataset['floorFits'] !== 'true') issues.push('floor placement failed');
+    if (bounds.width !== origin.width || bounds.height !== origin.height)
+      issues.push('floor measurement pending');
+    const gap = (a: DOMRect, b: DOMRect) =>
+      Math.max(a.left - b.right, b.left - a.right, a.top - b.bottom, b.top - a.bottom);
+    for (const [i, paint] of actualPaint.entries()) {
+      for (const other of actualPaint.slice(i + 1))
+        if (gap(paint, other) < 0)
+          issues.push(`floor month paint overlap: ${floorCells[i]!.dataset['month']}`);
+      for (const obstacle of bounds.obstacles) {
+        const r = new DOMRect(
+          origin.x + obstacle.x,
+          origin.y + obstacle.y,
+          obstacle.width,
+          obstacle.height,
+        );
+        if (gap(paint, r) < 0)
+          issues.push(`floor obstacle paint overlap: ${floorCells[i]!.dataset['month']}`);
+      }
+      const model = JSON.parse(floorCells[i]!.dataset['floorModelFootprint']!);
+      for (const other of [
+        ...floorCells.slice(i + 1).map((c) => JSON.parse(c.dataset['floorModelFootprint']!)),
+        ...bounds.obstacles,
+      ]) {
+        const r = new DOMRect(model.x, model.y, model.width, model.height),
+          b = new DOMRect(other.x, other.y, other.width, other.height);
+        if (gap(r, b) < 12.125)
+          issues.push(`floor model paint gap: ${floorCells[i]!.dataset['month']}`);
+      }
     }
   }
   const center = board?.querySelector('.center')?.getBoundingClientRect();
@@ -259,12 +349,23 @@ export function auditLayout() {
     const opponent = seatPanels[0]!.getBoundingClientRect();
     const own = seatPanels[1]!.getBoundingClientRect();
     const sideLayout = getComputedStyle(board!).gridTemplateColumns.trim().split(/\s+/).length > 1;
-    if (!sideLayout && opponentCapture && opponent.top - opponentCapture.bottom < 5.5)
+    const rowGap = Number.parseFloat(getComputedStyle(board!).rowGap);
+    const summaryGap = monthly ? rowGap - 0.5 : 5.5;
+    if (!sideLayout && opponentCapture && opponent.top - opponentCapture.bottom < summaryGap)
       issues.push('opponent summary gap');
-    if (!sideLayout && ownCapture && ownCapture.top - own.bottom < 5.5)
+    if (!sideLayout && ownCapture && ownCapture.top - own.bottom < summaryGap)
       issues.push('own summary gap');
     const firstHandCard = board?.querySelector('.hand .card')?.getBoundingClientRect();
-    if (!sideLayout && ownCapture && firstHandCard && firstHandCard.top - ownCapture.bottom < 17.5)
+    const handPadding = Number.parseFloat(
+      getComputedStyle(board!.querySelector('.hand')!).paddingTop,
+    );
+    // 기존18px는 부모6px+손패12px였다. 현재CSS의 같은 분리를 검사한다.
+    if (
+      !sideLayout &&
+      ownCapture &&
+      firstHandCard &&
+      firstHandCard.top - ownCapture.bottom < (monthly ? rowGap + handPadding - 0.5 : 17.5)
+    )
       issues.push('captured/hand separation');
     if (sideLayout && opponentCapture && ownCapture && center) {
       const minGap =

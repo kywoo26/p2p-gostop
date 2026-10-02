@@ -1,0 +1,505 @@
+{
+  "run": "20261001T185619361Z",
+  "baseline": "b0986dbba1ce3ec16a2e39e004b131ae115a580e",
+  "kind": "actual Game optional opt-in + actual Playback snapshot/controller fixture; default false; not complete solo/P2P or seeded fresh-deal proof",
+  "defaultEnabled": false,
+  "normAccepted": false,
+  "errors": [],
+  "measurement": "Node times enclose entire layoutMonthFloor; actual Floor DEV times enclose synchronous reservation handling, witness generation/validation/matching, primary, final validation/projection; diagnostic append and DOM paint are separate",
+  "results": [
+    {
+      "name": "normal",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "file": {
+        "path": "game-normal.png",
+        "bytes": 93478,
+        "sha256": "c23f95cce6389fec56b603157f919f29a5f74a1707fc2bcff87390730e7c614b"
+      },
+      "sameBeforeAfterCapture": true,
+      "node": {
+        "status": "placed",
+        "strategy": "scatter",
+        "searches": 7,
+        "exhausted": false,
+        "capacityPrunes": 0,
+        "elapsedHostMs": 2.5310739999999896,
+        "relocated": 0,
+        "primaryLimit": 8192,
+        "witnessSlots": 6,
+        "witnessCandidates": 36,
+        "witnessChecks": 36,
+        "witnessEdges": 59,
+        "witnessValid": false
+      },
+      "actualFloorCalls": [
+        {
+          "ms": 0.4000000059604645,
+          "width": 0,
+          "height": 0,
+          "cardCount": 10,
+          "searches": 0,
+          "primaryLimit": 8192,
+          "strategy": "scatter",
+          "witnessSlots": 0,
+          "witnessCandidates": 0,
+          "witnessChecks": 0,
+          "witnessEdges": 0,
+          "witnessValid": false,
+          "relocated": 0,
+          "fits": false
+        },
+        {
+          "ms": 3.699999988079071,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 10,
+          "searches": 7,
+          "primaryLimit": 8192,
+          "strategy": "scatter",
+          "witnessSlots": 6,
+          "witnessCandidates": 36,
+          "witnessChecks": 36,
+          "witnessEdges": 59,
+          "witnessValid": false,
+          "relocated": 0,
+          "fits": true
+        },
+        {
+          "ms": 0.20000000298023224,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 10,
+          "searches": 0,
+          "primaryLimit": 8192,
+          "strategy": "scatter",
+          "witnessSlots": 0,
+          "witnessCandidates": 0,
+          "witnessChecks": 0,
+          "witnessEdges": 0,
+          "witnessValid": false,
+          "relocated": 0,
+          "fits": true
+        },
+        {
+          "ms": 0.20000000298023224,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 10,
+          "searches": 0,
+          "primaryLimit": 8192,
+          "strategy": "scatter",
+          "witnessSlots": 0,
+          "witnessCandidates": 0,
+          "witnessChecks": 0,
+          "witnessEdges": 0,
+          "witnessValid": false,
+          "relocated": 0,
+          "fits": true
+        }
+      ],
+      "frame": {
+        "fits": "true",
+        "strategy": "scatter",
+        "expected": [3, 7, 12, 13, 15, 27, 38, 45, 48, 50],
+        "actual": [3, 7, 12, 13, 15, 27, 38, 45, 48, 50],
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42
+        },
+        "paintGap": {
+          "groups": 12.117993373437542,
+          "deck": 12.113244524835892
+        },
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "maximumModelDOMError": 0.015267092853452624
+      }
+    },
+    {
+      "name": "crowded",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "file": {
+        "path": "game-crowded.png",
+        "bytes": 102613,
+        "sha256": "8b130e6ac7e38bdda90f4713428b4f1d4052d726009faf6ca64c6ad4e756799f"
+      },
+      "sameBeforeAfterCapture": true,
+      "node": {
+        "status": "placed",
+        "strategy": "scatter",
+        "searches": 86,
+        "exhausted": false,
+        "capacityPrunes": 70,
+        "elapsedHostMs": 4.662123999999949,
+        "relocated": 0,
+        "primaryLimit": 8192,
+        "witnessSlots": 8,
+        "witnessCandidates": 64,
+        "witnessChecks": 64,
+        "witnessEdges": 65,
+        "witnessValid": false
+      },
+      "actualFloorCalls": [
+        {
+          "ms": 5.5999999940395355,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 12,
+          "searches": 86,
+          "primaryLimit": 8192,
+          "strategy": "scatter",
+          "witnessSlots": 8,
+          "witnessCandidates": 64,
+          "witnessChecks": 64,
+          "witnessEdges": 65,
+          "witnessValid": false,
+          "relocated": 0,
+          "fits": true
+        },
+        {
+          "ms": 0.29999999701976776,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 12,
+          "searches": 0,
+          "primaryLimit": 8192,
+          "strategy": "scatter",
+          "witnessSlots": 0,
+          "witnessCandidates": 0,
+          "witnessChecks": 0,
+          "witnessEdges": 0,
+          "witnessValid": false,
+          "relocated": 0,
+          "fits": true
+        }
+      ],
+      "frame": {
+        "fits": "true",
+        "strategy": "scatter",
+        "expected": [11, 12, 15, 18, 31, 32, 33, 34, 38, 40, 42, 46],
+        "actual": [11, 12, 15, 18, 31, 32, 33, 34, 38, 40, 42, 46],
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42
+        },
+        "paintGap": {
+          "groups": 12.124834996937409,
+          "deck": 12.124124041437454
+        },
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "maximumModelDOMError": 0.015609537037562404
+      }
+    },
+    {
+      "name": "twelve",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "file": null,
+      "sameBeforeAfterCapture": true,
+      "node": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 129,
+        "exhausted": true,
+        "capacityPrunes": 112,
+        "elapsedHostMs": 5.218697999999904,
+        "relocated": 0,
+        "primaryLimit": 128,
+        "witnessSlots": 18,
+        "witnessCandidates": 216,
+        "witnessChecks": 217,
+        "witnessEdges": 364,
+        "witnessValid": true
+      },
+      "actualFloorCalls": [
+        {
+          "ms": 7.5999999940395355,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 12,
+          "searches": 129,
+          "primaryLimit": 128,
+          "strategy": "boundary",
+          "witnessSlots": 18,
+          "witnessCandidates": 216,
+          "witnessChecks": 217,
+          "witnessEdges": 364,
+          "witnessValid": true,
+          "relocated": 0,
+          "fits": true
+        }
+      ],
+      "frame": {
+        "fits": "true",
+        "strategy": "boundary",
+        "expected": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "actual": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42
+        },
+        "paintGap": {
+          "groups": 13.59375,
+          "deck": 14.3046875
+        },
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "maximumModelDOMError": 0.013283794788279124
+      }
+    },
+    {
+      "name": "twelve",
+      "viewport": {
+        "width": 390,
+        "height": 734
+      },
+      "file": {
+        "path": "game-twelve.png",
+        "bytes": 105637,
+        "sha256": "af9fb846438bb1144185e6e089038f59a21626212ae21c3f351a96369bde28ea"
+      },
+      "sameBeforeAfterCapture": true,
+      "node": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 129,
+        "exhausted": true,
+        "capacityPrunes": 117,
+        "elapsedHostMs": 2.419300999999905,
+        "relocated": 0,
+        "primaryLimit": 128,
+        "witnessSlots": 18,
+        "witnessCandidates": 216,
+        "witnessChecks": 217,
+        "witnessEdges": 364,
+        "witnessValid": true
+      },
+      "actualFloorCalls": [
+        {
+          "ms": 5.5999999940395355,
+          "width": 366,
+          "height": 241.4375,
+          "cardCount": 12,
+          "searches": 129,
+          "primaryLimit": 128,
+          "strategy": "boundary",
+          "witnessSlots": 18,
+          "witnessCandidates": 216,
+          "witnessChecks": 217,
+          "witnessEdges": 364,
+          "witnessValid": true,
+          "relocated": 0,
+          "fits": true
+        }
+      ],
+      "frame": {
+        "fits": "true",
+        "strategy": "boundary",
+        "expected": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "actual": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "bounds": {
+          "width": 366,
+          "height": 241.4375,
+          "cardWidth": 42
+        },
+        "paintGap": {
+          "groups": 13.125,
+          "deck": 13.1328125
+        },
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "maximumModelDOMError": 0.013283794788279124
+      }
+    },
+    {
+      "name": "twelve-resize-390-to-360",
+      "actualFloorCalls": [
+        {
+          "ms": 5.5999999940395355,
+          "width": 366,
+          "height": 241.4375,
+          "cardCount": 12,
+          "searches": 129,
+          "primaryLimit": 128,
+          "strategy": "boundary",
+          "witnessSlots": 18,
+          "witnessCandidates": 216,
+          "witnessChecks": 217,
+          "witnessEdges": 364,
+          "witnessValid": true,
+          "relocated": 0,
+          "fits": true
+        },
+        {
+          "ms": 3.4000000059604645,
+          "width": 336,
+          "height": 243.78125,
+          "cardCount": 12,
+          "searches": 15,
+          "primaryLimit": 128,
+          "strategy": "scatter",
+          "witnessSlots": 18,
+          "witnessCandidates": 216,
+          "witnessChecks": 217,
+          "witnessEdges": 364,
+          "witnessValid": true,
+          "relocated": 7,
+          "fits": true
+        }
+      ],
+      "frame": {
+        "fits": "true",
+        "strategy": "scatter",
+        "expected": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "actual": [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44],
+        "bounds": {
+          "width": 336,
+          "height": 243.78125,
+          "cardWidth": 42
+        },
+        "paintGap": {
+          "groups": 12.125,
+          "deck": 14.2890625
+        },
+        "crossings": [],
+        "outside": [],
+        "handHUDCrossings": [],
+        "maximumModelDOMError": 0.014654296184616555
+      }
+    }
+  ],
+  "movement": {
+    "baselineRun": "20261001T184342864Z",
+    "run": "20261001T185619361Z",
+    "codeDelta": [
+      {
+        "name": "normal",
+        "viewport": {
+          "width": 360,
+          "height": 780
+        },
+        "changes": [],
+        "samePNG": true
+      },
+      {
+        "name": "crowded",
+        "viewport": {
+          "width": 360,
+          "height": 780
+        },
+        "changes": [],
+        "samePNG": true
+      },
+      {
+        "name": "twelve",
+        "viewport": {
+          "width": 360,
+          "height": 780
+        },
+        "changes": [],
+        "samePNG": null
+      },
+      {
+        "name": "twelve",
+        "viewport": {
+          "width": 390,
+          "height": 734
+        },
+        "changes": [],
+        "samePNG": true
+      },
+      {
+        "name": "twelve-resize-390-to-360",
+        "changes": [],
+        "samePNG": null
+      }
+    ],
+    "resize": {
+      "kind": "movement from strict scaled-origin projection; separate from code delta",
+      "movedCardIds": [4, 8, 12, 20, 24, 28, 44],
+      "moves": [
+        {
+          "id": 4,
+          "dx": 0.24590072131147522,
+          "dy": 0.693153114238811
+        },
+        {
+          "id": 8,
+          "dx": -3.6885236721311685,
+          "dy": 1.7986235239961132
+        },
+        {
+          "id": 12,
+          "dx": -1.4266387934426348,
+          "dy": 1.7986235239961132
+        },
+        {
+          "id": 20,
+          "dx": 0.24590072131147522,
+          "dy": 1.7986235239961132
+        },
+        {
+          "id": 24,
+          "dx": -3.6885236721311685,
+          "dy": -0.02912345340409006
+        },
+        {
+          "id": 28,
+          "dx": -1.4266387934426348,
+          "dy": -0.02912345340409006
+        },
+        {
+          "id": 44,
+          "dx": 0.24590072131147522,
+          "dy": -0.02912345340409006
+        }
+      ]
+    }
+  },
+  "finiteWitnessBounds": {
+    "groups": 12,
+    "slots": 144,
+    "candidateCells": 1728,
+    "originalCardIds": 51,
+    "candidatePoseTranslations": 7344,
+    "matchingEdgeUpperBound": 20736,
+    "stressKind": "synthetic 51-ID cost bound only; not legally reachable floor or supported Board screenshot"
+  },
+  "verification": {
+    "threeFileRun": 40,
+    "updatedLayoutRun": 20,
+    "unhandled": 0,
+    "realDevice": false,
+    "performanceAccepted": false
+  },
+  "ciBaseline": {
+    "run": 36909693772,
+    "head": "b0986dbba1ce3ec16a2e39e004b131ae115a580e",
+    "core": "success",
+    "chromium": "success",
+    "webkit": "failure",
+    "failedTest": "Board.month-stack.test.ts:162 cancellation detail0 click submits once",
+    "webkitE2E": "not run"
+  },
+  "gates": [
+    "cancelled keyboard click CI regression",
+    "minimum relocation/global NF-03",
+    "naturalness/failure UX/target beforepose/motion/OSSR/device/canonical/default enable"
+  ]
+}

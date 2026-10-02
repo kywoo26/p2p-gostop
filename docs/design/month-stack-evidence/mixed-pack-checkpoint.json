@@ -1,0 +1,200 @@
+{
+  "requirements": ["UX-02", "UX-05", "UX-06", "NF-08"],
+  "kind": "fixed measured Game bounds; pure layout before/after; actual Game component regression reported separately",
+  "run": "2026-10-02T02:14:32.482Z",
+  "algorithm": "existing greedy path first; remaining shared 128 visits order by actual area and short-side slack; valid ID/paint/reservation checks unchanged",
+  "validation": {
+    "componentTests": 40,
+    "componentFailures": 0,
+    "fontMissing": 0
+  },
+  "remaining": [
+    "legal18 390 prior/fresh failed; positive regression pending in next isolated space comparison",
+    "default E2E audit and screenshot deltas unresolved",
+    "not device/motion/whole-support fit acceptance"
+  ],
+  "results": [
+    {
+      "version": "ddf6c36109467cc5cab0886dc396d5aeab92b4cb",
+      "bounds": {
+        "width": 336,
+        "height": 245.84375,
+        "cardWidth": 42,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 147,
+            "y": 88.7265625,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 146,
+            "y": 87.7265625,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 195,
+            "y": 136.1171875,
+            "width": 26.875,
+            "height": 20
+          },
+          {
+            "x": 146,
+            "y": 87.7265625,
+            "width": 47,
+            "height": 73.390625
+          }
+        ]
+      },
+      "status": "failed",
+      "ids": [],
+      "primary": 8193,
+      "pack": 128,
+      "totalSynchronousNodeMs": 108.879852,
+      "steadySearches": null,
+      "actualGroupPaintCrosses": 0,
+      "obstaclePaintCrosses": 0,
+      "paintOutsideCount": 0
+    },
+    {
+      "version": "checkpoint-source",
+      "bounds": {
+        "width": 336,
+        "height": 245.84375,
+        "cardWidth": 42,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 147,
+            "y": 88.7265625,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 146,
+            "y": 87.7265625,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 195,
+            "y": 136.1171875,
+            "width": 26.875,
+            "height": 20
+          },
+          {
+            "x": 146,
+            "y": 87.7265625,
+            "width": 47,
+            "height": 73.390625
+          }
+        ]
+      },
+      "status": "placed",
+      "ids": [0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44],
+      "primary": 129,
+      "pack": 25,
+      "totalSynchronousNodeMs": 7.3847769999999855,
+      "steadySearches": 0,
+      "actualGroupPaintCrosses": 0,
+      "obstaclePaintCrosses": 0,
+      "paintOutsideCount": 0
+    },
+    {
+      "version": "ddf6c36109467cc5cab0886dc396d5aeab92b4cb",
+      "bounds": {
+        "width": 366,
+        "height": 243.5,
+        "cardWidth": 42,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 162,
+            "y": 87.5546875,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 161,
+            "y": 86.5546875,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 210,
+            "y": 134.9453125,
+            "width": 26.59375,
+            "height": 20
+          },
+          {
+            "x": 161,
+            "y": 86.5546875,
+            "width": 47,
+            "height": 73.390625
+          }
+        ]
+      },
+      "status": "placed",
+      "ids": [0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44],
+      "primary": 129,
+      "pack": 13,
+      "totalSynchronousNodeMs": 3.850469000000004,
+      "steadySearches": 0,
+      "actualGroupPaintCrosses": 0,
+      "obstaclePaintCrosses": 0,
+      "paintOutsideCount": 0
+    },
+    {
+      "version": "checkpoint-source",
+      "bounds": {
+        "width": 366,
+        "height": 243.5,
+        "cardWidth": 42,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 162,
+            "y": 87.5546875,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 161,
+            "y": 86.5546875,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 210,
+            "y": 134.9453125,
+            "width": 26.59375,
+            "height": 20
+          },
+          {
+            "x": 161,
+            "y": 86.5546875,
+            "width": 47,
+            "height": 73.390625
+          }
+        ]
+      },
+      "status": "placed",
+      "ids": [0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44],
+      "primary": 129,
+      "pack": 13,
+      "totalSynchronousNodeMs": 3.755665999999991,
+      "steadySearches": 0,
+      "actualGroupPaintCrosses": 0,
+      "obstaclePaintCrosses": 0,
+      "paintOutsideCount": 0
+    }
+  ],
+  "comparison": {
+    "390UnchangedCardPoses": 16,
+    "360BeforeFailedCardCount": 16,
+    "360AfterDisplayedModelIDs": 16,
+    "actualGameComponentTests": "Chromium20/WebKit20, all passed; no screenshot or motion acceptance inferred"
+  }
+}

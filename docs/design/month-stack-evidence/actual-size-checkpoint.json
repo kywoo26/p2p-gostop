@@ -1,0 +1,335 @@
+{
+  "run": "20261002T001726921Z",
+  "requirements": [
+    "UX-02",
+    "UX-05",
+    "UX-06",
+    "NF-03",
+    "NF-08",
+    "AC-06",
+    "AC-07"
+  ],
+  "kind": "actual Game opt-in with real Playback and controller fixture snapshots; actual SoloSession input regression is separate; no complete seeded-deal/P2P/WAAPI or device claim",
+  "baseSha": "5db56056864ec7386437afda66b78db73425a053",
+  "integratedMain": "e8ab9ffdd3f185934a12b1c62b61ed17fb70e5f7",
+  "defaultEnabled": false,
+  "errors": [],
+  "before": {
+    "kind": "pure layout call on previously measured supported Game bounds; not an original failed Game screenshot",
+    "legalConstruction": "51 unique cards, 10/10 hands, 8 floor cards (four pairs), 23 deck; play16/flip20, play24/shake false/flip28, play32/flip36, play40/flip44; seeded fresh-deal reachability unproved",
+    "groups": 12,
+    "ids": 16,
+    "status360": "failed",
+    "status390": "failed",
+    "primaryVisits": 8193,
+    "witnessValid": false,
+    "failedCells": []
+  },
+  "implementation": {
+    "packing": "Only when maximum-envelope matching fails: deterministic actual-size free rectangles, bounded recursion, zero-degree emergency poses, every placed group subtracted and entire result checked again. No case-specific coordinates or month rules.",
+    "admittedNodeLimit": 128,
+    "counter": "witnessSearches counts recursive calls including possible limit guard; primary129 includes last budget guard",
+    "reservation": "Unrelated reservation footprints are blockers; same-instance/current IDs/local offsets/ppeok top retained; existing valid pose validation precedes witness work.",
+    "parentGap": "Only monthStacks and <=699px portrait; max(0px, fan-gap - 1px/3); no global token, hand internal gap, card/label size or desktop rule changes.",
+    "failure": "No invalid cells returned or old anchors consumed. Failed/cells[] remains a typed diagnostic, not a complete user recovery UX. Search exhaustion is not an impossibility proof."
+  },
+  "results": [
+    {
+      "fixture": "normal",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "expectedIdCount": 10,
+      "actualIdCount": 10,
+      "idMatch": true,
+      "bounds": {
+        "width": 336,
+        "height": 245.84375
+      },
+      "previousHeight": 243.78125,
+      "computedParentGap": "7.66667px",
+      "originalParentGapToken": 8,
+      "computedRows": "48px 70.1094px 52px 245.844px 52px 70.1094px 180px",
+      "boardHeight": 780,
+      "handInternalGap": "4px",
+      "minimumPaintGap": {
+        "groups": 12.1172366415704,
+        "deck": 12.1171875
+      },
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "modelDomMaximumError": 0.015267092853452624,
+      "firstNodeCall": {
+        "status": "placed",
+        "strategy": "scatter",
+        "searches": 7,
+        "exhausted": false,
+        "capacityPrunes": 0,
+        "elapsedHostMs": 3.2864190000000235,
+        "relocated": 0,
+        "witnessSearches": 7,
+        "witnessCandidates": 42,
+        "witnessChecks": 43
+      },
+      "actualFloorFirstSynchronousMs": 4.299999997019768,
+      "captureLabelGaps": ["2px"]
+    },
+    {
+      "fixture": "crowded",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "expectedIdCount": 12,
+      "actualIdCount": 12,
+      "idMatch": true,
+      "bounds": {
+        "width": 336,
+        "height": 245.84375
+      },
+      "previousHeight": 243.78125,
+      "computedParentGap": "7.66667px",
+      "originalParentGapToken": 8,
+      "computedRows": "48px 70.1094px 52px 245.844px 52px 70.1094px 180px",
+      "boardHeight": 780,
+      "handInternalGap": "4px",
+      "minimumPaintGap": {
+        "groups": 12.124834996937409,
+        "deck": 12.124124041437454
+      },
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "modelDomMaximumError": 0.0133020729118698,
+      "firstNodeCall": {
+        "status": "placed",
+        "strategy": "scatter",
+        "searches": 86,
+        "exhausted": false,
+        "capacityPrunes": 70,
+        "elapsedHostMs": 5.343855000000076,
+        "relocated": 0,
+        "witnessSearches": 9,
+        "witnessCandidates": 72,
+        "witnessChecks": 73
+      },
+      "actualFloorFirstSynchronousMs": 6.700000002980232,
+      "captureLabelGaps": ["2px"]
+    },
+    {
+      "fixture": "twelve",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "expectedIdCount": 12,
+      "actualIdCount": 12,
+      "idMatch": true,
+      "bounds": {
+        "width": 336,
+        "height": 245.84375
+      },
+      "previousHeight": 243.78125,
+      "computedParentGap": "7.66667px",
+      "originalParentGapToken": 8,
+      "computedRows": "48px 70.1094px 52px 245.844px 52px 70.1094px 180px",
+      "boardHeight": 780,
+      "handInternalGap": "4px",
+      "minimumPaintGap": {
+        "groups": 13.59375,
+        "deck": 15.3359375
+      },
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "modelDomMaximumError": 0.013283794788279124,
+      "firstNodeCall": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 129,
+        "exhausted": true,
+        "capacityPrunes": 112,
+        "elapsedHostMs": 5.525939999999991,
+        "relocated": 0,
+        "witnessSearches": 0,
+        "witnessCandidates": 216,
+        "witnessChecks": 217
+      },
+      "actualFloorFirstSynchronousMs": 7.399999991059303,
+      "captureLabelGaps": ["2px"]
+    },
+    {
+      "fixture": "twelve",
+      "viewport": {
+        "width": 390,
+        "height": 734
+      },
+      "sameBeforeAfterCapture": true,
+      "expectedIdCount": 12,
+      "actualIdCount": 12,
+      "idMatch": true,
+      "bounds": {
+        "width": 366,
+        "height": 243.5
+      },
+      "previousHeight": 241.4375,
+      "computedParentGap": "5.66667px",
+      "originalParentGapToken": 6,
+      "computedRows": "48px 70.1094px 40px 243.5px 40px 70.1094px 172.344px",
+      "boardHeight": 734,
+      "handInternalGap": "4px",
+      "minimumPaintGap": {
+        "groups": 14.15625,
+        "deck": 14.1640625
+      },
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "modelDomMaximumError": 0.013283794788279124,
+      "firstNodeCall": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 129,
+        "exhausted": true,
+        "capacityPrunes": 118,
+        "elapsedHostMs": 2.4138510000000224,
+        "relocated": 0,
+        "witnessSearches": 0,
+        "witnessCandidates": 216,
+        "witnessChecks": 217
+      },
+      "actualFloorFirstSynchronousMs": 5.4000000059604645,
+      "captureLabelGaps": ["2px"]
+    },
+    {
+      "fixture": "mixed",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "expectedIdCount": 16,
+      "actualIdCount": 16,
+      "idMatch": true,
+      "bounds": {
+        "width": 336,
+        "height": 245.84375
+      },
+      "previousHeight": 243.78125,
+      "computedParentGap": "7.66667px",
+      "originalParentGapToken": 8,
+      "computedRows": "48px 70.1094px 52px 245.844px 52px 70.1094px 180px",
+      "boardHeight": 780,
+      "handInternalGap": "4px",
+      "minimumPaintGap": {
+        "groups": 12.125,
+        "deck": 12.3203125
+      },
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "modelDomMaximumError": 0.0132847947882766,
+      "firstNodeCall": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 129,
+        "exhausted": true,
+        "capacityPrunes": 118,
+        "elapsedHostMs": 2.508109999999988,
+        "relocated": 0,
+        "witnessSearches": 13,
+        "witnessCandidates": 132,
+        "witnessChecks": 133
+      },
+      "actualFloorFirstSynchronousMs": 5.299999997019768,
+      "captureLabelGaps": ["2px"],
+      "representativePng": {
+        "path": "actual-size-mixed-360.png",
+        "bytes": 100049,
+        "sha256": "45333079f6e2b3630920f02d660385aa9cc51fabafeb1963bdfe30b7f0b9b668",
+        "metadataChunks": []
+      }
+    },
+    {
+      "fixture": "mixed",
+      "viewport": {
+        "width": 390,
+        "height": 734
+      },
+      "sameBeforeAfterCapture": true,
+      "expectedIdCount": 16,
+      "actualIdCount": 16,
+      "idMatch": true,
+      "bounds": {
+        "width": 366,
+        "height": 243.5
+      },
+      "previousHeight": 241.4375,
+      "computedParentGap": "5.66667px",
+      "originalParentGapToken": 6,
+      "computedRows": "48px 70.1094px 40px 243.5px 40px 70.1094px 172.344px",
+      "boardHeight": 734,
+      "handInternalGap": "4px",
+      "minimumPaintGap": {
+        "groups": 12.125,
+        "deck": 14.1640625
+      },
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "modelDomMaximumError": 0.0132847947882766,
+      "firstNodeCall": {
+        "status": "placed",
+        "strategy": "boundary",
+        "searches": 129,
+        "exhausted": true,
+        "capacityPrunes": 118,
+        "elapsedHostMs": 2.5304180000002816,
+        "relocated": 0,
+        "witnessSearches": 13,
+        "witnessCandidates": 132,
+        "witnessChecks": 133
+      },
+      "actualFloorFirstSynchronousMs": 7.699999988079071,
+      "captureLabelGaps": ["2px"],
+      "representativePng": {
+        "path": "actual-size-mixed-390.png",
+        "bytes": 99664,
+        "sha256": "fdb5f8dff24a52d5a312f0cac9fdaf2f4bf997131bfaf31f28f9c4b2a1ca6914",
+        "metadataChunks": []
+      }
+    }
+  ],
+  "popup": {
+    "originalMeasurementIdClones": 0,
+    "candidateCount": 2,
+    "imageWidths": [48, 48],
+    "minimumButtonWidth": 157,
+    "minimumButtonHeight": 80.171875
+  },
+  "validation": {
+    "threeFilesBeforeControllerAddition": {
+      "chromium": 25,
+      "webkit": 25,
+      "unhandled": 0
+    },
+    "updatedGameFileSeparateRun": {
+      "chromium": 7,
+      "webkit": 7,
+      "unhandled": 0
+    },
+    "actualSoloSession": "Real hand pointer input, original candidate0 chooseTarget, accepted engine state, FIFO completion/reservation release, 360/390 resize, captured cards32px and session end/no late authority change.",
+    "limits": "No new seed/viewport matrix, full suite, baseline update, dependency, wire or choreography change."
+  },
+  "remaining": [
+    "Same-session independent checkpoint review and exact new-head CI.",
+    "Enable ordinary Game path and synchronize narrow canonical layout/selection clauses; opt-in false is not completion.",
+    "Emergency rows are a safety exception, not naturalness acceptance; normal 2x2 weakness remains.",
+    "Finite cases do not prove every supported/legal fit; failure recovery beyond validated witness and exact beforepose/motion/P2P/device remain separate gates."
+  ]
+}
