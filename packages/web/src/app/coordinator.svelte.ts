@@ -1,10 +1,11 @@
 import { takeInvitation, invitationRoom } from './entry.ts';
 
-import { go } from './navigation.ts';
+import { go, returnRoute, uiState } from './navigation.ts';
 import { PRESETS } from '@p2p-gostop/engine';
 import { proEnabled, stopAudio } from '../pro-assets/runtime.ts';
 import { onMount } from 'svelte';
-import { afterNavigate, beforeNavigate } from '$app/navigation';
+import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
+import { page, navigating } from '$app/state';
 import { getBridge } from '../bridge/bridge.ts';
 import { current } from '../game/current.svelte.ts';
 import { diagnosticsView } from '../game/diagnostics.ts';
@@ -32,16 +33,28 @@ export function createCoordinator() {
   // 호스트 앱은 Kit hash routing: 홈 / 혼자 연습 / 게임 / 친구와 대전(방 열기·대전) / 기록 /
   // 설정 / 진단 / 라이선스 / 개발 갤러리. 게스트는 GuestApp 안의 상태로 움직인다(프래그먼트는 세션 토큰 자리).
 
-  let pendingNavigation = false;
-  beforeNavigate(({ willUnload }) => {
-    pendingNavigation = !willUnload;
-  });
-  afterNavigate(() => {
-    pendingNavigation = false;
-    commitNavigation();
+  beforeNavigate(({ to, shallow, cancel }) => {
+    // 새 page를 만들기 전에 소유 중인 원격 방으로 돌린다.
+    if (!shallow && to?.route?.id === '/versus' && remoteActive) {
+      cancel();
+      go('/remote');
+    }
   });
 
-  const GALLERY = '/dev/gallery';
+  afterNavigate(({ from, to, shallow, type }) => {
+    if (shallow || to?.route.id !== '/settings') return;
+    // Kit anchor 진입도 버튼과 같은 복귀 상태를 저장한다. reload/popstate의 기존 상태는 유지한다.
+    const state = uiState(page.state);
+    state.returnTo ??= returnRoute(type === 'enter' ? null : from?.route.id);
+    void goto(page.url.href, {
+      shallow: true,
+      replace: true,
+      reset: false,
+      persistState: true,
+      state,
+    }).catch(() => log.error('설정의 복귀 화면을 저장하지 못했습니다.'));
+  });
+
   const mode = detectMode();
   // 원격 초대 비밀은 fragment에만 받는다. 페이지가 뜨자마자 메모리로 옮기고 주소에서 지운다.
   const remoteJoin = /^#\/join(?:\?|$)/.test(location.hash);
@@ -107,10 +120,9 @@ export function createCoordinator() {
   // Android 앱: 핫스팟·LAN 상태(NF-06 경고)를 앱 전체에서 본다
   if (mode === 'host' && bridge.isNative) hotspot.watch();
 
-  let hash = $state(location.hash);
   let remoteHost = $state.raw<RemoteHostController | null>(null);
   let remoteActive = $state(false);
-  const route = $derived(hash.replace(/^#/, '') || '/');
+  const route = $derived(page.route.id ?? '/');
   const host = $derived(p2p.host);
   const remoteConfig = $derived(host?.config ?? hostConfigFrom(settings.value));
   const remoteRules = $derived<HostRoomRules>({
@@ -127,12 +139,12 @@ export function createCoordinator() {
 
   function openRemote(): RemoteHostController | null {
     if (p2p.host && p2p.host.phase !== 'ended' && !remoteActive) {
-      go(p2p.host.phase === 'playing' ? '#/match' : '#/versus');
+      go(p2p.host.phase === 'playing' ? '/match' : '/versus');
       return null;
     }
     if (remoteHost) return remoteHost;
     if (!loadRemoteHostSettings(localStorage)) {
-      go('#/settings');
+      go('/settings');
       return null;
     }
     remoteHost = createRemoteHost({
@@ -148,7 +160,10 @@ export function createCoordinator() {
         p2p.host = game;
       },
     });
-    remoteHost.subscribe((snapshot) => {
+    const controller = remoteHost;
+    controller.subscribe((snapshot) => {
+      // 닫힌 이전 방의 지연된 알림이 현재 방·이동을 바꾸지 않는다.
+      if (remoteHost !== controller) return;
       remoteActive = snapshot.room !== undefined && snapshot.state !== 'ended';
       if (snapshot.state === 'ended') {
         cancelPendingNavigation();
@@ -175,21 +190,20 @@ export function createCoordinator() {
   }
 
   function startRemote() {
-    if (host?.start()) go('#/match');
+    if (host?.start()) go('/match');
   }
 
   $effect(() => {
     if (route === '/remote') openRemote();
   });
-  let returnFromSettings = $state<string | null>(null);
+  $effect(() => {
+    // pending 중에는 beforeNavigate가 실행되지 않을 수 있다. 방 소유가 바뀌면 대기 중 이동을 대체한다.
+    if (remoteActive && navigating.to?.route.id === '/versus') {
+      go('/remote', { replace: true });
+    }
+  });
   let backToken = $state(0);
   let backListenerReady = $state(false);
-  const galleryPage = $derived(
-    route === GALLERY || route.startsWith(`${GALLERY}/`)
-      ? route.slice(GALLERY.length).replace(/^\//, '')
-      : null,
-  );
-
   // 속도(UX-15 단계 시간표와 --dur-scale)와 효과음 설정을 문서에 반영한다.
   $effect(() => {
     const speed = settings.speed;
@@ -201,14 +215,11 @@ export function createCoordinator() {
     if (!settings.value.sound) stopAudio();
   });
 
-  // 앱을 #/game으로 다시 열면 저장된 솔로 세션을 이어받는다 (MN-05)
-  if (
-    mode === 'host' &&
-    location.hash === '#/game' &&
-    current.solo === null &&
-    current.resumable !== null
-  )
-    current.resumeSolo(settings.value);
+  // 직접 진입뿐 아니라 설정 reload 뒤 게임으로 돌아올 때도 저장된 세션을 이어받는다 (MN-05).
+  $effect(() => {
+    if (mode === 'host' && route === '/game' && current.solo === null && current.resumable !== null)
+      current.resumeSolo(settings.value);
+  });
 
   const inGame = $derived(
     mode === 'host' &&
@@ -231,11 +242,10 @@ export function createCoordinator() {
     let remove: (() => Promise<void>) | null = null;
     void bridge
       .addBackListener(() => {
-        cancelPendingNavigation();
         if (route === '/settings') {
-          go(returnFromSettings ?? '#/');
-          returnFromSettings = null;
+          go(returnRoute(page.state.returnTo), { replace: true });
         } else if (route === '/game' || route === '/match') {
+          cancelPendingNavigation();
           backToken += 1;
         }
       })
@@ -284,7 +294,7 @@ export function createCoordinator() {
   }
 
   function resumeSolo() {
-    if (current.resumeSolo(settings.value) !== null) go('#/game');
+    if (current.resumeSolo(settings.value) !== null) go('/game');
   }
 
   const SOLO_MENU: readonly MenuItem[] = [
@@ -304,20 +314,27 @@ export function createCoordinator() {
   ];
 
   function cancelPendingNavigation() {
-    if (pendingNavigation) go(`#${route}`, { replace: true, reset: false });
+    if (!navigating.to) return;
+    // 새 page/게임판을 만들지 않고 pending token을 대체한다. 메뉴·WAAPI·worker 소유는 유지한다.
+    void goto(page.url.href, {
+      shallow: true,
+      replace: true,
+      reset: false,
+      persistState: route === '/settings',
+      state: uiState(page.state),
+    }).catch(() => log.error('화면 이동을 취소하지 못했습니다.'));
   }
 
   function endSolo(showRecords = false) {
-    cancelPendingNavigation();
+    if (!showRecords) cancelPendingNavigation();
     current.solo?.end();
-    if (showRecords) go('#/records');
+    if (showRecords) go('/records');
   }
 
   function soloMenu(id: string) {
     if (id === 'end') endSolo();
     else {
-      if (id === 'settings') returnFromSettings = '#/game';
-      go(id === 'settings' ? '#/settings' : '#/');
+      go(id === 'settings' ? '/settings' : '/');
     }
   }
 
@@ -325,19 +342,19 @@ export function createCoordinator() {
     host?.end();
     p2p.closeRoom();
     if (remoteHost) {
-      void remoteHost.close();
+      const controller = remoteHost;
       remoteHost = null;
       remoteActive = false;
+      void controller.close();
     }
-    go('#/');
+    go('/');
   }
 
   function hostMenu(id: string) {
     if (id === 'end') endMatch();
-    else if (id === 'diagnostics') go('#/diagnostics');
+    else if (id === 'diagnostics') go('/diagnostics');
     else {
-      if (id === 'settings') returnFromSettings = '#/match';
-      go(id === 'settings' ? '#/settings' : '#/');
+      go(id === 'settings' ? '/settings' : '/');
     }
   }
 
@@ -358,17 +375,6 @@ export function createCoordinator() {
 
   function onError(message: string) {
     log.error(message);
-  }
-
-  function commitNavigation() {
-    if (location.hash === '#/versus' && remoteActive) {
-      go('#/remote');
-      return;
-    }
-    const previous = route;
-    hash = location.hash;
-    if ((previous === '/settings' && hash !== '#/settings') || hash === '#/' || hash === '')
-      returnFromSettings = null;
   }
 
   return {
@@ -392,9 +398,6 @@ export function createCoordinator() {
     },
     get mode() {
       return mode;
-    },
-    get galleryPage() {
-      return galleryPage;
     },
     get current() {
       return current;
@@ -452,9 +455,6 @@ export function createCoordinator() {
     },
     get changeSettings() {
       return changeSettings;
-    },
-    get returnFromSettings() {
-      return returnFromSettings;
     },
     get diagnosticsView() {
       return diagnosticsView;

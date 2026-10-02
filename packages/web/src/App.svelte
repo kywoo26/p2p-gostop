@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NavigationFeedback from './app/NavigationFeedback.svelte';
   import { onMount, type Snippet } from 'svelte';
   import { createCoordinator } from './app/coordinator.svelte.ts';
   import { setCoordinator } from './app/context.ts';
@@ -30,6 +31,8 @@
   onerror={(e) => onError(`오류: ${e instanceof ErrorEvent ? e.message : e.type}`)}
   onunhandledrejection={(e) => onError(`처리되지 않은 Promise 거부: ${String(e.reason)}`)}
 />
+
+<NavigationFeedback />
 
 <div class="app-root" data-effect-intensity={settings.value.effectIntensity}>
   {@render children()}

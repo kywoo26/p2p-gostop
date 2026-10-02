@@ -107,6 +107,7 @@ test('솔로: 동등 바닥 대상은 힌트 설정 없이 최소 ID를 한 번 
 
 test('국진 매번 묻기 설정은 새로고침 뒤에도 복원된다', async ({ page }) => {
   await page.goto('./?speed=instant#/settings');
+  await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
   const ask = page.getByLabel('국진 처리');
   await expect(ask).toHaveValue('"auto"');
   await ask.selectOption('"ask"');
@@ -252,7 +253,7 @@ test('P2P relay-dev: 게스트 유일 수는 한 번 전송하고 두 좌석의 
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '핫스팟 대전' }).click();
+    await host.getByRole('link', { name: '핫스팟 대전' }).click();
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
     await guest.getByRole('button', { name: '입장' }).click();

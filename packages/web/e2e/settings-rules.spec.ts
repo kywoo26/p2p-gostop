@@ -40,6 +40,7 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   page,
 }) => {
   await page.goto('./?speed=instant#/settings');
+  await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
   await page.getByLabel('보너스 카드 구성').selectOption('2');
   await expect(page.getByText(/사용자 지정 · 기준 프리셋/)).toBeVisible();
   await page.getByLabel('국진 처리').selectOption('"ask"');
@@ -47,6 +48,7 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   await page.getByLabel('시작 잔액 직접 입력').fill('12345');
   await page.getByLabel('시작 잔액 직접 입력').blur();
   await page.getByLabel('단위').selectOption('점');
+  await page.getByRole('button', { name: '표시·조작', exact: true }).click();
   const hint = page.getByLabel('힌트 등급');
   await expect(hint).toHaveValue('basic');
   await page.getByRole('combobox', { name: '효과 강도' }).selectOption('subtle');
@@ -78,6 +80,7 @@ test('설정→솔로: 사용자 지정 규칙·금액이 새 세션에 고정�
   await hint.selectOption('detail');
   await hint.selectOption('off');
   await page.getByRole('link', { name: '뒤로' }).click();
+  await expect(page.getByTestId('solo')).toBeVisible();
   const after = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('gostop.solo.v1') ?? 'null'),
   );
@@ -112,6 +115,7 @@ test('로비 프리셋 적용은 국진을 포함한 welcome 전체 규칙을 �
     const root = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${server.port}`;
     await page.goto(`${root}/${query}&role=host#/settings`);
+    await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
     await page.getByLabel('국진 처리').selectOption('"ask"');
     await page.goto(`${root}/${query}&role=host#/versus`);
     await guest.goto(`${root}/${query}&role=guest`);
@@ -198,6 +202,7 @@ test('4001 뒤 수동 재접속은 hello와 welcome을 한 번씩 보내고 로�
 
 test('설정→P2P 로비: 사용자 지정 규칙이 방 설정으로 전달되고 복원된다', async ({ page }) => {
   await page.goto('./?speed=instant#/settings');
+  await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
   await page.getByLabel('2장 폭탄').selectOption('"double"');
   await page.goto('./?speed=instant#/versus');
   await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
@@ -207,6 +212,7 @@ test('설정→P2P 로비: 사용자 지정 규칙이 방 설정으로 전달되
   );
   expect(saved.customRules.twoCardBomb).toBe('double');
   await page.goto('./?speed=instant#/settings');
+  await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
   await page.getByRole('button', { name: '프리셋 규칙 복원' }).click();
   await expect(page.getByLabel('2장 폭탄')).toHaveValue('"off"');
 });
@@ -222,6 +228,7 @@ test('설정→P2P welcome: 사용자 지정 규칙이 게스트 대기실에 �
     const root = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${server.port}`;
     await page.goto(`${root}/${query}&role=host#/settings`);
+    await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
     await page.getByLabel('보너스 카드 구성').selectOption('2');
     await page.goto(`${root}/${query}&role=host#/versus`);
     await expect(page.getByText(/사용자 지정 규칙이 게스트에게 전달됩니다/)).toBeVisible();
@@ -252,7 +259,7 @@ test('힌트 저장 실패는 현재 화면에 적용하고 새로고침 때 마
   await hint.selectOption('detail');
   await expect(hint).toHaveValue('detail');
   await page.getByRole('link', { name: '뒤로' }).click();
-  await page.getByRole('button', { name: '설정' }).click();
+  await page.getByRole('link', { name: '설정' }).click();
   await expect(hint).toHaveValue('detail');
   await page.reload();
   await expect(hint).toHaveValue('basic');

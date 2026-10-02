@@ -248,12 +248,13 @@ async function pair(browser: Browser, guestBrowser = browser): Promise<Pair> {
 
 async function openHost(run: Pair): Promise<{ invite: string; code: string }> {
   await run.host.goto(`${appOrigin}/?speed=instant#/`);
-  await run.host.getByRole('button', { name: '친구와 원격 대전' }).click();
+  await run.host.getByRole('link', { name: '친구와 원격 대전' }).click();
+  await run.host.getByRole('button', { name: '원격 연결', exact: true }).click();
   await run.host.getByRole('textbox', { name: '중계 URL' }).fill(run.origin);
   await run.host.getByLabel('생성 자격').fill(run.secret);
   await run.host.getByRole('button', { name: '원격 설정 저장' }).click();
   await run.host.getByRole('link', { name: '뒤로' }).click();
-  await run.host.getByRole('button', { name: '친구와 원격 대전' }).click();
+  await run.host.getByRole('link', { name: '친구와 원격 대전' }).click();
   await expect(run.host.getByText('중계 응답 정상')).not.toBeVisible();
   await run.host.getByRole('button', { name: '연결 확인' }).click();
   await expect(run.host.getByText(/중계 응답 정상/)).toBeVisible();
@@ -661,12 +662,10 @@ test('AC-RP-04 @full @paired 같은 문서에서 원격 종료 후 재접속 0�
     const menu = run.host.getByRole('dialog', { name: '메뉴' });
     await menu.getByRole('button', { name: '대전 끝내기' }).click();
     await menu.getByRole('button', { name: '대전 끝내기 (한 번 더 누르기)' }).click();
-    await expect(run.host.getByRole('button', { name: '혼자 연습' })).toBeVisible();
+    await expect(run.host.getByRole('link', { name: '혼자 연습' })).toBeVisible();
     ended = true;
     run.setHostUnavailable(false);
-    await run.host.evaluate(() => {
-      location.hash = '#/solo';
-    });
+    await run.host.getByRole('link', { name: '혼자 연습', exact: true }).click();
     await expect(run.host.getByRole('heading', { name: '혼자 연습' })).toBeVisible();
     await run.host.getByRole('button', { name: /시작/ }).first().click();
     await expect(run.host.getByTestId('solo')).toBeVisible();

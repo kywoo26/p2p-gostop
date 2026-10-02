@@ -21,8 +21,8 @@
     onmenu={soloMenu}
     onend={() => endSolo(true)}
     ended={current.solo.state.phase === 'ended'}
-    onfresh={() => go('#/solo')}
-    onrecords={() => go('#/records')}
+    onfresh={() => go('/solo')}
+    onrecords={() => go('/records')}
     {backToken}
   />
 {:else}

@@ -17,11 +17,10 @@
     {current.saveError} <a href="#/solo">저장 상태 확인</a>
   </p>{/if}
 <Home
-  onnavigate={go}
   {resume}
   onresume={resumeSolo}
   {match}
-  onmatch={() => go('#/match')}
+  onmatch={() => go('/match')}
   activeMode={remoteActive ? 'remote' : host && host.phase !== 'ended' ? 'hotspot' : undefined}
 />
 

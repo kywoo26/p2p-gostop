@@ -1,5 +1,6 @@
 <script lang="ts">
-  let { onnavigate }: { onnavigate?: (hash: string) => void } = $props();
+  import type { AppRoute } from '../app/navigation.ts';
+  let { onnavigate }: { onnavigate?: (route: AppRoute) => void } = $props();
   // 혼자 연습: 난이도 선택 → 즉시 시작 (spec 2.5, AI-03). 네트워크·권한 요청 없음.
   // 규칙·금액은 설정 화면 값으로 세션을 시작할 때 고정된다(FR-24).
   import type { Difficulty } from '@p2p-gostop/ai';
@@ -33,11 +34,11 @@
     if (current.saveError !== null) current.discardCorruptSave();
     current.startSolo(settings.value, settings.value.difficulty);
     confirmDialog?.close();
-    onnavigate?.('#/game');
+    onnavigate?.('/game');
   }
 
   function resume() {
-    if (current.resumeSolo(settings.value) !== null) onnavigate?.('#/game');
+    if (current.resumeSolo(settings.value) !== null) onnavigate?.('/game');
   }
 </script>
 

@@ -313,6 +313,12 @@ P1 한정 설계 검토(완료·root archive): Sol 6.1/high 역할은 공식 bui
 
 P1-F1 후속 소유(총괄): `packages/web/src/routes/License.test.ts`의 정확 runtime 집합 기대값과 이 plan·AGENTS·단일 design의 CI 연령 예측 정정만 다룬다. f700 전체 Node37/589 PASS, browser118files/1098 중1096 PASS·License C/W2 FAIL을 한 번 실행해 원형 보존했다(`--maxWorkers=4`, root Node 뒤 web 직접 workspace). 실제 client 6개/고지 원문은 f700 build에서 이미 대조했으므로 테스트 정답은 그 확정 집합으로 좁게 맞춘다. default npm ci는 실제 CI 36995301348 세 잡에서 성공했고 Android 잡도 성공, 실패 원인은 browser License 집합이었다. 시간 경과 전 CI 설치 불가라는 예측은 철회하며 `.npmrc`/CI/lock/예외 범위를 바꾸지 않는다. runtime reviewer heavy 반환 뒤 해당 License C/W2만 실행하여 PASS, 새 immutable로 분리한다. 실행 source는 f700+해당 테스트 집합 수정이다. 첫 좁은 실행은 생산 문서 상대 href를 Vitest browser 실제 href `/oss/NOTICE.txt`와 혼동하여 2 FAIL; 기존 href 기대값을 보존하고 집합6 수정만 남긴다. 독립 runtime 반례 후보는 확정 finding이 없어 선수정하지 않는다.
 
+**SK3-R1 · Kit 중심 UI/UX 세로 단면(2026-10-02 사용자 대개편 위임):** 기존 픽셀/중복 구현 보존은 목표가 아니다. 게임→설정→Back/오류 복귀와 게임판 인지·조작을 하나의 실행 단위로 개선한다. 총괄 소유: `src/app/{navigation,coordinator.svelte}.ts`, `src/app.d.ts`, `src/App.svelte`, route `+page/+error`, `src/ui/{Board.svelte,board-layout.css,Screen.svelte}`, 기존 skin/token 파일과 필요한 Home/Settings/Game UI 연결·해당 표적 E2E. authority/session/wire/engine/Playback 이동은 이 단위에 포함하지 않는다. Kit page/route를 탐색 정본으로 하고 `page.state`에는 검증된 복귀 목적지·일시 UI만 둔다. 자체 committed hash/returnFromSettings/pending 상태와 중복 CSS 구조를 삭제한다. CSS named portrait7/desktop3의 단일 소유자는 Board이며 skin은 재질/색/상태를 맡는다. 화면 큰 의도 변경은 actual Game 정상·혼잡/선택, 홈/준비 전후 PNG·영상으로 root/사용자에게 보여 주고 별도 검토한다.
+
+원형 a77 smoke 470=349 PASS/119 FAIL/2 미실행과 trace/dist를 보존했다. 360×780 gallery의 CSS 동률 선언·lazy source 순서 충돌은 같은 DOM 기하 반례로 확정했으나 전체119 원인으로 확대하지 않는다. RP07 원형은 3.3초에 document marker 소실로 실패했고 뒤31초/재접속0 단언은 미실행이다. 주소 직접 진입/legacy 초대와 앱내 Kit link/Back을 분리한다. 실패는 제품 CSS·비동기 화면 readiness·raw hash 탐색·기타 미확정 cluster로 추적하며 일괄 폐기/기준샷 갱신/threshold 완화를 하지 않는다. root+총괄+최대2, heavy는 총괄 단일≤4. Sol6.1/high 두 읽기 역할은 CSS 소유 판단과 actual UIUX 제안만 repo밖150줄 보고를 소유하며 제품/plan/설치/검증0; profiles 매 launch0개여서 provider 모델/high를 확인했다. CSS·UIUX 읽기 역할 모두 외부 보고/clean 확인 뒤 root archive 완료. 최신 사용자 분배 요청으로 실제 구현 A(Sol6.1/high: 탐색·복귀·오류와 해당 새 E2E)와 캡처 도구 B(Sol6.1/medium: repo 밖 유한 하네스)를 격리 분배했다. 매 launch profiles0 확인 후 provider 설정을 확인했다. A의 입력은 a77+R1 23파일 SHA snapshot이며 부모는 A 전용 소스만 통합한다. Board/Settings/Home·plan/통합 실행은 총괄 소유, B는 제품 편집/브라우저0이다. source-only 결과를 실행 PASS로 전용하지 않는다.
+
+최신 첫 큰 병합 우선 지시에 따라 R1 구현된 단면을 마감하고 추가 디자인/조사 역할은 두지 않는다. A owned6 통합·B actual 캡처를 부모가 검증했으며 두 역할은 원본/입력/외부 결과 보존 뒤 root archive 완료했다. 기존 핵심 landing/input/Playback 35 PASS와 탐색 원실패/HTTP503·잘못된200 복구 경계는 단일 설계 R1 실행 기록을 따른다. 요구사항 완료 승격은 최종 필수 gate와 독립 review 뒤 root가 판단한다.
+
 P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/sveltekit3.md#p1-실제-채택-checkpoint)에 단일 기록한다. 원 P0L 0727 CI red/벨 timeout 원인 미확정은 보존하며 3445540의 두 ARIA URL 수정 후 동일 P2 독립 검토 해소·CI 36991244091 세 잡 success는 별도 인수했다. 새 P1에 과거 green을 전용하지 않는다. 이번 source는 실제 layout/page/coordinator·entry와 공식 adapter wrapper/두 Vite graph 검사·실제 client OSS 6개다. 타입/lint/좁은 Home 4·build Node21(내부 graph5 포함)·C/W root/prefix 솔로4·실제 prefix LAN pair의 근거를 고정 후 별도 Conventional commit/FF push한다. 전체 필수 gate·31초 RP07·사용자 성능·실기기는 미완이고 새 immutable에서 root가 독립 review를 연결한다. 실패 원형/실행 source·dist digest/재현 하네스는 외부 checkpoint에 함께 보존한다.
 
 산출물은 단일 설계와 이 실행 단위에 연결한다. 진행 중인 동일 역할의 정정·검토 후속은 그 역할에서 끝낸다. 완료 역할은 근거 보존 후 root에 archive 인계하며 완료 뒤 새 업무·독립 review는 새 격리 역할에 배정한다. A/B는 보고서 정정본 보존 후 root archive 완료. shell 재현 자료 패키징은 새 Sol 6.1 medium 역할이 `tools/proofs/sveltekit3/**`만 소유하며 설치/build/browser 실행·계획 편집을 하지 않는다. 부모가 단일 lane에서 검증·통합한다. 이탈은 해당 구현과 같은 commit에서 동기화한다. rollback은 저장/wire 형식 보존 아래 branch/revert와 기존 v0.4.1 artifact 유지이며 운영 조작을 포함하지 않는다.
@@ -365,6 +371,10 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 ---
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
+
+### SK3-R1 첫 병합 checkpoint (진행)
+
+Kit route/state/오류·Board 구조 단일 소유와 이미 구현한 UI 단면을 고정한다. source53파일 snapshot과 실제7PNG/2영상·원실패/표적검사를 [단일 설계의 포함관계 표](../docs/design/sveltekit3.md#r1-검증-checkpoint-첫-병합-전)에 연결했다. Node589·browser 원1092/6→해당HUD18·핵심35·RP07 31초·표적48의 분모는 겹치므로 합산하지 않는다. W503은 reload 오류 자체를 보존하고 안전 복귀만 보장한다. 최종 dist-only preview 경계·글자24/16·굵기600/400 정합은 R1 소유에 포함한다. PNG29 갱신0·최종 smoke/timing/Android·초기 body·새 독립 review 미완이며 전체 Kit/UX/성능 수용을 완료로 승격하지 않는다. 추가 디자인 고도화는 첫 병합 이후 별도 분배한다.
 
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 

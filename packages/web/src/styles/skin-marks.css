@@ -4,27 +4,6 @@
   --color-hand-secured: oklch(90% 0.14 160);
   --color-hand-cue-base: oklch(20% 0.025 160);
 }
-:root .board .hand.compact {
-  --card-w-l: 48px;
-  --card-h-l: calc(var(--card-w-l) / 0.614);
-  --hand-art-visible: var(--card-h-l);
-}
-@media (min-width: 410px) {
-  :root .board .hand.compact {
-    --card-w-l: clamp(48px, calc((var(--hand-height, 184px) - 8px) * 0.307), 56px);
-  }
-}
-:root .board .hand.compact .slot {
-  grid-template-rows: auto 0;
-  background: transparent;
-}
-:root .board .hand.compact .row + .row {
-  margin-top: 4px;
-}
-:root .board .hand-label {
-  height: 0;
-  background: transparent;
-}
 :root .board .hand-cue,
 :root .board .hand-label .match-mark,
 :root .board .group-word {

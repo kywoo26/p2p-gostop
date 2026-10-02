@@ -283,6 +283,23 @@
       </p>
     </section>
   {:else}
+    <section class="connection-state" aria-labelledby={`${ids}-guest`}>
+      <h2 id={`${ids}-guest`}>접속자</h2>
+      <p class="guest" role="status" data-testid="guest-status">
+        {#if guest}
+          <span class={['dot', { on: guest.connected }]} aria-hidden="true"></span>
+          {guest.name} · {guest.connected ? '연결됨' : '끊김'}
+        {:else}
+          기다리는 중…
+        {/if}
+      </p>
+      <p class="next-step">
+        {#if resume}저장된 대전을 계속할 수 있습니다.
+        {:else if guest?.connected}준비가 되면 아래 시작을 누르세요.
+        {:else if url !== null}친구 폰에서 주소 QR을 열고 이름을 적으면 시작할 수 있습니다.
+        {:else}핫스팟을 켜고 친구 폰을 연결하세요.{/if}
+      </p>
+    </section>
     <section aria-labelledby={`${ids}-hotspot`} data-testid="hotspot" data-state={hotspot.state}>
       <h2 id={`${ids}-hotspot`}>핫스팟 · {STATE_LABEL[hotspot.state]}</h2>
       {#if hotspot.state === 'on' || hotspot.state === 'addressOnly' || hotspot.state === 'unsupported'}
@@ -362,18 +379,6 @@
         </ol>
       </section>
     {/if}
-
-    <section aria-labelledby={`${ids}-guest`}>
-      <h2 id={`${ids}-guest`}>접속자</h2>
-      <p class="guest" role="status" data-testid="guest-status">
-        {#if guest}
-          <span class={['dot', { on: guest.connected }]} aria-hidden="true"></span>
-          {guest.name} · {guest.connected ? '연결됨' : '끊김'}
-        {:else}
-          기다리는 중…
-        {/if}
-      </p>
-    </section>
   {/if}
 
   <section aria-labelledby={`${ids}-rules`}>
@@ -471,6 +476,21 @@
 </Screen>
 
 <style>
+  .connection-state {
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: var(--space-4);
+  }
+  .connection-state .guest {
+    font-size: var(--type-score-size);
+    line-height: var(--type-score-line);
+    font-weight: 700;
+  }
+  .next-step {
+    margin: var(--space-2) 0 0;
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line);
+    color: var(--color-text-muted);
+  }
   .pairs {
     display: grid;
     grid-template-columns: auto 1fr;

@@ -273,7 +273,7 @@ test('호스트·게스트 승자: 실제 중계에서 밀기와 다음 판 배�
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '핫스팟 대전' }).click();
+    await host.getByRole('link', { name: '핫스팟 대전' }).click();
     await host.getByRole('combobox', { name: '규칙' }).selectOption('arcade');
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');
@@ -324,7 +324,7 @@ test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 �
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
     await host.clock.install();
     await host.goto(`${base}/${query}&role=host#/`);
-    await host.getByRole('button', { name: '핫스팟 대전' }).click();
+    await host.getByRole('link', { name: '핫스팟 대전' }).click();
     await host.getByRole('combobox', { name: '규칙' }).selectOption('arcade');
     await guest.goto(`${base}/${query}&role=guest`);
     await guest.getByRole('textbox', { name: '내 이름' }).fill('민지');

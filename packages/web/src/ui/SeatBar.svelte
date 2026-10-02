@@ -194,9 +194,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--skin-paper);
-    font-size: 24px;
+    font-size: 16px;
     line-height: 30px;
-    font-weight: 600;
+    font-weight: 400;
     letter-spacing: 0;
   }
   .delta {
@@ -225,7 +225,8 @@
     white-space: nowrap;
   }
   .score b {
-    font-size: 24px;
+    font-weight: var(--hud-score-font-weight);
+    font-size: var(--hud-score-font-size);
     line-height: 30px;
   }
   .score span {

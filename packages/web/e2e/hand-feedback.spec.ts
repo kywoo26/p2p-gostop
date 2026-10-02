@@ -219,7 +219,7 @@ for (const [width, height] of [
       await expect(page.locator('.hand')).not.toContainText(/대기|폭3|흔3/);
       expect(report.inside).toBe(true);
       expect(report.scoreSize).toBe('24px');
-      expect(report.secondarySize).toBe('24px');
+      expect(report.secondarySize).toBe('16px');
       expect(report.tnum).toContain('tabular-nums');
       await expect(page.locator('[data-hand-group="1"]')).toHaveCount(3);
       await expect(page.locator('[data-hand-action="shake"]')).toHaveCount(3);
@@ -260,6 +260,8 @@ for (const width of [360, 390, 412, 430]) {
     test(`${width}px ${fixture}: 월 묶음과 48px 노출 @layout`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 780 });
       await page.goto(`./#/dev/gallery/hand-layout-${fixture}`);
+      // lazy page의 실제 손패가 생성된 뒤 같은 기하 단언을 실행한다.
+      await expect(page.locator('.hand .slot')).toHaveCount(10);
       const rows = await page.locator('.hand .row').evaluateAll((elements) =>
         elements.map((row) => ({
           count: row.querySelectorAll('.slot').length,

@@ -155,6 +155,55 @@ exact f700에서 root Node `npm test -- --maxWorkers=4`는 37파일/589 PASS, we
 
 CI 세 잡의 기본 `npm ci`는 모두 성공했고 Android 묶음도 성공했다. `.npmrc`와 workflow를 변경하거나 CI 예외를 추가한 결과가 아니다. 따라서 “72시간 이전 일반 CI 설치 불가” 예측을 철회한다. [공식 설정](https://docs.npmjs.com/cli/v11/using-npm/config/#min-release-age)의 연령 제한은 npm tree 해석 필터다. 설치된 npm 11.19.0의 `ci.js`는 잠긴 virtual tree를 읽어 검증하고, Arborist의 유효 기존 edge는 재해석 없이 재사용한다. `#fetchManifest`에서만 적용하는 `before`/release-age 선택 필터를 모든 frozen-lock 재설치의 차단 검사로 확대해서는 안 된다. 이번 CI 관측을 모든 npm/lock 상태의 미래 보장으로도 확대하지 않는다. 게시 시각/72시간 계산, 정확 lock 사전 감사와 새 버전 도입의 명령 단위 예외 절차는 계속 유지하며 정책을 해제하지 않는다.
 
+## R1 · Kit 중심 경험 재설계
+
+사용자는 2026-10-02 최소 port를 넘어 UI/UX·그래픽·구조의 대개편을 명시 위임했다. 성공은 기능 개수가 아니라 작은 화면의 카드/점수 인지, 합법 선택과 모션, 예측 가능한 이동·복구다. 기존 구현/픽셀은 대체 가능하고 권위·저장·보안·원 CardId·실제 착지와 사용자 합의 게임 경험은 보존한다.
+
+| 채택 기능·구분 | 대체할 구조 | 사용자 효과 | 실행 근거·수용 경계 |
+|---|---|---|---|
+| Kit typed `resolve`/`page.route`·기존 Kit 표준 | 문자열 hash 조립·별도 committed hash 복제 | 잘못된 경로를 빌드에서 찾고 Back 기준을 통일 | 실제 prefix/legacy entry와 앱내 탐색을 각각 검사 |
+| Kit3 `goto` shallow/state와 hook 의미 | singleton 설정 복귀 경로·일시 화면 상태 | 설정 복귀가 history 항목에 귀속, 안전한 탭/Back | 상태에는 토큰·session·원장 없음. late navigation/native Back 반례 |
+| Kit `navigating`·code preload·`onNavigate` | 자체 pending flag·중첩 lazy 화면/무표시 대기 | 현재 화면을 보존하면서 다음 화면 준비·부드러운 전환 | feature detect/reduced motion, gameplay WAAPI와 분리. speculative 서버 요청 없음 |
+| Kit 공통 `+error`·`handleError` (표준) | 비어 있거나 일반 오류로 끝나는 page | 같은 세션에서 재시도/게임 복귀 | 사용자에게 raw URL/token/stack 비표시·오류는 로컬 진단 |
+| Board-owned layout + 화면 토큰 | root skin과 lazy component의 중복 구조 선언 | 잘림 없는 월/덱/손패 위계, 터치/선택/실제 이동 endpoint 일치 | 실제 Game 정상·혼잡/선택·작은 화면 및 landing/target/bonus 프레임 |
+
+snapshot은 필요한 임시 입력 보존에 채택할 수 있으나 이미 저장되는 설정·Kit의 scroll 복원과 중복시키지 않는다. Svelte async 등 실험 기능도 일괄 배제하지 않고 얻는 UX·정적 배포 적합성을 유한 검증한다. 이번 세로 단면은 서버 작업이 없어 SSR/remote functions/forms 서버 추가의 제품 효과가 없으며, 기능 나열을 위한 런타임 서버는 추가하지 않는다. host/guest controller의 eager 분리는 후속 실제 body 계측으로 선택한다.
+
+원 smoke/RP07 실패와 CSS 동률 반례는 새 설계의 문제 근거다. CSSOM 반례는 비활성 desktop 선언도 제거했고 7행 기하 회복만 증명했다. 실제 Game의 monthStacks42px pose와 gallery legacy48px를 혼동하지 않으며, 사건 레일·center·선택·모션의 수용을 별도로 측정한다. 최종 시각 제안·전후자료와 구현 결과는 이 절에 이어 기록한다.
+
+### R1 첫 병합 경계와 실행 기록
+
+최신 사용자 지시로 첫 큰 병합을 우선한다. 현재 Kit 전환·탐색/세션/오류·Board 단일 layout·구현한 시각 단면을 마감하며 추가 그래픽/메뉴 고도화는 다음 단위다. `page.route`가 화면 정본이고 `page.state`에는 whitelist 복귀 경로와 설정 분류만 저장한다. Home은 typed 실제 anchor와 tap code preload, 설정은 persistent shallow 상태, 게임/방은 View Transition에서 제외한다. pending 취소는 공식 shallow replacement와 `/versus`의 원격 소유 render gate로 보호한다.
+
+Board의 중복 6행/7행 선언과 손패·획득 영역의 상충 선언을 삭제하고 portrait 7개/desktop 3개 named area를 한 파일에서 소유한다. 실제 floor pose·CardId·입력·Playback은 바꾸지 않았다. 점수/잔액 위계, 중립 선택 후보·종이빛 focus, 홈 hero 축소와 준비 다음 행동을 actual PNG 7개로 비교했다. 혼잡 화면은 constructed fixture이며 합법 진행 증명으로 쓰지 않는다. 이 PNG의 source는 A 탐색 통합 전 R1 build3이고, 후속 실행 근거와 구별한다.
+
+- A 탐색 패키지는 23개 입력 SHA와 소유 6파일을 대조해 통합했다. A의 source 검사와 부모 실행은 별개다. B 캡처 CLI는 부모 검토 뒤 실행했으며 초기 module import/전환 중 캡처 가정 실패를 보존했다. 정정된 캡처는 7 PNG·2 영상·23개 상태 검사 통과이며 영상 전체/제품 전체 수용을 뜻하지 않는다.
+- 원 탐색 18행은 12 PASS/6 FAIL이었다. 생성 manifest 경로 가정과 숨긴 메뉴의 중복 locator를 실제 빌드/보이는 메뉴에 맞춰 정정했다. 직접 URL/legacy 진입은 유지하고 앱내 raw hash만 실제 Kit anchor로 바꿨다. 기존 게임 권위·counter·document·31초 단언은 완화하지 않는다.
+- 잘못된 200 JS와 일시 503을 분리한 실제 HTTP fault fixture를 사용한다. 잘못된 200에서 오류→client 재시도 실패→같은 문서/저장/게임으로 복귀→입력 수락은 C/W PASS다. 503 후 서버 복원·수동 reload는 Chromium에서 PASS, WebKit에서는 HTML을 다시 받아도 모듈 재요청이 없어 실패했다. 무조건적인 cache 복구를 약속하지 않으며 새로고침은 best effort다.
+- [WebKit 270357](https://bugs.webkit.org/show_bug.cgi?id=270357)의 유사 증상을 참고했으나 원인을 동일시하지 않는다. [공식 Vite `build.modulePreload`](https://vite.dev/config/build-options.html#build-modulepreload)를 false로 한 유한 반례에서 해당 preload 링크는 없어졌지만 실패는 같았다. 효과 없는 설정은 원복했다. cache API/query buster/Kit 내부 patch는 추가하지 않았다.
+- A 통합 후 기존 landing/입력/Playback 표적 35행 PASS: 두 짝 접촉·실제 획득 동시 출발, 뻑 보너스·target chain·home restore·skip/reduced 포함. hand-input은 해당 smoke 프로젝트 범위로 실행했다. 후속 RP07 실제 relay pair의 같은 문서 종료→솔로→31,000ms 재접속 0 단언도 34.8초 PASS다. 원 a77의 marker 실패·31초 미도달은 보존한다. 전체 smoke/필수 묶음·독립 검토는 별도로 남는다.
+
+### R1 검증 checkpoint (첫 병합 전)
+
+root가 실제 정상·선택 PNG를 보고 잔액16px/400·점수24px/600 위계를 인수했다. 해당 크기 기대만 바꾸고 점수 크기·두 굵기 검사를 추가했다. `UX-11`의 400/600 체계와 기하/입력 단언은 유지한다. 원 browser 1092 PASS/6 FAIL과 원 R1 smoke 490=297 PASS/191 FAIL/2 미실행을 보존한다. smoke 실패는 굵기123·PNG29·잔액 크기16·lazy 손패 생성 전 측정16·중복 reload2·나머지5(503/preview/Home link/화면 이동 후 reload)로 분류했다. 전체 실패를 한 원인이나 구식 검사로 폐기하지 않는다.
+
+Kit preview는 adapter 이전의 client/prerendered를 제공하여 최종 dist에서 삭제한 평가 자산도 200으로 노출했다. 공식 Vite `isPreview` 분기에서 plugin 없이 최종 dist만 서빙하고 dev/build 설정은 보존한다. 기존 Vitest 설정은 config 함수를 받은 환경으로 평가한 뒤 병합한다. index·start chunk·worker·font 4개 HTTP body가 최종 파일 SHA와 일치하고 삭제 pro는404다. Vite preview를 실제 StaticSite/Ktor의 MIME/hash/security 수용으로 확대하지 않는다.
+
+| 실행 | 결과·포함관계 | 경계 |
+|---|---|---|
+| Node 필수 | 37파일/589 PASS | R1 소스 snapshot. 후속 수정은 web source/test/config |
+| browser 필수→표적 | 118파일/1098 중1092 PASS·6 FAIL → Board HUD2파일/18 PASS | 후속18에 원 실패6 포함. 1092+18을 새 전체 분모로 더하지 않음 |
+| landing/input/Playback | 35 PASS | 기존 단언·CardId·접촉/획득/뻑/복원/skip/reduced 보존 |
+| RP07 | 실제 relay pair1 PASS·34.8초, 종료 후31,000ms 외부 HTTP/WS0 | 같은 문서·실제 Home link. preview 수정 전 host 서빙과 guest 최종 dist를 구별; 원 rawhash 실패 보존 |
+| 수정 표적 | 48행=탐색22+손패16+모바일기하2+desktop2+손상저장1+preview1+guest문서entry2+설정1+홈1. 47 PASS/1 하네스 FAIL 뒤 preview1 PASS | 404의 absent content-type을 빈 문자열로 정규화. 크기/timeout/threshold 완화 없음 |
+| 탐색22 내부 | 503/잘못200 same-document 안전 복귀 C/W4 포함 | document marker·저장·worker1·입력 수락. W503 manual reload는 재요청0/오류를 명시 확인 후 저장 게임으로 복귀하며 자동 복구 성공이 아님 |
+| 실제 화면 캡처 | 같은 fixture 7 PNG·2 video·23 상태 검사 PASS | a77+source digest `367e9255487e8b2b10de7bf82a6ba7e616ac3748346f49d972f790f22a9c273a`. 정지 PNG와 표본 영상 프레임 검토, 전체 시각/실기기 수용과 구분 |
+| PNG 후속 | 원29 테스트만 실행,29 이미지 차이 보존·baseline 변경0 | 앞선 기능 단언은 유지; 실패 뒤 같은 테스트의 추가 동작은 미실행. 후속 검토 뒤 의도 변화만 갱신 |
+
+캡처 artifact hash는 `9a534fa1fc9a4ade6d88a237e4180f16a7ce1919a09d2094a5ff194a4cf2cf00`(앱 허용 자산 hash)이며149개 파일 raw1,693,193 B/2,097,152 B다. 캡처 하네스의 전체 파일 목록 digest `0f7993c5dc3c07e0c00fdc9b70343542c167fddcbdc560386f263941427c8bc5`와 분모가 다르다. 이번 raw 수치는 initial body1,500,000 B나 사용자 속도 개선 증거가 아니다. normal-turn 영상2.80초는 합법 seed1 history의 손패13/덱7/획득13·14 경로이고 두짝 landing10/30 fixture와 다르다. navigation 영상2.28초는 메뉴→설정 분류→Back이다. 혼잡 PNG는 constructed fixture다. HTML/OSS/hash/budget 순서·컴파일러/lock 핀은 유지하며 게임 Playback/FLIP·wire·엔진 규칙 변경은 없다.
+
+남은 merge gate:29 PNG의 의도 변화 검토·필요 좁은 기준 갱신, 새 immutable 독립 review, 이후 최종 필수 smoke/직렬 timing·Android/full 영향 검사 및 초기 body 확인. 사람 실기기와 운영 배포는 별도다. 새 디자인 기능을 추가하지 않고 이 단위를 먼저 고정한다.
+
 ## 이행·되돌리기
 
 SK3-P0 설계/유한 proof → P1 build shell·entry/token/path/오류·도구 → P2 route·coordinator 분리 → P3 필수 검증·독립 review·root 통합 순서다. proof 실패로 조정한 선택은 코드와 같은 commit에 문서화한다. v0.4.1 배포는 계속 유지한다. 저장/wire 형식을 바꾸지 않아 검증 실패 시 branch 또는 미출하 변경을 revert하고 원 artifact를 사용할 수 있다. 운영 포인터·main 병합·tag/release·서명은 root만 소유한다. Galaxy/iPhone 사람 수용은 별도 절차/사람 결과가 필요하며 자동 테스트로 PASS 처리하지 않는다.

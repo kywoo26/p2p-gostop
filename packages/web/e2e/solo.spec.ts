@@ -140,7 +140,7 @@ function watchErrors(page: Page): string[] {
 
 async function startSolo(page: Page, query: string, difficulty: string) {
   await page.goto(`./${query}#/`);
-  await page.getByRole('button', { name: '혼자 연습' }).click();
+  await page.getByRole('link', { name: '혼자 연습' }).click();
   await page.getByRole('radio', { name: new RegExp(difficulty) }).check();
   await page.getByRole('button', { name: '시작' }).click();
   await expect(page.getByTestId('board')).toBeVisible();
@@ -340,9 +340,11 @@ test('정산 → 다음 판, 설정 저장, 홈 이어하기 (spec 6.2, MN-05)',
   test.setTimeout(3 * 60_000);
   // 설정: 점당 200이면 시작 잔액도 비례해서 바뀐다(MN-04)
   await page.goto('./?speed=instant#/settings');
+  await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
   await page.getByRole('combobox', { name: '점당' }).selectOption('200');
   await expect(page.getByText('300,000냥')).toBeVisible();
   await page.goto('./?speed=instant#/settings');
+  await page.getByRole('button', { name: '규칙·금액', exact: true }).click();
   await expect(page.getByRole('combobox', { name: '점당' })).toHaveValue('200');
 
   await startSolo(page, '?speed=instant', '보통');

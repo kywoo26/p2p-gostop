@@ -1,15 +1,7 @@
 <script lang="ts">
-  import { getCoordinator } from '../../../../app/context.ts';
-
-  const app = getCoordinator();
-  const galleryPage = $derived(app.galleryPage);
+  import { page } from '$app/state';
+  import Gallery from '../Gallery.svelte';
 </script>
 
-<svelte:head><title>맞고</title></svelte:head>
-
-<!-- 개발 갤러리는 별도 청크로 지연 로드 (스냅샷·axe 대상, intent/plan.md 1.2) -->
-{#if galleryPage !== null}
-  {#await import('../../../../routes/dev/gallery/Gallery.svelte') then { default: Gallery }}
-    <Gallery page={galleryPage} />
-  {/await}
-{/if}
+<svelte:head><title>맞고 · 화면 검토</title></svelte:head>
+<Gallery page={page.params.page ?? ''} />

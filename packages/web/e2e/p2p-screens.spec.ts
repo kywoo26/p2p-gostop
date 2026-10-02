@@ -23,7 +23,7 @@ test('비루프백 origin의 `/`는 조작 없이 게스트 참가 화면 (iPhon
   await page.goto(`${HOTSPOT_ORIGIN}/`);
   await expect(page.getByRole('heading', { name: '게임 참가' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: '내 이름' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '혼자 연습' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '혼자 연습' })).toHaveCount(0);
 });
 
 test('비루프백의 ?role=host는 게스트로 열리고, 이전 /p2p/index.html 북마크는 루트로 이동한다 @smoke @guest', async ({
@@ -42,11 +42,11 @@ test('루프백 `/`와 `/?role=host`는 호스트 앱 홈 (Android WebView), `?r
   page,
 }) => {
   await page.goto('./');
-  await expect(page.getByRole('button', { name: '핫스팟 대전' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '혼자 연습' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '핫스팟 대전' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '혼자 연습' })).toBeVisible();
   await page.goto('./?role=host&build=abc1234');
   await expect(page.getByRole('heading', { name: '맞고 P2P' })).toBeVisible();
-  await page.getByRole('button', { name: '핫스팟 대전' }).click();
+  await page.getByRole('link', { name: '핫스팟 대전' }).click();
   await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
   await page.goto('./?role=guest');
   await expect(page.getByRole('heading', { name: '게임 참가' })).toBeVisible();

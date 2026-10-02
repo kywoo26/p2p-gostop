@@ -1,4 +1,5 @@
 <script lang="ts">
+  import './board-layout.css';
   import type { Difficulty } from '@p2p-gostop/ai';
   import { conciseSoloNotice, difficultyLabels, playerLabel } from '../game/player-labels.ts';
   import Scene from '../pro-assets/Scene.svelte';
@@ -554,6 +555,7 @@
 <svelte:window onresize={resizeTarget} onkeyup={targetKeyUp} onpointercancel={cancelTarget} />
 
 <section
+  data-board-layout="match"
   class={[
     'board',
     {
@@ -879,6 +881,8 @@
   }
   .floor-target :global(.prompt) {
     height: auto;
+    border-color: var(--color-divider);
+    background: var(--color-bg);
   }
   .floor-target-choices {
     display: grid;
@@ -894,9 +898,13 @@
     gap: 6px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-m);
-    background: var(--color-surface-raised);
+    background: var(--color-surface);
     color: var(--color-text);
     font: inherit;
+  }
+  .floor-target-choices button:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
   .floor-target-choices img {
     width: var(--table-card);
@@ -908,159 +916,6 @@
     line-height: 20px;
   }
 
-  .board {
-    --hud-height: var(--hud-height-compact);
-    --hud-extra-height: calc(var(--hud-height-expanded) - var(--hud-height));
-    --decision-height: 56px;
-    --hand-height: 108px;
-    --capture-height: 44px;
-    --my-capture-height: 48px;
-    position: relative;
-    display: grid;
-    grid-template-rows:
-      var(--hud-height) var(--capture-height) minmax(208px, 1fr) var(--decision-height)
-      var(--my-capture-height) var(--hand-height);
-    gap: 4px;
-    height: 100dvh;
-    min-height: 0;
-    padding: max(8px, var(--board-safe-top, env(safe-area-inset-top)))
-      max(12px, env(safe-area-inset-right))
-      max(8px, var(--board-safe-bottom, env(safe-area-inset-bottom)))
-      max(12px, env(safe-area-inset-left));
-    background: var(--board-background);
-    overflow: hidden;
-  }
-  @media (max-width: 699px) and (orientation: portrait) {
-    :global(:root) .board.monthStacks {
-      row-gap: max(0px, calc(var(--fan-gap, 8px) - 2px / 3));
-    }
-  }
-  .board.selecting {
-    --decision-height: 132px;
-  }
-  .board.two-hands {
-    --hand-height: 168px;
-  }
-  .board.hud-expanded:not(.selecting) {
-    --decision-height: calc(56px + var(--hud-extra-height));
-  }
-  .board.hud-expanded {
-    grid-template-rows:
-      84px var(--capture-height) minmax(208px, 1fr) calc(
-        var(--decision-height) - var(--hud-extra-height)
-      )
-      var(--my-capture-height) var(--hand-height);
-  }
-  .hud {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--hud-menu-size);
-    gap: var(--hud-menu-gap);
-    align-items: start;
-  }
-
-  .scoreboard {
-    display: grid;
-    grid-template-columns:
-      minmax(32px, 64px) minmax(max-content, 1fr)
-      max-content max-content max-content;
-    column-gap: 8px;
-    min-width: 0;
-    height: var(--hud-height);
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    box-shadow: 0 0 0 1px var(--color-hud-outline);
-    border-radius: var(--hud-radius);
-    overflow: hidden;
-  }
-
-  .scoreboard.expanded {
-    height: var(--hud-height-expanded);
-  }
-  @media (min-width: 410px) {
-    .board {
-      --hud-height: var(--hud-height-wide);
-    }
-  }
-
-  .menu-reserved {
-    width: var(--hud-menu-size);
-    height: var(--hud-menu-size);
-    pointer-events: none;
-  }
-  .captured-zone {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  /* 기존 Game의 상대 손패 anchor 패딩은 메뉴 이전 위치용이다. 실제 예약은 상단 HUD가 소유한다. */
-  .board .captured-zone :global([data-anchor='opp-hand']) {
-    padding-right: 0;
-  }
-
-  .captured-zone {
-    position: relative;
-    gap: 0;
-  }
-  .captured-zone :global(.captured) {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-  }
-  .captured-zone :global(.group) {
-    min-width: 0;
-  }
-  .captured-zone :global(.name) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 20px;
-    padding: 0 6px;
-    border: 1px solid var(--color-hud-outline);
-    border-radius: 6px;
-    background: var(--color-hud);
-    color: var(--color-hud-text);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-  }
-  .captured-zone :global(.name small) {
-    display: none;
-  }
-  .captured-zone :global(.stack) {
-    width: 100%;
-  }
-  .captured-zone :global(.stack > .card + .card) {
-    margin-left: calc(
-      min(7px, (100% - var(--card-w-s)) / max(1, var(--pile-count) - 1)) - var(--card-w-s)
-    );
-  }
-  .captured-zone > :global(.captured) {
-    position: absolute;
-    inset: 0;
-    visibility: hidden;
-    min-height: 0;
-  }
-  .decision-area {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 48px;
-    gap: 8px;
-    min-height: 0;
-    align-items: center;
-  }
-  .decision-area.idle-slot {
-    height: 100%;
-    grid-template-columns: minmax(0, 1fr) auto;
-    padding: 3px;
-    padding-left: 12px;
-    border: 1px solid color-mix(in oklch, var(--color-hud-muted) 20%, transparent);
-    border-radius: 12px;
-    background: color-mix(in oklch, var(--color-hud) 25%, transparent);
-  }
-  .decision-content {
-    min-height: 0;
-    height: 100%;
-    display: grid;
-    align-items: center;
-  }
   .flip-only {
     min-width: 48px;
     min-height: 48px;
@@ -1072,17 +927,6 @@
     font: inherit;
     font-size: 14px;
     line-height: 20px;
-  }
-  .hand-zone {
-    min-height: 0;
-    padding-top: 0;
-  }
-  .center {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 0;
   }
   .board-info {
     width: min(90vw, 28rem);
@@ -1136,187 +980,5 @@
     padding: 24px;
     background: var(--color-bg);
     text-align: center;
-  }
-  @media (min-width: 410px) {
-    .board {
-      --capture-height: 48px;
-      --my-capture-height: 56px;
-      --decision-height: 64px;
-    }
-    .board.selecting {
-      --decision-height: 144px;
-    }
-    .board.two-hands {
-      --hand-height: 184px;
-    }
-  }
-  @media (min-height: 900px) {
-    .board {
-      --capture-height: 110px;
-      --my-capture-height: 110px;
-    }
-    .captured-zone > :global(.captured) {
-      position: static;
-      visibility: visible;
-    }
-  }
-  @media (min-width: 410px) and (min-height: 900px) {
-    .board.two-hands {
-      --hand-height: clamp(
-        184px,
-        calc(
-          100dvh - max(8px, var(--board-safe-top, env(safe-area-inset-top))) -
-            max(8px, var(--board-safe-bottom, env(safe-area-inset-bottom))) - 20px -
-            var(--hud-height) - var(--capture-height) - var(--my-capture-height) -
-            var(--decision-height) - 208px
-        ),
-        220px
-      );
-    }
-  }
-  .board.first-pick {
-    --decision-height: 224px;
-    --hand-height: 0px;
-  }
-  .first-pick .hand-zone {
-    padding: 0;
-  }
-  .board:not(.two-hands):not(.selecting):not(.hud-expanded) {
-    --capture-height: 110px;
-    --my-capture-height: 110px;
-  }
-  .board:not(.two-hands):not(.selecting):not(.hud-expanded) .captured-zone > :global(.captured) {
-    position: static;
-    visibility: visible;
-  }
-  @media (min-height: 820px) {
-    .board:not(.two-hands) {
-      --capture-height: 110px;
-      --my-capture-height: 110px;
-    }
-    .board:not(.two-hands) .captured-zone > :global(.captured) {
-      position: static;
-      visibility: visible;
-    }
-  }
-
-  /* RP-06: 동일한 뷰와 행동을 세 영역에 배치한다. DOM 순서와 카드 슬롯 판정은 그대로다. */
-  @media (min-width: 1024px), (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
-    .board.board.board,
-    .board.board.board.hud-expanded {
-      --table-card: var(--board-card-wide);
-      --fan-hand: 110px;
-      --fan-seat: 52px;
-      --fan-capture: 110px;
-      --fan-top: 48px;
-      --fan-gap: 8px;
-      grid-template-columns: minmax(180px, 1fr) minmax(320px, 2fr) minmax(180px, 1fr);
-      grid-template-rows: var(--fan-top) minmax(0, 1fr) var(--fan-hand);
-      column-gap: clamp(12px, 2vw, 32px);
-      max-width: 1440px;
-      margin-inline: auto;
-    }
-    .board.board.board .hud {
-      grid-column: 1 / -1;
-      grid-row: 1;
-    }
-    .board.board.board .center {
-      grid-column: 2;
-      grid-row: 2;
-    }
-    .board.board.board .opponent-hud,
-    .board.board.board .mine-hud {
-      grid-row: 2;
-      align-self: start;
-      height: var(--fan-seat);
-    }
-    .board.board.board .opponent-hud,
-    .board.board.board .captured-zone:not(.mine) {
-      grid-column: 1;
-    }
-    .board.board.board .mine-hud,
-    .board.board.board .captured-zone.mine {
-      grid-column: 3;
-    }
-    .board.board.board .captured-zone {
-      grid-row: 2;
-      align-self: start;
-      height: var(--fan-capture);
-      margin-top: calc(var(--fan-seat) + 8px);
-    }
-    .board.board.board .decision-area,
-    .board.board.board .decision-area.idle-slot {
-      position: relative;
-      inset: auto;
-      transform: none;
-      grid-column: 3;
-      grid-row: 2;
-      align-self: end;
-      width: 100%;
-      max-height: min(240px, calc(100% - var(--fan-seat) - var(--fan-capture) - 16px));
-      min-height: 56px;
-      margin: 0;
-      pointer-events: auto;
-    }
-    .board.board.board.go-stop .decision-area {
-      top: auto;
-      bottom: auto;
-      left: auto;
-      right: auto;
-      transform: none;
-    }
-    .board.board.board .hand-zone {
-      grid-column: 2;
-      grid-row: 3;
-    }
-    .board.board.board.two-hands,
-    .board.board.board.first-pick {
-      --fan-hand: 206px;
-    }
-    .board.board.board.first-pick {
-      --fan-hand: 0px;
-    }
-  }
-
-  /* 200% 확대의 720×450 상당: 카드 크기를 모바일과 같게 두고 영역 높이를 확보한다. */
-  @media (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
-    .board.board.board,
-    .board.board.board.hud-expanded {
-      --table-card: var(--board-card-compact);
-      --fan-top: 48px;
-      --fan-seat: 40px;
-      --fan-capture: 68px;
-      --fan-hand: 100px;
-      --fan-gap: 8px;
-      grid-template-columns: 190px minmax(300px, 1fr) 190px;
-      column-gap: 8px;
-      padding-block: 4px;
-    }
-    .board.board.board.two-hands {
-      --fan-hand: 160px;
-    }
-    .board.board.board .captured-zone {
-      margin-top: calc(var(--fan-seat) + 8px);
-    }
-    .board.board.board .captured-zone :global(.stack) {
-      width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 1px);
-    }
-    .board.board.board .captured-zone :global(.stack > .card + .card) {
-      margin-left: calc(1px - var(--capture-card));
-    }
-    .board.board.board .captured-zone :global(.group),
-    .board.board.board .captured-zone :global(.name) {
-      width: 100%;
-      min-width: 0;
-    }
-    .board.board.board :global(.seat-bar .balance) {
-      font-size: 12px;
-      line-height: 18px;
-      letter-spacing: -0.75px;
-    }
-    .board.board.board .decision-area,
-    .board.board.board .decision-area.idle-slot {
-      max-height: calc(100% - var(--fan-seat) - var(--fan-capture) - 8px);
-    }
   }
 </style>
