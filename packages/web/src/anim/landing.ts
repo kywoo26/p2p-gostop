@@ -274,7 +274,7 @@ export class LandingScene {
     return obstacles;
   }
 
-  /** 다른 월·덱/UI paint와 겹친 출발은 월 묶음 전체를 실제 획득 후 표시로 제한한다. */
+  /** 다른 월·더미/UI paint와 겹친 출발은 월 묶음 전체를 실제 획득 후 표시로 제한한다. */
   prepareCapture(ids: readonly CardId[], floorIds: readonly CardId[]): Map<CardId, CardPose> {
     if (ids.length === 0) return new Map();
     const originals = originalCards(this.root);
@@ -283,7 +283,7 @@ export class LandingScene {
         .filter((el) => el.closest('[aria-label="바닥"]') !== null)
         .map((el) => Number(el.dataset['cardId'])),
     );
-    // 원본 소실로 장애물 목록이 비어도 안전하다고 결론 내리지 않는다.
+    // 원본 소실로 보호 영역 목록이 비어도 안전하다고 결론 내리지 않는다.
     const complete = floorIds.every(
       (id) => floor.has(id) || this.cards.get(id)?.fromFloor || this.cards.get(id)?.contacted,
     );
