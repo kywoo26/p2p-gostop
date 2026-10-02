@@ -386,6 +386,8 @@ root·독립B의 원본 비교로 승인된37장(기존29+CI fan8)만 [SHA allow
 
 root가 known30 후보27쌍을 원본 해상도로 직접 비교하여 hand focus/press/group18·합성before6·Chromium info3의 검토actual만 추가 승인했다. 후보목록 SHA와 복사 전후 해시를 기존 baseline JSON에 좁게 추가해 총64장(37+27)을 고정한다. info3은 내부2,103픽셀/배경 차이의 원인 미확정을 보존하며 그림 표시만 수용한다. actual이 없는 WebKit info3 PASS는 변경0이다. 외부 collector12FAIL/픽셀27FAIL·3PASS/기능hard실패0·후행미도달0은 보존한다. 복사 후 원형 strict12는 모두 PASS이며 후행 focus/press/will-change/reduced/group·판정보/storage까지 완료했다. 제품/테스트/config/ARIA/threshold는 바꾸지 않는다.
 
+최종 계측/검증 단위는 `scripts/measure-game-transfer.mjs`의 홈 핫스팟1곳만 실제 Kit link로 정합하고 이 plan을 함께 고정한다. 같은 fixture/첫 입력 가능 endpoint·단계·응답 수집/예산은 유지한다. 고정 HEAD에서 lock/설치 핀 불변이면 npm ci를 반복하지 않고 lint→check→Node(max4)→web browser(max4)→build→원형 smoke(일반max4·timing직렬)→Android(max4)를 한 묶음으로 실행한다. smoke의 외부 config는 동일 HEAD에서 성공한 최종 dist를 preview에 재사용하고 test/fixture/expect/threshold/project 의존 관계를 유지한다. 초기 body 실측과 raw/속도·사람 실기기는 별도 판정하며 실패한 단계는 원인 수정 후 해당 범위만 재검증한다. 결과는 실행 HEAD·원로그/근거에 연결하고 검사 뒤 문서만 바꾸어 CI를 취소하지 않는다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.

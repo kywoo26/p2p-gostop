@@ -124,7 +124,7 @@ try {
             const query = `?speed=instant&relay=127.0.0.1:${relayPort}`;
             trial.phase = 'host-navigation';
             await host.goto(`${address}${query}&role=host#/`);
-            await host.getByRole('button', { name: '핫스팟 대전' }).click();
+            await host.getByRole('link', { name: '핫스팟 대전' }).click();
             trial.phase = 'guest-lobby';
             await guest.goto(`${address}${query}&role=guest`);
             await guest.getByRole('textbox', { name: '내 이름' }).fill('시험 참가자');
