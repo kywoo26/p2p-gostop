@@ -1,5 +1,5 @@
 {
-  "scope": "SK3-R1: root reviewed exactly37 images; copy reviewed bytes only",
+  "scope": "SK3-R1: root reviewed exactly64 images (37 + followup27); copy reviewed bytes only",
   "reviewedSource": "R1 checkpoint png29 + CI37008134595 extra layout8; source equivalent483",
   "comparisonProductSource": "ccf0e42437e2cd650b9d218afe72cf442e826758 product, precommit BUILD_ID00eab2b",
   "comparisonArtifactHash": "828b20f93903c3553eb6d4ffeff98fe7b3995d9fee0f5bb32d0ce745b6fe6d7e",
@@ -336,6 +336,176 @@
       "currentSHA256": "4f2898be03cab96354eb33b56b22ce0da6704153e508f991c35b7b85ce1ebfaf",
       "changedPixelsFromReviewed": 0,
       "maxChannelDelta": 0
+    }
+  ],
+  "followupReview": {
+    "candidateListSHA256": "61ff3e5492438887523af69291d1e3a945d5559d78b8bba667c8f70d0dc11a05",
+    "sourceHEAD": "8c8b8218eccfd59d02d968bb3aa952ab1f2ec109",
+    "scope": "known30 external collector:27 pixel FAIL/3 PASS; all27 expected/actual original-resolution pairs reviewed by root; passing WebKit info3 has no actual attachment and stays unchanged",
+    "limit": "Chromium info3 includes2103 changed interior pixels; visual display accepted, raster cause unconfirmed. Collector12FAIL/hard functional errors0 does not imply original strict test PASS."
+  },
+  "followupEntries": [
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-focus-chromium.png",
+      "oldExpectedSHA256": "c574fba717a680da59a9990c239b9900fa5afe4c6242aedfcbb79ce35618cd42",
+      "reviewedActualSHA256": "e0cf76879c9c1571c27997a92b93365d8e5b51060cb379d72063d77d80d60ee1",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-press-chromium.png",
+      "oldExpectedSHA256": "7eebc16be3f56dedde9df9f750ce0379c439e9eaf310c66f8bf73446feed9df1",
+      "reviewedActualSHA256": "42e356b1062e7e5c86c5c076e23393216bee745bde68e7a0b4a25995f7025068",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-group-chromium.png",
+      "oldExpectedSHA256": "46fb56c0924568a293e17d9741e057dd91720959b43e4afcab7ce5c32eb704e4",
+      "reviewedActualSHA256": "1596c325649a138acd7e22f8e73014125bbae09cb32c3c57ec67d7a676bcac09",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-focus-chromium.png",
+      "oldExpectedSHA256": "0cf21e3b138b9a9f17502e14baa9d175d63b972fb2b7e18718fa70fc4ad65db4",
+      "reviewedActualSHA256": "cbd317d49a8928488b96ec5409d3366181c225dfaf66425ea7c887f67a277687",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-press-chromium.png",
+      "oldExpectedSHA256": "7bb96da5f1070370cf9d2304c414ccfc6f80b32cc5f66072fe88daa4db27b8e8",
+      "reviewedActualSHA256": "2953c03b7d525b1f9b11c0e8a953777a2d7de09465fec98c3b6ae00f0add03ce",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-group-chromium.png",
+      "oldExpectedSHA256": "161fed4b2de5f5badd7c81dc7f858baf1a2b7ca63222ae4b7c7491bd848e7268",
+      "reviewedActualSHA256": "e92b1c12f38426a733aae05e798a55acfebb79a8a5be9a3bfbb01068ce984b2b",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-focus-chromium.png",
+      "oldExpectedSHA256": "38e24f4a9df541460fba268a905396bce6e647d633b787c43ac0c8186aba832b",
+      "reviewedActualSHA256": "5cce39902684dc2c12b1e9d1228802b1d76fd7fabca1dee46cf140ffda52dced",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-press-chromium.png",
+      "oldExpectedSHA256": "194e619986733a299e697378c334ef3319a358270048b55caaa7b9ad668b64a8",
+      "reviewedActualSHA256": "a42ceb1998451f34d5778cf76c117b9a5dfc7ebaff3b8b0c25ca84310a7c0524",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-group-chromium.png",
+      "oldExpectedSHA256": "a74a22336c3935db4ace17516b53b3f9f2d9e9847a2b5d386c57a517ff0df3cc",
+      "reviewedActualSHA256": "c7ce0a1875d9e685831dc01181a53eef91cee166b2a9d68df37597694cd889c0",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-focus-webkit.png",
+      "oldExpectedSHA256": "fa999de9df001ecb55ddcb382c43ae18f0085028a5a0cc97919dd158ee2d622f",
+      "reviewedActualSHA256": "80349136e71d7905fdd5a78a629694a065c150e24dab5c2f9f8bdbe200c182f9",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-press-webkit.png",
+      "oldExpectedSHA256": "46305b0ba6fe793f305f2f0d202dd7aa9e222bb4f39a116297ef3c711af230f7",
+      "reviewedActualSHA256": "eea4032ba7a0454e362b9cdf2013060ea4c5b5bc9fc61e3e1406e7f16e7f7a31",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-360-group-webkit.png",
+      "oldExpectedSHA256": "c1ebdc18bf50aed286cc7546dcd783ff7c2e1d812f76b37d6794a04a4d148643",
+      "reviewedActualSHA256": "ec25986e8364e95dfa202d5e0f29d07e1a0437fe5fe36dc5bdb46cab389f8891",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-focus-webkit.png",
+      "oldExpectedSHA256": "5d674317d53cbb13f29a8787ea940acf2d28fbf5cb6e97f3cc938c5f0c9701d6",
+      "reviewedActualSHA256": "88e1c32f85ee1090b691659c77a65dfc298eafb0954e48fd83b80e7aee8055a4",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-press-webkit.png",
+      "oldExpectedSHA256": "0ded35e96327e84bf25dd7e3b65b80a4b4f1ee6897c261245ac560361d548daa",
+      "reviewedActualSHA256": "be4af3c2110326990f9d9642f46e92d5fdcaf43c4309252399cd796edcceeaae",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-390-group-webkit.png",
+      "oldExpectedSHA256": "167a094d6e0f782490254bdb0b6873d26cb67a7c057bc5ddfd8ea34f2a3c4115",
+      "reviewedActualSHA256": "052c401ea5c0135fd4325c1b8c5ee7adcc8ae007b43e11ce9be687946fe6b509",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-focus-webkit.png",
+      "oldExpectedSHA256": "866a95c66b3f24f12f2fff8e6575d1f404acc8cb412f9dccad859f208fa3ad9e",
+      "reviewedActualSHA256": "861d50217fa1f61ce24a0524628ac92f653e4eceeb60a18a06d615413c8db4bd",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-press-webkit.png",
+      "oldExpectedSHA256": "47e3c38571c1744e100c456e7d5d1bbe1cf758e95eea5fa28bd056bedca88793",
+      "reviewedActualSHA256": "f0ee541df9e8cc0c0409fc60926d10efb5c7f8838230b1910f6f84285b5a00af",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/hand-feedback.spec.ts/cues-412-group-webkit.png",
+      "oldExpectedSHA256": "0c6d0a6f0acd56078c7841ed6f9cb01df01fb38c6a175e78fb1af1721614b934",
+      "reviewedActualSHA256": "5d574e0246a86311ad8ef989570db95467b586f958353037fcd9f851cc817681",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-easy-before-synthetic-chromium.png",
+      "oldExpectedSHA256": "1379c92884c82d1da3399ed3cbca8257c2a66fed9389347db3b47101a9f628b5",
+      "reviewedActualSHA256": "608e1f3ea6df99575468b21cf80a7894c1bd890a375267c08786239632813b2c",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-easy-info-chromium.png",
+      "oldExpectedSHA256": "907eabbf988a7025d391c7fd2146ed2ef956512365490eeb56b5866cd128ffa4",
+      "reviewedActualSHA256": "045bb5a86b14b4e1f1218a90bb99d7264420e34f3abfeb062d615ab0fcccb388",
+      "review": "info content retained; interior/background raster cause unconfirmed"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-normal-before-synthetic-chromium.png",
+      "oldExpectedSHA256": "cc35b6cd132ba3f83dd6d096d2720af4fbbe7348687c4879a6d43627f929b90d",
+      "reviewedActualSHA256": "47d07ea55770edc3c32b4c597b50aaaf92a8799f32a8246344e9c51780dec585",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-normal-info-chromium.png",
+      "oldExpectedSHA256": "dc0cc09492c437c471bf7bf02a033f057f8cf75173487ca88068e389e35d2a36",
+      "reviewedActualSHA256": "23b21857665c54a3f716f6c7eb390fac9a0d33a371d700e59e69d1c76b0b9c4d",
+      "review": "info content retained; interior/background raster cause unconfirmed"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-commercial-before-synthetic-chromium.png",
+      "oldExpectedSHA256": "63b4a6f4d0b056a906b49f677c8630e66ebcb18cab39368e4b41b416e017fdb9",
+      "reviewedActualSHA256": "4821f20a0af81d0b1fc61f10d78618afb6309098ea0744f163f66aaedeff59f9",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-commercial-info-chromium.png",
+      "oldExpectedSHA256": "2dbeaf30635b5c15a147e2c9b15c78f88fc739548196252c315a9c4243ca4795",
+      "reviewedActualSHA256": "c4bf227416ec554878fb52c8a6b1d9c623cd06c36d481f0d6950f8d6379f9566",
+      "review": "info content retained; interior/background raster cause unconfirmed"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-easy-before-synthetic-webkit.png",
+      "oldExpectedSHA256": "49ce36e66b894843c0ec8cf6048018e072a78e90b259a4b18d5e48cfb000be4f",
+      "reviewedActualSHA256": "6340906ca5873ffdbdffdb5aa2fa3f21491af8b6fb7d72ce1a3ffee4a6f94a03",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-normal-before-synthetic-webkit.png",
+      "oldExpectedSHA256": "95c1cbf5976fcc823c0afeeadc9e4bb824a239530726fb97810a35590650de1a",
+      "reviewedActualSHA256": "9a2c8df2a1a0e65446995b534346f4d711480854d4bb359a3295db4a0172c83c",
+      "review": "reviewed HUD hierarchy and board material; information retained"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/player-labels.spec.ts/labels-commercial-before-synthetic-webkit.png",
+      "oldExpectedSHA256": "b4d5d558f87de1691c818a86abd18478d8bd3d9bd0b329039ccd3a9a54a32c73",
+      "reviewedActualSHA256": "fac40da61f42a48c841544b8e2b4b04401ecd5eea02ccdd35bb941a49efaa913",
+      "review": "reviewed HUD hierarchy and board material; information retained"
     }
   ]
 }

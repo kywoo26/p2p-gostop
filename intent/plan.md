@@ -384,6 +384,8 @@ cards readiness 후속은 `e2e/cards.spec.ts` S25 표적의 실제 `.deck-count`
 
 root·독립B의 원본 비교로 승인된37장(기존29+CI fan8)만 [SHA allowlist](../docs/design/sveltekit3-r1-baselines.json)에 따라 과거 검토actual bytes를 복사했다. 현재 출력과29byte동일/8희소그림차이는 별도로 보존·직접 읽었으며 새actual을 기준으로 복사하지 않았다. 원형37은 갱신첫PNG37 통과 후25 PASS/12 추가PNG FAIL(focus6·이름 before-synthetic6)이다. gallery 후행axe·off 입력·fan8은 완료했고 press/will-change/reduced·판정보/storage는 뒤미도달로 유지한다. 추가12 기준은 미갱신이며 제품/ARIA/threshold/assert 변경0, 전체 필수 gate 완료는 아니다.
 
+root가 known30 후보27쌍을 원본 해상도로 직접 비교하여 hand focus/press/group18·합성before6·Chromium info3의 검토actual만 추가 승인했다. 후보목록 SHA와 복사 전후 해시를 기존 baseline JSON에 좁게 추가해 총64장(37+27)을 고정한다. info3은 내부2,103픽셀/배경 차이의 원인 미확정을 보존하며 그림 표시만 수용한다. actual이 없는 WebKit info3 PASS는 변경0이다. 외부 collector12FAIL/픽셀27FAIL·3PASS/기능hard실패0·후행미도달0은 보존한다. 복사 후 원형 strict12는 모두 PASS이며 후행 focus/press/will-change/reduced/group·판정보/storage까지 완료했다. 제품/테스트/config/ARIA/threshold는 바꾸지 않는다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.
