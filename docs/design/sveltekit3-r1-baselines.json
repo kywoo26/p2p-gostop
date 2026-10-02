@@ -1,5 +1,5 @@
 {
-  "scope": "SK3-R1: root reviewed exactly70 images (37 + followup27 + desktop6); copy reviewed bytes only",
+  "scope": "SK3-R1: root reviewed exactly73 images (37 + followup27 + desktop6 + main full WebKit3); copy reviewed bytes only",
   "reviewedSource": "R1 checkpoint png29 + CI37008134595 extra layout8; source equivalent483",
   "comparisonProductSource": "ccf0e42437e2cd650b9d218afe72cf442e826758 product, precommit BUILD_ID00eab2b",
   "comparisonArtifactHash": "828b20f93903c3553eb6d4ffeff98fe7b3995d9fee0f5bb32d0ce745b6fe6d7e",
@@ -544,6 +544,30 @@
       "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-gostop-mac-webkit.png",
       "oldExpectedSHA256": "bc449e19e1353fe0dbd3cb7df295c5b44fbfeb26a1b172dd3b8a117a2db73915",
       "reviewedActualSHA256": "d887e845b9b9fd6d9548ce09f5dd0fcbc8b30e27d5dbb98d9dd3c2a003e8ad47"
+    }
+  ],
+  "mainFullReview": {
+    "main": "9505572c40bd270c8fb8bee8117e278e8d503090",
+    "run": 37022423468,
+    "artifact": 11233614900,
+    "approvedListSHA256": "ef41818442ca090deec34e307dd14660fdc0c80864700ec8229695e9e63674af",
+    "scope": "WebKit home/host/settings are @visual only and excluded from PR smoke; root reviewed all three expected/actual pairs at original resolution. First/retry actual bytes agree. Original main full: 254 passed, 3 PNG failures, 21 skipped; post-screenshot axe and timing-webkit not completed."
+  },
+  "mainFullEntries": [
+    {
+      "target": "packages/web/e2e/__screenshots__/gallery.spec.ts/home-webkit.png",
+      "oldExpectedSHA256": "37840c4fe86507e0fd272915f28091d5c71c8940a365afcdf3dcbd11b251a494",
+      "reviewedActualSHA256": "5d5248be8518d551bd9a28dc698ad4327f070e469acc44c924d69312c4c14c62"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/gallery.spec.ts/host-webkit.png",
+      "oldExpectedSHA256": "f7e52fff83ce3f4d80d5d53de3c0fefa0ad04adde8db5bcdc00e2f75a5337ecb",
+      "reviewedActualSHA256": "f45abf6b5d8d54b483860fe272fb8267b5a8347af909c01d87fd9ae8aba8360d"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/gallery.spec.ts/settings-webkit.png",
+      "oldExpectedSHA256": "183ad2ca2c6ff21c9ceaf16215c497df2ab4fb00e47f5b1bc9b8c486689a2186",
+      "reviewedActualSHA256": "3c0215fb51f2d53af1b168ee92b199578f10a32d5fdf607dfbe1d318e117183a"
     }
   ]
 }
