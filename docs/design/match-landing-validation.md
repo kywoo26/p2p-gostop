@@ -2,6 +2,8 @@
 
 2026-10-02 · FR-14~17·UX-15~17·NF-03/08/09·AC-06/07 · Refs #200, #202, #236
 
+최신 실제 main 통합 검사는 마지막 절에 기록한다. 아래 48px 실패·각 수정 단계·미커밋 합성은 당시의 실행 근거로 보존하며 새 head 결과로 전용하지 않는다.
+
 기준 main `e8ab9ffdd3f185934a12b1c62b61ed17fb70e5f7`, 계획 최종 SHA `b1fb35879c4fc170fb0445b5d0ddfb79fc090902`.
 첫 구현·실패와 후속 수정을 함께 게시한다. 전체 요구사항 완료, 사용자 시각 수용, 0.5초 고정 시간, 실기기·전체 성능 통과를 뜻하지 않는다. 아래 첫 42px 합성은 원본 소실로 실패했고, 후속 고정 staging 합성은 같은 정상 장면의 원본·접촉·출발을 보존했다. 누적 수정의 효과를 크기만의 효과로 해석하거나 전체 기본 Game 통합·출하 판정을 하지 않는다.
 
@@ -124,3 +126,43 @@ canonical stage30과 고정 reserve는 C `(175.5,233.1328,42,68.3906)`, W y233.1
 합법 실제 이어하기에서 수정 전 손패49·뻑 bonus48/50·두 선택 연쇄 stage29 C/W6FAIL을 보존했다. 수정 후 손패49 실제 획득/보충38, 뻑48/50 원본 고정·가짜획득0, play7→choose6→choose28 실제 수락/획득4, 두 선택 연쇄의 홈 이탈→복원 현재 stage29(옛 flip 재연0)→choose28 마감, skip/reduced를 포함한 실제 앱 E2E12PASS다. 각 stage ID가 존재하는 frame의 양수 원본1개/ghost1개/원본 outer WAAPI0·위치 변동0.05px 미만을 검사한다. 손패49 skip 전 counter0, 실제 Captured 뒤1장 반영·보충38·숨김/모션 정리0을 확인한다. reduced는 ghost를 만들지 않고 실제 최종 상태로 수렴한다.
 
 첫 home 종료 검사는 Home commit 전에 detached root를 읽어 실패했고, 실제 Home 표시/scene 제거를 기다리는 완료 경계로 고쳤다. skip의 첫 0-animation 기대는 기존 손패17/18/19의 무한 CSS 폭탄 힌트3개를 포함했다. 직접 effect/type/target을 기록해 구별했고, 손패의 무한 CSS 효과만 제외해 모든 다른 남은 모션0을 검사했다. 기존 제품 기준/좌표 기대/기준샷은 완화하지 않았다. 관련 기존 browser84PASS/check0오류0경고는 staging 후속 수정 시점의 표적이며 이전7fa 검증으로 전용하지 않는다. 추가 실제 Game/SoloSession의 bonus ghost 재생 중 수락 snapshot reset C/W2PASS는 원본 가림 복원·ghost/light/원본 모션0·최종 표시/권위 일치를 확인했다. 새 check0오류0경고·web lint:fix·폰트703문자/hash·privacy findings0을 확인했다. 후속 코드의 실제 landing/recovery/capture/staging 전체 유한 표적은19PASS/기존 W 접촉1FAIL이며, 이 실패의 기대값을 그대로 유지했다. 별도 게시 exactSHA/CI는 인계에서 기록한다. 실제 뻑 회수 중 새 bonus·따닥/즉시 resolve·나머지 경계·최종 필수 suite와 새 독립 검토는 아직 남는다.
+
+## 실제 main 통합: 최종 제품 검사·독립 COMMENT·CI 시도 구분
+
+실제 검사 head는 `eebe4c1e95e93d3efcabee5c34b85c573f809db0`, tree `f721fecdf359d719b49f4948639d3706818d7812`다. clean staging 제품 `1c52a96910086209abcb0458854643974f715039`에 root가 병합한 main `f9e8f7522f9b9e626709e290dbc5a458ceb58a19`를 정상 merge/FF push했다. 충돌0·rebase/force/stash0이며 두 plan 기록을 보존했다. main 대비 Floor/layout/Board/Game/skin/자산/승인42PNG·engine/protocol/wire/store/일반 producer 차이0, own 제품·시험 blob은1c와 같다. 기본 Game42·fixed staging 예약·부모 간격·합법18·폭탄 cue·audit가 실제 제품에 포함된다. 기존192+1c의642 RAF와 이번 실행은 별개다.
+
+현재 head의 호스트 필수 검사 결과:
+
+| 단계 | 실제 결과·범위 |
+|---|---|
+| 핀·설치 | Node24.21.0/npm11.19.0, `npm ci` 완료 |
+| lint/check | 통과, privacy16·findings0, Svelte0오류/0경고; knip의 기존 설정 안내1건과 실패를 구분 |
+| Node | `npm test -- --maxWorkers=4`, 37파일/587PASS |
+| browser | workspace 직접 명령·`--maxWorkers=4 --api.port=4262 --api.strictPort`, 1098PASS/실패0/미실행0 |
+| build·smoke | 표준 smoke webServer가 `npm run build`를 한 번 수행한 뒤 preview 실행. smoke466PASS/재시도0/미실행0, 착지20건과 직렬 timing2건은466에 포함 |
+| Android | `assembleDebug testDebugUnitTest lint --max-workers=4` 통과 |
+
+browser 첫 호출은 루트의 중첩 npm script가 추가 옵션을 전달하지 않아 기본 API63315/worker 미지정으로 실행됐다. 기능1098PASS지만 지정 포트·worker 준수 결과로 합산하지 않는다. 원로그를 보존하고 browser 단계만 올바른 workspace 명령으로 다시 실행해 위 결과를 얻었다. 제품/시험/timeout/threshold/기준샷 변경0, build·smoke·전체 필수 묶음 재실행0이다.
+
+실제 SoloSession 이어하기/controller/Playback 정상 표적의 source별 RAF·CardId 측정은 다음과 같다. C는412×839, W는393×659로 기하 조건을 구분한다.
+
+| 관측 | C412×839 | W393×659 |
+|---|---:|---:|
+| 관측 RAF | 113 | 109 |
+| 손패10 접촉·약한 빛(ms) | 286.9 | 300 |
+| 덱30 접촉·약한 빛(ms) | 703.3 | 702 |
+| strong / 획득 counter0(ms) | 1269.2 | 1264 |
+| target8·31 첫 실제 이동, 같은 RAF(ms) | 1386 | 1388 |
+| before→held target8/31 최대 오차(px) | 0.000153 / 0.000061 | 0 / 0 |
+
+W의 실제 before target8 `(79.1875,281.15625,42,68.390625)`, target31 `(271.796875,185.09375,42,68.390625)`를 예약했다. 두 짝은 actual Captured 반영 뒤 상대 위치를 유지한 채 같은 관측 frame에 출발했다. 강한 강조까지 타월 paint 교차0·획득 전 원본 바닥 존재를 검사했고 원본30=다른월8 오염은 재현되지 않았다. C의 회전 AABB에 부모 회전/outline을 다시 적용하지 않는다. 접촉 간격402/416.4ms는 source 관측값이며 고정0.5초·시각 인지 수용이 아니다.
+
+같은 smoke 안의 staging12표적은 총1506 RAF를 관측했다. 관측한 원본 staging의 양수 rect·숨김 시 같은ID ghost1개·native outer WAAPI0·위치 고정, hand49의 실제 Captured/보충38·counter0→1장, 뻑48/50/12의 실제 획득·strong0/기존10장 불변, 선택29→28·홈/복원·skip/reduced를 검사했다. 정상·복원·capture safety를 합친 own20표적 모두 통과다. 내부 displayed 배열 전체·backface 전체를 이 App sampler가 노출한 것으로 주장하지 않는다. 전체 ID·예약 관련 기본 Game browser 회귀는 별도 포함됐으며 이전 합성의642 RAF 데이터를 이1506에 합산하지 않는다.
+
+[동일 head 독립 COMMENT](https://github.com/kywoo26/p2p-gostop/pull/237#pullrequestreview-5388538901)는 자동 merge-tree와 실제 tree 일치·보호 영역 diff0·두 plan 보존·새 제품 차단0을 확인했다. 독립 source-dev actualdefault42 C/W8PASS는 정상/P1복원/뻑 staging/선택 연쇄 홈 복원이다. 독립 W393×659110RAF는 hand293/deck694/strong1256 counter0·target8/31 첫이동1375ms 같은RAF/before오차0이다. 독립 C412×839113RAF는 strong1265.6/첫이동1382.5ms 같은RAF다. 작성자 결과와 합산하지 않는다. 승인/merge 판정·전체 영상 재생·실기기·인지/성능 수용은 아니다.
+
+[CI36966732215](https://github.com/kywoo26/p2p-gostop/actions/runs/36966732215)는 exacteebe의 최종3jobs SUCCESS다. 실제 CI synthetic commit `38297580738d74ca9536ccb42d51d6a20b2e65bd`의 parents는 mainf9+eebe, tree는 위 head와 같다. core/Android·C component549/E2E246/timing2·W component549가 성공했다. W E2E는177PASS와**1flaky**다. hand49의 첫 시도에서 `stageIntact:89`의 active RAF `>2`에 Received1로 실패한 뒤 설정된 retry1이 통과했다. 첫 시도의 뒤 위치/가림 assertion은 미도달이며 원인·제품 결함/무해 지연을 확정하지 않는다. job 성공으로 failure용 브라우저 artifact가 업로드되지 않아 첫 frames/trace를 읽을 수 없고 원로그만 보존했다. 첫 CI 시도 모두PASS로 쓰지 않는다. PR 정책상 W timing은 미실행이다.
+
+로컬 실제 build와 CI의 기존 web-dist artifact 모두75파일·raw **1,616,921B / 2,097,152B**, 여유480,231B·외부URL0이다. CI artifact ID11210112618을 한 번 읽어 파일별 hash·크기를 보존했으며 재빌드하지 않았다. 70파일은 로컬과 바이트 같고 build 식별자/시간과 이를 참조하는5파일 hash가 다르다. 초기 encoded body는 미측정이며 archive 압축 크기와 혼동하지 않는다.
+
+필수 검사·기존 W 정상 최소 반례는 이 실제 통합 head에서 확인했다. 실제 뻑 회수 중 별도 bonus·즉시 resolve/따닥의 추가 실제 경로, 나머지 수명·전수 기하/전체 성능·사용자 시각/실기기 수용은 이 한정 검사로 완료 처리하지 않는다. 이후 문서 checkpoint는 이 제품·시험·기준샷 blob을 보존하고 새 SHA/CI를 따로 인계한다. Draft/Refs 유지·Closes/자체 merge/tag/release/archive0이다.
