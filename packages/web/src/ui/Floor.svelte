@@ -250,7 +250,7 @@
         obstacles: monthStacks
           ? [
               ...table.querySelectorAll(
-                '.deck .card, .deck-stack, .deck-count, .compact-ppeok, .staging .card',
+                '.deck .card, .deck-stack, .deck-count, .compact-ppeok, .staging-reserve',
               ),
             ]
               .filter((el) => {
@@ -335,9 +335,16 @@
           class="compact-ppeok">{group.month}월 뻑</span
         >{/each}
     {/if}
-    <div class="staging">
-      {#each staging as id (id)}
-        <Card {id} size="m" flippable marks={false} />
+    {#if monthStacks}<span class="staging-reserve" aria-hidden="true"></span>{/if}
+    <div class="staging" data-staging-capacity={monthStacks ? 4 : undefined}>
+      {#each staging as id, index (id)}
+        {#if monthStacks}
+          <span class="stage-card" style:z-index={index + 1}>
+            <Card {id} size="m" flippable marks={false} />
+          </span>
+        {:else}
+          <Card {id} size="m" flippable marks={false} />
+        {/if}
       {/each}
     </div>
   </div>
@@ -500,8 +507,40 @@
     z-index: 2;
   }
 
-  .staging > :global(.card) {
+  .staging :global(.card),
+  .staging-reserve {
     box-shadow: 0 0.4rem 1rem oklch(0% 0 0 / 0.5);
+  }
+
+  .monthStacks .staging,
+  .staging-reserve {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--card-w-m);
+    height: var(--card-h-m);
+    pointer-events: none;
+  }
+  .staging-reserve {
+    visibility: hidden;
+    outline: var(--card-edge-width) solid transparent;
+  }
+  .monthStacks .staging :global(.card),
+  .staging-reserve {
+    box-shadow:
+      2px 2px 0 oklch(30% 0.1 25),
+      4px 4px 0 oklch(24% 0.08 25);
+  }
+  .monthStacks .stage-card {
+    position: absolute;
+    inset: 0;
+  }
+  :global(:root .board) .table.monthStacks .deck-count {
+    top: auto;
+    bottom: 1px;
+    left: calc(100% + 6px);
+    right: auto;
+    z-index: 3;
   }
 
   .floor {

@@ -122,6 +122,8 @@ E2E는 시드 1의 저장 세션으로 손패·바닥·더미 첫 장과 낼 카
 
 동일 seq 재생 중 제거된 카드·묶음의 실제 paint 영역은 최종 snapshot(eventSeq 교체) 또는 큐 해제까지 예약하고 선택 입력 잠금과 구별한다. resize에서는 예약도 새 bounds로 재투영해 검사한다. 판 번호 변경/더미 증가 재분배/remount는 reset, 복원된 최신 snapshot은 현재 ID/월을 reconcile한다. resize 탐색0은 strict 재투영 실패 시 제한 탐색으로 개정한다. 유효 witness가 있을 때 primary128, 없을 때8192 방문 상한을 적용하며, 실제-size witness의 별도 재귀한도128 및 후보/검증 비용도 기록한다. 후보 미발견은 불가능 증명이 아니다. tie는 고정된 월/카드 순서·이전 origin과의 거리·좌표 순서로 결정한다. 필수 재배치는 UX-02 취소 입력 경계를 지키고 수락된 권위를 rollback하지 않는다. skip/감소 모션은 최종 공개 CardId/쌓임/선택 ID로 수렴해야 하며 모션 beforepose 보존은 #200 통합에서 별도 확인한다.
 
+#235 고정 뒤집기 자리 개정안(리뷰 전 미채택): 공개 staging 원본은 중앙 덱의 고정 영역에서 현재 앞면을 맨 위에 표시한다. R1/B2의 보너스 최대3장과 현재 뒤집기 카드(최대4개의 원 CardId)는 원본 DOM/양수 실제 크기를 유지하며, 빈 상태부터 동일한 outline·가시2/4px 두께 paint를 배치 예약에 포함한다. 덱 잔량은 덱 옆 별도 paint 영역에서 보호한다. solver는 움직이는 canonical 카드나 ghost의 frame AABB 대신 이 고정 예약 영역을 사용하며, 이동 paint 비가림과 원target beforepose/active held/settled top은 별도 모션 계약이다. CSS 고정만으로 모든 native rect가 불변이라고 판단하지 않는다.
+
 **UX-17.** `prefers-reduced-motion: reduce`에서는 FLIP·스케일·플래시·자동 스태거를 0으로 하고 카드의 최종 배치, 사건 문구, 점수 변화는 그대로 보여 준다. 효과 강도 “끔”도 같은 시각 경로를 쓴다. 움직임은 `transform`·`opacity`만, `will-change`는 움직이는 카드에만 일시적으로 준다. 점수 숫자, 남은 더미 수, 차례 라벨, 내 손패의 읽는 방향, 배경/탁자, 정산 금액은 흔들거나 카운트업하지 않는다. 반복 동작·초당 3회 초과 플래시는 금지한다. WCAG 2.3.3은 AAA지만 제품 목표로 따른다.
 
 ## 6. 사건 효과 규범

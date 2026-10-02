@@ -451,3 +451,72 @@ test('차단중 0높이 측정은 DOM 원ID/예약을 지우지 않고 권위·s
   expect(ids()).toEqual([]);
   expect(table.dataset['floorSuspended']).toBe('false');
 });
+
+test('고정 staging paint는 bonus3와 뒤집기 카드의 수명 동안 월 pose와 counter를 보존한다', async () => {
+  await page.viewport(393, 659);
+  const groups = [
+    floorGroup(1, [1]),
+    floorGroup(2, [4]),
+    floorGroup(3, [8, 10]),
+    floorGroup(6, [20]),
+    floorGroup(7, [27]),
+    floorGroup(8, [31]),
+    floorGroup(9, [35]),
+    floorGroup(12, [45]),
+  ];
+  const initial = view(groups);
+  const empty = { gwang: [], yeol: [], tti: [], pi: [] };
+  const base = {
+    ...initial,
+    seats: [
+      {
+        ...initial.seats[0],
+        hand: [0, 2, 3, 5, 6, 7, 9, 11, 12, 13],
+        handCount: 10,
+        captured: empty,
+      },
+      { ...initial.seats[1], hand: null, handCount: 10, captured: empty },
+    ] as const,
+  };
+  const screen = await render(Board, { view: base, monthStacks: true });
+  await settle();
+  const table = screen.container.querySelector<HTMLElement>('.table')!;
+  const before = poses(screen.container),
+    measured = table.dataset['floorModelBounds'];
+  expect(table.dataset['floorFits']).toBe('true');
+  expect(before.map((p) => p.id).sort((a, b) => a - b)).toEqual(
+    groups.flatMap((g) => g.cards).sort((a, b) => a - b),
+  );
+  const reserve = screen.container.querySelector<HTMLElement>('.staging-reserve')!;
+  const counter = screen.container.querySelector<HTMLElement>('.deck-count')!;
+  const deck = screen.container.querySelector<HTMLElement>('[data-anchor="deck"]')!;
+  const fixed = reserve.getBoundingClientRect();
+  expect(overlap(fixed, counter.getBoundingClientRect())).toBe(false);
+  for (const ids of [[], [48], [48, 49], [48, 49, 50], [48, 49, 50, 30], []]) {
+    await screen.rerender({ view: { ...base, staging: ids } });
+    await settle();
+    expect(table.dataset['floorFits']).toBe('true');
+    expect(table.dataset['floorModelBounds']).toBe(measured);
+    expect(poses(screen.container)).toEqual(before);
+    const staged = [...screen.container.querySelectorAll<HTMLElement>('.staging [data-card-id]')];
+    expect(staged.map((e) => Number(e.dataset['cardId']))).toEqual(ids);
+    for (const card of staged) {
+      const r = card.getBoundingClientRect(),
+        d = deck.getBoundingClientRect();
+      expect(r.width).toBeGreaterThan(0);
+      expect(r.height).toBeGreaterThan(0);
+      expect(r.x).toBe(d.x);
+      expect(r.y).toBe(d.y);
+      expect(overlap(r, counter.getBoundingClientRect())).toBe(false);
+      expect(
+        screen.container.querySelectorAll(`[data-card-id="${card.dataset['cardId']}"]`),
+      ).toHaveLength(1);
+    }
+    if (ids.length) {
+      const top = staged.at(-1)!;
+      expect(top.closest<HTMLElement>('.stage-card')!.style.zIndex).toBe(String(ids.length));
+      expect(top.querySelector('.front')).not.toBeNull();
+      expect(top.querySelector('.back')).not.toBeNull();
+    }
+  }
+});
