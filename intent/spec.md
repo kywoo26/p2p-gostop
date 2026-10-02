@@ -281,7 +281,7 @@ wire4는 v3 이하에 명시 VERSION_MISMATCH를 반환한다. 게스트 저장 
 
 [#235](https://github.com/kywoo26/p2p-gostop/pull/235)는 일반 Game 경로에 월별 포개기를 연결하는 구현 개정안이다. 선행 [#233](https://github.com/kywoo26/p2p-gostop/pull/233)의 A 공유 pose와 초기 격자/비대칭안은 기각된 역사다. 아래 문구는 이 PR의 독립 검토/병합 전 확정 수용 상태가 아니다.
 
-- 손패/선택 후보48px·획득32px·종횡비0.614·전체 앞면 손패·두 행 예산·HUD·획득 label-card gap2px를 유지한다. 바닥/덱은42px이며 사용자 크기 조정 위임에 따른 root 구현 기준이지 숫자 직접 선택의 기록이 아니다. 폭699px 이하 portrait에서 Board 부모 row-gap만 기존 token−1/3px(최소0)로 바꿔 실측 바닥 공간을 확보한다. 손패 내부/획득 내부/전역 token/desktop은 변경하지 않는다.
+- 손패/선택 후보48px·획득32px·종횡비0.614·전체 앞면 손패·두 행 예산·HUD·획득 label-card gap2px를 유지한다. 바닥/덱은42px이며 사용자 크기 조정 위임에 따른 root 구현 기준이지 숫자 직접 선택의 기록이 아니다. 폭699px 이하 portrait에서 Board 부모 row-gap만 기존 token−2/3px(최소0)로 바꿔 실측 바닥 공간을 확보한다. 손패 내부/획득 내부/전역 token/desktop은 변경하지 않는다.
 - 바닥 독립5×3/중앙7번/14칸/모든 앞면100% 대신 같은 월의 각 카드에 distinct pose·일관된 대각 포개기와 월별 실제 paint footprint를 적용한다.2장은 서로 구별,3+는 묶음과 늘어난 층을 읽는다. 보너스가 있는 뻑은 중간 bonus/최종 생성 월패 top, 회수 월패는 위에 append한다. 정지 뻑 최대6과 획득직전 표시7은 구분하고 권위 배열/CardId는 불변이다. 월 origin·원CardId local pose·원target beforepose·settled pose는 서로 대체하지 않는다.
 - 실측 부모 bounds·덱 outline/shadow·현재 group actual footprint·같은 seq 제거 예약을 모두 검사한다. 유효 이전 pose/무관 월 strict 고정이 우선이며 손패6↔7 바닥 이동0/최종 snapshot·큐 해제 예약 release/round reset을 보존한다. resize strict 재투영 실패 때만 제한 재탐색하며 현재 primary128(유효 witness 있음)/8192(없음), 별도 actual-size witness 재귀한도128을 사용한다. 제한 탐색은 전역 최소이동/완전성의 증명이 아니다.
 - 일반 분산을 못 찾으면0° 경계/행 witness를 검사한다. 모든 현재 ID·paint 여백·예약·영역 검사를 통과한 결과만 사용한다. failed/cells[]를 정상 placement/다음 anchor 또는 카드 없는 사용자 fallback으로 채택하지 않는다. 긴급 행 예외는 일반 자연스러움 최종 수용이 아니며 알려진 판 성공으로 모든 합법/지원 상태 fit를 보장하지 않는다.

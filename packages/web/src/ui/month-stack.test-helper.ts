@@ -2,13 +2,10 @@
 import { legalActions, reduce, type CardId } from '@p2p-gostop/engine';
 import { createScenario } from '@p2p-gostop/engine/testing';
 
-export function mixedTwelveMonths() {
+export function mixedTwelveMonths(includeGrowth = false) {
   const floor = [0, 1, 4, 5, 8, 9, 12, 13];
-  const hands: [CardId[], CardId[]] = [
-    [16, 32],
-    [24, 40],
-  ];
-  const deck = [20, 28, 36, 44];
+  const hands: [CardId[], CardId[]] = [includeGrowth ? [16, 32, 17] : [16, 32], [24, 40]];
+  const deck = includeGrowth ? [20, 28, 36, 44, 18] : [20, 28, 36, 44];
   const used = new Set([...floor, ...hands.flat(), ...deck]);
   for (let id = 0; id <= 50; id++) {
     if (used.has(id)) continue;

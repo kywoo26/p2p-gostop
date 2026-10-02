@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { legalActions, reduce } from '@p2p-gostop/engine';
 import {
   floorPresentationOrder,
   floorRectsOverlap,
@@ -380,3 +381,37 @@ test('고정 stage/counter paint를 포함한 혼합16장은 한 위치가 탐�
   expect(layoutMonthFloor(groups, size, result).cells).toEqual(result.cells);
   expect(layoutMonthFloor([...groups].reverse(), size).cells).toEqual(result.cells);
 });
+
+for (const [width, height, x, y] of [
+  [336, 245.84375, 147, 88.7265625],
+  [366, 243.5, 162, 87.5546875],
+] as const) {
+  test(`합법5턴18장 성장 ${width}×${width === 366 ? 245.46875 : height}는 원본 ID를 누락하지 않는다`, () => {
+    const state = mixedTwelveMonths(true),
+      action = { type: 'play', seat: 0, card: 17 } as const;
+    expect(legalActions(state, 0)).toContainEqual(action);
+    const step = reduce(state, action);
+    if (!step.ok) throw Error(step.message);
+    const group = step.state.floor.find((g) => g.month === 5)!;
+    expect(group.cards).toEqual([16, 17, 18]);
+    expect(group.kind).toBe('ppeok');
+    const size = {
+      width,
+      height,
+      cardWidth: 42,
+      paintPadding: 1,
+      obstacles: [{ x, y, width: 46, height: 72.390625 }],
+    };
+    const prior = placed(layoutMonthFloor(state.floor, size));
+    // 실제390 부모 행간 변경의 측정값. solver에 배치 좌표를 주지 않는다.
+    const current =
+      width === 366
+        ? { ...size, height: 245.46875, obstacles: [{ ...size.obstacles[0]!, y: 88.5390625 }] }
+        : size;
+    const grown = placed(layoutMonthFloor(step.state.floor, current, prior, []));
+    safe(grown.cells, current);
+    expect(grown.cells.flatMap((c) => c.cards).sort((a, b) => a - b)).toEqual(
+      step.state.floor.flatMap((g) => g.cards).sort((a, b) => a - b),
+    );
+  });
+}

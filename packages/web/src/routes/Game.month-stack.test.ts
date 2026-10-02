@@ -240,7 +240,7 @@ for (const [width, height] of [
       const root = screen.container.querySelector<HTMLElement>('.board')!;
       const style = getComputedStyle(root);
       const budget = Number.parseFloat(style.getPropertyValue('--fan-gap'));
-      expect(Number.parseFloat(style.rowGap)).toBeCloseTo(budget - 1 / 3, 4);
+      expect(Number.parseFloat(style.rowGap)).toBeCloseTo(budget - 2 / 3, 4);
       expect(style.gridTemplateRows.split(' ')).toHaveLength(7);
       expect(root.getBoundingClientRect().height).toBe(height);
       for (const el of root.querySelectorAll<HTMLElement>('.floor [data-card-id]')) {
@@ -416,6 +416,92 @@ test('기본 Game 정산 뒤 실제 새 라운드는 현재 원본 ID·예약·�
     expect(screen.container.querySelector('.hand button')).not.toBeNull();
     expect(screen.container.querySelector('.overlay')).toBeNull();
   } finally {
+    solo.dispose();
+  }
+}, 15000);
+
+test('390 실제 Game play17 성장16→18은 큐 중간 원본 ID와 resize/복원 수명을 보존한다', async () => {
+  await page.viewport(390, 734);
+  const session = createSession({
+    preset: 'standard',
+    rules: PRESETS.standard,
+    perPoint: 100,
+    startBalance: 100000,
+    names: ['좌석0', '좌석1'],
+    seed: 1,
+  }).session;
+  const solo = new SoloSession(
+    { ...session, phase: 'playing', game: mixedTwelveMonths(true) },
+    {
+      difficulty: 'easy',
+      timeBudgetMs: 100,
+      persist: false,
+      ai: { mode: 'inline', decide: () => new Promise(() => {}), dispose() {} },
+    },
+  );
+  const screen = await render(Game, { controller: solo });
+  const expected = () => solo.playback.board.floor.flatMap((g) => g.cards).sort((a, b) => a - b);
+  const frames: { expected: number[]; actual: number[]; fits: string | null }[] = [];
+  let active = true,
+    raf = 0;
+  const record = () => {
+    frames.push({
+      expected: expected(),
+      actual: floorIds(screen.container),
+      fits: screen.container.querySelector('.table')?.getAttribute('data-floor-fits') ?? null,
+    });
+    if (active) raf = requestAnimationFrame(record);
+  };
+  try {
+    await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected()));
+    expect(expected()).toHaveLength(16);
+    raf = requestAnimationFrame(record);
+    await userEvent.click(
+      screen.container.querySelector<HTMLElement>('.hand [data-card-id="17"]')!.closest('button')!,
+    );
+    await vi.waitFor(() => expect(solo.state.game.floor.flatMap((g) => g.cards)).toHaveLength(18));
+    await vi.waitFor(() => expect(solo.playback.idle).toBe(true), { timeout: 10000 });
+    await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected()));
+    active = false;
+    cancelAnimationFrame(raf);
+    record();
+    expect(expected()).toHaveLength(18);
+    expect(frames.length).toBeGreaterThan(1);
+    for (const frame of frames) {
+      expect(frame.actual).toEqual(frame.expected);
+      expect(frame.fits).toBe('true');
+    }
+    expect(solo.state.game.floor.find((g) => g.month === 5)?.cards).toEqual([16, 17, 18]);
+    expect(screen.container.querySelector('.layout-diagnostic')).toBeNull();
+    for (const row of screen.container.querySelectorAll<HTMLElement>('.hand .row'))
+      expect(getComputedStyle(row).gap).toBe('4px');
+    for (const group of screen.container.querySelectorAll<HTMLElement>('.captured .group'))
+      expect(getComputedStyle(group).rowGap).toBe('2px');
+    for (const [width, height] of [
+      [360, 780],
+      [390, 734],
+    ] as const) {
+      await page.viewport(width, height);
+      await vi.waitFor(() =>
+        expect(screen.container.querySelector('.table')?.getAttribute('data-floor-fits')).toBe(
+          'true',
+        ),
+      );
+      expect(floorIds(screen.container)).toEqual(expected());
+      expect(screen.container.querySelector('.table')?.getAttribute('data-floor-reserved')).toBe(
+        '0',
+      );
+    }
+    solo.playback.reset(
+      toBoardView(playerView(solo.state.game, 0), {
+        names: ['좌석0', '좌석1'],
+        balances: [100000, 100000],
+      }),
+    );
+    await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected()));
+  } finally {
+    active = false;
+    cancelAnimationFrame(raf);
     solo.dispose();
   }
 }, 15000);
