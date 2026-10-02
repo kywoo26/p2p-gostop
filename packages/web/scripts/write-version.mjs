@@ -26,6 +26,8 @@ const types = new Set([
   'mp4',
 ]);
 const files = [];
+// wire 프로토콜과 독립적인 artifact 집합 v2: 공개 고지 원문도 무결성에 포함한다.
+const notices = ['cards/ATTRIBUTION.md', 'pro/NOTICE.md', 'oss/NOTICE.txt'];
 async function visit(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.') || entry.isSymbolicLink()) continue;
@@ -38,12 +40,15 @@ async function visit(dir) {
     const name = relative(root, path).split(sep).join('/');
     const ext = entry.name.split('.').at(-1)?.toLowerCase();
     // Kit의 source build ID와 앱 wire/hash manifest는 별개다. 정확한 생성 파일만 포함한다.
-    if (!types.has(ext) && name !== '_app/version.json') continue;
+    if (!types.has(ext) && name !== '_app/version.json' && !notices.includes(name)) continue;
     files.push([name, await readFile(path)]);
   }
 }
 await visit(root);
 if (!files.some(([name]) => name === 'index.html')) throw new Error('web dist requires index.html');
+for (const notice of notices) {
+  if (!files.some(([name]) => name === notice)) throw new Error(`missing public notice: ${notice}`);
+}
 const hash = createHash('sha256');
 for (const [name, body] of files.toSorted(([a], [b]) => a.localeCompare(b))) {
   hash.update(name);
@@ -52,5 +57,5 @@ for (const [name, body] of files.toSorted(([a], [b]) => a.localeCompare(b))) {
 }
 await writeFile(
   join(root, 'version.json'),
-  `${JSON.stringify({ wireVersion: PROTOCOL_VERSION, hash: hash.digest('hex') })}\n`,
+  `${JSON.stringify({ wireVersion: PROTOCOL_VERSION, hash: hash.digest('hex'), assetSetVersion: 2 })}\n`,
 );

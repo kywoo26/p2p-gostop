@@ -497,6 +497,8 @@ FR-RP-08 (Q-RP-10 확정): 앱 실행·친구와 대전 진입의 LOHS/포그라
 
 **SK3 정적 호환 준비(NP-08·NF-RP-06):** Kit 채택 시 생성되는 정확한 `_app/version.json`은 source build ID를 가진 client 버전 확인 파일이며, 앱 `version.json`의 `{wireVersion,hash}` 및 relay `/version` 제어 응답과 구별한다. 생성된 Kit 파일만 artifact 해시에 포함하고 relay는 기존 release/hash prefix 안에서 JSON MIME·`no-store`로 제공한다. 임의 JSON·root alias·source map·중간 서버 출력은 추가 공개하지 않는다. Android는 동일 dist를 루트에서 제공하며 기존 JSON MIME/no-store, 생성된 content hash 자산의 장기 캐시를 유지한다. 파일이 없는 기존 Vite artifact의 해시·wire 형식은 변하지 않는다. 이 정적 호환 준비는 Kit 생산 전환·자동 업데이트/재시작 정책이나 사용자 성능 수용의 완료를 뜻하지 않는다.
 
+**공개 고지 정적 계약(NF-07·NP-08·NF-RP-06):** 공개 고지는 정확한 `cards/ATTRIBUTION.md`, `pro/NOTICE.md`, `oss/NOTICE.txt` 세 경로다. UI는 배포 base를 보존하고 UTF-8 plain text·nosniff로 원문을 읽는다. 새 산출물은 앱 manifest에 `assetSetVersion:2`를 기록하고 세 파일을 모두 artifact hash에 포함한다. 필드가 없는 기존 산출물은 기존 hash 집합으로만 검증하며 고지 세 파일은 무결성 보장 밖이므로 `no-store`로 제공한다. 2 이외의 명시 값·필수 고지 누락·hash 불일치는 거절하고 legacy digest로 재시도하지 않는다. 새 consumer는 옛 산출물을 인수하지만 옛 consumer는 새 산출물을 거절하므로 consumer 갱신→새 산출물 순서가 필요하다. 이 구분자는 게임 wire 4와 독립적이며 운영 배포를 실행한 기록이 아니다. 임의 txt/md/JSON 전체 공개는 추가하지 않는다.
+
 ### 13.5 승인 후 수용 기준
 
 | ID | 조건 |

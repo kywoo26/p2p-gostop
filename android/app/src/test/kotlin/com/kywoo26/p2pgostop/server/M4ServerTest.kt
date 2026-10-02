@@ -112,6 +112,21 @@ class M4ServerTest {
         )) assertEquals(HttpStatusCode.NotFound, client.get("/$path").status, path)
     }
 
+    @Test fun `공개 고지 세 경로는 루트에서 원문 UTF8 nosniff no-store로 읽는다`() = testApplication {
+        val paths = listOf("cards/ATTRIBUTION.md", "pro/NOTICE.md", "oss/NOTICE.txt")
+        val files = paths.associateWith { "# 합성 고지 원문\n" }
+        application { smokeModule(env(files)) }
+        for (path in paths) {
+            val response = client.get("/$path")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(files[path], response.bodyAsText())
+            assertEquals("text/plain; charset=utf-8", response.headers[HttpHeaders.ContentType])
+            assertEquals("nosniff", response.headers["X-Content-Type-Options"])
+            assertTrue(response.headers[HttpHeaders.CacheControl]!!.contains("no-store"))
+        }
+        assertEquals(HttpStatusCode.NotFound, client.get("/oss/missing.txt").status)
+    }
+
     @Test fun `최신 소켓이 역할을 교체하고 알림과 양방향 전달 순서가 유지된다`() = testApplication {
         val e = env()
         application { smokeModule(e) }

@@ -397,6 +397,7 @@ internal class RelayEnqueuePolicy<T>(
 }
 
 private val HASHED_ASSET = Regex("^assets/[A-Za-z0-9_/-]+-[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9]+$")
+private val PUBLIC_NOTICES = setOf("cards/ATTRIBUTION.md", "pro/NOTICE.md", "oss/NOTICE.txt")
 // Kit의 생성 namespace 안 content hash 파일만 장기 캐시한다. _app/version.json은 no-store다.
 private val KIT_HASHED_ASSET = Regex("^_app/immutable/(?:assets|chunks|entry|nodes|workers)/(?:[A-Za-z0-9_./-]*[.-])?[A-Za-z0-9_-]{8,}\\.(?:js|css|woff2|svg|png|jpg|jpeg|webp|avif|wasm|ogg|mp3|wav)$")
 
@@ -411,7 +412,8 @@ private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall,
         call.respondText("Not found", status = HttpStatusCode.NotFound)
         return
     }
-    val type = when (path.substringAfterLast('.', "")) {
+    // 고지는 브라우저에서 원문으로 읽는다. 기존 asset 공개 범위를 확장하지 않는다.
+    val type = if (path in PUBLIC_NOTICES) ContentType.Text.Plain.withParameter("charset", "utf-8") else when (path.substringAfterLast('.', "")) {
         "html" -> ContentType.Text.Html.withParameter("charset", "utf-8")
         "js" -> ContentType.parse("text/javascript; charset=utf-8")
         "css" -> ContentType.Text.CSS.withParameter("charset", "utf-8")
@@ -422,6 +424,7 @@ private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall,
         "woff2" -> ContentType.parse("font/woff2")
         else -> ContentType.Application.OctetStream
     }
+    if (path in PUBLIC_NOTICES) call.response.header("X-Content-Type-Options", "nosniff")
     call.response.header(HttpHeaders.CacheControl, if (path != "index.html" && (HASHED_ASSET.matches(path) || KIT_HASHED_ASSET.matches(path)))
         "public, max-age=31536000, immutable" else CacheControl.NoStore(null).toString())
     val content = bytes ?: "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><title>맞고</title><body><p>웹 번들이 없습니다.</p><a href=\"/smoke\">연결 확인</a></body></html>".toByteArray()

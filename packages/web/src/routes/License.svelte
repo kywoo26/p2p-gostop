@@ -42,7 +42,9 @@
       <dt>변경</dt>
       <dd>{CARD_ART_CHANGES}</dd>
     </dl>
-    <a class="button" href={attributionHref}>파일별 출처 목록 (ATTRIBUTION.md)</a>
+    <a class="button" data-sveltekit-reload href={attributionHref}
+      >파일별 출처 목록 (ATTRIBUTION.md)</a
+    >
   </section>
 
   <section aria-labelledby="lic-original">
@@ -77,7 +79,8 @@
   <section aria-labelledby="lic-dependencies">
     <h2 id="lic-dependencies">배포 의존성</h2>
     <p>웹·Android 의존성 고지는 앱에 포함된 파일에서 확인할 수 있습니다.</p>
-    <a class="button" href={`${import.meta.env.BASE_URL}oss/NOTICE.txt`}>전체 공개 소스 고지 읽기</a
+    <a class="button" data-sveltekit-reload href={`${import.meta.env.BASE_URL}oss/NOTICE.txt`}
+      >전체 공개 소스 고지 읽기</a
     >
   </section>
   <section aria-labelledby="lic-pro">
@@ -85,7 +88,9 @@
     {#each PRO_CREDITS as item (item.source)}<p>{item.author} · {item.license}</p>
       <code>{item.source}</code><code>{item.licenseUrl}</code>
       <p>{item.changes}</p>{/each}
-    <a class="button" href="/pro/NOTICE.md">파일별 출처 목록</a>
+    <a class="button" data-sveltekit-reload href={`${import.meta.env.BASE_URL}pro/NOTICE.md`}
+      >파일별 출처 목록</a
+    >
   </section>
 </Screen>
 

@@ -1,6 +1,6 @@
 // NF-07: Node만으로 실제 Vite 출력·npm lockfile과 커밋된 웹 고지를 대조한다.
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -37,6 +37,12 @@ test('실제 배포 JS 모듈의 직·간접 npm 패키지가 모두 원문 고�
     assert.equal(item.license, locked.license, `npm 라이선스 불일치: ${item.name}`);
     assert.ok(text.includes(`${item.name} ${item.version} — ${item.license}`));
     assert.ok(text.includes(`### ${item.name} ${item.version}`));
+    const dir = new URL(`../../../node_modules/${item.name}/`, import.meta.url);
+    const license = (await readdir(dir)).find((name) => /^LICEN[SC]E(?:\..*)?$/i.test(name));
+    assert.ok(license, `설치 패키지 라이선스 원문 누락: ${item.name}`);
+    const original = await readFile(new URL(license, dir), 'utf8');
+    assert.ok(text.includes(original), `원문 바이트 불일치: ${item.name}`);
   }
+  assert.equal(await readFile(new URL('../dist/oss/NOTICE.txt', import.meta.url), 'utf8'), text);
   assert.ok(text.includes('Copyright (c) Luke Edwards'));
 });
