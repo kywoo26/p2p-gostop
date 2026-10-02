@@ -1,7 +1,12 @@
-/* SK3-R1: 재질/의미 토큰. 게임판 구조는 ui/board-layout.css 단독 소유. */
+/* SK3-R2: 낮은 플레이 면·획득 받침·정보 표면. 구조는 Board layout 단독 소유. */
 :root {
-  --table-muted: #c3b9a8;
-  --table-border: #b9a98455;
-  --table-radius: 4px;
-  --board-background: #172723;
+  --table-muted: #bacdc7;
+  --table-border: #b8d3c333;
+  --table-radius: 10px;
+  --table-well: #092522;
+  --table-tray: #051b1952;
+  --table-seat: #16332fe8;
+  --table-seat-active: #274a40;
+  --table-turn: #bbdfc9;
+  --table-depth: inset 0 1px 4px #0005, 0 1px #e8fff00a;
 }

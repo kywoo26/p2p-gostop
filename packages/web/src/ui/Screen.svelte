@@ -20,7 +20,17 @@
 <main class="screen" class:scroll-body={scrollBody}>
   <Scene scene={title === '정산' ? 'settlement' : 'screen'} />
   <header>
-    {#if back !== null}<a class="back" href={back} aria-label="뒤로">←</a>{/if}
+    {#if back !== null}<a class="back" href={back} aria-label="뒤로"
+        ><svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"><path d="m14 5-7 7 7 7M7 12h14" /></svg
+        ></a
+      >{/if}
     <h1>{title}</h1>
     {#if title === '정산'}<Sprite kind="settlement" />{/if}
   </header>
@@ -40,6 +50,8 @@
 
 <style>
   .screen {
+    position: relative;
+    isolation: isolate;
     min-height: 100dvh;
     max-width: 30rem;
     margin: 0 auto;
@@ -53,7 +65,10 @@
   header {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    min-height: 64px;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-divider);
   }
 
   h1 {
@@ -69,16 +84,27 @@
     width: var(--touch-min);
     height: var(--touch-min);
     margin-left: calc(var(--space-2) * -1);
-    border-radius: var(--radius-m);
+    border-radius: 50%;
+    background: var(--color-surface-soft, var(--color-surface));
     color: var(--color-text);
     font-size: 1.5rem;
     text-decoration: none;
+  }
+  .back svg {
+    width: 24px;
+    height: 24px;
+  }
+  .back:focus-visible,
+  .body:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
   }
 
   .body {
     display: grid;
     align-content: start;
     gap: var(--space-4);
+    min-width: 0;
   }
 
   .actions {
@@ -86,6 +112,8 @@
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-divider);
   }
 
   .scroll-body {
@@ -120,6 +148,7 @@
     font: inherit;
     font-size: var(--font-size-l);
     text-decoration: none;
+    cursor: pointer;
   }
 
   .screen :global(.button.primary) {
@@ -127,6 +156,18 @@
     border-color: transparent;
     color: var(--color-on-accent);
     font-weight: 700;
+    box-shadow: var(--shadow-control, 0 4px 12px #0002);
+  }
+  .screen :global(.button:disabled) {
+    cursor: default;
+    border: 1px dashed var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    box-shadow: none;
+  }
+  .screen :global(.button:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
   }
 
   .screen :global(section) {

@@ -69,12 +69,13 @@ npm ci                                   # 처음, 그리고 package-lock.json�
 npm run lint
 npm run check
 npm test
-npm run test:browser
+npm run test:browser -w packages/web -- --project=chromium --maxWorkers=4
+npm run test:browser -w packages/web -- --project=webkit --maxWorkers=1
 npm run build -w packages/web
 npm run e2e:smoke -w packages/web
 android/gradlew -p android assembleDebug testDebugUnitTest lint
 ```
-  `npm run verify`는 npm ci 제외, E2E는 full로 위 검증을 차례로 돈다.
+  WebKit component는 로컬·CI 모두 worker 1로 실행한다(SK3-R2). Chromium 로컬은 공유 부하 상한4, CI의 기존 명령은 유지한다. workspace를 직접 지정하여 루트 script의 중첩 옵션 전달을 피한다. 현재 `npm run verify`의 browser 단계는 엔진별 worker를 분리하지 않으므로 이 필수 묶음은 위 명시 명령으로 실행한다(E2E full 검증은 `e2e:smoke` 대신 `e2e`).
 - 그 밖: `npm run dev -w packages/web`(Vite, 5173), `npm run start -w packages/relay-dev`(중계, 17777), `npm run sim -- --workers 4 …`, 스크린샷 기준 갱신 `npm run e2e -w packages/web -- --update-snapshots`, 자산 변환 `uv run packages/web/scripts/build-pro-assets.py`(파이썬 스크립트는 모두 `uv run`, 의존성은 스크립트의 PEP 723 메타데이터).
 - 공유 머신 부하: 여러 에이전트가 한 호스트를 쓴다. E2E는 설정 기본값(로컬 4 workers)을 넘기지 않고, `sim`은 `--workers 4` 이하(기본값은 CPU 수), Gradle은 `--max-workers=4` 이하, `@timing`(AC-06)은 설정대로 직렬로 둔다.
 - 호스트와 CI 결과가 다르면 버전 핀(위 1장 목록)과 `tools/setup-host.sh` 출력부터 대조한다. 문서에 남은 옛 표기 `docker compose run --rm dev <명령>`은 호스트 `<명령>`과 같다(개발 이미지는 2026-09-30 삭제).

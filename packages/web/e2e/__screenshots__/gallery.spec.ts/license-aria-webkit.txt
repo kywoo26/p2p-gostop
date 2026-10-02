@@ -1,7 +1,6 @@
 - main:
   - link "뒤로":
     - /url: "#/"
-    - text: ←
   - heading "라이선스" [level=1]
   - region "화투 그림 (0~47번 카드)":
     - heading "화투 그림 (0~47번 카드)" [level=2]

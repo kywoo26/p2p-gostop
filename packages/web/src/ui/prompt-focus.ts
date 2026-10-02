@@ -76,6 +76,15 @@ export function promptFocus(panel: HTMLElement) {
     document.removeEventListener('focusin', retainFocus);
     queueMicrotask(() => {
       if ([...panels].some((node) => node.isConnected)) return;
+      // 새 화면이 이미 받은 초점을 사라지는 선택 창의 복귀가 덮지 않는다.
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        active !== document.body &&
+        !panel.contains(active) &&
+        available(active)
+      )
+        return;
       if (previous && available(previous) && previous !== document.body) {
         previous.focus({ preventScroll: true });
       } else {

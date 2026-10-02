@@ -327,12 +327,11 @@ export function auditLayout() {
     }
   }
   const center = board?.querySelector('.center')?.getBoundingClientRect();
-  // 진영의 상태판은 차례와 무관하게 같은 바탕·안쪽 여백을 가진다.
+  // SK3-R2 / UX-24: 양 진영의 공통 치수는 같고, 차례에 따라 활성 바탕만 달라진다.
   const seatPanels = [...(board?.querySelectorAll<HTMLElement>('.opponent-hud, .mine-hud') ?? [])];
   if (seatPanels.length === 2) {
     const styles = seatPanels.map((el) => getComputedStyle(el));
     for (const property of [
-      'backgroundColor',
       'paddingTop',
       'paddingBottom',
       'paddingLeft',
@@ -341,7 +340,17 @@ export function auditLayout() {
     ] as const)
       if (styles[0]![property] !== styles[1]![property])
         issues.push(`seat style mismatch: ${property}`);
-    if (styles[0]!.backgroundColor === 'rgba(0, 0, 0, 0)') issues.push('seat background missing');
+    // skin-fan.css의 --table-seat / --table-seat-active 실제 색 계약을 양 진영에 적용한다.
+    const awaiting = board?.getAttribute('data-awaiting');
+    if (awaiting !== 'me' && awaiting !== 'other') issues.push('seat awaiting state missing');
+    const activeColor = 'rgb(39, 74, 64)';
+    const inactiveColor = 'rgba(22, 51, 47, 0.91)';
+    for (const [index, style] of styles.entries()) {
+      const active = awaiting === (index === 0 ? 'other' : 'me');
+      if (style.backgroundColor !== (active ? activeColor : inactiveColor))
+        issues.push(`seat background mismatch: ${index === 0 ? 'opponent' : 'mine'}`);
+      if (style.backgroundColor === 'rgba(0, 0, 0, 0)') issues.push('seat background missing');
+    }
     const opponentCapture = board
       ?.querySelector('.captured-zone:not(.mine)')
       ?.getBoundingClientRect();
