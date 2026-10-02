@@ -389,7 +389,7 @@
                 {id}
                 size="m"
                 flippable
-                highlight={highlight.includes(id)}
+                highlight={highlight.includes(id) || handLinks[group.month] !== undefined}
                 dimmed={options.length > 0}
                 marks={false}
               />
