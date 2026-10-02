@@ -14,7 +14,8 @@ import {
 import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 import { tick } from 'svelte';
 import { deal, planTurn, replay, skip, unskip, waitHold, type ReplayHost } from '../anim/choreo.ts';
-import { baseMs, durationMs, scaledMs } from '../anim/durations.ts';
+import { baseMs, durationMs, scaledMs, durScale } from '../anim/durations.ts';
+import { LandingScene } from '../anim/landing.ts';
 import type { BoardView } from '../lib/view-types.ts';
 import { bannerForEngineEvent, completedJokbo, type Banner } from '../ui/banner.ts';
 import { cardLabel } from '../ui/cards.ts';
@@ -147,6 +148,7 @@ export class Playback {
   private pumping = false;
   private generation = 0;
   private activeRoot: HTMLElement | null = null;
+  private landing: LandingScene | null = null;
   /** 현재 재생 묶음에서 탭 스킵을 요청했는지, 다음 AI 생각 간격에 전달한다 */
   private skipped = false;
   private disposed = false;
@@ -182,10 +184,21 @@ export class Playback {
     if (root === null) {
       // 마운트가 사라져도 수락된 정상 이벤트는 한 번씩 끝내고 최신 뷰로 스냅한다.
       if (this.activeRoot !== null) skip(this.activeRoot);
+      this.landing?.dispose();
+      this.landing = null;
       this.host = null;
       return;
     }
+    if (this.landing?.root !== root) {
+      this.landing?.dispose();
+      this.landing = new LandingScene(root);
+    }
     this.host = { root };
+    const generation = this.generation;
+    void tick().then(() => {
+      if (generation === this.generation && this.host?.root === root && !this.busy)
+        this.convergeContact();
+    });
     void this.pump();
   }
 
@@ -224,6 +237,10 @@ export class Playback {
     this.milestones = [];
     this.settlement = settlement;
     this.skipped = false;
+    const generation = this.generation;
+    void tick().then(() => {
+      if (generation === this.generation && !this.disposed && !this.busy) this.convergeContact();
+    });
   }
 
   /** 남은 애니메이션을 즉시 끝낸다 (spec 6.3 "화면을 탭하면 즉시 완료") */
@@ -237,6 +254,8 @@ export class Playback {
   dispose(): void {
     this.disposed = true;
     this.invalidate();
+    this.landing?.dispose();
+    this.landing = null;
     this.host = null;
     this.queue = [];
     this.pending = 0;
@@ -245,10 +264,25 @@ export class Playback {
   private invalidate(): void {
     this.generation += 1;
     if (this.activeRoot !== null) skip(this.activeRoot);
+    this.landing?.clear();
     if (this.bannerTimer !== null) clearTimeout(this.bannerTimer);
     this.bannerTimer = null;
     this.banner = null;
     this.clearToast();
+  }
+
+  private convergeContact(): void {
+    const scene = this.landing,
+      flight = this.board.inFlight;
+    if (
+      scene === null ||
+      flight?.played == null ||
+      flight.playTarget == null ||
+      durScale(scene.root) === 0
+    )
+      return;
+    if (!scene.has(flight.played)) scene.placeContact(flight.played, flight.playTarget);
+    scene.hideOriginals();
   }
 
   private async pump(): Promise<void> {
@@ -299,6 +333,7 @@ export class Playback {
       this.pumping = false;
       this.busy = false;
       if (this.host !== null) unskip(this.host.root);
+      if (!this.disposed) this.convergeContact();
     }
     if (!this.disposed && this.idle) this.onIdle?.(wasSkipped);
   }
@@ -367,10 +402,31 @@ export class Playback {
           };
         await deal(host, batch.board);
       } else {
-        await replay(host, this.board, events);
+        const evidence = batch.publicTarget?.evidence;
+        const acceptedContact =
+          evidence !== undefined &&
+          batch.publicTarget?.namespace.round === this.board.round &&
+          evidence.baseSeq === this.board.eventSeq &&
+          this.board.pending?.kind === 'target' &&
+          this.board.pending.source === 'play' &&
+          this.board.pending.seat === evidence.seat &&
+          this.board.pending.card === evidence.card &&
+          this.board.pending.options.includes(evidence.target)
+            ? { card: evidence.card, target: evidence.target }
+            : undefined;
+        if (events.length === 0) this.landing?.clear();
+        await replay(host, this.board, events, {
+          ...(this.landing === null ? {} : { scene: this.landing }),
+          ...(acceptedContact === undefined ? {} : { acceptedContact }),
+        });
       }
       const replayEndedAt = performance.now();
-      if (current()) await commit(batch.board);
+      if (current()) {
+        await commit(batch.board);
+        if (batch.board.inFlight?.playTarget == null || host === null || durScale(host.root) === 0)
+          this.landing?.clear();
+        else this.convergeContact();
+      }
       return { firstCommitAt, replayEndedAt, completedAt: performance.now(), steps };
     } finally {
       if (host !== null && ((!current() && !this.skipped) || this.host?.root !== host.root))
@@ -405,6 +461,7 @@ export class Playback {
     const plannedMs = planTurn(
       batch.events,
       document.documentElement.dataset['speed'] === 'normal',
+      measured.steps.some((step) => step.kind === 'contact'),
     ).plannedMs;
     const pending = batch.board.pending;
     const promptAfter = pending !== null && pending.seat === this.viewer && pending.kind !== 'play';

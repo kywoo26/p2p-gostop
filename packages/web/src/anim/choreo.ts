@@ -5,10 +5,11 @@
 // 빠름 묶음이 턴 예산(spec 6.4 탭→턴 종료 ≤ 700ms)을 넘을 것 같으면 이동 시간을 비율로 줄인다.
 // 기본 보통은 각 이동 뒤에 인지용 정지를 둔다(UX-15).
 // --dur-scale이 0(즉시 모드·동작 줄이기·건너뛰기)이면 측정·애니메이션 없이 커밋만 한다.
-import type { EngineEvent } from '@p2p-gostop/engine';
+import { getCard, GUKJIN_ID, type CardId, type EngineEvent } from '@p2p-gostop/engine';
 import { applyEvent, placeOf, type CardPlace, type DisplayBoard } from '../game/display.ts';
 import { DUR, NORMAL_DUR, baseMs, durScale } from './durations.ts';
 import { finishAll, flipCard, flipMove, sequence } from './flip.ts';
+import { cardPose, LandingScene, originalCards, type CardPose } from './landing.ts';
 
 export interface ReplayHost {
   /** 보드 루트: 카드 요소 측정, 건너뛰기(--dur-scale: 0), finishAll 범위 */
@@ -23,7 +24,7 @@ export interface ReplayHost {
   onStep?(kind: StepKind, ms: number): void;
 }
 
-type StepKind = 'play' | 'draw' | 'flip' | 'match' | 'collect' | 'none';
+type StepKind = 'play' | 'contact' | 'draw' | 'flip' | 'match' | 'collect' | 'none';
 
 export interface AnimStep {
   readonly kind: StepKind;
@@ -90,6 +91,7 @@ function stepMs(step: AnimStep, normal: boolean): number {
   const d = normal ? NORMAL_DUR : DUR;
   switch (step.kind) {
     case 'play':
+    case 'contact':
       return d.handToFloor;
     case 'draw':
     case 'flip':
@@ -122,8 +124,13 @@ export interface TurnPlan {
 }
 
 /** 이벤트 묶음의 애니메이션 계획 (replay와 같은 계산) */
-export function planTurn(events: readonly EngineEvent[], normal = false): TurnPlan {
+export function planTurn(
+  events: readonly EngineEvent[],
+  normal = false,
+  acceptedContact = false,
+): TurnPlan {
   const steps = planSteps(events);
+  if (acceptedContact) steps.unshift({ kind: 'contact', events: [] });
   const d = normal ? NORMAL_DUR : DUR;
   const rawMs = steps.reduce((sum, s) => sum + stepMs(s, normal), 0);
   const factor = !normal && rawMs > TURN_PLAN_MS ? TURN_PLAN_MS / rawMs : 1;
@@ -131,6 +138,7 @@ export function planTurn(events: readonly EngineEvent[], normal = false): TurnPl
   const holdMs = steps.map((s) => {
     switch (s.kind) {
       case 'play':
+      case 'contact':
         return d.playHold;
       case 'draw':
       case 'flip':
@@ -195,108 +203,342 @@ function isCaptured(place: CardPlace): boolean {
   return place === 'captured0' || place === 'captured1';
 }
 
-/** 단계 하나 실행: 이벤트 적용 → 커밋 → 자리가 바뀐 카드를 FLIP */
+export interface ReplayOptions {
+  readonly scene?: LandingScene;
+  /** 성공한 공개 수락 전이만. snapshot 현재 관계와 구분한다. */
+  readonly acceptedContact?: { readonly card: CardId; readonly target: CardId };
+}
+
+interface ContactContext {
+  played: CardId | null;
+}
+
+/** 유일 공개짝·자동 뻑묶음만 추론한다. 둘 중 선택은 수락 metadata/Matched.target을 기다린다. */
+function automaticTarget(board: DisplayBoard, id: CardId): CardId | null {
+  const month = getCard(id).month;
+  if (month === null) return null;
+  const group = board.floor.find((g) => g.month === month);
+  const cards = group?.cards.filter((card) => card !== id) ?? [];
+  return cards.length === 1 || (group !== undefined && group.kind !== 'loose')
+    ? (cards[0] ?? null)
+    : null;
+}
+
+function targetForFlip(board: DisplayBoard, id: CardId, context: ContactContext): CardId | null {
+  if (getCard(id).month === null) return null;
+  if (context.played !== null && getCard(context.played).month === getCard(id).month)
+    return context.played;
+  return automaticTarget(board, id);
+}
+
+async function contact(
+  host: ReplayHost,
+  scene: LandingScene,
+  card: CardId,
+  target: CardId,
+  duration: number,
+) {
+  const to = scene.contactPose(target, card);
+  if (to === undefined || host.isCurrent?.() === false) return;
+  const animation = scene.move(card, to, duration);
+  if (animation !== undefined) await sequence(() => animation);
+  if (host.isCurrent?.() === false || durScale(host.root) === 0) return;
+  // 약한 관계 강조는 획득 확정과 다르다. 기존 정지 시간에 한 번 표시한다.
+  void sequence(() =>
+    scene.pulse([card, target], false, Math.min(duration, baseMs('matchHighlight', host.root))),
+  );
+}
+
+function destination(root: HTMLElement, id: CardId, board: DisplayBoard): CardPose | undefined {
+  const original = originalCards(root).find((el) => Number(el.dataset['cardId']) === id);
+  if (original !== undefined) return cardPose(original, root);
+  // summary의 최근4 밖 ID: 종류 칸의 실제 stack endpoint로 마감한다. canonical ID를 추가하지 않는다.
+  const seat = placeOf(board, id) === 'captured0' ? 0 : 1;
+  const mine = seat === board.viewer;
+  const kind = getCard(id).kind;
+  const pile =
+    id === GUKJIN_ID && board.seats[seat].gukjinAsPi ? 'pi' : kind === 'bonus' ? 'pi' : kind;
+  const stack = root.querySelector<HTMLElement>(
+    '.captured-zone' + (mine ? '.mine' : ':not(.mine)') + ' [data-pile="' + pile + '"] .stack',
+  );
+  if (stack === null) return undefined;
+  const sample = stack.querySelector<HTMLElement>('.card');
+  if (sample === null) return undefined;
+  const pose = cardPose(sample, root),
+    rect = stack.getBoundingClientRect();
+  return {
+    ...pose,
+    rect: new DOMRect(rect.right - pose.width, rect.top, pose.width, pose.height),
+    angle: 0,
+  };
+}
+
+/** 단계 하나. 이벤트열·onEvent는 원순서 그대로, 시각 관계만 별도로 투영한다. */
 async function runStep(
   host: ReplayHost,
   board: DisplayBoard,
   step: AnimStep,
   factor: number,
-  /** 이 단계의 계획 시간 (planTurn().stepMs, 줄인 뒤) */
   plannedMs: number,
   holdMs: number,
+  scene: LandingScene,
+  context: ContactContext,
 ): Promise<DisplayBoard> {
   if (host.isCurrent?.() === false) return board;
+  const active = durScale(host.root) !== 0;
+  const contacts: { card: CardId; target: CardId }[] = [];
+  const settled: CardId[] = [];
+  const captured: CardId[] = [];
   let next = board;
   for (const event of step.events) {
-    if (host.isCurrent?.() === false) return board;
+    if (active) {
+      if (event.type === 'CardPlayed' && !event.bonus) {
+        const card = event.cards[0];
+        if (card !== undefined) {
+          context.played = card;
+          const target = automaticTarget(next, card);
+          if (target !== null) contacts.push({ card, target });
+        }
+      } else if (event.type === 'Bomb') {
+        const target = event.cards[event.handCards];
+        if (target !== undefined)
+          for (const card of event.cards.slice(0, event.handCards)) contacts.push({ card, target });
+      } else if (event.type === 'Matched') {
+        const card = event.cards[0];
+        if (card !== undefined && !scene.has(card)) contacts.push({ card, target: event.target });
+      }
+      if (event.type === 'Captured' || event.type === 'PiStolen') captured.push(...event.cards);
+      if (event.type === 'Ppeok' || event.type === 'Placed') settled.push(...event.cards);
+      if (event.type === 'CardFlipped') {
+        const card = event.cards[0];
+        if (card !== undefined) {
+          const target = targetForFlip(next, card, context);
+          if (target !== null) scene.reserve(target);
+        }
+      }
+    }
     next = applyEvent(next, event);
     host.onEvent(event);
     if (host.isCurrent?.() === false) return board;
   }
-  if (step.kind === 'none' || durScale(host.root) === 0) {
+  if (step.kind === 'none' || !active) {
+    scene.clear();
     await host.commit(next);
     return next;
   }
   const before = measure(host.root);
+  // 제거·재배치 전에 원본 target/획득 카드의 pose를 확보한다.
+  for (const relation of contacts) {
+    scene.reserve(relation.target);
+    scene.reserve(relation.card);
+  }
+  for (const id of captured) scene.reserve(id);
+  for (const id of settled) scene.reserve(id);
+  const captureSources = new Map(
+    captured.flatMap((id) => {
+      const pose = scene.pose(id);
+      return pose === undefined ? [] : [[id, pose] as const];
+    }),
+  );
+  const highlightMs = captured.length === 0 ? 0 : plannedMs * 0.22;
+  if (captured.length > 0) {
+    await sequence(() => scene.pulse(captured, true, highlightMs));
+    if (host.isCurrent?.() === false) return board;
+  }
   await host.commit(next);
   if (host.isCurrent?.() === false) return next;
+  scene.hideOriginals();
   const after = measure(host.root);
-  const ms = (base: number) => base * factor;
   const animations: Animation[] = [];
-  let captureIndex = 0;
-  for (const el of host.root.querySelectorAll<HTMLElement>('[data-card-id]')) {
-    if (el.closest('dialog') !== null) continue;
+  animations.push(...scene.settle(settled, plannedMs));
+  const ms = (base: number) => base * factor;
+  const revealed: { card: CardId; target: CardId }[] = [];
+  for (const event of step.events)
+    if (event.type === 'CardFlipped') {
+      const card = event.cards[0];
+      if (card === undefined) continue;
+      const target = targetForFlip(board, card, context);
+      if (target !== null) {
+        scene.reserve(target);
+        scene.reserve(card);
+        revealed.push({ card, target });
+      }
+    }
+  const destinations = new Map(
+    captured.flatMap((id) => {
+      const to = destination(host.root, id, next);
+      return to === undefined ? [] : [[id, to] as const];
+    }),
+  );
+  for (const id of captured) {
+    const to = destinations.get(id),
+      from = captureSources.get(id);
+    if (to === undefined || from === undefined) continue;
+    // 같은 월의 각 묶음은 45%까지 같은 벡터로 함께 출발한다.
+    const members = captured.filter(
+      (other) =>
+        getCard(other).month === getCard(id).month &&
+        captureSources.has(other) &&
+        destinations.has(other),
+    );
+    const dx =
+      (members.reduce((sum, other) => {
+        const a = captureSources.get(other)!.rect,
+          b = destinations.get(other)!.rect;
+        return sum + b.x + b.width / 2 - a.x - a.width / 2;
+      }, 0) /
+        members.length) *
+      0.4;
+    const dy =
+      (members.reduce((sum, other) => {
+        const a = captureSources.get(other)!.rect,
+          b = destinations.get(other)!.rect;
+        return sum + b.y + b.height / 2 - a.y - a.height / 2;
+      }, 0) /
+        members.length) *
+      0.4;
+    const via = {
+      ...from,
+      rect: new DOMRect(from.rect.x + dx, from.rect.y + dy, from.rect.width, from.rect.height),
+    };
+    const animation = scene.move(id, to, plannedMs - highlightMs, via);
+    if (animation !== undefined) animations.push(animation);
+  }
+  for (const el of originalCards(host.root)) {
     const key = el.dataset['cardId'];
     if (key === undefined) continue;
-    const to = after.get(key);
-    if (to === undefined) continue;
-    const id = Number(key);
-    const from = before.get(key);
-    const was = placeOf(board, id);
-    const now = placeOf(next, id);
+    const id = Number(key),
+      to = after.get(key),
+      from = before.get(key);
+    if (to === undefined || captured.includes(id) || scene.has(id)) continue;
+    const was = placeOf(board, id),
+      now = placeOf(next, id);
     const inner = el.querySelector<HTMLElement>('.inner');
     if (from === undefined) {
-      // 새로 나타난 카드: 더미에서 뒤집혀 나오거나(뒤집기·보충) 상대 손패에서 나온다
       const fromDeck = step.kind === 'flip' || step.kind === 'draw';
       const source = before.get(fromDeck ? '@deck' : '@opp-hand');
       if (source === undefined) continue;
       const duration = ms(baseMs(fromDeck ? 'flip' : 'handToFloor', host.root));
       animations.push(flipMove(el, source, to, { duration }));
       if (inner !== null) animations.push(flipCard(inner, { duration }));
-      continue;
-    }
-    if (!moved(from, to)) continue;
-    if (isCaptured(now) && !isCaptured(was)) {
-      animations.push(
-        flipMove(el, from, to, {
-          duration: ms(baseMs('capture', host.root)),
-          delay: ms(baseMs('captureStagger', host.root) * captureIndex),
-        }),
+    } else if (moved(from, to)) {
+      const duration = ms(
+        baseMs(
+          isCaptured(now) && isCaptured(was) && now !== was
+            ? 'steal'
+            : was === 'hand'
+              ? 'handToFloor'
+              : 'matchHighlight',
+          host.root,
+        ),
       );
-      captureIndex += 1;
-    } else if (isCaptured(now) && isCaptured(was) && now !== was) {
-      animations.push(flipMove(el, from, to, { duration: ms(baseMs('steal', host.root)) }));
-    } else if (was === 'hand' && now !== 'hand') {
-      animations.push(flipMove(el, from, to, { duration: ms(baseMs('handToFloor', host.root)) }));
-    } else {
-      // 뒤집기 자리 → 바닥, 무더기 재배치, 손패·획득패 정렬 이동
-      animations.push(
-        flipMove(el, from, to, { duration: ms(baseMs('matchHighlight', host.root)) }),
-      );
+      animations.push(flipMove(el, from, to, { duration }));
     }
   }
-  if (animations.length === 0) {
-    // 움직일 카드가 없어도 매칭 강조 등은 계획 시간만큼 보인다
-    await waitHold(host.root, plannedMs);
+  // 새 공개 카드의 출발은 deck/상대 hand다. 내 손패는 예약한 beforepose다.
+  for (const relation of [...contacts, ...revealed]) {
+    const held = scene.reserve(relation.card);
+    if (held === undefined) continue;
+    if (before.get(String(relation.card)) === undefined) {
+      const source = before.get(revealed.includes(relation) ? '@deck' : '@opp-hand');
+      if (source !== undefined) {
+        // 공개 카드만 ghost에 넣고 출발점으로 옮긴다.
+        const pose = scene.pose(relation.card)!;
+        const a = scene.move(relation.card, { ...pose, rect: source, angle: 0 }, 0);
+        if (a !== undefined) await sequence(() => a);
+      }
+    }
+  }
+  if (revealed.length > 0) {
+    // 뒷면→공개 staging→원본짝 관계의 두 단계를 flip 시간 안에서 재생한다.
+    for (const relation of revealed) {
+      const el = originalCards(host.root).find(
+        (el) => Number(el.dataset['cardId']) === relation.card,
+      );
+      if (el === undefined) continue;
+      const pose = cardPose(el, host.root);
+      const move = scene.move(relation.card, pose, plannedMs * 0.55);
+      if (move !== undefined) animations.push(move);
+      const inner = heldInner(scene, relation.card);
+      if (inner !== null) animations.push(flipCard(inner, { duration: plannedMs * 0.55 }));
+    }
+    await sequence(() => animations);
     if (host.isCurrent?.() === false) return next;
-    await waitHold(host.root, holdMs);
-    return next;
+    await Promise.all(
+      revealed.map((r) => contact(host, scene, r.card, r.target, plannedMs * 0.45)),
+    );
+  } else {
+    const placed: CardId[] = [];
+    for (const relation of contacts) {
+      const to = scene.contactPose(relation.target, relation.card);
+      if (to === undefined) continue;
+      placed.push(relation.card, relation.target);
+      const a = scene.move(relation.card, to, plannedMs);
+      if (a !== undefined) animations.push(a);
+    }
+    if (animations.length === 0) await waitHold(host.root, plannedMs - highlightMs);
+    else await sequence(() => animations);
+    if (host.isCurrent?.() === false) return next;
+    if (placed.length > 0)
+      void sequence(() =>
+        scene.pulse(
+          placed,
+          false,
+          Math.min(holdMs || plannedMs, baseMs('matchHighlight', host.root)),
+        ),
+      );
   }
-  await sequence(() => animations);
+  scene.release(captured);
+  scene.release(settled);
   if (host.isCurrent?.() === false) return next;
   await waitHold(host.root, holdMs);
   return next;
 }
 
-/**
- * 이벤트 묶음 재생. 끝나면 마지막 중간 판을 돌려준다(호출자가 최신 뷰로 스냅한다, spec 6.4).
- * 도중에 건너뛰기(skip)가 걸리면 남은 단계는 즉시 커밋된다.
- */
+function heldInner(scene: LandingScene, id: CardId): HTMLElement | null {
+  return scene.root.querySelector<HTMLElement>('[data-motion-card-id="' + id + '"] .inner');
+}
+
+/** 원본 이벤트 순서를 보존하고 공개 관계를 각 표시 단계에서 투영한다. */
 export async function replay(
   host: ReplayHost,
   from: DisplayBoard,
   events: readonly EngineEvent[],
+  options: ReplayOptions = {},
 ): Promise<DisplayBoard> {
-  const plan = planTurn(
-    events,
-    host.root.ownerDocument.documentElement.dataset['speed'] === 'normal',
-  );
+  const scene = options.scene ?? new LandingScene(host.root);
+  const normal = host.root.ownerDocument.documentElement.dataset['speed'] === 'normal';
+  const plan = planTurn(events, normal, options.acceptedContact !== undefined);
+  const context: ContactContext = { played: from.inFlight?.played ?? null };
   let board = from;
-  for (const [i, step] of plan.steps.entries()) {
-    if (host.isCurrent?.() === false) break;
-    const startedAt = host.onStep === undefined ? 0 : performance.now();
-    board = await runStep(host, board, step, plan.factor, plan.stepMs[i] ?? 0, plan.holdMs[i] ?? 0);
-    if (host.isCurrent?.() !== false) host.onStep?.(step.kind, performance.now() - startedAt);
+  try {
+    for (const [i, step] of plan.steps.entries()) {
+      if (host.isCurrent?.() === false) break;
+      const startedAt = host.onStep === undefined ? 0 : performance.now();
+      if (
+        step.kind === 'contact' &&
+        options.acceptedContact !== undefined &&
+        durScale(host.root) !== 0
+      ) {
+        const { card, target } = options.acceptedContact;
+        context.played = card;
+        await contact(host, scene, card, target, plan.stepMs[i] ?? 0);
+        if (host.isCurrent?.() !== false) await waitHold(host.root, plan.holdMs[i] ?? 0);
+      } else
+        board = await runStep(
+          host,
+          board,
+          step,
+          plan.factor,
+          plan.stepMs[i] ?? 0,
+          plan.holdMs[i] ?? 0,
+          scene,
+          context,
+        );
+      if (host.isCurrent?.() !== false) host.onStep?.(step.kind, performance.now() - startedAt);
+    }
+  } finally {
+    if (options.scene === undefined) scene.clear();
   }
   return board;
 }
