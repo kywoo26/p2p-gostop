@@ -355,3 +355,28 @@ test('혼합12월16장은 actual-size 유한 witness로 서로 다른 영역을 
   expect(blocked.witnessValid).toBe(false);
   expect(blocked.cells).toEqual([]);
 });
+
+test('고정 stage/counter paint를 포함한 혼합16장은 한 위치가 탐색 예산을 모두 쓰지 않는다', () => {
+  const groups = mixedTwelveMonths().floor;
+  const size = {
+    width: 336,
+    height: 245.84375,
+    cardWidth: 42,
+    paintPadding: 1,
+    obstacles: [
+      { x: 147, y: 88.7265625, width: 46, height: 72.390625 },
+      { x: 146, y: 87.7265625, width: 44, height: 70.390625 },
+      { x: 195, y: 136.1171875, width: 26.875, height: 20 },
+      { x: 146, y: 87.7265625, width: 47, height: 73.390625 },
+    ],
+  };
+  const result = placed(layoutMonthFloor(groups, size));
+  safe(result.cells, size);
+  expect(result.cells.flatMap((c) => c.cards).sort((a, b) => a - b)).toEqual(
+    groups.flatMap((g) => g.cards).sort((a, b) => a - b),
+  );
+  expect(result.witnessSearches).toBeLessThanOrEqual(128);
+  expect(result.primaryLimit).toBe(128);
+  expect(layoutMonthFloor(groups, size, result).cells).toEqual(result.cells);
+  expect(layoutMonthFloor([...groups].reverse(), size).cells).toEqual(result.cells);
+});

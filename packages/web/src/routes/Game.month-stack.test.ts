@@ -231,8 +231,10 @@ for (const [width, height] of [
       controller: controller(playback, () => false),
     });
     try {
-      await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected));
       const table = screen.container.querySelector<HTMLElement>('.table')!;
+      await vi.waitFor(() =>
+        expect(floorIds(screen.container), table.dataset['floorModelBounds']).toEqual(expected),
+      );
       expect(table.dataset['floorFits']).toBe('true');
       expect(table.dataset['floorStrategy']).toBe('boundary');
       const root = screen.container.querySelector<HTMLElement>('.board')!;

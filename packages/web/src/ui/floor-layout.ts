@@ -639,10 +639,12 @@ export function layoutMonthFloor(
   // 이전 유효 배치 뒤에 유한 배치를 먼저 검증한다. 성공할 때만 탐색 상한을 줄인다.
   // 각 위치는 실제 카드·예약·더미 검사를 통과해야 한다. 이전 유효 배치가 먼저다.
   {
-    const boundaryBlocks = blocks.map((b) => ({
+    let boundaryBlocks = blocks.map((b) => ({
       ...b,
       shape: monthShape(b.group, bounds, b.old, 0),
     }));
+    // 기존의 짧은 성공 경로를 먼저 보존한다. 실패 뒤에도 같은128회 예산을 쓴다.
+    let greedy = true;
     const edge = STACK_EDGE + 0.000001;
     const w = Math.max(...boundaryBlocks.map((b) => b.shape.footprint.width));
     const h = Math.max(...boundaryBlocks.map((b) => b.shape.footprint.height));
@@ -711,7 +713,8 @@ export function layoutMonthFloor(
     // 이미 놓은 묶음을 매번 장애 영역에 포함한다. 같은 빈 공간을 두 번 쓰지 않는다.
     if (!witness) {
       const pack = (at: number, placed: MonthFloorCell[]): MonthFloorCell[] | null => {
-        if (++witnessSearches > 128) return null;
+        if (witnessSearches >= 128) return null;
+        witnessSearches++;
         if (at === boundaryBlocks.length) return placed;
         const block = boundaryBlocks[at]!,
           local = block.shape.footprint;
@@ -781,6 +784,23 @@ export function layoutMonthFloor(
             seen.add(key);
             return true;
           })
+          .map((origin) => {
+            const cell = shifted(local, origin.x, origin.y);
+            const fit = greedy
+              ? 0
+              : Math.min(
+                  ...regions
+                    .filter(
+                      (r) =>
+                        cell.x >= r.x &&
+                        cell.y >= r.y &&
+                        cell.x + cell.width <= r.x + r.width &&
+                        cell.y + cell.height <= r.y + r.height,
+                    )
+                    .map((r) => Math.min(r.width - local.width, r.height - local.height)),
+                );
+            return { origin, fit };
+          })
           .sort((a, b) => {
             const distance = (p: { x: number; y: number }) => {
               const r = shifted(local, p.x, p.y);
@@ -789,8 +809,14 @@ export function layoutMonthFloor(
                 Math.min(r.y - edge, bounds.height - edge - r.y - r.height)
               );
             };
-            return distance(a) - distance(b) || a.x - b.x || a.y - b.y;
-          });
+            return (
+              a.fit - b.fit ||
+              distance(a.origin) - distance(b.origin) ||
+              a.origin.x - b.origin.x ||
+              a.origin.y - b.origin.y
+            );
+          })
+          .map(({ origin }) => origin);
         for (const origin of origins) {
           witnessCandidates++;
           witnessChecks++;
@@ -803,11 +829,20 @@ export function layoutMonthFloor(
           if (!validStacks([...placed, cell], bounds, reservations)) continue;
           const found = pack(at + 1, [...placed, cell]);
           if (found) return found;
-          if (witnessSearches >= 128) break;
+          if (greedy || witnessSearches >= 128) break;
         }
         return null;
       };
-      const cells = pack(0, []);
+      let cells = pack(0, []);
+      if (!cells && witnessSearches < 128) {
+        greedy = false;
+        boundaryBlocks = [...boundaryBlocks].sort(
+          (a, b) =>
+            b.shape.footprint.width * b.shape.footprint.height -
+              a.shape.footprint.width * a.shape.footprint.height || a.group.month - b.group.month,
+        );
+        cells = pack(0, []);
+      }
       if (cells) {
         witnessChecks++;
         if (validStacks(cells, bounds, reservations)) witness = cells;
