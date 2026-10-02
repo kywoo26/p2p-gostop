@@ -305,6 +305,8 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 | SK3-P2 (P1 뒤) | host/guest shell과 route별 얇은 page, persistent coordinator 분리. engine/AI/protocol 규칙은 변경하지 않음 | session과 DOM 수명을 분리. settings Back/홈 dispose·resume/guest restore/정산 restart/target-before-pose·WAAPI 착지/skip/reduced 회귀. 실제 host/guest/solo body·raw와 기준 비교 |
 | SK3-P3 (P2 뒤) | 구현 owner 자기 검증 → 독립 reviewer → root 병합 판단 | AGENTS §5 필수 native lint/check/Node/browser/build/smoke/Android≤4 및 영향 full E2E. 현재 head/base/실제 시험 commit 연결. 예산/기준샷 완화 없음. 사람 기기 수용·main/tag/release/운영/서명 root 소유 |
 
+P0L 독립 리뷰 P2: 0727ab3에서 pro 고지 링크를 base-aware로 고친 뒤 C/W gallery license ARIA 텍스트 기대값의 `/pro/NOTICE.md`가 남아 CI가 실패했다. `license-aria-{chromium,webkit}.txt`의 해당 URL 각 한 줄만 `./pro/NOTICE.md`로 맞춘다. 이미지 기준·임계값은 변경하지 않는다. 같은 CI의 벨 표본 timeout은 원인 미확정으로 분리하며 전체 녹색으로 보고하지 않는다. 원형 gallery license의 ARIA·기존 PNG·axe를 C 1개/W 1개로 실행해 PASS(각 ≤2 workers). W는 smoke 태그 필터에서 제외되어 full 설정에 해당 파일/name/project만 선택했으며 전체 suite를 실행한 것이 아니다. 실행 소스는 0727ab3+두 txt 변경이다.
+
 산출물은 단일 설계와 이 실행 단위에 연결한다. 진행 중인 동일 역할의 정정·검토 후속은 그 역할에서 끝낸다. 완료 역할은 근거 보존 후 root에 archive 인계하며 완료 뒤 새 업무·독립 review는 새 격리 역할에 배정한다. A/B는 보고서 정정본 보존 후 root archive 완료. shell 재현 자료 패키징은 새 Sol 6.1 medium 역할이 `tools/proofs/sveltekit3/**`만 소유하며 설치/build/browser 실행·계획 편집을 하지 않는다. 부모가 단일 lane에서 검증·통합한다. 이탈은 해당 구현과 같은 commit에서 동기화한다. rollback은 저장/wire 형식 보존 아래 branch/revert와 기존 v0.4.1 artifact 유지이며 운영 조작을 포함하지 않는다.
 
 상태 확인: 2026-10-01, main `17c8d29`(#213 병합). 작업별 기준 SHA는 각 실행계획에 고정한다. 요구 상태는 §3-2, 현재 배정·공유 파일 인계는 이 절이 정본이다. AGENTS.md는 단일 작업 규범이며 이슈·PR은 정본과 commit SHA를 연결한다. 이 문서 정비는 #211 출하 후 후속이며 v0.3.2 출시 gate를 추가하지 않는다.
