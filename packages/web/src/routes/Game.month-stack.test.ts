@@ -12,6 +12,7 @@ import { createSession } from '../game/session.ts';
 import { SoloSession } from '../game/solo.svelte.ts';
 import type { AiClient } from '../game/ai-client.ts';
 import { mixedTwelveMonths } from '../ui/month-stack.test-helper.ts';
+import { resultScenario } from '../game/solo-result.test-helper.ts';
 import '../styles/skin-fan.css';
 
 const board = (state: GameState) =>
@@ -70,7 +71,7 @@ function twelveMonths() {
   return state;
 }
 
-test('Game opt-in은 합법 구성12월 전체 ID를 실제 Playback snapshot으로 표시하고 resize/복원 후 유지한다', async () => {
+test('Game 기본 경로는 합법 구성12월 전체 ID를 실제 Playback snapshot으로 표시하고 resize/복원 후 유지한다', async () => {
   await page.viewport(360, 780);
   const state = twelveMonths(),
     view = board(state),
@@ -78,7 +79,6 @@ test('Game opt-in은 합법 구성12월 전체 ID를 실제 Playback snapshot으
   const playback = new Playback(view, { viewer: 0, names: () => ['좌석0', '좌석1'] });
   const screen = await render(Game, {
     controller: controller(playback, () => false),
-    monthStacks: true,
   });
   await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected));
   for (const [width, height] of [
@@ -102,7 +102,7 @@ test('Game opt-in은 합법 구성12월 전체 ID를 실제 Playback snapshot으
   playback.dispose();
 });
 
-test('Game 기본 경로는 opt-in을 활성화하지 않는다', async () => {
+test('Game 기본 경로는 월 묶음과 현재 원본 ID를 안전하게 표시한다', async () => {
   await page.viewport(360, 780);
   const playback = new Playback(board(createScenario({ hands: [[0], [4]], floor: [8] })), {
     viewer: 0,
@@ -110,7 +110,11 @@ test('Game 기본 경로는 opt-in을 활성화하지 않는다', async () => {
   });
   const screen = await render(Game, { controller: controller(playback, () => false) });
   await vi.waitFor(() => expect(floorIds(screen.container)).toEqual([8]));
-  expect(screen.container.querySelector('.table')?.hasAttribute('data-floor-strategy')).toBe(false);
+  expect(screen.container.querySelector('.table')?.getAttribute('data-floor-fits')).toBe('true');
+  expect(screen.container.querySelector('.table')?.getAttribute('data-floor-strategy')).toBe(
+    'scatter',
+  );
+  expect(screen.container.querySelector('.layout-diagnostic')).toBeNull();
   playback.dispose();
 });
 
@@ -130,7 +134,6 @@ test('Game native 선택 전체48px·원ID는 실제 engine 수락/Playback 완�
   const playback = new Playback(board(state), { viewer: 0, names: () => ['좌석0', '좌석1'] });
   const sent: Action[] = [];
   const screen = await render(Game, {
-    monthStacks: true,
     controller: controller(playback, (action) => {
       const next = reduce(state, action);
       if (!next.ok) return false;
@@ -180,7 +183,6 @@ test('390×734 Game fresh 12월도 긴급0도 배치로 전체 CardId와 덱·�
   const playback = new Playback(view, { viewer: 0, names: () => ['좌석0', '좌석1'] });
   const screen = await render(Game, {
     controller: controller(playback, () => false),
-    monthStacks: true,
   });
   await vi.waitFor(() =>
     expect(floorIds(screen.container)).toEqual(
@@ -227,7 +229,6 @@ for (const [width, height] of [
     const playback = new Playback(view, { viewer: 0, names: () => ['좌석0', '좌석1'] });
     const screen = await render(Game, {
       controller: controller(playback, () => false),
-      monthStacks: true,
     });
     try {
       await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected));
@@ -306,7 +307,7 @@ test('실제 SoloSession 입력·원target 선택·FIFO 완료·resize·종료�
       persist: false,
     },
   );
-  const screen = await render(Game, { controller: solo, monthStacks: true });
+  const screen = await render(Game, { controller: solo });
   const expected = () =>
     board(solo.state.game)
       .floor.flatMap((g) => g.cards)
@@ -358,5 +359,61 @@ test('실제 SoloSession 입력·원target 선택·FIFO 완료·resize·종료�
   } finally {
     solo.dispose();
     releaseAi?.();
+  }
+}, 15000);
+
+test('기본 Game 정산 뒤 실제 새 라운드는 현재 원본 ID·예약·입력을 복원한다', async () => {
+  await page.viewport(360, 780);
+  const solo = new SoloSession(resultScenario(), {
+    difficulty: 'easy',
+    timeBudgetMs: 100,
+    persist: false,
+    ai: {
+      mode: 'inline',
+      decide: async () => {
+        throw Error('CPU 요청 없음');
+      },
+      dispose() {},
+    },
+  });
+  const screen = await render(Game, { controller: solo });
+  const assertCurrentFloor = async () => {
+    const expected = () => solo.playback.board.floor.flatMap((g) => g.cards).sort((a, b) => a - b);
+    await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected()));
+    expect(screen.container.querySelector('.table')!.getAttribute('data-floor-fits')).toBe('true');
+    expect(screen.container.querySelector('.layout-diagnostic')).toBeNull();
+  };
+  try {
+    await assertCurrentFloor();
+    expect(solo.submit({ type: 'play', seat: 0, card: 16 })).toBe(true);
+    solo.skipAnimations();
+    await vi.waitFor(
+      () => expect(screen.container.querySelector('[data-choice="acknowledge"]')).not.toBeNull(),
+      { timeout: 10000 },
+    );
+    await assertCurrentFloor();
+    await userEvent.click(
+      screen.container.querySelector<HTMLButtonElement>('[data-choice="acknowledge"]')!,
+    );
+    await vi.waitFor(() =>
+      expect(screen.container.querySelector('[data-choice="accept"]')).not.toBeNull(),
+    );
+    await userEvent.click(
+      screen.container.querySelector<HTMLButtonElement>('[data-choice="accept"]')!,
+    );
+    await vi.waitFor(() => expect(solo.playback.settlement).not.toBeNull());
+    expect(solo.state.roundNumber).toBe(1);
+    solo.nextRound();
+    expect(solo.state.roundNumber).toBe(2);
+    solo.skipAnimations();
+    await vi.waitFor(() => expect(solo.playback.idle).toBe(true), { timeout: 10000 });
+    expect(solo.playback.board.floor.flatMap((g) => g.cards).length).toBeGreaterThan(0);
+    await assertCurrentFloor();
+    expect(screen.container.querySelector('.table')!.getAttribute('data-floor-reserved')).toBe('0');
+    expect(screen.container.querySelector('.table')!.getAttribute('data-floor-round')).toBe('2');
+    expect(screen.container.querySelector('.hand button')).not.toBeNull();
+    expect(screen.container.querySelector('.overlay')).toBeNull();
+  } finally {
+    solo.dispose();
   }
 }, 15000);
