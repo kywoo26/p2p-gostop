@@ -390,6 +390,8 @@ root가 known30 후보27쌍을 원본 해상도로 직접 비교하여 hand focu
 
 고정208 검증은 lint/check·Node589·browser1098·build21·Android3작업 PASS, 원 smoke487PASS/11FAIL/2미실행이다. 실패는 fonts 초점1·desktop PNG6·짧은 desktop 고/스톱 겹침4로 분리한다. 겹침 후속은 `board-layout.css`의 portrait go-stop 조건만 `:where`로 낮춰 기존 wide/short 높이가 우선하게 한다. 같은 DOM에서240px 선언1개 제거 시 C/W 두 폭 모두 겹침이 사라진 근거를 보존하고, 새 수치·자식 clipping·threshold 변경 없이 원형 버튼/Tab/정보 검사와 대표 portrait 불변을 표적으로 확인한다. timing2는 원 의존 관계로 미실행이며 별도 직렬 실행 전에는 통과로 합산하지 않는다.
 
+fonts 후속은 `e2e/fonts.spec.ts`의 실제 Home typed link 표시 대기1줄만 소유한다. 원 trace에서 boot 문서의 fonts.ready 뒤 Tab(5142~5163ms), Home DOM(5166ms) 순서로 초점 대상 없는 입력이 발생했다. 준비된 Home에서 기존 폰트/대비/Tab/초점 단언을 수행하며 timeout·키보드 동작·기대값은 유지한다. CSS 제품 fix와 별도 commit이고 새 source의 표적 결과를 원208 실패와 구분한다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.

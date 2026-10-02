@@ -21,6 +21,7 @@ for (const [width, height] of [
       if (url.pathname.endsWith('.woff2')) fonts.add(url.pathname);
     });
     await page.goto('./#/dev/gallery/home');
+    await expect(page.getByRole('link', { name: '핫스팟 대전' })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     const measured = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
