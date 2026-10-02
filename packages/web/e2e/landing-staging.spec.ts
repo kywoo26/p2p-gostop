@@ -160,32 +160,81 @@ for (const mode of ['skip', 'reduced'] as const) {
     ).toBe(1);
     await expect(page.locator('[aria-label="내 손패"] [data-slot="38"]')).toBeVisible();
     await expect(page.locator('[data-landing-scene]')).toHaveCount(0);
-    const cleanup = await page.locator('[data-testid="board"]').evaluate((root) => ({
-      hidden: [...root.querySelectorAll<HTMLElement>('[data-card-id]')].filter(
-        (el) => el.style.visibility === 'hidden',
-      ).length,
-      // 손패 폭탄 힌트의 무한 CSS 효과는 재생 모션과 수명이 다르다.
-      animations: root.getAnimations({ subtree: true }).filter((a) => {
-        const target = (a.effect as KeyframeEffect)?.target;
-        return !(
-          a instanceof CSSAnimation &&
-          a.effect?.getTiming().iterations === Infinity &&
+    const cleanup = await page.locator('[data-testid="board"]').evaluate(async (root) => {
+      const animations = root.getAnimations({ subtree: true });
+      const handHint = (animation: Animation) => {
+        const target = (animation.effect as KeyframeEffect)?.target;
+        return (
+          animation instanceof CSSAnimation &&
+          animation.effect?.getTiming().iterations === Infinity &&
           target instanceof Element &&
           target.closest('[aria-label="내 손패"]')
         );
-      }).length,
-      details: root.getAnimations({ subtree: true }).map((a) => ({
-        state: a.playState,
-        type: a.constructor.name,
-        target: (a.effect as KeyframeEffect)?.target?.outerHTML.slice(0, 300),
-        timing: a.effect?.getTiming(),
-      })),
-    }));
+      };
+      // SK3-R2 / UX-24: HUD 색 전환은 카드 재생과 별개이며, 두 속성·유한225ms만 허용한다.
+      const hudTransitions = animations.filter((animation): animation is CSSTransition => {
+        const target = (animation.effect as KeyframeEffect)?.target;
+        return (
+          animation instanceof CSSTransition &&
+          target instanceof Element &&
+          target.matches('.mine-hud, .opponent-hud') &&
+          ['background-color', 'border-left-color'].includes(animation.transitionProperty)
+        );
+      });
+      const snapshot = {
+        hidden: [...root.querySelectorAll<HTMLElement>('[data-card-id]')].filter(
+          (el) => el.style.visibility === 'hidden',
+        ).length,
+        ghosts: root.querySelectorAll('[data-motion-card-id]').length,
+        animations: animations.filter(
+          (animation) =>
+            !handHint(animation) && !hudTransitions.includes(animation as CSSTransition),
+        ).length,
+        details: animations.map((animation) => ({
+          state: animation.playState,
+          type: animation.constructor.name,
+          target: (animation.effect as KeyframeEffect)?.target?.outerHTML.slice(0, 300),
+          timing: animation.effect?.getTiming(),
+        })),
+        hudTransitions: hudTransitions.map((transition) => ({
+          property: transition.transitionProperty,
+          target: (transition.effect as KeyframeEffect)?.target?.getAttribute('class'),
+          timing: transition.effect?.getTiming(),
+        })),
+      };
+      for (const transition of hudTransitions) {
+        const timing = transition.effect?.getTiming();
+        if (timing?.duration !== 225 || timing.iterations !== 1 || timing.easing !== 'ease-out')
+          throw new Error('HUD transition must finish in one 225ms ease-out iteration');
+      }
+      const hudFinished = await Promise.all(
+        hudTransitions.map(async (transition) => {
+          await transition.finished;
+          return { state: transition.playState, currentTime: transition.currentTime };
+        }),
+      );
+      return {
+        ...snapshot,
+        hudFinished,
+        remainingAnimations: root.getAnimations({ subtree: true }).filter((a) => !handHint(a))
+          .length,
+      };
+    });
     await writeFile(testInfo.outputPath('cleanup.json'), JSON.stringify(cleanup));
-    expect({ hidden: cleanup.hidden, animations: cleanup.animations }).toEqual({
+    // 즉시 카드/ghost/WAAPI 정리0과 HUD 전환 종료 뒤 모션0을 각각 강제한다.
+    expect({
+      hidden: cleanup.hidden,
+      ghosts: cleanup.ghosts,
+      animations: cleanup.animations,
+    }).toEqual({
       hidden: 0,
+      ghosts: 0,
       animations: 0,
     });
+    if (mode === 'reduced') expect(cleanup.hudTransitions).toEqual([]);
+    for (const finished of cleanup.hudFinished)
+      expect(finished).toEqual({ state: 'finished', currentTime: 225 });
+    expect(cleanup.remainingAnimations).toBe(0);
   });
 }
 
