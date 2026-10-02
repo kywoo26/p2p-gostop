@@ -322,6 +322,7 @@ interface MonthFloorResult extends MonthFloorBounds {
   witnessChecks: number;
   witnessEdges: number;
   witnessValid: boolean;
+  witnessSearches: number;
   searches: number;
   exhausted: boolean;
   reprojected: boolean;
@@ -551,7 +552,8 @@ export function layoutMonthFloor(
   let witnessSlots = 0,
     witnessCandidates = 0,
     witnessChecks = 0,
-    witnessEdges = 0;
+    witnessEdges = 0,
+    witnessSearches = 0;
   let witness: MonthFloorCell[] | null = null;
   let strategy: 'scatter' | 'boundary' = 'scatter';
   const result = (
@@ -569,6 +571,7 @@ export function layoutMonthFloor(
       witnessChecks,
       witnessEdges,
       witnessValid: witness !== null,
+      witnessSearches,
       searches,
       exhausted,
       reprojected,
@@ -703,6 +706,112 @@ export function layoutMonthFloor(
       const cells = [...assigned.values()].map(({ cell }) => cell);
       witnessChecks++;
       if (validStacks(cells, bounds, reservations)) witness = cells;
+    }
+    // 최대 크기 자리에 들어가지 않아도 각 묶음의 실제 영역으로 유한 배치를 검사한다.
+    // 이미 놓은 묶음을 매번 장애 영역에 포함한다. 같은 빈 공간을 두 번 쓰지 않는다.
+    if (!witness) {
+      const pack = (at: number, placed: MonthFloorCell[]): MonthFloorCell[] | null => {
+        if (++witnessSearches > 128) return null;
+        if (at === boundaryBlocks.length) return placed;
+        const block = boundaryBlocks[at]!,
+          local = block.shape.footprint;
+        let regions: FloorRect[] = [
+          {
+            x: edge,
+            y: edge,
+            width: bounds.width - 2 * edge,
+            height: bounds.height - 2 * edge,
+          },
+        ];
+        const blockers = [
+          ...bounds.obstacles,
+          ...placed.map((c) => c.footprint),
+          ...reservations.filter((r) => !sameInstance(r, block.group)).map((r) => r.footprint),
+        ];
+        for (const source of blockers) {
+          const obstacle = {
+            x: source.x - STACK_GAP,
+            y: source.y - STACK_GAP,
+            width: source.width + 2 * STACK_GAP,
+            height: source.height + 2 * STACK_GAP,
+          };
+          const split = regions.flatMap((r) => {
+            if (!floorRectsOverlap(r, obstacle)) return [r];
+            const out: FloorRect[] = [];
+            const left = Math.min(r.x + r.width, obstacle.x),
+              right = Math.max(r.x, obstacle.x + obstacle.width),
+              top = Math.min(r.y + r.height, obstacle.y),
+              bottom = Math.max(r.y, obstacle.y + obstacle.height);
+            if (left > r.x) out.push({ ...r, width: left - r.x });
+            if (right < r.x + r.width) out.push({ ...r, x: right, width: r.x + r.width - right });
+            if (top > r.y) out.push({ ...r, height: top - r.y });
+            if (bottom < r.y + r.height)
+              out.push({ ...r, y: bottom, height: r.y + r.height - bottom });
+            return out;
+          });
+          regions = split.filter(
+            (r, i) =>
+              r.width >= local.width &&
+              r.height >= local.height &&
+              !split.some(
+                (other, j) =>
+                  j !== i &&
+                  other.x <= r.x &&
+                  other.y <= r.y &&
+                  other.x + other.width >= r.x + r.width &&
+                  other.y + other.height >= r.y + r.height &&
+                  (j < i || other.width > r.width || other.height > r.height),
+              ),
+          );
+        }
+        const seen = new Set<string>();
+        const origins = regions
+          .flatMap((r) => [
+            { x: r.x - local.x, y: r.y - local.y },
+            { x: r.x + r.width - local.width - local.x, y: r.y - local.y },
+            { x: r.x - local.x, y: r.y + r.height - local.height - local.y },
+            {
+              x: r.x + r.width - local.width - local.x,
+              y: r.y + r.height - local.height - local.y,
+            },
+          ])
+          .filter((origin) => {
+            const key = `${origin.x}:${origin.y}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .sort((a, b) => {
+            const distance = (p: { x: number; y: number }) => {
+              const r = shifted(local, p.x, p.y);
+              return (
+                Math.min(r.x - edge, bounds.width - edge - r.x - r.width) +
+                Math.min(r.y - edge, bounds.height - edge - r.y - r.height)
+              );
+            };
+            return distance(a) - distance(b) || a.x - b.x || a.y - b.y;
+          });
+        for (const origin of origins) {
+          witnessCandidates++;
+          witnessChecks++;
+          const cell = stackCell(
+            block.group,
+            block.shape,
+            origin,
+            block.old?.slot ?? block.group.month - 1,
+          );
+          if (!validStacks([...placed, cell], bounds, reservations)) continue;
+          const found = pack(at + 1, [...placed, cell]);
+          if (found) return found;
+          if (witnessSearches >= 128) break;
+        }
+        return null;
+      };
+      const cells = pack(0, []);
+      if (cells) {
+        witnessChecks++;
+        if (validStacks(cells, bounds, reservations)) witness = cells;
+      }
     }
   }
   if (witness) primaryLimit = 128;

@@ -7,6 +7,11 @@ import { toBoardView } from '../game/adapter.ts';
 import type { GameController } from '../game/controller.ts';
 import { Playback } from '../game/playback.svelte.ts';
 import Game from './Game.svelte';
+import { PRESETS } from '@p2p-gostop/engine';
+import { createSession } from '../game/session.ts';
+import { SoloSession } from '../game/solo.svelte.ts';
+import type { AiClient } from '../game/ai-client.ts';
+import { mixedTwelveMonths } from '../ui/month-stack.test-helper.ts';
 import '../styles/skin-fan.css';
 
 const board = (state: GameState) =>
@@ -209,3 +214,149 @@ test('390×734 Game fresh 12월도 긴급0도 배치로 전체 CardId와 덱·�
     expect(getComputedStyle(group).rowGap).toBe('2px');
   playback.dispose();
 });
+
+for (const [width, height] of [
+  [360, 780],
+  [390, 734],
+] as const) {
+  test(`${width}×${height} 합법 혼합12월16장 actual Game은 모든 ID와 paint 여백·행간을 보존한다`, async () => {
+    await page.viewport(width, height);
+    const view = board(mixedTwelveMonths());
+    const expected = view.floor.flatMap((g) => g.cards).sort((a, b) => a - b);
+    expect(expected).toHaveLength(16);
+    const playback = new Playback(view, { viewer: 0, names: () => ['좌석0', '좌석1'] });
+    const screen = await render(Game, {
+      controller: controller(playback, () => false),
+      monthStacks: true,
+    });
+    try {
+      await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected));
+      const table = screen.container.querySelector<HTMLElement>('.table')!;
+      expect(table.dataset['floorFits']).toBe('true');
+      expect(table.dataset['floorStrategy']).toBe('boundary');
+      const root = screen.container.querySelector<HTMLElement>('.board')!;
+      const style = getComputedStyle(root);
+      const budget = Number.parseFloat(style.getPropertyValue('--fan-gap'));
+      expect(Number.parseFloat(style.rowGap)).toBeCloseTo(budget - 1 / 3, 4);
+      expect(style.gridTemplateRows.split(' ')).toHaveLength(7);
+      expect(root.getBoundingClientRect().height).toBe(height);
+      for (const el of root.querySelectorAll<HTMLElement>('.floor [data-card-id]')) {
+        const pose = JSON.parse(el.closest<HTMLElement>('.stack-card')!.dataset['floorModelPose']!);
+        expect(pose.angle).toBe(0);
+      }
+      const cells = [...root.querySelectorAll<HTMLElement>('.floor .group')].map((el) =>
+        JSON.parse(el.dataset['floorModelFootprint']!),
+      );
+      const bounds = JSON.parse(table.dataset['floorModelBounds']!);
+      const gap = (a: DOMRect, b: DOMRect) =>
+        Math.max(
+          a.x - b.x - b.width,
+          b.x - a.x - a.width,
+          a.y - b.y - b.height,
+          b.y - a.y - a.height,
+        );
+      for (const [i, cell] of cells.entries()) {
+        expect(cell.x).toBeGreaterThanOrEqual(2);
+        expect(cell.y).toBeGreaterThanOrEqual(2);
+        expect(cell.x + cell.width).toBeLessThanOrEqual(bounds.width - 2);
+        expect(cell.y + cell.height).toBeLessThanOrEqual(bounds.height - 2);
+        for (const other of [...cells.slice(i + 1), ...bounds.obstacles])
+          expect(gap(cell, other)).toBeGreaterThanOrEqual(12);
+      }
+      for (const button of root.querySelectorAll<HTMLElement>('.hand button')) {
+        expect(button.getBoundingClientRect().width).toBeGreaterThanOrEqual(48);
+        expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
+      }
+      for (const group of root.querySelectorAll<HTMLElement>('.captured .group'))
+        expect(getComputedStyle(group).rowGap).toBe('2px');
+      playback.reset(view);
+      await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected));
+      expect(table.dataset['floorReserved']).toBe('0');
+    } finally {
+      playback.dispose();
+    }
+  });
+}
+
+test('실제 SoloSession 입력·원target 선택·FIFO 완료·resize·종료는 현재 floor ID를 보존한다', async () => {
+  await page.viewport(360, 780);
+  let releaseAi: (() => void) | undefined;
+  const ai: AiClient = {
+    mode: 'inline',
+    decide: (request) =>
+      new Promise((resolve) => {
+        releaseAi = () => resolve({ action: request.view.legal[0]!, ms: 0 });
+      }),
+    dispose: () => {},
+  };
+  const session = createSession({
+    preset: 'standard',
+    rules: PRESETS.standard,
+    perPoint: 100,
+    startBalance: 100000,
+    names: ['좌석0', '좌석1'],
+    seed: 1,
+  }).session;
+  const solo = new SoloSession(
+    { ...session, phase: 'playing', game: mixedTwelveMonths() },
+    {
+      difficulty: 'easy',
+      timeBudgetMs: 100,
+      ai,
+      persist: false,
+    },
+  );
+  const screen = await render(Game, { controller: solo, monthStacks: true });
+  const expected = () =>
+    board(solo.state.game)
+      .floor.flatMap((g) => g.cards)
+      .sort((a, b) => a - b);
+  try {
+    await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected()));
+    const hand = screen.container
+      .querySelector<HTMLElement>('.hand [data-card-id="2"]')!
+      .closest('button')!;
+    expect(hand.disabled).toBe(false);
+    await userEvent.click(hand);
+    await vi.waitFor(() => expect(solo.state.game.pending?.kind).toBe('target'));
+    await vi.waitFor(() => expect(solo.playback.idle).toBe(true), { timeout: 10000 });
+    const choice = screen.container.querySelector<HTMLButtonElement>(
+      '.floor-target [data-candidate-id="0"]',
+    )!;
+    expect(choice).not.toBeNull();
+    expect(choice.getBoundingClientRect().width).toBeGreaterThanOrEqual(48);
+    expect(choice.querySelector('img')!.getBoundingClientRect().width).toBe(48);
+    await userEvent.click(choice);
+    expect(solo.state.actions.at(-1)).toEqual({ type: 'chooseTarget', seat: 0, card: 0 });
+    solo.skipAnimations();
+    await vi.waitFor(() => expect(solo.playback.idle).toBe(true), { timeout: 10000 });
+    await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected()));
+    expect(screen.container.querySelector('.table')!.getAttribute('data-floor-reserved')).toBe('0');
+    expect(solo.state.game.seats[0].captured.gwang).toContain(0);
+    for (const captured of screen.container.querySelectorAll<HTMLElement>('.captured .card'))
+      expect(captured.getBoundingClientRect().width).toBe(32);
+    for (const [width, height] of [
+      [390, 734],
+      [360, 780],
+    ] as const) {
+      await page.viewport(width, height);
+      await vi.waitFor(() =>
+        expect(screen.container.querySelector('.table')!.getAttribute('data-floor-fits')).toBe(
+          'true',
+        ),
+      );
+      expect(floorIds(screen.container)).toEqual(expected());
+    }
+    solo.end();
+    await vi.waitFor(() =>
+      expect(screen.container.querySelector('.game')!.getAttribute('data-phase')).toBe('ended'),
+    );
+    const after = solo.state.actions.length;
+    hand.click();
+    expect(solo.state.actions).toHaveLength(after);
+    expect(floorIds(screen.container)).toEqual(expected());
+  } finally {
+    solo.dispose();
+    releaseAi?.();
+  }
+}, 15000);

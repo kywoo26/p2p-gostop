@@ -69,6 +69,7 @@
       witnessChecks: number;
       witnessEdges: number;
       witnessValid: boolean;
+      witnessSearches: number;
       relocated: number;
       fits: boolean;
     }[]
@@ -185,6 +186,7 @@
             witnessChecks: r.witnessChecks,
             witnessEdges: r.witnessEdges,
             witnessValid: r.witnessValid,
+            witnessSearches: r.witnessSearches,
             relocated: r.relocated,
             fits: r.fits,
           },

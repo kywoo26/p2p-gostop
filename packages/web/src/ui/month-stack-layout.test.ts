@@ -12,6 +12,7 @@ import type {
   MonthFloorPlaced,
 } from './floor-layout.ts';
 import { floorGroup, boundaryAfter } from './floor-stability-fixtures.ts';
+import { mixedTwelveMonths } from './month-stack.test-helper.ts';
 
 // actual Board 고정 capture 165412510Z의 부모·paint 측정. 기대 배치 좌표를 solver에 주지 않는다.
 const bounds: MonthFloorBounds = {
@@ -324,4 +325,33 @@ test('12월·51원본 합성 비용 상한에서 witness 슬롯·카드 pose 생
       .map((p) => p.id)
       .sort((a, b) => a - b),
   ).toEqual(Array.from({ length: 51 }, (_, i) => i));
+});
+
+test('혼합12월16장은 actual-size 유한 witness로 서로 다른 영역을 쓰고 예약을 검사한다', () => {
+  const groups = mixedTwelveMonths().floor;
+  const size = {
+    ...bounds,
+    cardWidth: 42,
+    height: 245.84375,
+    obstacles: [{ x: 147, y: 88.7265625, width: 46, height: 72.390625 }],
+  };
+  const result = placed(layoutMonthFloor(groups, size));
+  safe(result.cells, size);
+  expect(result.cells.flatMap((c) => c.cards).sort((a, b) => a - b)).toEqual(
+    groups.flatMap((g) => g.cards).sort((a, b) => a - b),
+  );
+  expect(result.witnessSearches).toBeLessThanOrEqual(128);
+  expect(result.primaryLimit).toBe(128);
+  expect(result.strategy).toBe('boundary');
+  expect(layoutMonthFloor(groups, size, result).searches).toBe(0);
+  const reserve = { ...result.cells[0]!, month: 1 as const, cards: [3] };
+  const blocked = layoutMonthFloor(
+    groups,
+    { ...size, obstacles: [{ x: 0, y: 0, width: size.width, height: size.height }] },
+    result,
+    [reserve],
+  );
+  expect(blocked.status).toBe('failed');
+  expect(blocked.witnessValid).toBe(false);
+  expect(blocked.cells).toEqual([]);
 });

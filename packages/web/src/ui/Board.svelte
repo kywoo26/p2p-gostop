@@ -557,6 +557,7 @@
   class={[
     'board',
     {
+      monthStacks,
       'hud-expanded': expandedHud,
       selecting,
       'two-hands': pickFirst === null,
@@ -927,6 +928,11 @@
       max(12px, env(safe-area-inset-left));
     background: var(--board-background);
     overflow: hidden;
+  }
+  @media (max-width: 699px) and (orientation: portrait) {
+    :global(:root) .board.monthStacks {
+      row-gap: max(0px, calc(var(--fan-gap, 8px) - 1px / 3));
+    }
   }
   .board.selecting {
     --decision-height: 132px;
