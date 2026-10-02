@@ -52,21 +52,41 @@
   align-items: center;
 }
 :root [data-board-layout] .table-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 18px 20px;
   align-items: center;
-  gap: 8px;
+  column-gap: 8px;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   font-size: 14px;
 }
 :root [data-board-layout] .table-heading span {
-  flex: none;
+  grid-column: 1;
   color: var(--table-muted);
+  font-size: 12px;
+  line-height: 18px;
 }
 :root [data-board-layout] .table-heading strong {
+  grid-column: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+:root [data-board-layout] .turn-state {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  padding: 5px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--table-tray);
+  box-shadow: inset 0 0 0 1px var(--table-border);
+  color: var(--table-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+:root [data-board-layout][data-awaiting='me'][data-busy='false'] .turn-state {
+  background: var(--table-turn);
+  color: var(--color-on-accent);
 }
 :root .game .menu-button {
   position: absolute;
@@ -79,9 +99,9 @@
   width: 48px;
   height: 48px;
   border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border-radius: 14px;
+  background: var(--table-tray);
+  box-shadow: inset 0 0 0 1px var(--table-border);
   color: var(--skin-paper);
   font-size: 14px;
   font-weight: 400;
@@ -119,6 +139,9 @@
   grid-template-rows: 16px 1fr;
   gap: 2px;
   min-width: 0;
+  border-radius: 7px;
+  background: var(--table-tray);
+  box-shadow: var(--table-depth);
 }
 :root [data-board-layout] .captured-zone .name {
   display: block;
@@ -133,6 +156,7 @@
   font-size: 12px;
   line-height: 16px;
   font-weight: 400;
+  text-indent: 4px;
 }
 :root [data-board-layout] .captured-zone .name :is(b, small) {
   display: none;
@@ -158,7 +182,7 @@
   padding: 0 3px;
   border: 1px solid var(--table-border);
   border-radius: var(--table-radius);
-  background: #172723;
+  background: var(--table-well);
   color: var(--skin-paper);
   font-size: 12px;
   line-height: 18px;
@@ -169,9 +193,13 @@
 :root [data-board-layout] :is(.opponent-hud, .mine-hud) {
   min-width: 0;
   padding: 2px 6px;
-  background: #eed5a108;
+  background: var(--table-seat);
   border-left: 2px solid transparent;
   border-radius: var(--table-radius);
+  box-shadow: inset 0 1px #d8f5e814;
+  transition:
+    background-color var(--dur-modal) ease-out,
+    border-color var(--dur-modal) ease-out;
 }
 :root [data-board-layout] :is(.scoreboard, .scoreboard.expanded) {
   display: block;
@@ -201,7 +229,8 @@
 :root [data-board-layout] .seat-bar .score {
   border: 1px solid var(--table-border);
   border-radius: var(--table-radius);
-  background: #101d19;
+  background: var(--table-well);
+  box-shadow: var(--table-depth);
 }
 :root [data-board-layout] .center {
   position: relative;
@@ -209,6 +238,11 @@
   place-items: center;
   min-width: 0;
   min-height: 0;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 40%, #4b8b7524, #0b282426);
+  box-shadow:
+    inset 0 1px 0 #d7efdd14,
+    inset 0 0 24px #00120f2b;
 }
 :root [data-board-layout] .center::before {
   display: none;
@@ -247,7 +281,8 @@
   right: 1px;
   border-radius: var(--table-radius);
   border-color: var(--table-border);
-  background: #172723;
+  background: var(--color-surface);
+  box-shadow: none;
   font-size: 12px;
   line-height: 18px;
   font-weight: 400;
@@ -363,7 +398,7 @@
   border: 1px solid var(--table-border);
   border-radius: var(--table-radius);
   box-shadow: none;
-  background: #172723;
+  background: var(--table-well);
 }
 :root [data-board-layout] .decision-area :is(h2, .risk, button, button strong) {
   font-size: 14px;
@@ -385,9 +420,20 @@
 }
 :root [data-board-layout][data-awaiting='me'] .mine-hud,
 :root [data-board-layout][data-awaiting='other'] .opponent-hud {
-  border-left-color: var(--skin-brass);
+  border-left-color: var(--table-turn);
+  background: var(--table-seat-active);
+}
+:root [data-board-layout][data-awaiting='me'] .mine-hud .score,
+:root [data-board-layout][data-awaiting='other'] .opponent-hud .score {
+  background: var(--table-turn);
+  color: var(--color-on-accent);
+  border-color: transparent;
+  box-shadow: inset 0 1px #fff3;
 }
 @media (prefers-reduced-motion: reduce) {
+  :root [data-board-layout] :is(.opponent-hud, .mine-hud) {
+    transition: none;
+  }
   :root [data-board-layout] .hand .art-window {
     transition: none;
     animation: none;
@@ -536,12 +582,12 @@
   font-size: 16px;
 }
 :root [data-board-layout].go-stop .decision-area .stop {
-  background: #843d38;
-  color: var(--skin-paper);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   border: 1px solid var(--table-border);
 }
 :root [data-board-layout].go-stop .decision-area .go {
-  background: #285c4c;
+  background: var(--color-surface-raised);
   color: var(--skin-paper);
   border: 1px solid var(--table-border);
 }

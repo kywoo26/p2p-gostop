@@ -372,7 +372,18 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
-### SK3-R1 첫 병합 checkpoint (진행)
+### SK3-R2 그래픽·UI/UX 후속 (진행)
+
+- 기준은 PR #238·#239 통합 main `b6cb309ae5f6c6e4a058f0bbe0c07df4e8f9a8d9`다. main full CI `37027169994` 세 작업 성공은 첫 기술 통합 gate이며 그래픽 목표 완료가 아니다. WebKit 재시도 통과2건의 원인 미확정·CI timing record 정책·사람 실기기 미검증은 보존한다.
+- 사용자 연속 위임에 따라 기존 총괄이 설계 해석·분배·코드/실제 화면 검토·이 plan을 소유하고 제품은 직접 편집하지 않는다. 메뉴 high 역할5소스·캡처 medium 역할의 외부 산출물을 확인했고, 새 Sol6.1 high 구현자가 미검증 Board/토큰 초안5개와 메뉴5개를 단독 통합한다. 설치·build·browser는 구현자 단일4264 lane/최대4 worker, timing 직렬이다.
+- 첫 단위는 `styles/{tokens,skin,skin-fan}.css`, `ui/{Board.svelte,board-layout.css,Screen.svelte,PromptPanel.svelte,prompt-focus.ts}`, `routes/{Home,HostRoom,Settings,Settlement}.svelte` 총12파일이다. PromptPanel은 제목의 자동/키보드 초점을 유지하는 재질 정합, prompt-focus는 새 결과 화면의 유효 초점을 이전 창 정리가 덮지 않는 수명 경계를 맡는다. [단일 설계의 R2](../docs/design/sveltekit3.md#r2--게임판과-메뉴의-그래픽uiux-후속)에 따라 플레이 면·획득 받침·차례·주행동·정산의 위계를 개선한다. 권위·CardId·원장·선택/WAAPI·P2P/worker 수명은 변경하지 않는다.
+- 첫 수용 자료는 동일 하네스/기존 fixture의 실제 정상·선택·혼잡 게임판 및 홈·설정·준비7 PNG와 짧은 플레이/탐색 영상2개다. 추가 정산1장은 공개 gallery fixture이며 실제 게임 정산과 구별한다. before는 기준 main의 성공 build를 재사용하고 after의 실제 source digest/artifact/fixture를 연결한다. 혼잡 constructed fixture, 도구 오류, 정지/영상 관측과 기능 PASS를 구분한다.
+- 소스만 작성한 A와 구문만 검사한 B 결과는 제품 실행 PASS가 아니다. 실제 전후 원본 검토→필요 인지/입력/접근성·landing 표적→immutable 독립 검토/필수 gate 순서다. 기준 PNG·ARIA·threshold는 선변경하지 않으며 검토된 의도 변화의 정확한 바이트만 이후 별도 갱신한다. 추가 연구·새 기능으로 첫 실제 비교를 늦추지 않는다.
+- 첫 실제 비교의 덱 카운터 그림자와 후속 HUD 그림자는 별개 제품 회귀다. 덱 그림자는 Floor 장애물 영역을 넓혀 카드 배치를 바꿨고, HUD 바깥 그림자는 landing의 11px paint 확장으로 두 짝 중 한 묶음의 사전 강조를 막았다. 원 실패·그림자 제거 후 원형 검사·소스/산출물 귀속을 보존하며 counts나 정지 기하 동일만으로 모션 수용을 대체하지 않는다. 지정 component204·정산/reduced12와 착지 원6 중5/1, 단독 WebKit 실패→보존 before 통과→수정 후 통과는 각각의 실행 분모다.
+- 외부 Home 검증 도구의 설정 병합 실수로 범위 밖120 suite/1102 case를 실행한 이력은 보존한다(1099 PASS/3 FAIL). 이를 예정 전체 gate 완료로 쓰지 않는다. 새 도구의 대비 계산 실패2와 기존 WebKit 정산 초점 실패1을 구분하고 후자는 해당 원형만 재현·분류한다. 이후 실행 전 실제 include·파일/프로젝트/시험 목록을 확인하며 원 기준·timeout·재시도는 완화하지 않는다.
+- HUD 수정 후 원형 landing/recovery6은 PASS다. 정산 초점은 현재 원형1 FAIL·정확한 기준 소스1 PASS였고, 결과 제목 focus→이전 고/스톱 창 outro→menu fallback 순서를 실제 관측했다. `ui/prompt-focus.ts`가 이미 다른 유효 요소로 옮겨진 초점을 보존하도록 좁게 수정했으며 기존 previous/fallback은 유지한다. 최신12소스에서 정산 제목·고/스톱 Tab/Escape/trigger·연쇄 busy 복귀 C/W6 PASS(84 collect 중78 name 미선택)다. 전역 복귀 삭제·임의 지연·단언 완화는 하지 않았다. 표시2곳의 `view.playable` 정합과 초점 수정은 앞선204/12/landing6 검사의 실행 소스에 소급하지 않으며 최종 제품 gate는 별도다.
+
+### SK3-R1 첫 병합 checkpoint (역사 기록)
 
 Kit route/state/오류·Board 구조 단일 소유와 이미 구현한 UI 단면을 고정한다. source53파일 snapshot과 실제7PNG/2영상·원실패/표적검사를 [단일 설계의 포함관계 표](../docs/design/sveltekit3.md#r1-검증-checkpoint-첫-병합-전)에 연결했다. Node589·browser 원1092/6→해당HUD18·핵심35·RP07 31초·표적48의 분모는 겹치므로 합산하지 않는다. W503은 reload 오류 자체를 보존하고 안전 복귀만 보장한다. 최종 dist-only preview 경계·글자24/16·굵기600/400 정합은 R1 소유에 포함한다. PNG29 갱신0·최종 smoke/timing/Android·초기 body·새 독립 review 미완이며 전체 Kit/UX/성능 수용을 완료로 승격하지 않는다. 추가 디자인 고도화는 첫 병합 이후 별도 분배한다.
 

@@ -12,20 +12,26 @@
   color-scheme: dark;
 
   /* 표면과 글자 */
-  --color-bg: oklch(19% 0.018 170);
-  --color-surface: oklch(28% 0.025 170);
-  --color-surface-raised: oklch(33% 0.025 170);
-  --color-border: oklch(62% 0.025 160);
-  --color-text: oklch(95% 0.025 85);
-  --color-text-muted: oklch(76% 0.025 140);
-  --color-accent: oklch(86% 0.07 85);
-  --color-accent-pressed: oklch(79% 0.07 85);
-  --color-on-accent: oklch(20% 0.025 160);
+  --color-bg: oklch(16% 0.025 195);
+  --color-surface: oklch(25% 0.03 195);
+  --color-surface-soft: oklch(20% 0.026 195);
+  --color-surface-raised: oklch(32% 0.035 195);
+  --color-border: oklch(62% 0.035 185);
+  --color-text: oklch(97% 0.012 85);
+  --color-text-muted: oklch(77% 0.025 185);
+  --color-accent: oklch(92% 0.035 85);
+  --color-accent-pressed: oklch(85% 0.04 85);
+  --color-accent-secondary: #ed937e;
+  --color-on-accent: oklch(20% 0.026 195);
+  --shadow-panel: 0 12px 30px #0003, inset 0 1px #ffffff0a;
+  --shadow-control: 0 3px 0 #0003, inset 0 1px #ffffff14;
   /* 게임판 바탕 */
-  --color-felt: oklch(24% 0.025 170);
+  --color-felt: oklch(26% 0.04 190);
 
-  --color-felt-highlight: oklch(28% 0.025 170);
-  --board-background: var(--color-felt);
+  --color-felt-highlight: oklch(33% 0.045 190);
+  --board-background:
+    radial-gradient(ellipse at 50% 42%, #34736926, #041515b8 95%),
+    linear-gradient(#102f2de8, #102723ed), var(--skin-felt) center / 380px repeat;
   --color-board-toast: var(--color-surface);
   --radius-pill: 999px;
 
@@ -119,7 +125,7 @@
 
   /* A · 사이: 의미 역할. 카드 크기/표식 및 --dur-*는 기존 소유 계약 유지. */
   --color-control-border: var(--color-border);
-  --color-divider: oklch(49% 0.03 160);
+  --color-divider: oklch(47% 0.035 185);
   --color-focus: var(--color-text);
   --color-selected: var(--color-accent);
   --color-error: oklch(78% 0.13 25);

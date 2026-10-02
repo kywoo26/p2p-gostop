@@ -189,280 +189,298 @@
 </script>
 
 <Screen title={remote ? '원격 방 열기' : '방 열기'}>
-  {#if remote && remoteSnapshot}
-    <RemoteGuide controller={remote} />
-    <section aria-label="원격 초대">
-      <h2>친구와 원격 대전</h2>
-      {#if remoteSnapshot.room}
-        <p class="hint">
-          초대 남은 시간 <time data-testid="invite-countdown"
-            >{countdown(inviteExpiresAt ?? 0, 15 * 60)}</time
-          >
+  <div class="room-flow">
+    {#if remote && remoteSnapshot}
+      <section class="connection-state" aria-label="상대 상태">
+        <h2>상대</h2>
+        <p class="guest" role="status">
+          <span class={['dot', { on: remoteSnapshot.peerPresent }]} aria-hidden="true"></span>
+          {guest?.name ?? '상대'} · {remoteSnapshot.peerPresent ? '연결됨' : '접속 대기'}
         </p>
-        <p class="hint">
-          방 남은 시간 <time data-testid="room-countdown"
-            >{countdown(remoteSnapshot.room.expiresAt, 6 * 60 * 60)}</time
-          >
-        </p>
-        {#if inviteExpiresAt !== null && now < inviteExpiresAt}
-          <p>방 코드</p>
-          <strong class="remote-code" data-testid="remote-code">{remoteSnapshot.room.code}</strong>
-          <label class="remote-link-label" for={`${ids}-remote-link`}>초대 링크</label>
-          <input
-            id={`${ids}-remote-link`}
-            class="remote-link"
-            readonly
-            bind:this={inviteInput}
-            value={remoteSnapshot.room.inviteLink}
-            onclick={(e) => e.currentTarget.select()}
-            onfocus={(e) => e.currentTarget.select()}
-          />
-          <button type="button" class="button" onclick={copyInvite}>초대 링크 복사</button>
-          {#if copyStatus}<p role="status">{copyStatus}</p>{/if}
-          <span class="remote-qr"
-            ><QrCode text={remoteSnapshot.room.inviteLink} label="원격 초대 QR" /></span
-          >
-          <p class="hint">링크 전체를 선택해 친구에게 보내세요. 초대 내용은 비밀입니다.</p>
-        {:else}
-          <p role="status">초대 시간이 끝났습니다.</p>
-          {#if !remoteSnapshot.peerPresent}<button
-              type="button"
-              class="button"
-              disabled={remoteBusy}
-              onclick={() => void renewRemoteRoom()}>새 방 만들기</button
-            >{/if}
-        {/if}
-      {:else}
-        <button
-          class="button primary"
-          type="button"
-          disabled={remoteBusy || remoteSnapshot.state === 'creating'}
-          onclick={() => void createRemoteRoom()}>방 만들기</button
-        >
-      {/if}
-    </section>
-    {#if remoteSnapshot.error}<p role="alert" class="warn">
-        {#if remoteSnapshot.state === 'ended' && remoteSnapshot.error === 'expired'}
-          방 이용 시간이 끝났습니다. 새 방을 만드세요.
-        {:else}
-          {REMOTE_ERROR_MESSAGES[remoteSnapshot.error].title}. {REMOTE_ERROR_MESSAGES[
-            remoteSnapshot.error
-          ].action}
-        {/if}
-      </p>{/if}
-    <section aria-label="참여 요청">
-      <h2>참여 요청</h2>
-      {#each remoteSnapshot.requests as request (request.id)}
-        <div class="remote-request">
-          <p>
-            {request.nickname ?? '이름 미입력'} · {request.kind === 'code'
-              ? '코드 참여'
-              : '초대 링크'} · 남은 시간 {countdown(request.expiresAt)}
+      </section>
+      <RemoteGuide controller={remote} />
+      <section class="invite-section" aria-label="원격 초대">
+        <h2>친구와 원격 대전</h2>
+        {#if remoteSnapshot.room}
+          <p class="hint">
+            초대 남은 시간 <time data-testid="invite-countdown"
+              >{countdown(inviteExpiresAt ?? 0, 15 * 60)}</time
+            >
           </p>
+          <p class="hint">
+            방 남은 시간 <time data-testid="room-countdown"
+              >{countdown(remoteSnapshot.room.expiresAt, 6 * 60 * 60)}</time
+            >
+          </p>
+          {#if inviteExpiresAt !== null && now < inviteExpiresAt}
+            <p>방 코드</p>
+            <strong class="remote-code" data-testid="remote-code">{remoteSnapshot.room.code}</strong
+            >
+            <label class="remote-link-label" for={`${ids}-remote-link`}>초대 링크</label>
+            <input
+              id={`${ids}-remote-link`}
+              class="remote-link"
+              readonly
+              bind:this={inviteInput}
+              value={remoteSnapshot.room.inviteLink}
+              onclick={(e) => e.currentTarget.select()}
+              onfocus={(e) => e.currentTarget.select()}
+            />
+            <button type="button" class="button" onclick={copyInvite}>초대 링크 복사</button>
+            {#if copyStatus}<p role="status">{copyStatus}</p>{/if}
+            <span class="remote-qr"
+              ><QrCode text={remoteSnapshot.room.inviteLink} label="원격 초대 QR" /></span
+            >
+            <p class="hint">링크 전체를 선택해 친구에게 보내세요. 초대 내용은 비밀입니다.</p>
+          {:else}
+            <p role="status">초대 시간이 끝났습니다.</p>
+            {#if !remoteSnapshot.peerPresent}<button
+                type="button"
+                class="button"
+                disabled={remoteBusy}
+                onclick={() => void renewRemoteRoom()}>새 방 만들기</button
+              >{/if}
+          {/if}
+        {:else}
+          <button
+            class="button primary"
+            type="button"
+            disabled={remoteBusy || remoteSnapshot.state === 'creating'}
+            onclick={() => void createRemoteRoom()}>방 만들기</button
+          >
+        {/if}
+      </section>
+      {#if remoteSnapshot.error}<p role="alert" class="warn">
+          {#if remoteSnapshot.state === 'ended' && remoteSnapshot.error === 'expired'}
+            방 이용 시간이 끝났습니다. 새 방을 만드세요.
+          {:else}
+            {REMOTE_ERROR_MESSAGES[remoteSnapshot.error].title}. {REMOTE_ERROR_MESSAGES[
+              remoteSnapshot.error
+            ].action}
+          {/if}
+        </p>{/if}
+      <section class="request-section" aria-label="참여 요청">
+        <h2>참여 요청</h2>
+        {#each remoteSnapshot.requests as request (request.id)}
+          <div class="remote-request">
+            <p>
+              {request.nickname ?? '이름 미입력'} · {request.kind === 'code'
+                ? '코드 참여'
+                : '초대 링크'} · 남은 시간 {countdown(request.expiresAt)}
+            </p>
+            <div class="row-buttons">
+              <button
+                class="button primary"
+                type="button"
+                disabled={remoteBusy}
+                onclick={() => void acceptRemote(request.id)}>수락</button
+              >
+              <button
+                class="button"
+                type="button"
+                disabled={remoteBusy}
+                onclick={() => remote.deny(request.id)}>거절</button
+              >
+            </div>
+          </div>
+        {:else}<p class="hint">요청을 기다리는 중…</p>{/each}
+      </section>
+    {:else}
+      <section class="connection-state" aria-labelledby={`${ids}-guest`}>
+        <h2 id={`${ids}-guest`}>접속자</h2>
+        <p class="guest" role="status" data-testid="guest-status">
+          {#if guest}
+            <span class={['dot', { on: guest.connected }]} aria-hidden="true"></span>
+            {guest.name} · {guest.connected ? '연결됨' : '끊김'}
+          {:else}
+            기다리는 중…
+          {/if}
+        </p>
+        <p class="next-step">
+          {#if resume}저장된 대전을 계속할 수 있습니다.
+          {:else if guest?.connected}준비가 되면 아래 시작을 누르세요.
+          {:else if url !== null}친구 폰에서 주소 QR을 열고 이름을 적으면 시작할 수 있습니다.
+          {:else}핫스팟을 켜고 친구 폰을 연결하세요.{/if}
+        </p>
+      </section>
+      <section
+        class="network-section"
+        aria-labelledby={`${ids}-hotspot`}
+        data-testid="hotspot"
+        data-state={hotspot.state}
+      >
+        <h2 id={`${ids}-hotspot`}>핫스팟 · {STATE_LABEL[hotspot.state]}</h2>
+        {#if hotspot.state === 'on' || hotspot.state === 'addressOnly' || hotspot.state === 'unsupported'}
+          <dl class="pairs">
+            {#if hotspot.ssid !== null}
+              <dt>이름</dt>
+              <dd>{hotspot.ssid}</dd>
+              <dt>비밀번호</dt>
+              <dd>{hotspot.password ?? '없음'}</dd>
+            {/if}
+            <dt>주소</dt>
+            <dd data-testid="guest-url">{url ?? '확인 중…'}</dd>
+          </dl>
+        {/if}
+        {#if hotspot.warning !== null || (hotspot.state === 'addressOnly' && hotspot.lanEnabled !== false)}
+          <p class="warn" role="note" data-testid="lan-warning">
+            {hotspot.warning ??
+              '주소만 표시: 같은 Wi-Fi의 누구나 이 주소로 들어올 수 있습니다. 믿을 수 있는 네트워크에서만 쓰세요.'}
+            시작한 뒤에는 세션 토큰이 없는 접속을 거절합니다.
+          </p>
+        {:else if hotspot.state === 'unsupported'}
+          <p class="hint">
+            핫스팟은 Android 앱에서 켭니다. 지금은 같은 네트워크의 브라우저가 위 주소로 들어올 수
+            있습니다.
+          </p>
+        {:else if hotspot.state === 'failed'}
+          <p class="warn" role="alert">
+            핫스팟을 켜지 못했습니다{hotspot.error !== null && !permission
+              ? ` (${hotspot.error})`
+              : ''}. 휴대폰 설정에서 핫스팟을 직접 켜고 친구 폰을 연결한 뒤 "주소만 표시"를
+            누르세요.
+          </p>
+        {/if}
+        {#if permission}
+          <p class="hint" role="status">근처 기기 권한을 허용한 뒤 다시 누르세요.</p>
+        {/if}
+        {#if hotspot.state === 'addressOnly' && hotspot.lanEnabled === false}
+          <p class="hint">친구 폰이 접속하려면 "주소만 표시"로 LAN 접속을 여세요.</p>
+        {/if}
+        {#if hotspot.state !== 'unsupported' && hotspot.state !== 'on'}
           <div class="row-buttons">
             <button
+              type="button"
               class="button primary"
-              type="button"
-              disabled={remoteBusy}
-              onclick={() => void acceptRemote(request.id)}>수락</button
+              disabled={hotspot.state === 'starting'}
+              onclick={() => onhotspot?.()}>핫스팟 켜기</button
             >
-            <button
-              class="button"
-              type="button"
-              disabled={remoteBusy}
-              onclick={() => remote.deny(request.id)}>거절</button
-            >
+            {#if hotspot.state !== 'addressOnly' || hotspot.lanEnabled === false}
+              <button type="button" class="button" onclick={() => onaddressonly?.()}
+                >주소만 표시</button
+              >
+            {/if}
           </div>
-        </div>
-      {:else}<p class="hint">요청을 기다리는 중…</p>{/each}
-    </section>
-    <section aria-label="상대 상태">
-      <h2>상대</h2>
-      <p role="status">
-        {guest?.name ?? '상대'} · {remoteSnapshot.peerPresent ? '연결됨' : '접속 대기'}
-      </p>
-    </section>
-  {:else}
-    <section class="connection-state" aria-labelledby={`${ids}-guest`}>
-      <h2 id={`${ids}-guest`}>접속자</h2>
-      <p class="guest" role="status" data-testid="guest-status">
-        {#if guest}
-          <span class={['dot', { on: guest.connected }]} aria-hidden="true"></span>
-          {guest.name} · {guest.connected ? '연결됨' : '끊김'}
-        {:else}
-          기다리는 중…
         {/if}
-      </p>
-      <p class="next-step">
-        {#if resume}저장된 대전을 계속할 수 있습니다.
-        {:else if guest?.connected}준비가 되면 아래 시작을 누르세요.
-        {:else if url !== null}친구 폰에서 주소 QR을 열고 이름을 적으면 시작할 수 있습니다.
-        {:else}핫스팟을 켜고 친구 폰을 연결하세요.{/if}
-      </p>
-    </section>
-    <section aria-labelledby={`${ids}-hotspot`} data-testid="hotspot" data-state={hotspot.state}>
-      <h2 id={`${ids}-hotspot`}>핫스팟 · {STATE_LABEL[hotspot.state]}</h2>
-      {#if hotspot.state === 'on' || hotspot.state === 'addressOnly' || hotspot.state === 'unsupported'}
-        <dl class="pairs">
-          {#if hotspot.ssid !== null}
-            <dt>이름</dt>
-            <dd>{hotspot.ssid}</dd>
-            <dt>비밀번호</dt>
-            <dd>{hotspot.password ?? '없음'}</dd>
-          {/if}
-          <dt>주소</dt>
-          <dd data-testid="guest-url">{url ?? '확인 중…'}</dd>
-        </dl>
-      {/if}
-      {#if hotspot.warning !== null || (hotspot.state === 'addressOnly' && hotspot.lanEnabled !== false)}
-        <p class="warn" role="note" data-testid="lan-warning">
-          {hotspot.warning ??
-            '주소만 표시: 같은 Wi-Fi의 누구나 이 주소로 들어올 수 있습니다. 믿을 수 있는 네트워크에서만 쓰세요.'}
-          시작한 뒤에는 세션 토큰이 없는 접속을 거절합니다.
-        </p>
-      {:else if hotspot.state === 'unsupported'}
-        <p class="hint">
-          핫스팟은 Android 앱에서 켭니다. 지금은 같은 네트워크의 브라우저가 위 주소로 들어올 수
-          있습니다.
-        </p>
-      {:else if hotspot.state === 'failed'}
-        <p class="warn" role="alert">
-          핫스팟을 켜지 못했습니다{hotspot.error !== null && !permission
-            ? ` (${hotspot.error})`
-            : ''}. 휴대폰 설정에서 핫스팟을 직접 켜고 친구 폰을 연결한 뒤 "주소만 표시"를 누르세요.
-        </p>
-      {/if}
-      {#if permission}
-        <p class="hint" role="status">근처 기기 권한을 허용한 뒤 다시 누르세요.</p>
-      {/if}
-      {#if hotspot.state === 'addressOnly' && hotspot.lanEnabled === false}
-        <p class="hint">친구 폰이 접속하려면 "주소만 표시"로 LAN 접속을 여세요.</p>
-      {/if}
-      {#if hotspot.state !== 'unsupported' && hotspot.state !== 'on'}
-        <div class="row-buttons">
-          <button
-            type="button"
-            class="button primary"
-            disabled={hotspot.state === 'starting'}
-            onclick={() => onhotspot?.()}>핫스팟 켜기</button
+        {#if hotspot.state !== 'unsupported'}
+          <button type="button" class="link" onclick={() => ondiagnostics?.()}
+            >기기 진단 열기</button
           >
-          {#if hotspot.state !== 'addressOnly' || hotspot.lanEnabled === false}
-            <button type="button" class="button" onclick={() => onaddressonly?.()}
-              >주소만 표시</button
-            >
-          {/if}
-        </div>
-      {/if}
-      {#if hotspot.state !== 'unsupported'}
-        <button type="button" class="link" onclick={() => ondiagnostics?.()}>기기 진단 열기</button>
-      {/if}
-    </section>
-
-    {#if url !== null}
-      <section aria-labelledby={`${ids}-steps`}>
-        <h2 id={`${ids}-steps`}>친구 폰(iPhone)에서</h2>
-        <ol class="steps">
-          {#if wifi !== null}
-            <li>
-              <span class="qr"><QrCode text={wifi} label="Wi-Fi 접속 QR" /></span>
-              <span>카메라로 <b>Wi-Fi QR</b>을 찍어 연결 → "인터넷 없이 사용"</span>
-            </li>
-          {/if}
-          <li>
-            <span class="qr"><QrCode text={url} label="게임 주소 QR" /></span>
-            <span>카메라로 <b>주소 QR</b>을 찍어 Safari로 열기</span>
-          </li>
-          <li>
-            <span class="qr step-icon" aria-hidden="true">{wifi === null ? 2 : 3}</span>
-            <span>이름을 적고 입장. 게임 중에는 자동 잠금을 "안 함"으로</span>
-          </li>
-        </ol>
+        {/if}
       </section>
-    {/if}
-  {/if}
 
-  <section aria-labelledby={`${ids}-rules`}>
-    <h2 id={`${ids}-rules`}>{resume ? '이어하기' : '규칙·금액'}</h2>
-    {#if resume}
-      <p class="rules">
-        {resume.round}판째부터 · {rules.custom ? '사용자 지정' : PRESET_LABEL[rules.preset]} · 점당 {formatMoney(
-          rules.perPoint,
-          rules.unit,
-        )}{resume.guestName ? ` · 지난 상대 ${resume.guestName}` : ''}
-      </p>
-      <p class="hint">
-        생각 시간: {rules.timerDecisionMs === null ? '끄기' : `${rules.timerDecisionMs / 1000}초`} · 결정마다
-        적용
-      </p>
-      <button type="button" class="link" onclick={() => onfresh?.()}>새 세션으로 시작</button>
-    {:else}
-      <label class="row">
-        <span>내 이름</span>
-        <input
-          type="text"
-          maxlength="12"
-          autocomplete="nickname"
-          value={rules.hostName}
-          onchange={(e) => onrules?.({ hostName: e.currentTarget.value })}
-        />
-      </label>
-      <label class="row">
-        <span>규칙</span>
-        <select
-          value={rules.preset}
-          onchange={(e) => onrules?.({ preset: e.currentTarget.value as PresetId })}
-        >
-          {#each PRESETS as id (id)}<option value={id}>{PRESET_LABEL[id]}</option>{/each}
-        </select>
-      </label>
-      {#if rules.custom}<p class="rules">
-          사용자 지정 규칙이 게스트에게 전달됩니다. <a href="#/settings">세부 규칙·복원</a>
-        </p>{/if}
-      <label class="row">
-        <span>점당</span>
-        <select
-          value={rules.perPoint}
-          onchange={(e) => onrules?.({ perPoint: Number(e.currentTarget.value) })}
-        >
-          {#each PER_POINT_OPTIONS as value (value)}
-            <option {value}>{formatMoney(value, rules.unit)}</option>
-          {/each}
-        </select>
-      </label>
-      <p class="row">
-        <span>시작 잔액</span>
-        <strong>{formatMoney(rules.startBalance, rules.unit)}</strong>
-      </p>
-      <label class="row">
-        <span>생각 시간</span>
-        <select
-          value={rules.timerDecisionMs === null ? 'off' : String(rules.timerDecisionMs)}
-          onchange={(e) =>
-            onrules?.({
-              timerDecisionMs:
-                e.currentTarget.value === 'off'
-                  ? null
-                  : (Number(e.currentTarget.value) as TimerDecisionMs),
-            })}
-        >
-          <option value="off">끄기</option><option value="5000">5초</option><option value="10000"
-            >10초</option
-          >
-          <option value="20000">20초</option><option value="30000">30초</option><option
-            value="60000">60초</option
-          >
-        </select>
-      </label>
+      {#if url !== null}
+        <section class="invite-section" aria-labelledby={`${ids}-steps`}>
+          <h2 id={`${ids}-steps`}>친구 폰(iPhone)에서</h2>
+          <ol class="steps">
+            {#if wifi !== null}
+              <li>
+                <span class="qr"><QrCode text={wifi} label="Wi-Fi 접속 QR" /></span>
+                <span
+                  ><span class="step-number" aria-hidden="true">1.</span> 카메라로 <b>Wi-Fi QR</b>을
+                  찍어 연결 → "인터넷 없이 사용"</span
+                >
+              </li>
+            {/if}
+            <li>
+              <span class="qr"><QrCode text={url} label="게임 주소 QR" /></span>
+              <span
+                ><span class="step-number" aria-hidden="true">{wifi === null ? 1 : 2}.</span>
+                카메라로 <b>주소 QR</b>을 찍어 Safari로 열기</span
+              >
+            </li>
+            <li class="entry-step">
+              <span class="qr step-icon" aria-hidden="true">{wifi === null ? 2 : 3}</span>
+              <span>이름을 적고 입장. 게임 중에는 자동 잠금을 "안 함"으로</span>
+            </li>
+          </ol>
+        </section>
+      {/if}
     {/if}
-    <p class="hint">
-      선택마다 시간이 적용됩니다. 초과하면 합법 카드 중 ID가 가장 작은 카드를 내고, 선택 창은
-      스톱·흔들지 않기 등 정해진 행동으로 진행합니다. 선 고르기·밀기/받기·다음 판·재충전은 직접
-      선택합니다.
-    </p>
-    {#if timerSaveFailed}<p class="warn" role="alert">
-        이번 대전에는 적용했지만 설정을 저장하지 못했어요
-      </p>{/if}
-  </section>
+
+    <section class="setup-section" aria-labelledby={`${ids}-rules`}>
+      <h2 id={`${ids}-rules`}>{resume ? '이어하기' : '규칙·금액'}</h2>
+      {#if resume}
+        <p class="rules">
+          {resume.round}판째부터 · {rules.custom ? '사용자 지정' : PRESET_LABEL[rules.preset]} · 점당
+          {formatMoney(rules.perPoint, rules.unit)}{resume.guestName
+            ? ` · 지난 상대 ${resume.guestName}`
+            : ''}
+        </p>
+        <p class="hint">
+          생각 시간: {rules.timerDecisionMs === null ? '끄기' : `${rules.timerDecisionMs / 1000}초`} ·
+          결정마다 적용
+        </p>
+        <button type="button" class="link" onclick={() => onfresh?.()}>새 세션으로 시작</button>
+      {:else}
+        <label class="row">
+          <span>내 이름</span>
+          <input
+            type="text"
+            maxlength="12"
+            autocomplete="nickname"
+            value={rules.hostName}
+            onchange={(e) => onrules?.({ hostName: e.currentTarget.value })}
+          />
+        </label>
+        <label class="row">
+          <span>규칙</span>
+          <select
+            value={rules.preset}
+            onchange={(e) => onrules?.({ preset: e.currentTarget.value as PresetId })}
+          >
+            {#each PRESETS as id (id)}<option value={id}>{PRESET_LABEL[id]}</option>{/each}
+          </select>
+        </label>
+        {#if rules.custom}<p class="rules">
+            사용자 지정 규칙이 게스트에게 전달됩니다. <a href="#/settings">세부 규칙·복원</a>
+          </p>{/if}
+        <label class="row">
+          <span>점당</span>
+          <select
+            value={rules.perPoint}
+            onchange={(e) => onrules?.({ perPoint: Number(e.currentTarget.value) })}
+          >
+            {#each PER_POINT_OPTIONS as value (value)}
+              <option {value}>{formatMoney(value, rules.unit)}</option>
+            {/each}
+          </select>
+        </label>
+        <p class="row">
+          <span>시작 잔액</span>
+          <strong>{formatMoney(rules.startBalance, rules.unit)}</strong>
+        </p>
+        <label class="row">
+          <span>생각 시간</span>
+          <select
+            value={rules.timerDecisionMs === null ? 'off' : String(rules.timerDecisionMs)}
+            onchange={(e) =>
+              onrules?.({
+                timerDecisionMs:
+                  e.currentTarget.value === 'off'
+                    ? null
+                    : (Number(e.currentTarget.value) as TimerDecisionMs),
+              })}
+          >
+            <option value="off">끄기</option><option value="5000">5초</option><option value="10000"
+              >10초</option
+            >
+            <option value="20000">20초</option><option value="30000">30초</option><option
+              value="60000">60초</option
+            >
+          </select>
+        </label>
+      {/if}
+      <p class="hint">
+        선택마다 시간이 적용됩니다. 초과하면 합법 카드 중 ID가 가장 작은 카드를 내고, 선택 창은
+        스톱·흔들지 않기 등 정해진 행동으로 진행합니다. 선 고르기·밀기/받기·다음 판·재충전은 직접
+        선택합니다.
+      </p>
+      {#if timerSaveFailed}<p class="warn" role="alert">
+          이번 대전에는 적용했지만 설정을 저장하지 못했어요
+        </p>{/if}
+    </section>
+  </div>
 
   {#snippet actions()}
     <button
@@ -476,115 +494,181 @@
 </Screen>
 
 <style>
-  .connection-state {
+  .room-flow {
+    display: grid;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+  section.connection-state {
+    padding: var(--space-2) 0 var(--space-4);
+    border-radius: 0;
     border-bottom: 1px solid var(--color-divider);
-    padding-bottom: var(--space-4);
+    background: transparent;
   }
   .connection-state .guest {
-    font-size: var(--type-score-size);
-    line-height: var(--type-score-line);
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    line-height: 1.35;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
   }
   .next-step {
     margin: var(--space-2) 0 0;
-    font-size: var(--type-label-size);
-    line-height: var(--type-label-line);
+    font-size: var(--font-size-s);
+    line-height: 1.65;
     color: var(--color-text-muted);
+  }
+  section.network-section {
+    background: var(--color-surface-soft, var(--color-surface));
+    padding: var(--space-4);
+    border-radius: var(--radius-panel);
+    gap: var(--space-3);
+  }
+  section.invite-section {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    gap: var(--space-4);
+  }
+  section.setup-section {
+    padding: var(--space-4);
+    border-radius: var(--radius-panel);
+    background: var(--color-surface);
+    gap: var(--space-3);
+    box-shadow: var(--shadow-panel, 0 8px 24px #0002);
+  }
+  section.request-section {
+    padding: 0;
+    background: transparent;
+  }
+  .step-number {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+    font-weight: 700;
+  }
+  h2 {
+    display: flex;
+    align-items: center;
   }
   .pairs {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--space-1) var(--space-3);
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-2) var(--space-3);
     margin: 0;
-  }
-  .remote-code {
-    font-family: ui-monospace, monospace;
-    font-size: clamp(1.4rem, 6vw, 2rem);
-    letter-spacing: 0.08em;
-    overflow-wrap: anywhere;
-  }
-  .remote-link-label {
-    font-weight: 600;
-  }
-  .remote-link {
-    width: 100%;
-    min-width: 0;
     font-size: var(--font-size-s);
   }
-  .remote-qr {
-    width: min(100%, 12rem);
-  }
-  .remote-request {
-    display: grid;
-    gap: var(--space-2);
-  }
-
   .pairs dt {
     color: var(--color-text-muted);
   }
-
   .pairs dd {
     margin: 0;
     font-family: ui-monospace, monospace;
     overflow-wrap: anywhere;
   }
-
-  .steps {
+  .remote-code {
+    display: block;
+    padding-block: var(--space-3);
+    font-family: ui-monospace, monospace;
+    font-size: clamp(2rem, 9vw, 3rem);
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .remote-link-label {
+    font-weight: 600;
+    font-size: var(--font-size-s);
+  }
+  input.remote-link {
+    width: 100%;
+    min-width: 0;
+    font-size: var(--font-size-s);
+  }
+  .remote-qr {
+    display: block;
+    width: min(100%, 12rem);
+    justify-self: center;
+    padding: var(--space-2);
+    border-radius: var(--radius-m);
+    background: var(--color-text);
+    box-shadow: var(--shadow-panel, 0 8px 24px #0003);
+  }
+  .remote-request {
     display: grid;
     gap: var(--space-3);
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--color-divider);
+  }
+  .remote-request p {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .steps {
+    display: grid;
+    gap: var(--space-4);
     margin: 0;
     padding: 0;
     list-style: none;
   }
-
   .steps li {
     display: grid;
-    grid-template-columns: 7.5rem 1fr;
+    grid-template-columns: 8rem minmax(0, 1fr);
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
+    font-size: var(--font-size-s);
+    line-height: 1.7;
   }
-
   .qr {
     display: grid;
     place-items: center;
     aspect-ratio: 1;
+    padding: var(--space-1);
+    border-radius: var(--radius-m);
+    background: var(--color-text);
+    box-shadow: var(--shadow-panel, 0 8px 24px #0003);
   }
-
-  .step-icon {
-    width: 3rem;
-    justify-self: center;
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-s);
-    color: var(--color-text-muted);
+  .steps li.entry-step {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-divider);
+  }
+  .qr.step-icon {
+    width: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    color: var(--color-text);
+    background: transparent;
+    box-shadow: none;
     font-weight: 700;
   }
-
   .guest,
   .rules,
   .hint,
   .warn {
     margin: 0;
   }
-
   .hint,
   .rules {
     color: var(--color-text-muted);
     font-size: var(--font-size-s);
+    line-height: 1.65;
   }
-
   .warn {
     padding: var(--space-2) var(--space-3);
-    border-left: 3px solid var(--color-event-ppeok);
+    border-left: 3px solid var(--color-accent-secondary, var(--color-event-ppeok));
     font-size: var(--font-size-s);
+    line-height: 1.65;
+    overflow-wrap: anywhere;
   }
-
   .row-buttons {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: minmax(0, 1fr);
     gap: var(--space-2);
   }
-
   .row {
     display: flex;
     align-items: center;
@@ -592,23 +676,36 @@
     min-height: var(--touch-min);
     gap: var(--space-3);
     margin: 0;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-divider);
+    font-size: var(--font-size-s);
   }
-
+  .row > span {
+    flex: 1;
+  }
+  .row strong {
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
   input,
   select {
+    min-width: 0;
+    max-width: 60%;
     min-height: var(--touch-min);
     padding: 0 var(--space-3);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-m);
+    border-radius: var(--radius-control);
     background: var(--color-bg);
     color: var(--color-text);
     font: inherit;
   }
-
   input {
     width: 9rem;
   }
-
+  .remote-link {
+    max-width: 100%;
+  }
   .link {
     justify-self: start;
     min-height: var(--touch-min);
@@ -617,18 +714,31 @@
     background: none;
     color: var(--color-accent);
     font: inherit;
+    font-size: var(--font-size-s);
     text-decoration: underline;
+    text-underline-offset: 3px;
   }
-
   .dot {
-    display: inline-block;
-    width: 0.6rem;
-    height: 0.6rem;
+    flex: 0 0 auto;
+    width: 0.65rem;
+    height: 0.65rem;
     border-radius: 50%;
-    background: var(--color-event-ppeok);
+    background: var(--color-accent-secondary, var(--color-event-ppeok));
   }
-
   .dot.on {
     background: var(--color-accent);
+    box-shadow: 0 0 0 5px var(--color-surface-raised);
+  }
+  input:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+  @media (min-width: 768px) {
+    .steps li {
+      grid-template-columns: 10rem minmax(0, 1fr);
+    }
   }
 </style>

@@ -77,6 +77,12 @@
     font-size: 14px;
     line-height: 20px;
     text-align: left;
+    padding-inline: 4px;
+    border-radius: var(--radius-m);
+  }
+  h2:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
   }
   .prompt-content {
     min-height: 0;

@@ -587,6 +587,17 @@
       <strong title={opponent.name}
         >{pending?.kind === 'target' ? '먹을 바닥패를 선택하세요' : opponentLabel}</strong
       >
+      <small class="turn-state" aria-hidden="true">
+        {selecting
+          ? '선택 중'
+          : thinking
+            ? '상대 차례 · 생각 중'
+            : busy
+              ? '진행 중'
+              : view.playable.length > 0
+                ? '내 차례'
+                : '상대 차례'}
+      </small>
     </div>
     <div class="menu-reserved" data-testid="menu-reserved" aria-hidden="true">메뉴</div>
   </div>
@@ -680,7 +691,7 @@
           ? '상대 차례 · 생각 중'
           : busy
             ? '진행 중'
-            : playable.length > 0
+            : view.playable.length > 0
               ? '내 차례'
               : '상대 차례'}
       />
@@ -882,7 +893,7 @@
   .floor-target :global(.prompt) {
     height: auto;
     border-color: var(--color-divider);
-    background: var(--color-bg);
+    background: var(--table-well);
   }
   .floor-target-choices {
     display: grid;
@@ -898,7 +909,7 @@
     gap: 6px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-m);
-    background: var(--color-surface);
+    background: var(--table-seat);
     color: var(--color-text);
     font: inherit;
   }

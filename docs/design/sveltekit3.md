@@ -214,6 +214,30 @@ exact `48356cc` 독립 C/W 반례에서 두 결함을 확인했다. 대전과 �
 
 exact483 B-LAYOUT-01은 시각 깨짐이 아니라 구조 소유 계약 누락이다. skin-marks의 높은 특이도 hand gap8/짧은 fine padding8 두 선언을 삭제하고 기존 Board selector에서 동일 적용값을 소유한다. 기본 gap8·padding16, 높이760 이하 padding12, 너비700 이상/높이600 이하/fine padding8을 보존한다. 상충하던 gap6/4는 제거했으며 row 내부 gap4와 상태 outline/focus는 그대로다. 같은 gallery fixture의 모바일 두 높이·desktop·짧은 fine C/W8쌍에서 실제 gap/padding/행·손패·slot·card rect가 모두 동일했다. PNG는7쌍 byte 동일이고 C412×915 한 쌍의 상대 획득피16픽셀은 RGB 최대1 차이다(손패 차이0). strict byte 일치 실패 원본을 보존하며 threshold 변경이나 재촬영으로 지우지 않았다. build21 PASS, raw149파일1,693,494 B다. root가 검토한37 PNG의 갱신과 기능 단언은 별도이며 변경 없는 기하를 의도 변화로 승인받는 작업이 아니다.
 
+## R2 · 게임판과 메뉴의 그래픽·UI/UX 후속
+
+첫 Kit 통합 뒤 사용자는 기존 총괄에게 그래픽 개선을 계속 위임하고, 총괄의 역할을 설계 해석·분배·품질 검토로 명확히 했다. 제품 구현은 Sol6.1 high 단일 소유이며 캡처 도구의 유한 정합은 medium 역할이 맡았다. 기능 개수·기존 픽셀 보존 대신 카드 인지, 차례/주행동 구분, 판과 메뉴의 시각 일관성을 실제 화면으로 판단한다. 색상은 후보이며 사용자 확정 취향이 아니다.
+
+공식 [Clubhouse Games](https://www.nintendo.com/ph/switch/as7t/index.html)의 테이블 화면과 [Balatro UI 자료](https://www.playbalatro.com/press-kit)는 카드 면·정보·행동 영역의 대비를 읽는 참고다. 해당 그림·코드는 복사하지 않는다. 기존 번들 화투 SVG·허가된 재질과 CSS/직접 그린 UI SVG로 구성하여 새 라이브러리·비트맵·외부 런타임 요청을 추가하지 않는다.
+
+| 개선 | 교체하는 표현 | 보존·검토 경계 |
+|---|---|---|
+| 플레이 면과 획득 받침의 깊이, 차례/점수 위계 | 한 평면에 섞인 카드와 HUD, 거의 보이지 않는 차례선 | 월/덱/손패 기하·실제 착지·선택 CardId 보존. 장식·그림자가 카드 정보와 경쟁하지 않는지 정상/선택/혼잡 비교 |
+| 홈의 주행동·보조 메뉴, 준비의 접속→QR→규칙 흐름 | 같은 모양의 버튼/박스 나열 | typed link/preload·활성 방 제약·QR/접속 정보·시작 조건 유지 |
+| 설정의 조작 묶음과 명확한 선택 상태 | 동일 강조의 긴 필드 목록 | persistent shallow 분류/Back·저장·48px 터치·키보드 초점 유지 |
+| 정산 결과 장면과 예상/확정액 구분 | 계산 표 아래에 묻힌 다음 행동 | 미정산 문구·받기/밀기·정산0/잔액/재시작 의미 보존. gallery 표시를 실제 권위 정산 증거로 쓰지 않음 |
+| 정보 표면·그림자·제한된 상태 전환의 공통 체계 | 화면별 재질/우선순위 차이 | 기존 Kit 이동과 gameplay WAAPI를 분리, reduced motion 유지. 색만으로 선택/차례를 전달하지 않음 |
+
+실제 before는 통합 main `b6cb309` 제품의 빌드이며, after는 구현 소스 digest와 산출물 해시를 함께 고정한다. 동일 fixture/viewport/harness의 PNG와 영상으로 먼저 검토한 뒤 필요한 좁은 기능 검증을 붙인다. 원 오류·새 도구 가정 실패와 최종 실행을 구분하고, 시각 의도 승인 없이 기준샷을 바꾸지 않는다. main full의 이전 green을 이 변경의 수용으로 전용하지 않는다.
+
+그림자는 표시만의 변경이 아니다. `Floor.svelte`는 덱·카운터·임시패 예약 영역의 paint를 장애물로 읽고, `anim/landing.ts`는 원본/임시 카드와 덱·손패·HUD·선택 영역의 바깥 outline/shadow를 읽는다. 초안 덱 카운터의 큰 그림자는 바닥 배치를 바꿨고, 후속 HUD 그림자는 `abs(2) + 6 × 1.5 = 11px`로 영역을 넓혀 한 월 묶음의 강조를 제한했다. 8px라는 초기 보고는 Floor 식과 혼동하여 철회했다. 두 원 실패를 보존하고 해당 바깥 그림자를 제거해 검사한다. 모션 알고리즘·권위 상태·충돌 단언을 바꾸어 장식을 수용하지 않는다.
+
+구조 감사는 새 shadow/outline의 실제 소비점을 구분한다. 덱 카운터는 shadow 없음, HUD는 바깥 그림자 없음, 기존 카드·staging·손패 상태선은 유지한다. 획득 받침/점수의 얕은 재질과 메뉴 전용 그림자는 현재 Floor/landing의 직접 측정 대상과 구분하며, 이 소스 판정을 모든 화면의 실행 보증으로 확대하지 않는다. 선택 제목은 자동 focus-visible과 Tab 후 후보 초점을 관측하여 2px 표시를 유지하고 모서리·안쪽 offset만 정합한다.
+
+비교 하네스는 HTTP 정적 서버와 기존 LAN relay의 개발용 `?relay=` 접점을 사용한다. 실제 host 연결/종료를 양쪽 동일 조건에서 확인하며, 초기 정적 서버 WS 404는 별도 실패로 남긴다. 이 경로는 Android의 같은 origin 서빙이나 guest 참여 수용이 아니다. 공개 정산 fixture의 끝까지 스크롤·고정 action·axe 관측과 실제 결과 확인/받기·밀기·종료 검사는 따로 기록한다.
+
+결과 화면의 구조 변경은 기존 초점 경합도 드러냈다. WebKit의 수동 스톱·스킵 원형1건은 기준 소스에서 통과하고 변경 소스에서 실패했다. 실제 focusin 기록은 결과 제목→이전 고/스톱 창 outro→그 창의 menu fallback 순서였다. 이전 창의 정리는 이미 panel 밖의 유효 요소가 받은 초점을 보존하고, 초점이 없거나 기존 대상이 무효일 때만 원래 trigger/fallback으로 복귀한다. 타이머나 반복 refocus 대신 `prompt-focus.ts`의 해제 경계에 한정하며, 원형 정산·선택 취소·연쇄 복귀와 메뉴 동작을 따로 검증한다.
+
 ## 이행·되돌리기
 
 SK3-P0 설계/유한 proof → P1 build shell·entry/token/path/오류·도구 → P2 route·coordinator 분리 → P3 필수 검증·독립 review·root 통합 순서다. proof 실패로 조정한 선택은 코드와 같은 commit에 문서화한다. v0.4.1 배포는 계속 유지한다. 저장/wire 형식을 바꾸지 않아 검증 실패 시 branch 또는 미출하 변경을 revert하고 원 artifact를 사용할 수 있다. 운영 포인터·main 병합·tag/release·서명은 root만 소유한다. Galaxy/iPhone 사람 수용은 별도 절차/사람 결과가 필요하며 자동 테스트로 PASS 처리하지 않는다.
