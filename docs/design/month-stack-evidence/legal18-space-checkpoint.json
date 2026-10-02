@@ -7,7 +7,8 @@
     "before": "20261002T021900962Z",
     "fresh": "20261002T021922148Z",
     "live": "20261002T022242937Z",
-    "settledPaint": "20261002T022428002Z"
+    "settledPaint": "20261002T022428002Z",
+    "resizeVerification": "20261002T024300300Z"
   },
   "validation": {
     "componentPassed": 66,
@@ -161,9 +162,48 @@
               "height": 68.390625
             }
           },
+          "currentModelBounds": {
+            "width": 336,
+            "height": 247.8125,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 147,
+                "y": 89.7109375,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 146,
+                "y": 88.7109375,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 195,
+                "y": 137.1015625,
+                "width": 26.59375,
+                "height": 20
+              },
+              {
+                "x": 146,
+                "y": 88.7109375,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
           "fits": "true",
           "originalIdCount": 18,
-          "idSetMatchesFinal": true
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 13.3046875,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.0132847947882766
+          }
         },
         {
           "parent": {
@@ -179,9 +219,48 @@
               "height": 68.390625
             }
           },
+          "currentModelBounds": {
+            "width": 366,
+            "height": 245.46875,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 162,
+                "y": 88.5390625,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 161,
+                "y": 87.5390625,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 210,
+                "y": 135.9296875,
+                "width": 26.59375,
+                "height": 20
+              },
+              {
+                "x": 161,
+                "y": 87.5390625,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
           "fits": "true",
           "originalIdCount": 18,
-          "idSetMatchesFinal": true
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 12.1328125,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.013283794788279124
+          }
         }
       ],
       "desktop": {
@@ -327,9 +406,48 @@
               "height": 68.390625
             }
           },
+          "currentModelBounds": {
+            "width": 336,
+            "height": 247.8125,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 147,
+                "y": 89.90625,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 146,
+                "y": 88.90625,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 195,
+                "y": 137.296875,
+                "width": 26.34375,
+                "height": 20
+              },
+              {
+                "x": 146,
+                "y": 88.90625,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
           "fits": "true",
           "originalIdCount": 18,
-          "idSetMatchesFinal": true
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 13.109375,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.0132847947882766
+          }
         },
         {
           "parent": {
@@ -345,9 +463,48 @@
               "height": 68.390625
             }
           },
+          "currentModelBounds": {
+            "width": 366,
+            "height": 245.46875,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 162,
+                "y": 88.734375,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 161,
+                "y": 87.734375,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 210,
+                "y": 136.125,
+                "width": 26.34375,
+                "height": 20
+              },
+              {
+                "x": 161,
+                "y": 87.734375,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
           "fits": "true",
           "originalIdCount": 18,
-          "idSetMatchesFinal": true
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 12.125,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.013283794788279124
+          }
         }
       ],
       "desktop": {
@@ -403,5 +560,11 @@
     "compact ppeok visible badge is hidden by existing skin; existing Game feedback/ARIA remains; not new visual-clue acceptance",
     "no shipping build/CI, no device/OS zoom/performance acceptance",
     "final E2E audit/baseline and #237 integration remain separate gates"
-  ]
+  ],
+  "resizeVerification": {
+    "supersedes": "resizes from022242937Z read parent360 before model390 RO/effect commit; that observation is not actual360 paint acceptance",
+    "condition": "fits true AND model width/height equal current DOM table rect before reading; no sleep/retry/threshold change",
+    "gameComponentTests": 18,
+    "failures": 0
+  }
 }

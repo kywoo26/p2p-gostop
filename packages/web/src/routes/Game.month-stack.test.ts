@@ -47,6 +47,14 @@ const floorIds = (root: HTMLElement) =>
   [...root.querySelectorAll<HTMLElement>('.floor [data-card-id]')]
     .map((e) => Number(e.dataset['cardId']))
     .sort((a, b) => a - b);
+function assertMeasuredFloor(root: HTMLElement) {
+  const table = root.querySelector<HTMLElement>('.table')!;
+  const rect = table.getBoundingClientRect();
+  const model = JSON.parse(table.dataset['floorModelBounds']!);
+  expect(model.width).toBe(rect.width);
+  expect(model.height).toBe(rect.height);
+  expect(table.dataset['floorFits']).toBe('true');
+}
 function twelveMonths() {
   let state = createScenario({
     roundNumber: 2,
@@ -86,11 +94,7 @@ test('Game 기본 경로는 합법 구성12월 전체 ID를 실제 Playback snap
     [360, 780],
   ]) {
     await page.viewport(width!, height!);
-    await vi.waitFor(() =>
-      expect(screen.container.querySelector('.table')?.getAttribute('data-floor-fits')).toBe(
-        'true',
-      ),
-    );
+    await vi.waitFor(() => assertMeasuredFloor(screen.container));
     expect(floorIds(screen.container)).toEqual(expected);
     expect(screen.container.querySelector('.layout-diagnostic')).toBeNull();
   }
@@ -343,11 +347,7 @@ test('실제 SoloSession 입력·원target 선택·FIFO 완료·resize·종료�
       [360, 780],
     ] as const) {
       await page.viewport(width, height);
-      await vi.waitFor(() =>
-        expect(screen.container.querySelector('.table')!.getAttribute('data-floor-fits')).toBe(
-          'true',
-        ),
-      );
+      await vi.waitFor(() => assertMeasuredFloor(screen.container));
       expect(floorIds(screen.container)).toEqual(expected());
     }
     solo.end();
@@ -482,11 +482,7 @@ test('390 실제 Game play17 성장16→18은 큐 중간 원본 ID와 resize/복
       [390, 734],
     ] as const) {
       await page.viewport(width, height);
-      await vi.waitFor(() =>
-        expect(screen.container.querySelector('.table')?.getAttribute('data-floor-fits')).toBe(
-          'true',
-        ),
-      );
+      await vi.waitFor(() => assertMeasuredFloor(screen.container));
       expect(floorIds(screen.container)).toEqual(expected());
       expect(screen.container.querySelector('.table')?.getAttribute('data-floor-reserved')).toBe(
         '0',
