@@ -210,6 +210,10 @@ exact `48356cc` 독립 C/W 반례에서 두 결함을 확인했다. 대전과 �
 
 표적 분모는14행이다: 실제 relay 단일 대전·둘 공존의 대전/솔로 기원6, 종료 솔로2, 기존 503/잘못200 같은 문서 복귀4, manual5032(C/W). 최초13 PASS/1 FAIL은 WebKit 설정 모듈이 정상 열려 고장 주입이 성립하지 않은 하네스 결과다. 해당 setup은 방 생성 전 실제 UI가 저장한 설정만 새 browser context로 옮겨, 이전 module cache와 분리했다. 원격 세션 복원이나 cache 우회 제품 기능이 아니다. 수정 후 remote6 PASS(양 기원·실제503 주입·대전 종료 후 손실 안내 제거 포함)는 앞선6을 대체하며, 유지된8과 합한 표적14 PASS다. check0/0·build21 PASS이며 전체 필수 gate 성공으로 확대하지 않는다. 잘못200/503 원실패와 WebKit manual reload 한계는 그대로 보존한다. 외부 config의 ESM/cwd 실수로 테스트 시작 전에 실패한 시도도 별도 보존하며 제품 검증으로 세지 않는다.
 
+### R1 CSS 구조 소유 후속
+
+exact483 B-LAYOUT-01은 시각 깨짐이 아니라 구조 소유 계약 누락이다. skin-marks의 높은 특이도 hand gap8/짧은 fine padding8 두 선언을 삭제하고 기존 Board selector에서 동일 적용값을 소유한다. 기본 gap8·padding16, 높이760 이하 padding12, 너비700 이상/높이600 이하/fine padding8을 보존한다. 상충하던 gap6/4는 제거했으며 row 내부 gap4와 상태 outline/focus는 그대로다. 같은 gallery fixture의 모바일 두 높이·desktop·짧은 fine C/W8쌍에서 실제 gap/padding/행·손패·slot·card rect가 모두 동일했다. PNG는7쌍 byte 동일이고 C412×915 한 쌍의 상대 획득피16픽셀은 RGB 최대1 차이다(손패 차이0). strict byte 일치 실패 원본을 보존하며 threshold 변경이나 재촬영으로 지우지 않았다. build21 PASS, raw149파일1,693,494 B다. root가 검토한37 PNG의 갱신과 기능 단언은 별도이며 변경 없는 기하를 의도 변화로 승인받는 작업이 아니다.
+
 ## 이행·되돌리기
 
 SK3-P0 설계/유한 proof → P1 build shell·entry/token/path/오류·도구 → P2 route·coordinator 분리 → P3 필수 검증·독립 review·root 통합 순서다. proof 실패로 조정한 선택은 코드와 같은 commit에 문서화한다. v0.4.1 배포는 계속 유지한다. 저장/wire 형식을 바꾸지 않아 검증 실패 시 branch 또는 미출하 변경을 revert하고 원 artifact를 사용할 수 있다. 운영 포인터·main 병합·tag/release·서명은 root만 소유한다. Galaxy/iPhone 사람 수용은 별도 절차/사람 결과가 필요하며 자동 테스트로 PASS 처리하지 않는다.

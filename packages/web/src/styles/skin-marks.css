@@ -210,15 +210,6 @@
   box-shadow: 0 0 0 4px var(--color-hand-cue-base);
 }
 /* 상태 선은 카드 앞면·크기를 바꾸지 않는다. 누름/초점은 바깥 입력 슬롯에서 구분한다. */
-:root .board .hand.compact.hand {
-  gap: 8px;
-}
-/* 짧은 가로 재배치에서는 위 여백 4px를 줄 간격에 옮겨 영역 높이를 유지한다. */
-@media (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
-  :root .board .hand.compact.hand {
-    padding-top: 8px;
-  }
-}
 :root .board .hand.compact .slot.slot.selected {
   outline: 2px dashed var(--skin-paper);
   outline-offset: 4px;

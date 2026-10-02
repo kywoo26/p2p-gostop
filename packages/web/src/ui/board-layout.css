@@ -404,7 +404,7 @@
 :root [data-board-layout] .hand.compact {
   display: grid;
   grid-template-rows: repeat(2, var(--table-card-height));
-  gap: 6px;
+  gap: 8px;
   padding-top: 16px;
 }
 :root [data-board-layout] .hand.compact .row {
@@ -478,7 +478,6 @@
     line-height: 12px;
   }
   :root [data-board-layout] .hand.compact {
-    gap: 4px;
     padding-top: 12px;
   }
   :root [data-board-layout] .hand.compact .slot.selected .art-window {
@@ -682,6 +681,10 @@
 
 /* 200% 확대의 720×450 상당: 카드 크기를 모바일과 같게 두고 영역 높이를 확보한다. */
 @media (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
+  /* 기존 skin의 적용값을 보존하되 두 손패 행의 간격·여백은 Board가 소유한다. */
+  :root [data-board-layout] .hand.compact {
+    padding-top: 8px;
+  }
   :root [data-board-layout] {
     --table-card: var(--board-card-compact);
     --fan-top: 48px;

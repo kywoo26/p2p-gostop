@@ -378,6 +378,8 @@ Kit route/state/오류·Board 구조 단일 소유와 이미 구현한 UI 단면
 
 독립 exact483 오류 P2 두 건 후속은 `navigation.ts`·coordinator·`+error.svelte`와 remote-play/kit-navigation 표적에 한정한다. 기존 `page.state.returnTo`의 출발 게임을 우선하고 현재 유효 소유만 복귀시킨다. 원격 방 보유 중 수동 reload는 숨기며 무조건 유지 문구를 제거한다. 단일/공존 양기원·종료 소유와 기존 같은 문서 복귀/503 한계14행 PASS(check0/0·build21 PASS)이며, 원FAIL·하네스 실패·수정 source를 분리 보존한다. CSS 소유 이관·cards readiness·root 검토37장 baseline은 각각 별도 commit이며 새 UI 기능·전체 수용 승격은 없다.
 
+CSS B-LAYOUT-01 후속 소유는 `board-layout.css`·`skin-marks.css` 두 파일과 이 plan/단일 설계다. 높은 특이도의 skin 구조2선언을 삭제하고 기존 layout selector에 실제 적용 gap8/padding16·12·short-fine8을 이관한다. row 간격·상태 외곽·카드 pose 변경은 없으며 mobile/desktop/짧은 fine C/W8쌍 computed 기하 동일·PNG7쌍 bytes 동일을 확인했다. 나머지1쌍은 상대 획득피16픽셀/RGB 최대1 차이이며 원 strict byte 실패를 보존한다. build21 PASS, 시각 회귀나37장 갱신 승인으로 확대하지 않는다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.
