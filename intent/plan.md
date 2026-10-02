@@ -392,6 +392,8 @@ root가 known30 후보27쌍을 원본 해상도로 직접 비교하여 hand focu
 
 fonts 후속은 `e2e/fonts.spec.ts`의 실제 Home typed link 표시 대기1줄만 소유한다. 원 trace에서 boot 문서의 fonts.ready 뒤 Tab(5142~5163ms), Home DOM(5166ms) 순서로 초점 대상 없는 입력이 발생했다. 준비된 Home에서 기존 폰트/대비/Tab/초점 단언을 수행하며 timeout·키보드 동작·기대값은 유지한다. CSS 제품 fix와 별도 commit이고 새 source의 표적 결과를 원208 실패와 구분한다.
 
+첫 병합 후속 마감: root가 desktop1440 play/target/gostop C/W6쌍도 원본으로 직접 검토해 정확actual bytes만 승인했다. 기존 SHA 목록에6행을 추가한 총70장(37+27+6) 외 PNG/ARIA/threshold/assert 변경0이며 원형 strict6은 뒤 Tab/trap까지 PASS다. 제품 `bfd6368`·시험 `5385ef0`의 build21/web lint, fonts2+짧은desktop4, 기존 키보드 액션4(비선택16 제외), portrait390×734 C/W2 전후기하 동일을 확인했다. 원208 timing2 미실행은 동일 성공dist와 원 samples/threshold의 timing-chromium1worker·`--no-deps`로만 재개해2 PASS(31초,21표본 p50 381/max548ms)했다. 전체 smoke 재실행 PASS로 합산하지 않는다. 같은5385 산출물 raw1,693,502B·초기 host1,088,523/guest993,515/solo1,164,381B는 각각 예산 이내다. v0.4.1 대비 초기body 감소와 요청 수/전체raw 증가·warm HTML 증가를 함께 보존하며 사용자 속도·사람 실기기 수용으로 확대하지 않는다. source/실행별 원실패·표적/계측 자료를 root에 인계하고 최종 CI·병합은 root가 판정한다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.

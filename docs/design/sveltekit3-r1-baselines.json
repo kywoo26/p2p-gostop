@@ -1,5 +1,5 @@
 {
-  "scope": "SK3-R1: root reviewed exactly64 images (37 + followup27); copy reviewed bytes only",
+  "scope": "SK3-R1: root reviewed exactly70 images (37 + followup27 + desktop6); copy reviewed bytes only",
   "reviewedSource": "R1 checkpoint png29 + CI37008134595 extra layout8; source equivalent483",
   "comparisonProductSource": "ccf0e42437e2cd650b9d218afe72cf442e826758 product, precommit BUILD_ID00eab2b",
   "comparisonArtifactHash": "828b20f93903c3553eb6d4ffeff98fe7b3995d9fee0f5bb32d0ce745b6fe6d7e",
@@ -506,6 +506,44 @@
       "oldExpectedSHA256": "b4d5d558f87de1691c818a86abd18478d8bd3d9bd0b329039ccd3a9a54a32c73",
       "reviewedActualSHA256": "fac40da61f42a48c841544b8e2b4b04401ecd5eea02ccdd35bb941a49efaa913",
       "review": "reviewed HUD hierarchy and board material; information retained"
+    }
+  ],
+  "desktopReview": {
+    "candidateListSHA256": "a613c949c0ebb2520081a384eb555f387d9b46686a4955776c12efdcdef8e92a",
+    "sourceHEAD": "208899068a245f2506680a4a91028f7bb0dd6401",
+    "scope": "1440x900 play/target/gostop in both engines; root checked all12 source image hashes and original-resolution pairs; reviewed historical actual bytes only",
+    "limit": "Original six tests passed preceding audit and axe, then failed pixel checks; subsequent Tab/trap was unexecuted. Four shortdesktop overlap failures are separate product fixes, not baseline acceptance."
+  },
+  "desktopEntries": [
+    {
+      "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-play-mac-chromium.png",
+      "oldExpectedSHA256": "27d7db74d484338d4a1e039854978a4aae737b7618173ecf739383af719e6892",
+      "reviewedActualSHA256": "4c93d1c3aae01401be8bc3f329bf925a346e7ad28bf256bc7a339b3ef21ffe7e"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-target-mac-chromium.png",
+      "oldExpectedSHA256": "6aed5511120083ce11bf2468ff0f542f94fe58493d97c1a7b9bfb9951b29f5e8",
+      "reviewedActualSHA256": "508d932d79b3b4feb926446b13eeff78bd862af0be6c562f7ca0f40306e62f56"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-gostop-mac-chromium.png",
+      "oldExpectedSHA256": "41537c96b3a1692663809c93a4179f6c42cde8dedd47fd81668760c1075004d7",
+      "reviewedActualSHA256": "3e6a2c19a8cfcd0212236ff695c84e6fb5b72e541a96d0ac509923893417882d"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-play-mac-webkit.png",
+      "oldExpectedSHA256": "5fb8432b449b965de6bb59161c14e6606b1a5743d2f6235b1c5649e9f5c26866",
+      "reviewedActualSHA256": "017635dadeb99050e3f4f2cdaf2b40b244155206505b6716281374f93fc0afc4"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-target-mac-webkit.png",
+      "oldExpectedSHA256": "a21733172f2e1ec5bd5ff204a9ed81c3e69b1d09fc415667bb7c5a4dd7d792a6",
+      "reviewedActualSHA256": "85c9d5e61c581c5a0f0d7077fe2844db3bae1f80d6500d4ad1106ab5138f6285"
+    },
+    {
+      "target": "packages/web/e2e/__screenshots__/mac-responsive.spec.ts/mac-gostop-mac-webkit.png",
+      "oldExpectedSHA256": "bc449e19e1353fe0dbd3cb7df295c5b44fbfeb26a1b172dd3b8a117a2db73915",
+      "reviewedActualSHA256": "d887e845b9b9fd6d9548ce09f5dd0fcbc8b30e27d5dbb98d9dd3c2a003e8ad47"
     }
   ]
 }
