@@ -88,13 +88,22 @@ test('Game 기본 경로는 합법 구성12월 전체 ID를 실제 Playback snap
   const screen = await render(Game, {
     controller: controller(playback, () => false),
   });
-  await vi.waitFor(() => expect(floorIds(screen.container)).toEqual(expected));
+  await vi.waitFor(() => {
+    expect(floorIds(screen.container)).toEqual(expected);
+    expect(window.innerWidth).toBe(360);
+    expect(window.innerHeight).toBe(780);
+    assertMeasuredFloor(screen.container);
+  });
   for (const [width, height] of [
     [390, 734],
     [360, 780],
   ]) {
     await page.viewport(width!, height!);
-    await vi.waitFor(() => assertMeasuredFloor(screen.container));
+    await vi.waitFor(() => {
+      expect(window.innerWidth).toBe(width);
+      expect(window.innerHeight).toBe(height);
+      assertMeasuredFloor(screen.container);
+    });
     expect(floorIds(screen.container)).toEqual(expected);
     expect(screen.container.querySelector('.layout-diagnostic')).toBeNull();
   }
