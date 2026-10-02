@@ -617,6 +617,7 @@
     <Floor
       compact
       {monthStacks}
+      layoutSuspended={landscape}
       round={view.round}
       {playbackBusy}
       snapshotSeq={view.eventSeq}

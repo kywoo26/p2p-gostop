@@ -23,6 +23,7 @@
     compact?: boolean;
     /** #202 실제 Board 검토용. 일반 적용은 별도 리뷰 뒤 전환한다. */
     monthStacks?: boolean;
+    layoutSuspended?: boolean;
     round?: number;
     playbackBusy?: boolean;
     snapshotSeq?: number;
@@ -41,6 +42,7 @@
   let {
     compact = false,
     monthStacks = false,
+    layoutSuspended = false,
     round = 0,
     playbackBusy = false,
     snapshotSeq = 0,
@@ -54,6 +56,7 @@
   }: Props = $props();
   let table: HTMLElement;
   let bounds = $state<MonthFloorBounds>({ width: 0, height: 0, cardWidth: 48, obstacles: [] });
+  let measurementActive = $state(false);
   let monthLayout = $state.raw<MonthFloorLayout>();
   let monthLayoutCosts = $state.raw<
     {
@@ -197,6 +200,7 @@
   $effect(() => {
     void staging;
     void groups;
+    void layoutSuspended;
     const paintRect = (el: Element, origin: DOMRect) => {
       const r = el.getBoundingClientRect(),
         style = getComputedStyle(el);
@@ -227,7 +231,16 @@
       };
     };
     const update = () => {
+      if (monthStacks && layoutSuspended) {
+        measurementActive = false;
+        return;
+      }
       const rect = table.getBoundingClientRect();
+      if (monthStacks && (rect.width <= 0 || rect.height <= 0)) {
+        measurementActive = false;
+        return;
+      }
+      measurementActive = true;
       const measured: MonthFloorBounds = {
         width: rect.width,
         height: rect.height,
@@ -291,7 +304,10 @@
   style:--table-card-height={monthStacks ? 'calc(42px / 0.614)' : undefined}
   bind:this={table}
   data-floor-folded={layout.folded}
-  data-floor-fits={monthStacks ? (monthLayout?.fits ?? false) : layout.fits}
+  data-floor-fits={monthStacks
+    ? measurementActive && !layoutSuspended && (monthLayout?.fits ?? false)
+    : layout.fits}
+  data-floor-suspended={monthStacks ? layoutSuspended : undefined}
   data-floor-strategy={monthStacks ? monthLayout?.strategy : undefined}
   data-floor-searches={monthStacks ? monthLayout?.searches : undefined}
   data-floor-exhausted={monthStacks ? monthLayout?.exhausted : undefined}

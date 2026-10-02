@@ -2,6 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 import Board from './Board.svelte';
+import Floor from './Floor.svelte';
 import { fixtures } from '../lib/fixtures.ts';
 import type { BoardView } from '../lib/view-types.ts';
 import { boundaryAfter, floorGroup } from './floor-stability-fixtures.ts';
@@ -385,3 +386,68 @@ for (const [key, trigger] of [
     expect(submitted).toHaveBeenCalledTimes(1); // release를 재사용하지 않는다. 제출된 선택도 취소하지 않는다.
   });
 }
+
+test('차단중 0높이 측정은 DOM 원ID/예약을 지우지 않고 권위·skip·reset 뒤 현재 ID로 복귀한다', async () => {
+  await page.viewport(360, 780);
+  const groups = [floorGroup(1, [0]), floorGroup(2, [4]), floorGroup(3, [8])];
+  const screen = await render(Floor, {
+    compact: true,
+    monthStacks: true,
+    groups,
+    deckCount: 20,
+    round: 1,
+    snapshotSeq: 100,
+  });
+  const table = screen.container.querySelector<HTMLElement>('.table')!;
+  table.style.width = '336px';
+  table.style.height = '245.84375px';
+  const ids = () =>
+    [...table.querySelectorAll<HTMLElement>('.floor [data-card-id]')].map((e) =>
+      Number(e.dataset['cardId']),
+    );
+  await vi.waitFor(() => expect(table.dataset['floorFits']).toBe('true'));
+  const before = [...table.querySelectorAll<HTMLElement>('.stack-card')].map(
+    (e) => e.dataset['floorModelPose'],
+  );
+  const measured = table.dataset['floorModelBounds'];
+  await screen.rerender({ layoutSuspended: true, playbackBusy: true });
+  table.style.width = '756px';
+  table.style.height = '0px';
+  await vi.waitFor(() => expect(table.getBoundingClientRect().height).toBe(0));
+  expect(table.dataset['floorFits']).toBe('false');
+  expect(table.dataset['floorSuspended']).toBe('true');
+  expect(ids()).toEqual([0, 4, 8]);
+  expect(table.dataset['floorModelBounds']).toBe(measured);
+  expect(
+    [...table.querySelectorAll<HTMLElement>('.stack-card')].map((e) => e.dataset['floorModelPose']),
+  ).toEqual(before);
+  await screen.rerender({ groups: groups.slice(1) });
+  await vi.waitFor(() => expect(ids()).toEqual([4, 8]));
+  expect(table.dataset['floorReserved']).toBe('1');
+  expect(table.querySelector('[data-card-id="0"]')).toBeNull();
+  await screen.rerender({ playbackBusy: false });
+  await vi.waitFor(() => expect(table.dataset['floorReserved']).toBe('0'));
+  await screen.rerender({
+    groups: [floorGroup(4, [12])],
+    round: 2,
+    snapshotSeq: 101,
+    deckCount: 23,
+    playbackBusy: true,
+  });
+  await vi.waitFor(() => expect(ids()).toEqual([12]));
+  expect(table.dataset['floorReserved']).toBe('0');
+  expect(table.querySelector('[data-card-id="4"]')).toBeNull();
+  await screen.rerender({ layoutSuspended: false, playbackBusy: false });
+  expect(table.dataset['floorFits']).toBe('false');
+  table.style.width = '336px';
+  table.style.height = '245.84375px';
+  await vi.waitFor(() => expect(table.dataset['floorFits']).toBe('true'));
+  expect(ids()).toEqual([12]);
+  expect(table.dataset['floorSuspended']).toBe('false');
+  // 양수 영역의 실제 배치 실패는 이전 ID로 가리지 않는다.
+  table.style.width = '42px';
+  table.style.height = '20px';
+  await vi.waitFor(() => expect(table.dataset['floorFits']).toBe('false'));
+  expect(ids()).toEqual([]);
+  expect(table.dataset['floorSuspended']).toBe('false');
+});
