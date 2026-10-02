@@ -83,3 +83,36 @@ export function restoredLandingSave() {
   }
   return { version: 1 as const, difficulty: 'easy' as const, session };
 }
+
+export function handBonusLandingSave() {
+  const session = {
+    ...createSession({
+      preset: 'standard',
+      rules: PRESETS.standard,
+      perPoint: 100,
+      startBalance: 100_000,
+      names: ['좌석0', '좌석1'],
+      seed: 2,
+    }).session,
+    game: newRound(PRESETS.standard, 2, { dealer: 0 }).state,
+  };
+  const result = sessionAct(session, { type: 'play', seat: 0, card: 49 });
+  if (!result.ok) throw new Error(result.message);
+  return {
+    save: { version: 1 as const, difficulty: 'easy' as const, session },
+    events: result.events,
+  };
+}
+
+export function targetChainLandingSave() {
+  return {
+    ...restoredLandingSave(),
+    session: {
+      ...restoredLandingSave().session,
+      actions: [] as readonly Action[],
+      game: newRound(PRESETS.standard, [3839809690, 1129524092, 3832060461, 2933933213], {
+        dealer: 0,
+      }).state,
+    },
+  };
+}

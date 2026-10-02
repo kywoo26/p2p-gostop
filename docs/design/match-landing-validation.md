@@ -3,7 +3,7 @@
 2026-10-02 · FR-14~17·UX-15~17·NF-03/08/09·AC-06/07 · Refs #200, #202, #236
 
 기준 main `e8ab9ffdd3f185934a12b1c62b61ed17fb70e5f7`, 계획 최종 SHA `b1fb35879c4fc170fb0445b5d0ddfb79fc090902`.
-첫 구현·실패를 함께 게시한다. 전체 요구사항 완료, 사용자 시각 수용, 0.5초 고정 시간, 실기기·전체 성능 통과를 뜻하지 않는다. #235의 고정 checkpoint와 격리 합성한 실제 42px 비교는 원본 카드 소실로 실패했다. 기본 Game 통합·출하 판정은 하지 않는다.
+첫 구현·실패와 후속 수정을 함께 게시한다. 전체 요구사항 완료, 사용자 시각 수용, 0.5초 고정 시간, 실기기·전체 성능 통과를 뜻하지 않는다. 아래 첫 42px 합성은 원본 소실로 실패했고, 후속 고정 staging 합성은 같은 정상 장면의 원본·접촉·출발을 보존했다. 누적 수정의 효과를 크기만의 효과로 해석하거나 전체 기본 Game 통합·출하 판정을 하지 않는다.
 
 ## 제품 계약
 
@@ -42,7 +42,7 @@ Chromium(Pixel7, 실제 CSS viewport412×839) source run 관측(단위 px/ms, �
 
 | 안 | 이 반례에서 확인/가정 | 남은 비교 |
 |---|---|---|
-| 바닥·더미 48→42 | 단위 테스트는 두 실제 DOM 폭에서 같은 알고리즘을 검사했다. 폭 감소12.5%는 계산이며 실제 월 배치·clearance 해소 증거가 아니다. #235 opt-in42가 진행 중이고 기본 활성화는 아직 아니다. | 같은 seed의 실제 before/접촉/강조에서 인접월·더미 paint와 두 그림 식별 |
+| 바닥·더미 48→42 | 단위 테스트는 두 실제 DOM 폭에서 같은 알고리즘을 검사했다. 폭 감소12.5%는 계산이며 실제 월 배치·clearance 해소 증거가 아니다. 최초 비교는 opt-in42, 아래 후속은 기본42 Game의 누적 수정 합성이다. | 같은 seed의 실제 before/접촉/강조에서 인접월·더미 paint와 두 그림 식별 |
 | 월·행 여백 조정 | W 원본 row 교차가 있으므로 incoming 방향만으로 원본 배치 문제를 해소할 수 없다. #235 소유이며 이 branch는 수정하지 않는다. | 공유 checkpoint의 실제 footprint/경계·paint와 동일 장면 비교 |
 | 유한 방향·offset 감소 | C48에서 own11.15px 침범 수정, W48은 실패 유지. 작은 offset은 두 그림 식별을 약하게 할 수 있다. | 실제42 연결 뒤 target before 보존 및 이미지 식별의 사용자 검토 |
 
@@ -88,3 +88,39 @@ root가 제공한 불변 합성은 #235 `3fc4d18263636f02f3db13d7b5f35c6e07aa633
 검증은 browser84PASS(landing/choreo/Playback recovery/skip, C/W), web check0오류0경고, 실제 E2E7PASS/기존 W 접촉1FAIL(정상 두 짝·보너스 뻑·복원/홈/선택 마감·393×659 출발 제한)이다. dev port4262/workers2이며 새 build/full suite/baseline 실행0. 기존 접촉 시험의 기대를 완화하지 않고 원본 존재 전제만 추가했다. 원본 floor 소실은 교차0으로 통과하지 않는다.
 
 P1 exact840의 [독립 delta COMMENT](https://github.com/kywoo26/p2p-gostop/pull/237#pullrequestreview-5387295996)는 최소 P1 해소·신규 차단0을 확인했고 PR 전체 수용은 아니다. [CI36948583842](https://github.com/kywoo26/p2p-gostop/actions/runs/36948583842)는 완료: core/Android 및 Chromium 성공, WebKit 기존 정상 접촉 실패다. 위 strong 후속의 새 SHA/CI·독립 검토는 별도로 인계한다. 다음 단계는 승인된 no-target/bonus flip·hand bonus→stage 모션을 ghost로 처리하는 최소 후속이며 별도 commit이다. 실제42 새 합성 비교·나머지 특수 경로·최종 전체 검사·기기 수용·병합/출하는 미완이다.
+
+
+## strong 독립 검토·주석 폰트 gate 복구
+
+strong 제품 `fb5004ee0fe011eefa3ea407400e4ba335c8390f`의 [CI36951573461](https://github.com/kywoo26/p2p-gostop/actions/runs/36951573461)는 3 jobs 실패였다. 두 새 한국어 주석의 글자가 폰트 검사 대상 TS 코퍼스에 포함돼 build에서 누락 글자 `덱물`로 차단됐다. core Android는 미실행, 두 browser component는 성공했지만 E2E는 같은 build/webServer 차단으로 미시작이다. 기존 W 접촉 제품 실패와 구별한다.
+
+`7fa37a9a41de4013715d2de223af3e08a213b167`는 해당 두 주석만 기존 코퍼스 표현으로 바꿨다. 실행문·다른 제품 blob·UI·폰트 자산·코퍼스 수집·gate·임계값 변경0이다. 직접 폰트703문자/hash 검사는 통과했다. [동일 head CI36952139277](https://github.com/kywoo26/p2p-gostop/actions/runs/36952139277)는 최종 core/Android 및 Chromium component/E2E/timing 성공, WebKit component 성공·기존 접촉 E2E 실패·timing 미실행이다. 전체는 실패이며 재실행으로 덮지 않았다.
+
+[exact7fa 독립 COMMENT](https://github.com/kywoo26/p2p-gostop/pull/237#pullrequestreview-5387512460)는 strong 타월 pose 최소 반례 해소·정상 두짝 출발 보존·P1 복원 회귀를 확인했다. 독립 browser20PASS, 실제 E2E5PASS/기존 W 접촉1FAIL, API 경계 C/W2PASS다. 안전 제한 카드의 실제 획득 영역 강조만 확인한 것으로 접촉 UX·PR 전체 병합 수용이 아니다. 아래 새 staging 제품은 이 검토에 포함되지 않는다.
+
+## 고정 staging 후속 합성: 같은 정상 장면의 원본·관계·출발
+
+root의 불변 합성은 #235 `ddf6c36109467cc5cab0886dc396d5aeab92b4cb` + #237 `7fa37a9a41de4013715d2de223af3e08a213b167`, tree `90abd3c2ea29ef422720c4a7f7109b327e3ffd2b`, source.tar SHA-256 `14b3726a7f493634fd37bba68e77df4c53a64c0fab4519c31bd68deb9623cdc2`다. manifest1,181개 원본 파일 hash 재검증 변경0이다. 별도 복제에 actual Game/controller와 sampler의 네 harness 파일만 추가했다. Game의 옛 optional flag API를 복원하거나 제품 Game/Floor/Board를 고치지 않았다. 기본 Game42/포트4262/seed1/dealer1/play10/normal/C와W 모두393×659다. .git 없는 dev 실험이며 shipping CI·최종 통합 증거가 아니다. 아래 staging ghost 후속은 미포함이다.
+
+양 엔진 table은 `(12,183.078125,369,168.5)`다. C112/W101 RAF 모두 Playback 표시 floor IDs와 원본 floor CardId DOM 일치, 중복·양수 rect 실패0, 숨긴 원본의 ghost 부재0이었다. 접촉·strong 중 incoming10/30의 타월 paint 침범0, typed 배치 실패0이다. 원본 존재를 검사한 뒤 교차를 판정해 공집합 교차0을 성공으로 처리하지 않는다. 권위 최종 floor6IDs와 Playback 중간9→10IDs는 frame에서 분리 기록했다.
+
+| 관측 | C | W |
+|---|---:|---:|
+| 손패 접촉·약한 빛(ms) | 288.1 | 301 |
+| 덱 접촉·약한 빛(ms) | 704.3 | 718 |
+| strong / counter0(ms) | 1270.7 | 1280 |
+| 두 짝 첫 실제 이동, 동일 RAF(ms) | 1387.4 | 1463 |
+
+before target8 `(79.1875,280.171875,42,68.390625)`, target31 `(271.796875,186.078125,42,68.390625)`에서 incoming10 `(95.1475,268.47708)`, incoming30 `(287.75687,197.77292)`로 접촉했다. target의 before→strong held 오차는 C최대0.0000153px/W0으로, 성장한 월 묶음의 다른 settled 좌표를 덮어쓰지 않았다. Captured commit 뒤 counter광1·피3가 됐고 두 월 짝은 같은 관측 frame에서 각각 출발했다. 초기 공통 이동 구간의 짝 상대 좌표 오차는 C최대0.00000763px/W0이다. 중앙 합체가 아니다.
+
+canonical stage30과 고정 reserve는 C `(175.5,233.1328,42,68.3906)`, W y233.16145로 같은 위치다. stage native rect와 덱 counter의 교차0을 기록했고 flip 앞면/뒤면 변화도 원본과 ghost를 나눠 기록했다. C strong/W flip PNG를 직접 확인해 두 짝 그림·덱 잔량의 분리를 관측했다. 전체 영상 재생·사용자 인지 수용·고정0.5초·전체 성능 판정은 아니다. 원본 PNG/영상/frames·후보 기각·출발 대조·harness diff/hash는 root와 #235에 전달했다.
+
+이 결과는 원래 3fc+840 소실 실패와 구별한다. 크기·배치·rotation·staging 예약/paint 수정이 누적됐으므로 48→42 단독 인과 효과가 아니다. #235 mixed16/18 원본 소실 실패, 최종 source 통합·전체 suite·shipping CI·기기 수용은 남아 있다.
+
+## 새 no-target/bonus staging: canonical 원본과 ghost의 수명 분리
+
+기존 no-target 공개 flip과 손패 bonus는 canonical staging Card DOM에 native FLIP을 걸었다. 이제 새 staging ID의 실제 DOM이 commit된 뒤 clone을 성립시키고, 이동/뒤집기는 ghost에만 적용한다. 손패 bonus는 삭제 전 손패 beforepose를 확보하고 새 덱 공개는 실제 deck anchor에서 시작한다. clone 새 부모의 shadow를 다시 측정하며 원본 CardId/앞뒷면·권위 배열·active held beforepose를 보존한다. known-target flip 경로는 유지한다. 새 staging ghost가 있다는 사실과 정확 target 접촉이 성립했다는 사실을 구분해, 이후 실제 Matched에서는 접촉하지 않은 staging ghost도 선택 target으로 착지한다. 새 공통 API/registry/wire/Floor/Board/Game 편집0이다.
+
+합법 실제 이어하기에서 수정 전 손패49·뻑 bonus48/50·두 선택 연쇄 stage29 C/W6FAIL을 보존했다. 수정 후 손패49 실제 획득/보충38, 뻑48/50 원본 고정·가짜획득0, play7→choose6→choose28 실제 수락/획득4, 두 선택 연쇄의 홈 이탈→복원 현재 stage29(옛 flip 재연0)→choose28 마감, skip/reduced를 포함한 실제 앱 E2E12PASS다. 각 stage ID가 존재하는 frame의 양수 원본1개/ghost1개/원본 outer WAAPI0·위치 변동0.05px 미만을 검사한다. 손패49 skip 전 counter0, 실제 Captured 뒤1장 반영·보충38·숨김/모션 정리0을 확인한다. reduced는 ghost를 만들지 않고 실제 최종 상태로 수렴한다.
+
+첫 home 종료 검사는 Home commit 전에 detached root를 읽어 실패했고, 실제 Home 표시/scene 제거를 기다리는 완료 경계로 고쳤다. skip의 첫 0-animation 기대는 기존 손패17/18/19의 무한 CSS 폭탄 힌트3개를 포함했다. 직접 effect/type/target을 기록해 구별했고, 손패의 무한 CSS 효과만 제외해 모든 다른 남은 모션0을 검사했다. 기존 제품 기준/좌표 기대/기준샷은 완화하지 않았다. 관련 기존 browser84PASS/check0오류0경고는 staging 후속 수정 시점의 표적이며 이전7fa 검증으로 전용하지 않는다. 추가 실제 Game/SoloSession의 bonus ghost 재생 중 수락 snapshot reset C/W2PASS는 원본 가림 복원·ghost/light/원본 모션0·최종 표시/권위 일치를 확인했다. 새 check0오류0경고·web lint:fix·폰트703문자/hash·privacy findings0을 확인했다. 후속 코드의 실제 landing/recovery/capture/staging 전체 유한 표적은19PASS/기존 W 접촉1FAIL이며, 이 실패의 기대값을 그대로 유지했다. 별도 게시 exactSHA/CI는 인계에서 기록한다. 실제 뻑 회수 중 새 bonus·따닥/즉시 resolve·나머지 경계·최종 필수 suite와 새 독립 검토는 아직 남는다.

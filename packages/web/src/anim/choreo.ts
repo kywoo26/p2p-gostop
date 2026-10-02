@@ -292,7 +292,10 @@ async function runStep(
   let next = board;
   for (const event of step.events) {
     if (active) {
-      if (event.type === 'CardPlayed' && !event.bonus) {
+      if (event.type === 'CardPlayed' && event.bonus) {
+        const card = event.cards[0];
+        if (card !== undefined) scene.reserve(card);
+      } else if (event.type === 'CardPlayed' && !event.bonus) {
         const card = event.cards[0];
         if (card !== undefined) {
           context.played = card;
@@ -305,7 +308,8 @@ async function runStep(
           for (const card of event.cards.slice(0, event.handCards)) contacts.push({ card, target });
       } else if (event.type === 'Matched') {
         const card = event.cards[0];
-        if (card !== undefined && !scene.has(card)) contacts.push({ card, target: event.target });
+        if (card !== undefined && !scene.isContacted(card))
+          contacts.push({ card, target: event.target });
       }
       if (event.type === 'Captured' || event.type === 'PiStolen') captured.push(...event.cards);
       if (event.type === 'Ppeok' || event.type === 'Placed') settled.push(...event.cards);
@@ -367,6 +371,28 @@ async function runStep(
       return to === undefined ? [] : [[id, to] as const];
     }),
   );
+  // 새 staging의 원본 위치는 유지하고 공개 카드의 이동은 ghost가 맡는다.
+  for (const id of next.staging) {
+    if (board.staging.includes(id) || revealed.some((relation) => relation.card === id)) continue;
+    const source =
+      before.get(String(id)) ?? before.get(step.kind === 'play' ? '@opp-hand' : '@deck');
+    const el = originalCards(host.root).find((el) => Number(el.dataset['cardId']) === id);
+    if (el === undefined || source === undefined) continue;
+    const kept = scene.has(id);
+    const to = cardPose(el, host.root);
+    if (scene.reserve(id) === undefined) continue;
+    if (!kept) {
+      const start = scene.move(id, { ...to, rect: source, angle: 0 }, 0);
+      if (start !== undefined) await sequence(() => start);
+      if (host.isCurrent?.() === false) return next;
+    }
+    const duration = ms(baseMs(step.kind === 'play' ? 'handToFloor' : 'flip', host.root));
+    const move = scene.move(id, to, duration);
+    if (move !== undefined) animations.push(move);
+    const inner = heldInner(scene, id);
+    if (before.get(String(id)) === undefined && inner !== null)
+      animations.push(flipCard(inner, { duration }));
+  }
   animations.push(
     ...scene.pulseCaptured(
       captured.filter((id) => !captureSources.has(id)),

@@ -107,6 +107,10 @@ export class LandingScene {
     return this.cards.has(id);
   }
 
+  isContacted(id: CardId): boolean {
+    return this.cards.get(id)?.contacted ?? false;
+  }
+
   pose(id: CardId): CardPose | undefined {
     return this.cards.get(id)?.pose;
   }
