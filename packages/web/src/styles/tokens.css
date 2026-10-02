@@ -31,7 +31,7 @@
   --color-felt-highlight: oklch(33% 0.045 190);
   --board-background:
     radial-gradient(ellipse at 50% 42%, #34736926, #041515b8 95%),
-    linear-gradient(#102f2de8, #102723ed), var(--skin-felt) center / 380px repeat;
+    linear-gradient(#102f2de8, #102723ed), var(--skin-felt) center / 380px repeat var(--color-felt);
   --color-board-toast: var(--color-surface);
   --radius-pill: 999px;
 
