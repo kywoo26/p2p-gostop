@@ -396,6 +396,8 @@ fonts 후속은 `e2e/fonts.spec.ts`의 실제 Home typed link 표시 대기1줄�
 
 첫 병합 main full 후속(SK3-R1·AC-05): PR #238은 main `9505572c40bd270c8fb8bee8117e278e8d503090`에 병합됐고, CI `37022423468`의 WebKit full은254 PASS/3 PNG FAIL/21 skip이다. smoke의 WebKit 선택 밖인 gallery home/host/settings3장은 기존 승인70장 밖이었고 PNG 뒤 axe·WebKit timing은 미완이다. root가 원본3쌍을 직접 검토한 정확actual bytes만 별도 fix branch에서 기존 SHA 목록에 추가한다(총73장). 제품/원시험/config/ARIA/threshold/다른 PNG는 불변이다. 제품 source가 같은 성공 `5385ef0` dist를 재사용한 원형 gallery WebKit3은 PNG·후행axe까지3 PASS(3.8초)다. 별도 timing-webkit 첫 실행은 reload 중 버전확인 pageError로 빠름1 FAIL·보통1 미실행·원project조건1 skip이며 원로그/trace를 보존한다. 이 기준샷 정합을 timing 통과로 합산하지 않는다. 원 main 실패와 새 후속 결과·빌드 귀속을 구분하며 전체 suite 재실행이나 사람 실기기 수용으로 확대하지 않는다.
 
+같은 후속의 timing readiness는 `solo.spec.ts`의 첫 goto 뒤 실제 Home「핫스팟 대전」link visible 대기1줄만 별도 commit으로 추가한다. 오류 watcher 시작·`errors=[]`·저장/reload·fixture/카드·7표본/워밍업·계측 경계·threshold는 유지한다. 원형/Home-ready 첫warmup 통제1쌍은2 PASS이며 원형에서 앞 오류가 재현되지 않아 인과 확정으로 쓰지 않는다. 원 무계측 FAIL trace는 보존한다. 1줄 반영 후 동일제품dist의 원형 timing-webkit full을 `--no-deps`·1worker로1회 실행하여 빠름·보통2 PASS(각3경로·21표본), 원래 timing-chromium 전용 재접속1 skip을 확인했다. 빠름 전체 p50 397/max576ms·보통 경로별 p50 1252/1794/1271ms와 기존 오류/시간 단언이 통과했으며 같은 head 전체 suite·실기기 수용은 아니다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.

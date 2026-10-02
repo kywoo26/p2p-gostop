@@ -210,6 +210,7 @@ async function fixedTurnMs(
   // 매 표본을 같은 저장 세션에서 시작한다. 무작위 판의 다른 이벤트 경로가 섞이지 않는다.
   await page.setViewportSize({ width: 412, height: 915 });
   await page.goto(`./${query}#/`);
+  await expect(page.getByRole('link', { name: '핫스팟 대전' })).toBeVisible();
   await page.evaluate((save) => localStorage.setItem('gostop.solo.v1', JSON.stringify(save)), save);
   await page.reload();
   await page.getByRole('button', { name: /이어하기/ }).click({ timeout: 10_000 });
