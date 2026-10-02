@@ -142,6 +142,8 @@ test.describe('S25 Ultra 게임판 표식', () => {
   test.use({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 3.5 });
   test('더미 수는 뒷면 안에, 바닥·손패 앞면 가림과 별도 배지 0 @layout', async ({ page }, info) => {
     await page.goto('./#/dev/gallery/board');
+    // Kit의 초기 문서에는 이미지가 없어 every()가 먼저 참일 수 있다. 실제 판부터 기다린다.
+    await expect(page.locator('.deck-count')).toBeVisible();
     await page.waitForFunction(() =>
       [...document.images].every((img) => img.complete && img.naturalWidth > 0),
     );

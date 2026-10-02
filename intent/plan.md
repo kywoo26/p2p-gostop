@@ -380,6 +380,8 @@ Kit route/state/오류·Board 구조 단일 소유와 이미 구현한 UI 단면
 
 CSS B-LAYOUT-01 후속 소유는 `board-layout.css`·`skin-marks.css` 두 파일과 이 plan/단일 설계다. 높은 특이도의 skin 구조2선언을 삭제하고 기존 layout selector에 실제 적용 gap8/padding16·12·short-fine8을 이관한다. row 간격·상태 외곽·카드 pose 변경은 없으며 mobile/desktop/짧은 fine C/W8쌍 computed 기하 동일·PNG7쌍 bytes 동일을 확인했다. 나머지1쌍은 상대 획득피16픽셀/RGB 최대1 차이이며 원 strict byte 실패를 보존한다. build21 PASS, 시각 회귀나37장 갱신 승인으로 확대하지 않는다.
 
+cards readiness 후속은 `e2e/cards.spec.ts` S25 표적의 실제 `.deck-count` 표시 대기2줄과 이 plan만 소유한다. exact483 CI C 첫 시도·W 첫/재시도 trace에서 boot 문서의 image0 때문에 `every()`가 먼저 참이 되고 실제 gallery 생성 전에 null 측정했다. W 재시도는 실패 뒤 첫 SVG 요청과 deck 생성까지 관측됐다. 기존 이미지 로드·기하·가림·scroll·표식 단언/timeout/재시도는 그대로이며 C/W 원형2행 PASS다. 다른 layout/벨 flaky는 이 원인으로 묶지 않는다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.
