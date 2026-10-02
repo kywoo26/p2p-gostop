@@ -110,6 +110,8 @@ p2p-gostop/
 
 ### 1.8 스택·의존성 도입 근거
 
+**SK3 · SvelteKit 3 채택 검증(2026-10-02, NF-01/02/03/04/05/07/08/09·MN-05·AI-05·AC-04/05/06/07):** 사용자가 Kit 3 도입·필요 재설계를 명시 위임했다. 현재 plain Vite 앱의 새 프레임워크 채택이며 2→3 codemod를 실행하지 않는다. `@sveltejs/kit` **3.0.0**·`@sveltejs/adapter-static` **4.0.0**(MIT)을 격리 finite proof에만 정확히 고정한다. 게시/72시간 경과, peer 조건, root가 수락한 두 패키지 이름만의 명령 단위 연령 예외와 lock 해석→전체 integrity/연령/peer 검사→설치 순서는 [단일 설계](../docs/design/sveltekit3.md#의존성설치-경계)에 둔다. `.npmrc`·CI의 3일 제한·설치 스크립트 차단 및 생산 lock은 이 proof에서 바꾸지 않는다. 생산 적용은 proof 결과와 별도 설치 checkpoint 뒤 진행한다.
+
 **#208 개인정보 잔존·재유입 감사 (NF-01·NF-RP-06):** Node 내장 API만 쓰는 추적 텍스트/PR 추가 행 검사와 합성 반례 테스트를 루트 lint에 연결한다. 신규 의존성·제품 상한은 추가하지 않는다. §1.9의 공개 검증 자료도 값 비노출·역할별 일반화를 적용한다. 범위·오탐·#190 소유 잔존·과거 이력/외부 미검증은 [감사 기록](../docs/reviews/privacy-residue-audit.md)에 구분한다. 요구사항 완료 상태는 변경하지 않는다.
 
 **NF-09 CI 설치 경로:** Ubuntu 24.04 GitHub 러너의 기존 apt 미러 목록에서 공식 HTTPS archive/security를 Azure HTTP보다 우선한다(`.github/scripts/prefer-ubuntu-https.sh`, 미지원 형식은 무변경 실패). source·suite/component·Signed-By·신뢰 키·버전 핀·Playwright 공식 설치 명령과 20분 검증 상한은 보존하며, 호스트 설치는 기존 `tools/setup-host.sh`만 사용한다. 설치 지연 감소·전체 timing 완료는 hosted CI 측정 후 판정하고, 요구사항 완료 상태는 바꾸지 않는다.
@@ -288,6 +290,20 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 | M6 완성도        | Galaxy 호스트·솔로 우선, P1·AC 전부 충족해야 v1.0.0                                                                                    | [현재 트랙](#현재-트랙)                                                              |
 
 ### 현재 트랙
+
+<a id="sk3"></a>
+#### SK3 활성 실행 단위 — 새 프레임워크 채택
+
+2026-10-02 기준 `991334023d48eaf7e77848c61048e18de5f49bfb` (`v0.4.1`). 사용자 Kit 3 도입·필요 재설계 위임과 root 격리 proof 지시를 수락 근거로 한다. 아래 역사 계획의 상태·완료 기록은 이 작업에서 일괄 재작성하지 않는다. 현재 SK3 판단 정본은 [설계](../docs/design/sveltekit3.md), 요구 상태는 §3-2의 기존 행을 보존한다. 계획·검증 준비를 요구 완료로 승격하지 않는다.
+
+| 단위 | 소유·실행 순서 | 위험·증명·완료 조건 |
+|---|---|---|
+| SK3-P0 (진행) | Astra xhigh 총괄: 이 설계/plan/AGENTS의 좁은 delta, 격리 proof 소스·lock·검증. Sol 6.1 high A: App/session/Playback/P2P/Android 수명 읽기 감사. Sol 6.1 medium B: 공식3/npm/도구 읽기 감사. 두 역할은 별도 worktree·tmp 결과만 소유하며 같은 plan을 편집하지 않음 | high는 수명 경합·반례, medium은 공식 자료·메타 수집에 배분. Vite 유지 개선/Kit hash SPA/필요 재설계 비교 → 공식 전체 맥락 → dependency 검사 → 실제 정적 shell·최소 앱 proof. 프로세스/worker≤4 단일 heavy lane. 최초 계획 SHA는 PR 본문 |
+| SK3-P1 (P0 뒤) | 총괄 또는 인수받은 구현 role: web Vite/Kit 설정, app/entry·route shell, `remote.ts` 이름 충돌, path/version·OSS/build scripts, web TS6·ESLint·knip·import probe. 실제 파일 ownership은 착수 시 좁게 갱신 | 같은 dist 루트/version prefix·plainHTTP·fragment privacy·static Ktor/Android assets. 생산 lock은 별도 checkpoint. 외부 서비스·SW·SSR·remote functions 추가 없음 |
+| SK3-P2 (P1 뒤) | host/guest shell과 route별 얇은 page, persistent coordinator 분리. engine/AI/protocol 규칙은 변경하지 않음 | session과 DOM 수명을 분리. settings Back/홈 dispose·resume/guest restore/정산 restart/target-before-pose·WAAPI 착지/skip/reduced 회귀. 실제 host/guest/solo body·raw와 기준 비교 |
+| SK3-P3 (P2 뒤) | 구현 owner 자기 검증 → 독립 reviewer → root 병합 판단 | AGENTS §5 필수 native lint/check/Node/browser/build/smoke/Android≤4 및 영향 full E2E. 현재 head/base/실제 시험 commit 연결. 예산/기준샷 완화 없음. 사람 기기 수용·main/tag/release/운영/서명 root 소유 |
+
+산출물은 단일 설계와 이 실행 단위에 연결한다. 완료 역할은 근거 보존 후 root에 archive 인계하고 필요 시 동일 role을 후속 독립 검토에 재사용한다. 이탈은 해당 구현과 같은 commit에서 동기화한다. rollback은 저장/wire 형식 보존 아래 branch/revert와 기존 v0.4.1 artifact 유지이며 운영 조작을 포함하지 않는다.
 
 상태 확인: 2026-10-01, main `17c8d29`(#213 병합). 작업별 기준 SHA는 각 실행계획에 고정한다. 요구 상태는 §3-2, 현재 배정·공유 파일 인계는 이 절이 정본이다. AGENTS.md는 단일 작업 규범이며 이슈·PR은 정본과 commit SHA를 연결한다. 이 문서 정비는 #211 출하 후 후속이며 v0.3.2 출시 gate를 추가하지 않는다.
 
