@@ -55,6 +55,65 @@ function assertMeasuredFloor(root: HTMLElement) {
   expect(model.height).toBe(rect.height);
   expect(table.dataset['floorFits']).toBe('true');
 }
+// 실패한 기존 wait 바깥에서만 읽는다. 진단 오류도 원래 단언 오류를 바꾸지 않는다.
+function reportMeasuredFloorFailure(
+  root: HTMLElement,
+  phase: 'initial' | 'resize',
+  requested: { width: number; height: number },
+  error: unknown,
+): never {
+  try {
+    const table = root.querySelector<HTMLElement>('.table');
+    const rect = table?.getBoundingClientRect();
+    const style = table ? getComputedStyle(table) : null;
+    const viewport = window.visualViewport;
+    console.error(
+      'MONTH_STACK_RESIZE_FAILURE ' +
+        JSON.stringify({
+          phase,
+          requested,
+          inner: { width: window.innerWidth, height: window.innerHeight },
+          visualViewport: viewport
+            ? {
+                width: viewport.width,
+                height: viewport.height,
+                offsetLeft: viewport.offsetLeft,
+                offsetTop: viewport.offsetTop,
+                scale: viewport.scale,
+              }
+            : null,
+          visibility: { state: document.visibilityState, hidden: document.hidden },
+          hasFocus: document.hasFocus(),
+          table: table
+            ? {
+                connected: table.isConnected,
+                ownerDoc: table.ownerDocument === document,
+                rect: rect
+                  ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+                  : null,
+                computed: {
+                  display: style!.display,
+                  visibility: style!.visibility,
+                  contentVisibility: style!.contentVisibility,
+                  contain: style!.contain,
+                },
+              }
+            : null,
+          floor: {
+            bounds: table?.dataset['floorModelBounds'] ?? null,
+            suspended: table?.dataset['floorSuspended'] ?? null,
+            fits: table?.dataset['floorFits'] ?? null,
+          },
+          landscape: window.matchMedia('(orientation: landscape)').matches,
+          coarse: window.matchMedia('(pointer: coarse)').matches,
+          fakeTimers: vi.isFakeTimers(),
+        }),
+    );
+  } catch {
+    // 조회·JSON·logger가 실패해도 받은 동일 error를 보존한다.
+  }
+  throw error;
+}
 function twelveMonths() {
   let state = createScenario({
     roundNumber: 2,
@@ -88,22 +147,35 @@ test('Game 기본 경로는 합법 구성12월 전체 ID를 실제 Playback snap
   const screen = await render(Game, {
     controller: controller(playback, () => false),
   });
-  await vi.waitFor(() => {
-    expect(floorIds(screen.container)).toEqual(expected);
-    expect(window.innerWidth).toBe(360);
-    expect(window.innerHeight).toBe(780);
-    assertMeasuredFloor(screen.container);
-  });
+  try {
+    await vi.waitFor(() => {
+      expect(floorIds(screen.container)).toEqual(expected);
+      expect(window.innerWidth).toBe(360);
+      expect(window.innerHeight).toBe(780);
+      assertMeasuredFloor(screen.container);
+    });
+  } catch (error) {
+    reportMeasuredFloorFailure(screen.container, 'initial', { width: 360, height: 780 }, error);
+  }
   for (const [width, height] of [
     [390, 734],
     [360, 780],
   ]) {
     await page.viewport(width!, height!);
-    await vi.waitFor(() => {
-      expect(window.innerWidth).toBe(width);
-      expect(window.innerHeight).toBe(height);
-      assertMeasuredFloor(screen.container);
-    });
+    try {
+      await vi.waitFor(() => {
+        expect(window.innerWidth).toBe(width);
+        expect(window.innerHeight).toBe(height);
+        assertMeasuredFloor(screen.container);
+      });
+    } catch (error) {
+      reportMeasuredFloorFailure(
+        screen.container,
+        'resize',
+        { width: width!, height: height! },
+        error,
+      );
+    }
     expect(floorIds(screen.container)).toEqual(expected);
     expect(screen.container.querySelector('.layout-diagnostic')).toBeNull();
   }
