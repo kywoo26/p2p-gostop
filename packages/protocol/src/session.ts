@@ -2,6 +2,7 @@
 export { HostSession, type HostSessionOptions, type HostSessionState } from './host.ts';
 export {
   GuestSession,
+  readGuestSessionState,
   type GuestConnection,
   type GuestSessionOptions,
   type GuestSessionState,

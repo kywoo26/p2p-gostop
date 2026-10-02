@@ -28,15 +28,21 @@ import {
   settlementDigest,
   viewDigest,
   type ObservedRound,
+  type PublicTargetObservation,
+  type PublicTargetCheck,
   type VerifyFailure,
 } from './verify.ts';
-import type { BoardView, SettlementView } from './view-types.ts';
+import { publicTargetCheckSchema, publicTargetObservationSchema } from './schema.ts';
+import { matchesAcceptedPlayTarget } from './view.ts';
+import type { AcceptedPlayTarget, BoardView, SettlementView } from './view-types.ts';
 
 export type RoundCheck =
   | {
       readonly round: number;
       readonly result: 'verified';
       readonly time?: 'verified' | 'unverifiable';
+      /** 기존 verified와 별도의 새 공개 대상 관찰 결과. 없는 옛 결과는 미관찰. */
+      readonly publicTargets?: PublicTargetCheck;
     }
   | { readonly round: number; readonly result: 'aborted'; readonly reason: string }
   | { readonly round: number; readonly result: 'unverifiable'; readonly reason: 'noCommitment' }
@@ -49,8 +55,15 @@ interface Commitment {
   readonly guestSecret: string;
   revealed: boolean;
 }
+interface MutablePublicTargets {
+  gap: boolean;
+  overflowSeq?: number;
+  accepted: Record<string, AcceptedPlayTarget[]>;
+  relations: Record<string, Array<{ played: number | null; playTarget: number | null }>>;
+}
 interface MutableObservation {
   readonly round: number;
+  publicTargets?: MutablePublicTargets;
   readonly events: Record<string, string>;
   readonly views: Record<string, string>;
   readonly sent: Action[];
@@ -66,7 +79,7 @@ interface MutableObservation {
 
 /** GuestSession.toJSON()의 모양. 탭 수명 저장소(sessionStorage)에 두고 restore로 넘긴다 */
 export interface GuestSessionState {
-  readonly v: 1 | 2;
+  readonly v: 1 | 2 | 3;
   readonly token: string | null;
   readonly seq: number;
   readonly epoch: string | null;
@@ -103,6 +116,107 @@ export interface GuestSessionOptions {
 
 export type GuestConnection = 'idle' | 'joining' | 'joined' | 'tokenRejected' | 'versionMismatch';
 
+function samePublicTarget(a: AcceptedPlayTarget, b: AcceptedPlayTarget): boolean {
+  return a.baseSeq === b.baseSeq && a.seat === b.seat && a.card === b.card && a.target === b.target;
+}
+function clonePublicTargets(value: PublicTargetObservation, gap = value.gap): MutablePublicTargets {
+  return {
+    gap,
+    ...(value.overflowSeq === undefined ? {} : { overflowSeq: value.overflowSeq }),
+    accepted: Object.fromEntries(
+      Object.entries(value.accepted).map(([key, targets]) => [
+        key,
+        targets.map((target) => ({ ...target })),
+      ]),
+    ),
+    relations: Object.fromEntries(
+      Object.entries(value.relations).map(([key, relations]) => [
+        key,
+        relations.map((r) => ({ ...r })),
+      ]),
+    ),
+  };
+}
+
+/** 탭 저장 validating reader. wire4/store3는 독립이고 옛 관찰에 새 검증 성공을 붙이지 않는다. */
+export function readGuestSessionState(value: unknown): GuestSessionState | null {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('v' in value) ||
+    (value.v !== 1 && value.v !== 2 && value.v !== 3) ||
+    !('observations' in value) ||
+    !Array.isArray(value.observations) ||
+    value.observations.length > 2 ||
+    !('checks' in value) ||
+    !Array.isArray(value.checks) ||
+    value.checks.length > 100 ||
+    !('commitments' in value) ||
+    !Array.isArray(value.commitments) ||
+    value.commitments.length > 2 ||
+    !('seq' in value) ||
+    !Number.isSafeInteger(value.seq) ||
+    Number(value.seq) < 0
+  )
+    return null;
+  if (
+    value.v >= 2 &&
+    (!('timerSettings' in value) ||
+      !('decision' in value) ||
+      !('timeoutHistory' in value) ||
+      !('nextRequestId' in value))
+  )
+    return null;
+  const observations: unknown[] = [];
+  if (value.v === 3) {
+    for (const check of value.checks) {
+      if (typeof check !== 'object' || check === null) return null;
+      if (
+        'publicTargets' in check &&
+        !publicTargetCheckSchema.safeParse(check.publicTargets).success
+      )
+        return null;
+    }
+    for (const observation of value.observations) {
+      if (
+        typeof observation !== 'object' ||
+        observation === null ||
+        !('publicTargets' in observation)
+      )
+        return null;
+      const parsed = publicTargetObservationSchema.safeParse(observation.publicTargets);
+      if (!parsed.success) return null;
+      const targets = parsed.data;
+      observations.push({ ...observation, publicTargets: targets });
+      if (
+        !('round' in observation) ||
+        !Number.isSafeInteger(observation.round) ||
+        Number(observation.round) < 1
+      )
+        return null;
+      for (const map of [targets.accepted, targets.relations]) {
+        const keys = Object.keys(map);
+        if (
+          keys.length > 401 ||
+          keys.some((k) => !/^(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(Number(k)))
+        )
+          return null;
+      }
+      if (
+        Object.entries(targets.accepted).some(([key, values]) =>
+          values.some((target) => Number(key) !== target.baseSeq),
+        ) ||
+        Object.values(targets.relations).reduce((sum, items) => sum + items.length, 0) > 401 ||
+        Object.values(targets.accepted).reduce((sum, items) => sum + items.length, 0) > 400
+      )
+        return null;
+    }
+  }
+  // 기존 v1/v2 기본 계약은 유지. 새 영역은 위 스키마로 검증하고 constructor가 복제한다.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  return { ...value, ...(value.v === 3 ? { observations } : {}) } as GuestSessionState;
+}
+
 const CHECK_LIMIT = 100;
 const ERROR_LIMIT = 200;
 const HELLO_RETRY_MAX_MS = 30_000;
@@ -123,6 +237,8 @@ export class GuestSession {
   /** 마지막으로 본 호스트 세대 */
   epoch: string | null = null;
   view: BoardView | null = null;
+  /** 이번에 accept한 live 전이만. snapshot/welcome에서 지우며 저장·재연하지 않는다. */
+  acceptedPlayTarget: AcceptedPlayTarget | null = null;
   /** 원장 요약 (잔액·최근 항목). 전체 이력은 requestLedgerHistory() → ledgerHistory */
   ledger: LedgerSummary | null = null;
   rules: RuleOptions | null = null;
@@ -186,10 +302,13 @@ export class GuestSession {
     this.helloRetryDelay = this.ackTimeout;
     this.token = options.sessionToken;
     this.seq = options.lastSeq ?? 0;
-    const saved = options.restore;
-    if (saved && (saved.v === 1 || saved.v === 2)) {
+    const saved =
+      options.restore === undefined ? undefined : readGuestSessionState(options.restore);
+    if (options.restore !== undefined && saved === null)
+      throw new Error('게스트 저장 형식이 잘못되었습니다');
+    if (saved && (saved.v === 1 || saved.v === 2 || saved.v === 3)) {
       if (
-        saved.v === 2 &&
+        saved.v >= 2 &&
         (saved.timerSettings === undefined ||
           saved.decision === undefined ||
           saved.timeoutHistory === undefined ||
@@ -210,6 +329,9 @@ export class GuestSession {
         views: { ...o.views },
         sent: [...o.sent],
         settlement: o.settlement,
+        ...(saved.v === 3 && o.publicTargets
+          ? { publicTargets: clonePublicTargets(o.publicTargets, true) }
+          : {}),
         ...(o.timing
           ? {
               timing: {
@@ -614,7 +736,7 @@ export class GuestSession {
 
   toJSON(): GuestSessionState {
     return {
-      v: 2,
+      v: 3,
       token: this.token ?? null,
       seq: this.seq,
       epoch: this.epoch,
@@ -625,6 +747,9 @@ export class GuestSession {
         views: { ...o.views },
         sent: [...o.sent],
         settlement: o.settlement,
+        publicTargets: o.publicTargets
+          ? clonePublicTargets(o.publicTargets)
+          : { gap: true, accepted: {}, relations: {} },
         ...(o.timing
           ? {
               timing: {
@@ -674,6 +799,8 @@ export class GuestSession {
     return this.observations.find((o) => o.round === round);
   }
   private markTimeGap(): void {
+    for (const observed of this.observations)
+      if (observed.publicTargets) observed.publicTargets.gap = true;
     if (this.decision === null) return;
     const timing = this.observation(this.decision.key.round)?.timing;
     if (timing) timing.gap = true;
@@ -696,6 +823,8 @@ export class GuestSession {
     if (settlement) observed.settlement = settlementDigest(settlement);
   }
   private accept(m: Extract<HostMessage, { t: 'snapshot' | 'events' }>, seq: number): void {
+    const previousSeq = this.seq;
+    this.acceptedPlayTarget = m.t === 'events' ? (m.acceptedPlayTarget ?? null) : null;
     this.seq = seq;
     this.view = m.view;
     this.ledger = m.ledger;
@@ -705,8 +834,60 @@ export class GuestSession {
     this.acceptDecision(m.decision);
     if (m.timeoutResult) this.acceptTimeout(m.timeoutResult);
     const observed = this.observation(m.view.round);
+    if (observed) {
+      const targets = (observed.publicTargets ??= {
+        gap: !(m.t === 'events' && m.list.some((e) => e.type === 'Dealt')),
+        accepted: {},
+        relations: {},
+      });
+      if (
+        (m.t === 'snapshot' && previousSeq !== seq) ||
+        (this.awaitingResync && !(m.t === 'events' && m.list.some((e) => e.type === 'Dealt')))
+      )
+        targets.gap = true;
+      this.observeRelation(observed, m.view, seq);
+      if (m.t === 'events' && m.acceptedPlayTarget) {
+        const evidence = m.acceptedPlayTarget;
+        this.observeAccepted(observed, evidence);
+      }
+    }
     if (m.t === 'events' && observed)
       for (const event of m.list) observed.events[String(event.seq)] = eventDigest(event);
+  }
+  private observeRelation(observed: MutableObservation, view: BoardView, seq: number): void {
+    const targets = (observed.publicTargets ??= { gap: true, accepted: {}, relations: {} });
+    const relation = { played: view.inFlight.played, playTarget: view.inFlight.playTarget };
+    const key = String(seq);
+    const relations = targets.relations[key] ?? [];
+    if (relations.some((r) => r.played === relation.played && r.playTarget === relation.playTarget))
+      return;
+    if (Object.values(targets.relations).reduce((sum, values) => sum + values.length, 0) >= 401)
+      this.targetOverflow(targets, seq);
+    else {
+      relations.push(relation);
+      targets.relations[key] = relations;
+    }
+  }
+  private observeAccepted(
+    observed: MutableObservation | undefined,
+    evidence: AcceptedPlayTarget,
+  ): void {
+    if (!observed) return;
+    const targets = (observed.publicTargets ??= { gap: true, accepted: {}, relations: {} });
+    const key = String(evidence.baseSeq);
+    const values = targets.accepted[key] ?? [];
+    if (values.some((old) => samePublicTarget(old, evidence))) return;
+    if (Object.values(targets.accepted).reduce((sum, items) => sum + items.length, 0) >= 400)
+      this.targetOverflow(targets, evidence.baseSeq + 1);
+    else {
+      values.push({ ...evidence });
+      targets.accepted[key] = values;
+    }
+  }
+  private targetOverflow(targets: MutablePublicTargets, seq: number): void {
+    targets.gap = true;
+    targets.overflowSeq = Math.min(targets.overflowSeq ?? seq, seq);
+    this.error('MALFORMED');
   }
   private welcome(m: Extract<HostMessage, { t: 'welcome' }>): void {
     this.token = m.sessionToken;
@@ -717,6 +898,8 @@ export class GuestSession {
     this.connection = 'joined';
     const restarted = this.epoch !== null && this.epoch !== m.epoch;
     this.epoch = m.epoch;
+    this.acceptedPlayTarget = null;
+    if (restarted) this.markTimeGap();
     if (restarted) {
       this.decision = null;
       this.renderedAttempt = null;
@@ -729,6 +912,14 @@ export class GuestSession {
       for (const o of this.observations) {
         for (const key of Object.keys(o.events)) if (Number(key) > m.seq) delete o.events[key];
         for (const key of Object.keys(o.views)) if (Number(key) > m.seq) delete o.views[key];
+        if (o.publicTargets) {
+          if (o.publicTargets.overflowSeq !== undefined && o.publicTargets.overflowSeq > m.seq)
+            delete o.publicTargets.overflowSeq;
+          for (const key of Object.keys(o.publicTargets.accepted))
+            if (Number(key) >= m.seq) delete o.publicTargets.accepted[key];
+          for (const key of Object.keys(o.publicTargets.relations))
+            if (Number(key) > m.seq) delete o.publicTargets.relations[key];
+        }
         o.settlement = null;
       }
     } else if (restarted) this.status = null;
@@ -865,7 +1056,12 @@ export class GuestSession {
         timeoutResults: entries,
       });
       check = result.ok
-        ? { round: m.round, result: 'verified', ...(result.time ? { time: result.time } : {}) }
+        ? {
+            round: m.round,
+            result: 'verified',
+            ...(result.time ? { time: result.time } : {}),
+            ...(result.publicTargets ? { publicTargets: result.publicTargets } : {}),
+          }
         : { round: m.round, result: 'failed', reason: result.reason };
     }
     this.recordCheck(check);
@@ -932,14 +1128,48 @@ export class GuestSession {
         break;
       case 'events':
         if (m.to <= this.seq) {
-          this.applyStatus(m.status);
-          break;
+          // 이미 관찰한 seq의 재수신은 뷰/전이 적용과 별개로 상이 관계 증거를 보존한다.
+          const observed = this.observation(m.view.round);
+          if (observed?.publicTargets?.relations[String(m.to)])
+            this.observeRelation(observed, m.view, m.to);
         }
-        if (m.from !== this.seq + 1) {
-          // 빈틈: 토큰과 lastSeq로 다시 hello (호스트가 차분이나 스냅샷을 보낸다)
+        if (m.to > this.seq && m.from !== this.seq + 1) {
+          // 누락된 직전 pending으로 live 수락을 판정하지 않는다. 받은 공개 증거는 남기고
+          // 접촉 전이는 재연하지 않은 채 기존 hello 복구로 현재 관계에 수렴한다.
+          if (m.acceptedPlayTarget)
+            this.observeAccepted(this.observation(m.view.round), m.acceptedPlayTarget);
+          this.acceptedPlayTarget = null;
           this.markTimeGap();
           this.error('STALE_SEQ');
           this.join();
+          break;
+        }
+        if (m.acceptedPlayTarget) {
+          const evidence = m.acceptedPlayTarget;
+          const old = this.observation(m.view.round)?.publicTargets?.accepted[
+            String(m.acceptedPlayTarget.baseSeq)
+          ];
+          if (m.to <= this.seq) {
+            if (old && !old.some((value) => samePublicTarget(value, evidence))) {
+              this.observeAccepted(this.observation(m.view.round), m.acceptedPlayTarget);
+              this.error('MALFORMED');
+            }
+          } else if (
+            this.awaitingResync ||
+            this.view === null ||
+            this.view.round !== m.view.round ||
+            !matchesAcceptedPlayTarget(this.view, m.acceptedPlayTarget) ||
+            (m.view.inFlight.playTarget !== null &&
+              (m.view.inFlight.playTarget !== m.acceptedPlayTarget.target ||
+                m.view.inFlight.played !== m.acceptedPlayTarget.card))
+          ) {
+            this.observeAccepted(this.observation(m.view.round), m.acceptedPlayTarget);
+            this.error('MALFORMED');
+            break;
+          }
+        }
+        if (m.to <= this.seq) {
+          this.applyStatus(m.status);
           break;
         }
         this.accept(m, m.to);

@@ -358,7 +358,14 @@ it('실제 ws 중계로 20판: 게스트 자기 화면만으로 진행, 판 사�
       Array.from({ length: 20 }, (_, i) => ({
         round: i + 1,
         shown: true,
-        check: { round: i + 1, result: 'verified' },
+        check: {
+          round: i + 1,
+          result: 'verified',
+          // 첫 접속·진행 중 끊김·탭 복원·호스트 재시작 후 판은 관찰 공백을 숨기지 않는다.
+          publicTargets: [1, 3, 8, 13].includes(i + 1)
+            ? { result: 'unverifiable', reason: 'gap' }
+            : { result: 'verified', scope: 'complete' },
+        },
       })),
     );
     expect(replacedCodes).toEqual([RELAY_CLOSE_REPLACED]);

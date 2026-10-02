@@ -6,7 +6,7 @@
     "valid": true,
     "value": {
       "t": "hello",
-      "v": 3,
+      "v": 4,
       "name": "민지",
       "lastSeq": 0
     }
@@ -192,14 +192,14 @@
     "valid": true,
     "value": {
       "t": "hello",
-      "v": 3,
+      "v": 4,
       "name": "민지",
       "lastSeq": 3,
       "pad": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     },
     "parsed": {
       "t": "hello",
-      "v": 3,
+      "v": 4,
       "name": "민지",
       "lastSeq": 3
     }
@@ -238,7 +238,7 @@
     "reason": "MALFORMED",
     "value": {
       "t": "hello",
-      "v": 3,
+      "v": 4,
       "name": "민\u0007지"
     }
   },
@@ -371,7 +371,7 @@
     "valid": true,
     "value": {
       "t": "welcome",
-      "v": 3,
+      "v": 4,
       "timerSettings": { "decisionMs": 10000, "policy": "fixed-v1" },
       "seat": 1,
       "sessionToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -418,7 +418,7 @@
     "reason": "MALFORMED",
     "value": {
       "t": "welcome",
-      "v": 3,
+      "v": 4,
       "timerSettings": { "decisionMs": 10000, "policy": "fixed-v1" },
       "seat": 1,
       "sessionToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
