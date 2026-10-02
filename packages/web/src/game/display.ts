@@ -145,7 +145,7 @@ export function applyEvent(input: DisplayBoard, event: EngineEvent): DisplayBoar
       };
     case 'Matched': {
       const landed = landFromStaging(board, event.cards);
-      return { ...landed, highlight: event.cards.slice(1) };
+      return { ...landed, highlight: [...new Set([...input.highlight, ...event.cards.slice(1)])] };
     }
     case 'Placed':
     case 'Jjok':
