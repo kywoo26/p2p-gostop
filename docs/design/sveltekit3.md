@@ -74,6 +74,8 @@ npm ci --ignore-scripts=true --min-release-age=3 \
 
 격리 shell lock 사전검사: resolved 75개(다른 플랫폼 optional 포함)의 registry 게시 시각·lock integrity 일치·Node engine·설치된 peer 범위 검사에서 문제 0. 새 항목은 위 두 핀, `@standard-schema/spec@1.1.0`(2025-12-15), `cookie@2.0.1`(2026-06-30)이다. 독립 해석으로 기준 lock과 달라진 항목은 `@oxc-project/types@0.151.0`(2026-09-21), `esrap@2.4.0`(2026-09-26). 임시 App 수명 proof에도 이 차이가 남아 있으므로 Kit 자체 성능 효과로 계산하지 않는다. 채택안 성능 비교 전에 기준 전이를 맞춘다. 추가 연령 예외 0. 이 기록은 격리 shell이며 생산 lock delta가 아니다.
 
+P1 root 설치 checkpoint: 격리 lock-only 후보는 web에 두 정확 dev 핀만 추가하고 npm 항목은 Kit/adapter/standard-schema/cookie 4개만 추가했다. 기존 항목의 교체·삭제는 0이다. 특히 esrap 2.3.12, Oxc types root 0.150.0/rolldown 하위 0.151.0, Svelte/Vite/rolldown 핀을 기준과 일치시켰다. 후보 lock SHA-256은 `3f69190da729bcfadab0d8a98e0558ad6fd202f8ea3b19ffc53623c56b1900d5`다. 2026-10-02 09:44Z 추가4 registry 원문과 version/integrity/engine/dependency/peer를 대조했고 제3 연령 예외·install lifecycle script는 0이었다. root는 이 두 파일의 migration branch 반영과 두 이름 예외의 로컬 npm ci 1회를 명시 승인했다. 승인된 로컬 npm ci 1회가 성공했고 설치된 registry 패키지 256개는 lock과 일치했다(지원하지 않는 플랫폼 optional 제외, workspace link 별도). lock 바이트 변경·예상 밖 의존성 변경은 0이며 CI 기본 제한·main/운영 소유권은 유지한다.
+
 ## 유한 proof와 예산
 
 1. 기준 checkout에서 정상 `npm ci`·web build, 기존 frozen CI 36969821582의 raw/body/worker 기준 인수. 새 측정은 기존 artifact 결과와 구분한다.
@@ -120,6 +122,32 @@ Kit P0L 격리 재빌드의 실제 client 수집 경로는 `dist/oss/bundled-pac
 재현용 shell 원형·정확 lock·관측 자료는 [유한 proof fixture](../../tools/proofs/sveltekit3/fixtures/proof.fixture.json)에 모았다. `commands` 순서로 저장소 밖 새 `PROOF_SCRATCH`(실행자가 설정하는 환경변수)에 준비→현재 registry preflight→명령 단위 예외 설치→build→browser를 실행한다. 생산 workspace 설치 명령이 아니다. 총괄은 패키징된 소스의 순수 변환 4 tests/18 negative cases·lint를 통과한 뒤 새 scratch에서 75개 사전검사, `npm ci`, split/single/inline build, prefix-only C/W를 실제 재현했다. 원본 실패와 변환 성공은 예상대로이며 입력 HTML digest도 일치했다. 패키징 역할의 실행 전 기록과 부모의 실제 재현을 구별한다. App/coordinator 수명 proof는 이 작은 shell의 성공 판정에 포함하지 않는다.
 
 재현 CLI는 knip entry로 등록했다. browser CLI 한 파일의 `unlisted` 예외는 web workspace의 기존 Playwright dev 핀을 직접 검증·재사용하기 위한 것이며 루트 manifest에 중복 핀을 만들지 않는다. registry preflight의 semver 판정은 버전을 검증한 npm 11.19.0 도구체계에서 가져온다. privacy 예외는 parser 코드가 초대값으로 오인된 2곳과 공개 합성 토큰 2곳의 파일·행·정확 지문에만 묶었다.
+
+## P1 실제 채택 checkpoint
+
+P0L·P2 URL 텍스트 수정의 독립 검토와 `3445540` CI 성공을 인수한 뒤의 별도 제품 단위다. `+layout`이 문서 수명 coordinator를 만들고 각 `+page`는 Home/솔로/대전/설정/기록/고지 등을 필요한 때 가져온다. 기존 세션/worker/Playback는 그대로 사용하며 URL switch의 화면 선택을 Kit router로 옮겼다. Home/SoloSetup/Versus는 이동 callback을 받는다. `hooks.client.init`은 Kit route 해석 전에 원격 초대를 메모리로 옮겨 scrub하고 LAN 구형 `#g` 입력을 `#/guest#g`로 인수한다. committed route와 진행 중 navigation을 구별해 native Back은 이전 화면의 메뉴/설정 복귀를 우선하며 늦게 받은 route 응답을 무효화한다. 기본 focus/announcer와 전체 수명 반례 수용은 후속 필수 gate까지 계속한다.
+
+[공식 adapter 표면](https://svelte.dev/docs/kit/writing-adapters)을 감싼 `scripts/relocatable-static.mjs`는 공식 static 출력을 받은 뒤 index만 상대화한다. `kit-entry-graph.mjs`가 두 [Vite JSON graph](https://vite.dev/guide/backend-integration.html)에서 start의 첫 runtime dynamic edge·app·root0의 정적 JS 폐포를 도출한다. lazy route와 worker를 초기 preload로 합치지 않는다. 현재 root CSS는 client node0 한 정적 group과 server +layout 한 group의 교집합이며 대응 CSS 원문 바이트도 같아야 한다. 동적 CSS/asset group·root universal/server·bootstrap CSS는 지원하지 않고 실패한다. builder.manifest 파일 목록이나 HTML에서 센 개수를 정답으로 사용하지 않는다.
+
+정확 Kit/adapter 핀·hash/split/client 설정·app template 소스 digest·전체 bootstrap 문법을 고정하고 예상 HTML과 byte 단위로 비교한다. 소스 template 변경은 명시 구조 재검토 대상이나 BUILD_ID/출력 hash는 graph로 도출하므로 생성 HTML digest의 수동/자동 갱신이 필요 없다. CSP/SRI/nonce·추가 코드·외부/절대/혼합 URL·중복/누락·다른 graph는 실패한다. 원본 HTML/두 graph/입출력 digest/개수는 `.svelte-kit/relocation`에 보존하고 같은 원본·graph·증거·결과만 재실행 no-op을 허용한다. 내부 import/fork/monkeypatch는 없다. 이 방식도 Kit 3.0.0의 entry topology·root0·bootstrap 문법에 의존하므로 핀 갱신 때 실제 구조 검토가 필요하다. 함께 생성된 graph/HTML의 **구조 정합**이며 공급망 인증이나 악의적 동시 writer 전체 방어가 아니다.
+
+최종 순서는 adapter HTML 제한 변환→평가용 pro 자산 정리/OSS 원문 포함 정적 조립→metadata 공백 정리→write-version/hash→OSS·전체 raw 검사다. source BUILD_ID와 Kit version.name은 같고 wireVersion 4/assetSetVersion 2와는 의미가 다르다. 배포 분모는 client-only dist의 모든 파일(고지·JSON·lazy chunk·worker 포함), artifact hash의 허용 집합은 P0L 계약을 따른다. `.svelte-kit`/SSR/graph/원본 HTML/source map은 dist에 넣지 않는다. 기존 public 파일 URL의 `BASE_URL='./'` 호환 define은 유지하며 typed asset API 전환으로 계측 없이 링크 표현을 바꾸지 않는다.
+
+실제 client 수집은 이제 branch 산출물의 Kit·clsx·devalue·Svelte·uqr·zod 6개다. source NOTICE/UI JSON/설치 LICENSE/lock/출하 NOTICE를 대조했으며 Android 71개 집합은 바꾸지 않았다. P0L 당시 생산 4개/Kit scratch 6개의 역사와 이번 실제 branch 6개를 구별한다.
+
+| 검사 묶음 | 포함 관계·범위 |
+|---|---|
+| build Node 검사 21개 | graph 5 + OSS 2 + skin 4 + compact 1 + raw 4 + transfer probe 5. 아래 반례를 별도 테스트 수로 더하지 않음 |
+| graph 검사 5개 내부 | HTML/template/version 거절 16건, manifest/edge/SSR 거절 **10건**(초기 중간 보고 9건 정정), 다른 정상 build graph와 원래 HTML 불일치 1건, 재실행 불일치 4건. 실제 출력 양성·정상 BUILD_ID/hash 변경 양성·no-op 포함 |
+| 실제 솔로 4행 | Chromium/WebKit × root/prefix-only. 같은 최종 artifact·identity/no-store 응답·첫 합법 입력과 font ready 경계, 설정/native Back→홈/이어하기→reload→종료. 화면 왕복 중 worker 재생성 0 |
+| 실제 LAN pair 1회 | prefix-only 원 StaticSite wire/hash 인수, Chromium host/WebKit guest. 보류 settings+native Back의 late commit 0, popstate, guest reload seq/round 보존, 구형 #g, HTTP/history/title/body/announcer 토큰 노출 0, focus Kit GET 21B/200/no-store·문서 reload 0 |
+| 좁은 component 4개 | 기존 Home 2 cases × Chromium/WebKit, 실제 Kit/Vitest 구성에서 callback 이동과 UI 유지 |
+
+첫 P1 build(`BUILD_ID=3445540`)의 솔로 관측 초기 body는 C 1,176,714 B/76응답, W 1,187,780 B/77응답으로 root와 prefix가 같았다. 요청 수·전송량은 속도/CPU/사용자 성능 PASS가 아니다. 명시 종료 후 3.2초+focus에서 WS 재시도 0·모든 socket 종료는 31초 RP07 검사가 아니다. 최초 source 타입 오류, CSP 기본값을 빈 객체로 가정한 adapter 실패, build script JSDoc 부족과 타입 수정, 이동된 초대 파싱의 lint 수정은 실패 시도와 최종 source를 구분해 보존한다.
+
+전체 lint·check(0 errors/0 warnings, knip 포함)와 좁은 Home component 4개도 통과했다. OSS 추가로 이동한 clsx 원저작자 귀속 email의 기존 privacy 허용 지문은 그대로 두고 행 번호 88→99만 맞췄다. 새 allowlist 종류·값이나 gate 완화는 없다.
+
+현재 checkpoint의 미완은 전체 필수 suite/31초 RP07·정산·Playback·focus/오류 상세 회귀/host·guest 최종 body/실기기 수용이다. controller/engine 일부는 root에 여전히 eager이므로 추가 경계 분리 이득은 다음 단위에서 측정한다. CI 기본 3일 gate는 두 핀이 모두 72시간을 넘는 **2026-10-04 17:22:34.593Z**까지 유지한다. 독립 검토·main/배포 완료로 표시하지 않는다.
 
 ## 이행·되돌리기
 

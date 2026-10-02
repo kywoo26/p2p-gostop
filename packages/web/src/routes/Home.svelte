@@ -7,6 +7,7 @@
   import { loadRemoteHostSettings } from '../net/index.ts';
 
   interface Props {
+    onnavigate?: (hash: string) => void;
     /** 이어할 수 있는 혼자 연습 세션 (MN-05). 있으면 맨 위에 "이어하기" */
     resume?: { readonly round: number; readonly label: string } | null;
     onresume?: (() => void) | undefined;
@@ -17,7 +18,15 @@
     activeMode?: 'hotspot' | 'remote' | undefined;
   }
 
-  let { resume = null, onresume, match = null, onmatch, remoteReady, activeMode }: Props = $props();
+  let {
+    resume = null,
+    onresume,
+    match = null,
+    onmatch,
+    remoteReady,
+    activeMode,
+    onnavigate,
+  }: Props = $props();
 
   const configured = $derived(
     remoteReady ??
@@ -63,8 +72,7 @@
         class={['menu-button', item.primary && 'primary', item.id === 'versus' && 'versus']}
         disabled={(item.id === 'remote' && activeMode === 'hotspot') ||
           (item.id === 'versus' && activeMode === 'remote')}
-        onclick={() =>
-          (location.hash = item.id === 'remote' && !configured ? '#/settings' : item.href)}
+        onclick={() => onnavigate?.(item.id === 'remote' && !configured ? '#/settings' : item.href)}
       >
         {item.label}<span aria-hidden="true">↗</span>
       </button>

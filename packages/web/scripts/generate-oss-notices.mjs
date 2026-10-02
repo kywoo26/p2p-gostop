@@ -32,6 +32,8 @@ try {
   report = execFileSync(
     join(root, 'android/gradlew'),
     [
+      '--max-workers=4',
+      '--no-daemon',
       '--project-cache-dir',
       projectCache,
       '-p',

@@ -643,7 +643,7 @@
     {
       "path": "packages/web/public/oss/NOTICE.txt",
       "type": "email",
-      "line": 88,
+      "line": 99,
       "field": "email",
       "sha256": "bdf9ce3b6fad26286e88dc74fe508107913344140b3282382d6ee4c290e7175c",
       "reason": "원저작자 라이선스 귀속 이메일 보존"

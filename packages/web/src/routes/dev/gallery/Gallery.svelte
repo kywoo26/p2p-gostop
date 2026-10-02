@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { go } from '../../../app/navigation.ts';
   // 개발 갤러리 (intent/plan.md 1.2): 고정 픽스처(packages/web/fixtures)로 화면·상태·토큰을 나열한다.
   // 스냅샷·axe 대상(e2e/gallery.spec.ts). 엔진과 연결하지 않는 정적 화면만 그린다.
   import { ALL_CARD_IDS } from '@p2p-gostop/engine';
@@ -196,7 +197,7 @@
 {:else if page === 'settlement'}
   <Settlement view={fixtures.settlement} />
 {:else if page === 'home'}
-  <Home />
+  <Home onnavigate={go} />
 {:else if page === 'host'}
   <HostRoom
     hotspot={{ ...fixtures.hostRoom.hotspot, error: null, lanEnabled: true, warning: null }}

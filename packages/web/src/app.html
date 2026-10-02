@@ -6,13 +6,15 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#14171f" />
     <link rel="icon" href="data:," />
-    <title>맞고 P2P</title>
+    %sveltekit.head%
   </head>
   <body>
     <div id="app">
-      <p role="status">불러오는 중…</p>
-      <progress aria-label="불러오는 중"></progress>
+      <div id="boot-status">
+        <p role="status">불러오는 중…</p>
+        <progress aria-label="불러오는 중"></progress>
+      </div>
+      %sveltekit.body%
     </div>
-    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
