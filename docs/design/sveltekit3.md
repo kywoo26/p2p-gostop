@@ -25,7 +25,7 @@
 | `asset`/`resolve`, readonly `page.url` | [paths](https://svelte.dev/docs/kit/$app-paths)로 타입 있는 route/asset 참조. asset 인자는 선행 `/` 없음. `resolve` hash 출력과 물리 version prefix를 구별 |
 | rendering 오류·`handleError` | 3 stable. route 오류 경계와 동기 client hook을 사용해 로컬 익명 오류 코드/복구 경로 제공. session을 초기화하거나 raw URL·토큰·상대 손패를 log하지 않음 |
 | 기본 version polling 1시간 | 명시 `pollInterval: 0`. 이 값으로 focus/visibility 기반 확인까지 꺼진다고 주장하지 않음. source BUILD_ID에 version.name 연결하고 실제 같은 origin/version prefix 요청·404/재시작 유무 측정 |
-| Svelte async·remote functions·fork preloads | experimental. 이번 도입에 필요하지 않아 켜지 않음. `p2p/remote.ts` 같은 일반 모듈 이름도 3의 reserved remote segment와 충돌하므로 별도 rename 필요 |
+| Svelte async·remote functions·fork preloads | experimental. 이번 도입에 필요하지 않아 켜지 않음. 문서의 reserved remote segment에서 추정한 5파일 rename은 철회: Kit 3.0.0의 기능 OFF guard는 `/\.remote\.(js\|ts)$/`에 해당하며 기존 `remote.ts`·`remote.net.ts` 등은 매칭되지 않는다. 이름 변경 0으로 전체 App compile 성공. 더 넓은 experimental transform 필터와 혼동하지 않음 |
 | observability·instrumentation | [서버 span 기능](https://svelte.dev/docs/kit/observability)이 stable로 바뀌어도 정적 앱에는 수집 서버가 없음. OpenTelemetry exporter/외부 수집기 도입 안 함; 기존 로컬 진단·브라우저 timing 재사용 |
 | server-only/env/security | [이행 보안](https://svelte.dev/docs/kit/migrating-to-sveltekit-3#Security)·[env](https://svelte.dev/docs/kit/environment-variables) 학습. 현재 서버 env·form action 없음. CSP/CSRF를 이유로 HTTP LAN·WS 인증 계약을 변경하지 않음 |
 
@@ -55,7 +55,7 @@
 | `@sveltejs/kit@3.0.0` | 2026-10-01 17:22:34.593 | 2026-10-04 17:22:34.593 | root 승인 격리 finite proof의 명령 단위 예외 |
 | `@sveltejs/adapter-static@4.0.0` | 2026-10-01 17:21:55.874 | 2026-10-04 17:21:55.874 | 위와 같음 |
 
-[npm 공식 설정](https://docs.npmjs.com/cli/v11/using-npm/config/#min-release-age-exclude)과 설치된 11.19.0 정의를 대조했다. exclude는 **패키지 이름**에만 매칭하며 `package@version` 구문은 지원하지 않는다. 따라서 아래처럼 두 정확한 설치 핀 + 두 정확한 이름(와일드카드 없음) + 해석된 lock 검사로 범위를 제한한다. 전이 의존성에는 예외가 전파되지 않는다. 저장소·전역 `.npmrc`와 CI 기본 3일 제한, `ignore-scripts=true`는 바꾸지 않는다.
+[npm 공식 설정](https://docs.npmjs.com/cli/v11/using-npm/config/#min-release-age-exclude)과 설치된 11.19.0 정의를 대조했다. exclude는 **패키지 이름**에만 매칭하며 패키지 이름에 버전을 붙인 구문은 지원하지 않는다. 따라서 아래처럼 두 정확한 설치 핀 + 두 정확한 이름(와일드카드 없음) + 해석된 lock 검사로 범위를 제한한다. 전이 의존성에는 예외가 전파되지 않는다. 저장소·전역 `.npmrc`와 CI 기본 3일 제한, `ignore-scripts=true`는 바꾸지 않는다.
 
 ```sh
 # 격리 proof 디렉터리에서 실행. 생산 workspace 명령이 아니다.
@@ -72,6 +72,8 @@ npm ci --ignore-scripts=true --min-release-age=3 \
 
 새 미달 전이는 package/version/time/필요성을 root에 보고한다. 생산 lock 반영과 일반 CI 설치는 별도 checkpoint이며 위 예외를 묵시적으로 확대하지 않는다.
 
+격리 shell lock 사전검사: resolved 75개(다른 플랫폼 optional 포함)의 registry 게시 시각·lock integrity 일치·Node engine·설치된 peer 범위 검사에서 문제 0. 새 항목은 위 두 핀, `@standard-schema/spec@1.1.0`(2025-12-15), `cookie@2.0.1`(2026-06-30)이다. 독립 해석으로 기준 lock과 달라진 항목은 `@oxc-project/types@0.151.0`(2026-09-21), `esrap@2.4.0`(2026-09-26). 임시 App 수명 proof에도 이 차이가 남아 있으므로 Kit 자체 성능 효과로 계산하지 않는다. 채택안 성능 비교 전에 기준 전이를 맞춘다. 추가 연령 예외 0. 이 기록은 격리 shell이며 생산 lock delta가 아니다.
+
 ## 유한 proof와 예산
 
 1. 기준 checkout에서 정상 `npm ci`·web build, 기존 frozen CI 36969821582의 raw/body/worker 기준 인수. 새 측정은 기존 artifact 결과와 구분한다.
@@ -87,6 +89,20 @@ npm ci --ignore-scripts=true --min-release-age=3 \
 | solo 초기 body | 1,211,434 B | 1,500,000 B. worker 49,658 B 포함 |
 
 기존 첫 합법 입력 정의·encoded HTTP body·worker 포함을 유지한다. raw·요청 수·실제 body·parse/CPU·2초/100ms/60fps·기기 결과를 혼합하지 않는다. 개선 주장은 새 수치가 나온 항목에만 한다. 외부 요청 0·service worker/Cache API 0·baseline image 일괄 갱신 0·threshold 완화 0이다.
+
+### P0 관측과 남은 경계
+
+- 정적 shell은 Chromium·WebKit의 **prefix-only** 서버에서 원본 split/single의 루트 `/_app` 요청이 404로 실패했다. split의 생성 HTML bootstrap import와 modulepreload/stylesheet만 상대화한 뒤 첫 load→지연 settings→Back/deep hash reload→지속 worker·CSS/font 응답이 모두 prefix 안에서 성공했다. shell은 14곳/+14 B, 실제 App wrapper는 16곳이었다. 이 숫자는 각 출력의 관측값이며 미래 출력의 상수가 아니다. 승인된 입력 digest·구조·개수, Kit/adapter 핀을 검사하고 불일치하면 실패해야 한다. 원본 보존·멱등성, CSP hash/SRI/nonce 존재 시 별도 생성 검토, 사용자 문자열/JS 일괄 치환 금지를 조건으로 한다. node_modules 또는 브라우저 runtime 수정은 없다.
+- 같은 cold readiness(화면·font ready·worker 응답), identity/no-store Node 응답에서 shell split은 229,900 B/19응답, single은 244,665 B/6응답이었다. split은 settings 진입 때 1청크 추가, single은 추가 0. inline 후보는 이 worker/font fixture에서 정상 readiness에 도달하지 못했다. 요청 수와 body는 속도 판정이 아니며 shell 수치를 제품 절감으로 쓰지 않는다. 이 범위에서 공식 출력 옵션만으로 같은 artifact의 임의 prefix 이동성과 코드 분리를 함께 만족하지 못했다. 제한 HTML 변환의 유지 비용을 채택 비용에 포함한다.
+- `pollInterval: 0`에서도 focus+visibility가 합쳐져 같은 prefix `/_app/version.json`에 GET 1건(`cache-control: no-cache`)이 발생했다. 503 후 자동 재시도·document reload 0, 다음 focus 때 재요청 1건/200·34 B였다. 외부 origin 0과 같은 origin 정적 확인을 구별한다. token fixture는 HTTP/history state/title/announcer/error 노출 0이었으며 실제 P2P 종료·복원 증명은 별도다.
+- 실제 App 임시 wrapper는 raw hash 대입 시 full reload·Back 실패를 재현했다. 공식 `goto`로 전환 후 두 브라우저에서 솔로 첫 합법 입력→설정/native Back→홈/이어하기→문서 reload/저장 복원→종료가 통과했다. seed/round/잔액/기록이 같고 화면 왕복 중 worker 재생성 0, worker 49,658 B와 SHA-256이 기준과 같다. 초기 body는 Vite 1,211,434 B/32응답, Kit Chromium 1,264,526 B/47응답, WebKit 1,275,592 B/48응답이다. WebKit의 같은 `cards/0.svg` 11,066 B 1건 추가만 요청 멀티셋 차이로 확인했다. 기존 로그에는 initiator/cache 정보가 없어 중복 원인·성능 개선을 주장하지 않는다. 예산 내 통과이며 route 분리 순효과는 아직 미입증이다.
+- 후속 실제 page 분리와 문서 수명 coordinator 첫 proof도 같은 솔로 시나리오 C/W PASS. body는 각각 1,173,968 B/70응답·1,185,034 B/71응답으로 wrapper보다 90,558 B 감소했다. Vite와 비교한 관측 감소는 37,466 B·26,400 B다. 아직 compiler 전이 차이·OSS 고지 추가 전 값이며 host/guest controller의 root eager import가 남는다. 제품 성능 수용이나 최종 절감으로 승격하지 않는다. 다음 범위는 실제 guest 초대/복원·진행 중 navigation 무효화·종료 소유권·최종 정적 metadata/OSS다.
+- 실제 원본 `StaticSite`의 wire 4/hash 검사를 거친 artifact를 version prefix에서 제공하고 Chromium host/WebKit guest의 LAN pair를 확인했다. settings 청크 응답을 보류한 상태에서 native Back은 committed match 메뉴를 유지했고, 응답을 풀어도 settings가 뒤늦게 반영되지 않았다. settings popstate·guest reload의 seq/round 보존·기존 `#g` 링크 재진입·HTTP/history state/title/body/announcer 토큰 비노출도 통과했다. host 종료 통지 뒤 guest가 명시적으로 나가면 양쪽 WS가 닫히고 3.2초+focus에 새 시도 0이었다. 이는 31초 원격 RP07 회귀가 아니다. 하네스의 이중 응답 해제·메뉴 selector·솔로 전용 종료 selector 오류는 별도 실패 자료로 보존했고 제품 결함으로 분류하지 않았다. 원 relay에서 Kit version 요청 404는 그대로 관측했으며 정적 호환 수정 대상이다.
+- 정적 계약 미완: relay의 기존 확장자 허용표는 JSON을 제외한다. Android는 JSON MIME이 있으나 Kit `_app/immutable`은 기존 `assets/` 장기 캐시 규칙 밖이다. Kit `_app/version.json`과 앱 wire `version.json`은 다른 의미를 가진다. 최종 배포 후보에서 필요한 정확한 JSON 경로만 서빙/hash 정책에 반영하고 source BUILD_ID·wire 형식을 보존해야 한다. 클라이언트 module 집합의 OSS 고지 갱신, 최종 HTML 변환→OSS/metadata 조립→최종 write-version/hash→예산 검사를 증명해야 하며 `.svelte-kit` SSR 중간물·source map은 출하하지 않는다.
+
+재현용 shell 원형·정확 lock·관측 자료는 [유한 proof fixture](../../tools/proofs/sveltekit3/fixtures/proof.fixture.json)에 모았다. `commands` 순서로 저장소 밖 새 `PROOF_SCRATCH`(실행자가 설정하는 환경변수)에 준비→현재 registry preflight→명령 단위 예외 설치→build→browser를 실행한다. 생산 workspace 설치 명령이 아니다. 총괄은 패키징된 소스의 순수 변환 4 tests/18 negative cases·lint를 통과한 뒤 새 scratch에서 75개 사전검사, `npm ci`, split/single/inline build, prefix-only C/W를 실제 재현했다. 원본 실패와 변환 성공은 예상대로이며 입력 HTML digest도 일치했다. 패키징 역할의 실행 전 기록과 부모의 실제 재현을 구별한다. App/coordinator 수명 proof는 이 작은 shell의 성공 판정에 포함하지 않는다.
+
+재현 CLI는 knip entry로 등록했다. browser CLI 한 파일의 `unlisted` 예외는 web workspace의 기존 Playwright dev 핀을 직접 검증·재사용하기 위한 것이며 루트 manifest에 중복 핀을 만들지 않는다. registry preflight의 semver 판정은 버전을 검증한 npm 11.19.0 도구체계에서 가져온다. privacy 예외는 parser 코드가 초대값으로 오인된 2곳과 공개 합성 토큰 2곳의 파일·행·정확 지문에만 묶었다.
 
 ## 이행·되돌리기
 

@@ -1159,6 +1159,38 @@
       "field": "secret",
       "sha256": "0ff6289462a47efb1b4eb8071a8f6df2772ec9d195601ac6171d1131d981c657",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/fixtures/source.fixture.json",
+      "type": "invite-secret",
+      "line": 5,
+      "field": "invite-secret",
+      "sha256": "38e89b94f3b8e89b3e8207ca9eb28c77e5fedb230d3d7e1761b3f9097144c888",
+      "reason": "SK3-P0: 고정 shell URL parser 정규식/코드 문자열, 실제 초대값 아님; 원형 바이트·digest 보존"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/matrix-shell.mjs",
+      "type": "literal-credential",
+      "line": 60,
+      "field": "literal-credential",
+      "sha256": "4eac9e18d08c6364abc0198edd9c4481761d4748f0daacdcc470ba0f15a180b4",
+      "reason": "SK3-P0: abcdef 순환으로 직접 만든 공개 합성 fixture 토큰, 환경/인증 조회 없음"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/observed/scripts.json",
+      "type": "invite-secret",
+      "line": 5,
+      "field": "invite-secret",
+      "sha256": "38e89b94f3b8e89b3e8207ca9eb28c77e5fedb230d3d7e1761b3f9097144c888",
+      "reason": "SK3-P0: 고정 shell URL parser 정규식/코드 문자열, 실제 초대값 아님; 원형 바이트·digest 보존"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/observed/scripts.json",
+      "type": "literal-credential",
+      "line": 7,
+      "field": "literal-credential",
+      "sha256": "d4e3dfb4f69b5ea35b819bdee97a9f021f1b0e3968a13a1f37398ad4136962bc",
+      "reason": "SK3-P0: abcdef 순환으로 직접 만든 공개 합성 fixture 토큰, 환경/인증 조회 없음"
     }
   ],
   "pending": []

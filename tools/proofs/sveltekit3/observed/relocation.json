@@ -1,0 +1,13 @@
+{
+  "kit": "3.0.0",
+  "adapter": "4.0.0",
+  "counts": {
+    "preloads": 11,
+    "styles": 1,
+    "imports": 2
+  },
+  "originalSha256": "45ba84157b2a8f9f49a66a2ef12a62326356f508290eea73d07153cf2d7b2565",
+  "resultSha256": "5190027ebf5bb7b1bd365941702489d72fe8bd743e5e48376fbbdf84cb2ee576",
+  "idempotent": true,
+  "negativeCases": 4
+}

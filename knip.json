@@ -10,7 +10,8 @@
         "tools/bundle/*.mjs",
         "tools/relay/check-static.ts",
         "tools/relay/create-credentials.ts",
-        "tools/relay/write-qr.ts"
+        "tools/relay/write-qr.ts",
+        "tools/proofs/sveltekit3/{prepare,preflight,build,matrix-shell}.mjs"
       ]
     },
     "packages/*": {},
@@ -27,5 +28,8 @@
         "e2e/design/wireframe.render.ts"
       ]
     }
+  },
+  "ignoreIssues": {
+    "tools/proofs/sveltekit3/matrix-shell.mjs": ["unlisted"]
   }
 }

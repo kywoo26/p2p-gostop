@@ -1,0 +1,16 @@
+{
+  "vite.config.js": "import {defineConfig} from 'vite';\nimport {sveltekit} from '@sveltejs/kit/vite';\nimport adapter from '@sveltejs/adapter-static';\nexport default defineConfig({plugins:[sveltekit({adapter:adapter({pages:'dist',assets:'dist'}),output:{bundleStrategy:process.env.PROOF_STRATEGY??'split'},router:{type:'hash'},compilerOptions:{runes:true},version:{name:'proof-source-9913340',pollInterval:0},serviceWorker:{register:false}})],build:{target:['es2022','safari17']}});\n",
+  "tsconfig.json": "{\"extends\":\"$app/tsconfig\",\"include\":[\"src\"]}\n",
+  "src/app.html": "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><link rel=\"icon\" href=\"data:,\">%sveltekit.head%</head><body><div id=\"app\">%sveltekit.body%</div></body></html>\n",
+  "src/entry.ts": "export let invitation: string | null = null; export function capture(){const hash=location.hash;if(/^#\\/join(?:\\?|$)/.test(hash)){invitation=location.href;history.replaceState(history.state,'',location.pathname+location.search+'#/join');}else if(/^#g=/.test(hash)){history.replaceState(history.state,'',location.pathname+location.search+'#/guest#'+hash.slice(1));}}",
+  "src/hooks.client.ts": "import {capture} from './entry.ts';export function init(){capture();}export function handleError({status}){return {message:'로컬 오류',status};}",
+  "src/probe.worker.ts": "self.onmessage=()=>self.postMessage('pong');\n",
+  "src/styles/shell.css": "@font-face{font-family:Proof;src:url('./font.woff2') format('woff2');font-display:swap}body{font-family:Proof,sans-serif}h1{color:green}",
+  "src/routes/+error.svelte": "<script>import {page} from '$app/state';</script><svelte:head><title>복구 proof</title></svelte:head><h1>오류 {page.status}</h1>\n",
+  "src/routes/+layout.svelte": "<script>import '../styles/shell.css';import {onMount} from 'svelte'; import {afterNavigate} from '$app/navigation'; import {page} from '$app/state'; let {children}=$props(); let replies=$state(0); let visits=$state(0); onMount(()=>{ const worker=new Worker(new URL('../probe.worker.ts',import.meta.url),{type:'module'}); worker.onmessage=()=>replies++; worker.postMessage('ping'); return ()=>worker.terminate(); }); afterNavigate(()=>visits++);</script><output id=\"lifetime\">{replies}/{visits}</output>{@render children()}\n",
+  "src/routes/+page.svelte": "<script>import {asset,resolve} from '$app/paths';</script><svelte:head><title>홈 proof</title></svelte:head><h1>홈 proof</h1><img src={asset('probe.svg')} alt=\"proof\"><a href={resolve('/settings')}>설정</a>\n",
+  "src/routes/settings/+page.svelte": "<script>import {resolve} from '$app/paths';</script><svelte:head><title>설정 proof</title></svelte:head><h1>설정 proof</h1><a href={resolve('/')}>홈</a>\n",
+  "src/routes/join/+page.svelte": "<svelte:head><title>참여 proof</title></svelte:head><h1>참여 proof</h1>",
+  "src/routes/guest/+page.svelte": "<svelte:head><title>게스트 proof</title></svelte:head><h1>게스트 proof</h1>",
+  "static/probe.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\" fill=\"green\"/></svg>\n"
+}
