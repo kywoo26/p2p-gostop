@@ -143,6 +143,13 @@ export class LandingScene {
     if (kept !== undefined) return kept;
     const source = originalCards(this.root).find((el) => Number(el.dataset['cardId']) === id);
     if (source === undefined) return undefined;
+    return this.reserveFrom(id, source);
+  }
+
+  private reserveFrom(id: CardId, source: HTMLElement): HeldCard | undefined {
+    if (this.disposed) return undefined;
+    const kept = this.cards.get(id);
+    if (kept !== undefined) return kept;
     const pose = cardPose(source, this.root);
     if (pose.rect.width <= 0 || pose.rect.height <= 0) return undefined;
     if (this.layer === null) {
@@ -229,21 +236,18 @@ export class LandingScene {
     return animation;
   }
 
-  /** 실제 선택 원본의 예약 pose. append/top/월 anchor는 사용하지 않는다. */
-  contactPose(target: CardId, incoming?: CardId): CardPose | undefined {
-    const keptTarget = this.has(target);
-    const targetCard = this.reserve(target);
-    if (targetCard === undefined) return undefined;
-    const pose = targetCard.pose;
+  private obstacles(target: CardId, incoming?: CardId): DOMRectReadOnly[] {
     const month = getCard(target).month;
     const obstacles: DOMRectReadOnly[] = [];
+    const staged = new Set<CardId>();
     for (const el of originalCards(this.root)) {
       const id = Number(el.dataset['cardId']);
+      if (el.closest('.staging') !== null) staged.add(id);
       if (
         id === incoming ||
         id === target ||
         getCard(id).month === month ||
-        el.closest('[aria-label="바닥"]') === null ||
+        (el.closest('[aria-label="바닥"]') === null && el.closest('.staging') === null) ||
         this.cards.has(id)
       )
         continue;
@@ -255,7 +259,7 @@ export class LandingScene {
         id === incoming ||
         id === target ||
         getCard(id).month === month ||
-        !(held.fromFloor || held.contacted)
+        !(held.fromFloor || held.contacted || staged.has(id))
       )
         continue;
       obstacles.push(painted(held.pose, held.outset));
@@ -267,6 +271,60 @@ export class LandingScene {
       if (rect.width > 0 && rect.height > 0)
         obstacles.push(painted(cardPose(el, this.root), paintOutset(el)));
     }
+    return obstacles;
+  }
+
+  /** 다른 월·덱/UI paint와 겹친 출발은 월 묶음 전체를 실제 획득 후 표시로 제한한다. */
+  prepareCapture(ids: readonly CardId[], floorIds: readonly CardId[]): Map<CardId, CardPose> {
+    if (ids.length === 0) return new Map();
+    const originals = originalCards(this.root);
+    const floor = new Set(
+      originals
+        .filter((el) => el.closest('[aria-label="바닥"]') !== null)
+        .map((el) => Number(el.dataset['cardId'])),
+    );
+    // 원본 소실로 장애물 목록이 비어도 안전하다고 결론 내리지 않는다.
+    const complete = floorIds.every(
+      (id) => floor.has(id) || this.cards.get(id)?.fromFloor || this.cards.get(id)?.contacted,
+    );
+    const held = ids.map((id) => [id, this.reserve(id)] as const);
+    const unsafeMonths = new Set<ReturnType<typeof getCard>['month']>();
+    for (const [id, card] of held) {
+      const tableSource =
+        floorIds.includes(id) ||
+        card?.fromFloor ||
+        card?.contacted ||
+        originals.some(
+          (el) => Number(el.dataset['cardId']) === id && el.closest('.staging') !== null,
+        );
+      if (
+        card === undefined ||
+        (tableSource &&
+          (!complete ||
+            this.obstacles(id).some((obstacle) =>
+              overlaps(painted(card.pose, card.outset), obstacle),
+            )))
+      )
+        unsafeMonths.add(getCard(id).month);
+    }
+    const unsafe = ids.filter((id) => unsafeMonths.has(getCard(id).month));
+    const sources = new Map(
+      held.flatMap(([id, card]) =>
+        card === undefined || unsafe.includes(id) ? [] : [[id, card.pose] as const],
+      ),
+    );
+    // 같은 프레임 안에서 되돌려 실패한 임시 clone/원본 숨김을 남기지 않는다.
+    this.release(unsafe);
+    return sources;
+  }
+
+  /** 실제 선택 원본의 예약 pose. append/top/월 anchor는 사용하지 않는다. */
+  contactPose(target: CardId, incoming?: CardId): CardPose | undefined {
+    const keptTarget = this.has(target);
+    const targetCard = this.reserve(target);
+    if (targetCard === undefined) return undefined;
+    const pose = targetCard.pose;
+    const obstacles = this.obstacles(target, incoming);
     const bounds = (
       this.root.querySelector<HTMLElement>('.table') ?? this.root
     ).getBoundingClientRect();
@@ -317,6 +375,18 @@ export class LandingScene {
     if (incoming !== undefined) this.release([incoming]);
     if (!keptTarget) this.release([target]);
     return undefined;
+  }
+
+  /** 출발 제한 카드의 강조는 Captured commit 후 존재하는 실제 획득 원본에만 만든다. */
+  pulseCaptured(ids: readonly CardId[], duration: number): Animation[] {
+    const originals = originalCards(this.root);
+    const visible = ids.filter((id) => {
+      const source = originals.find(
+        (el) => Number(el.dataset['cardId']) === id && el.closest('.captured-zone') !== null,
+      );
+      return source !== undefined && this.reserveFrom(id, source) !== undefined;
+    });
+    return this.pulse(visible, true, duration);
   }
 
   pulse(ids: readonly CardId[], strong: boolean, duration: number): Animation[] {

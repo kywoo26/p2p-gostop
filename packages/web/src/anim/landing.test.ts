@@ -117,3 +117,61 @@ test('관계 후보 실패와 incoming DOM 부재는 새 target 원본을 숨겨
   expect(target.style.visibility).toBe('');
   expect(root.querySelector('[data-landing-scene]')).toBeNull();
 });
+
+test('안전한 획득 묶음은 footprint 이동 후에도 예약 beforepose로 함께 출발한다', () => {
+  const table = stage();
+  const target = card(table, 8, 100, 100);
+  card(table, 10, 115, 110);
+  card(table, 31, 300, 100);
+  scene.reserve(8);
+  const before = scene.pose(8)!.rect;
+  target.parentElement!.style.left = '200px';
+  const sources = scene.prepareCapture([8, 10], [8, 10, 31]);
+  expect([...sources.keys()]).toEqual([8, 10]);
+  expect(sources.get(8)!.rect.x).toBe(before.x);
+  expect(scene.pose(8)!.rect.x).toBe(before.x);
+});
+
+test('staging와 다른 월이 같은 pose이면 두 월 묶음의 잘못된 강조를 모두 막는다', () => {
+  const table = stage();
+  const targets = [card(table, 8, 160, 180), card(table, 10, 170, 190), card(table, 31, 300, 180)];
+  const staging = document.createElement('div');
+  staging.className = 'staging';
+  staging.style.cssText = 'position:absolute;left:160px;top:180px;';
+  const incoming = document.createElement('span');
+  incoming.dataset['cardId'] = '30';
+  incoming.style.cssText = 'display:block;width:48px;height:72px;';
+  staging.append(incoming);
+  table.append(staging);
+  expect(scene.prepareCapture([8, 10, 31, 30], [8, 10, 31]).size).toBe(0);
+  expect(targets.every((el) => el.style.visibility === '')).toBe(true);
+  expect(incoming.style.visibility).toBe('');
+  expect(root.querySelector('[data-landing-scene]')).toBeNull();
+});
+
+test('다른 월 원본 DOM 소실은 빈 장애물 목록으로 획득 출발을 허용하지 않는다', () => {
+  const table = stage();
+  const target = card(table, 8, 100, 100);
+  card(table, 10, 115, 110);
+  scene.reserve(8);
+  expect(scene.prepareCapture([8, 10], [8, 10, 31]).size).toBe(0);
+  expect(target.style.visibility).toBe('');
+  expect(root.querySelector('[data-landing-scene]')).toBeNull();
+});
+
+test('출발 제한 강조는 실제 획득 DOM이 생긴 후에만 만들고 수명을 마감한다', () => {
+  const table = stage();
+  const source = card(table, 8, 100, 100);
+  expect(scene.pulseCaptured([8], 100)).toEqual([]);
+  expect(source.style.visibility).toBe('');
+  const capture = document.createElement('div');
+  capture.className = 'captured-zone';
+  table.append(capture);
+  capture.append(source.parentElement!);
+  const animations = scene.pulseCaptured([8], 100);
+  expect(animations).toHaveLength(1);
+  expect(root.querySelector('[data-contact-light="capture"]')).not.toBeNull();
+  scene.release([8]);
+  expect(source.style.visibility).toBe('');
+  expect(root.querySelector('[data-landing-scene]')).toBeNull();
+});

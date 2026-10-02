@@ -64,6 +64,7 @@ test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page
       contactLight: number;
       counts: string[];
       contacts: string[];
+      originalFloorIds: string[];
       paint: Record<string, { month: string; x: number; y: number; width: number; height: number }>;
     };
     const frames: Frame[] = [];
@@ -83,6 +84,9 @@ test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page
         contacts: cards
           .filter((el) => el.querySelector('[data-contact-light]'))
           .map((el) => el.dataset['motionCardId']!),
+        originalFloorIds: [
+          ...board.querySelectorAll<HTMLElement>('[aria-label="바닥"] [data-card-id]'),
+        ].map((el) => el.dataset['cardId']!),
         paint: Object.fromEntries(
           [...cards, ...board.querySelectorAll<HTMLElement>('[aria-label="바닥"] [data-card-id]')]
             .filter((el) => getComputedStyle(el).visibility !== 'hidden')
@@ -134,6 +138,7 @@ test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page
             contactLight: number;
             counts: string[];
             contacts: string[];
+            originalFloorIds: string[];
             paint: Record<
               string,
               { month: string; x: number; y: number; width: number; height: number }
@@ -152,6 +157,7 @@ test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page
   expect(frames.some((frame) => frame.captureLight === 4)).toBe(true);
   // 접촉 light가 시작된 후부터 강한 강조까지 검사한다. flight의 상공 통과는 제외한다.
   for (const frame of frames.filter((f) => f.counts.map(Number).reduce((a, b) => a + b, 0) === 0)) {
+    expect(frame.originalFloorIds).toEqual(expect.arrayContaining(Object.keys(geometry.floor)));
     for (const id of frame.contacts.filter((id) => id === '10' || id === '30')) {
       const a = frame.paint[id]!;
       for (const [other, b] of Object.entries(frame.paint)) {

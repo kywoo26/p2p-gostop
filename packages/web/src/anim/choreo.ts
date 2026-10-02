@@ -332,17 +332,14 @@ async function runStep(
     scene.reserve(relation.target);
     scene.reserve(relation.card);
   }
-  for (const id of captured) scene.reserve(id);
   for (const id of settled) scene.reserve(id);
-  const captureSources = new Map(
-    captured.flatMap((id) => {
-      const pose = scene.pose(id);
-      return pose === undefined ? [] : [[id, pose] as const];
-    }),
+  const captureSources = scene.prepareCapture(
+    captured,
+    board.floor.flatMap((group) => group.cards),
   );
-  const highlightMs = captured.length === 0 ? 0 : plannedMs * 0.22;
-  if (captured.length > 0) {
-    await sequence(() => scene.pulse(captured, true, highlightMs));
+  const highlightMs = captureSources.size === 0 ? 0 : plannedMs * 0.22;
+  if (captureSources.size > 0) {
+    await sequence(() => scene.pulse([...captureSources.keys()], true, highlightMs));
     if (host.isCurrent?.() === false) return board;
   }
   await host.commit(next);
@@ -369,6 +366,12 @@ async function runStep(
       const to = destination(host.root, id, next);
       return to === undefined ? [] : [[id, to] as const];
     }),
+  );
+  animations.push(
+    ...scene.pulseCaptured(
+      captured.filter((id) => !captureSources.has(id)),
+      plannedMs - highlightMs,
+    ),
   );
   for (const id of captured) {
     const to = destinations.get(id),
