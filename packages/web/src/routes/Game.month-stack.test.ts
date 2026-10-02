@@ -67,6 +67,41 @@ function reportMeasuredFloorFailure(
     const rect = table?.getBoundingClientRect();
     const style = table ? getComputedStyle(table) : null;
     const viewport = window.visualViewport;
+    // 해당 table의 plain record에서 scalar만 복사한다. DOM/전역 객체는 출력하지 않는다.
+    const resize = (
+      table as
+        | (HTMLElement & {
+            __monthStackResizeRecord?: {
+              generation: number;
+              setupAt: number;
+              tableObservedAt: number | null;
+              deckObservedAt: number | null;
+              callbacks: number;
+              callbackAt: number | null;
+              tableEntry: { width: number; height: number } | null;
+              deckEntry: { width: number; height: number } | null;
+              updates: number;
+              updateAt: number | null;
+              currentTableIsObserved: boolean | null;
+              outcome: string;
+              suspendedReturns: number;
+              zeroReturns: number;
+              assignments: number;
+              unchanged: number;
+              measurement: { width: number; height: number; cardWidth: number } | null;
+              assignmentAt: number | null;
+              unchangedAt: number | null;
+              cleanupAt: number | null;
+              disconnectedAt: number | null;
+              previousCleanup: {
+                generation: number;
+                cleanupAt: number | null;
+                disconnectedAt: number | null;
+              } | null;
+            };
+          })
+        | null
+    )?.__monthStackResizeRecord;
     console.error(
       'MONTH_STACK_RESIZE_FAILURE ' +
         JSON.stringify({
@@ -107,6 +142,48 @@ function reportMeasuredFloorFailure(
           landscape: window.matchMedia('(orientation: landscape)').matches,
           coarse: window.matchMedia('(pointer: coarse)').matches,
           fakeTimers: vi.isFakeTimers(),
+          resizeObserver: resize
+            ? {
+                generation: resize.generation,
+                setupAt: resize.setupAt,
+                tableObservedAt: resize.tableObservedAt,
+                deckObservedAt: resize.deckObservedAt,
+                callbacks: resize.callbacks,
+                callbackAt: resize.callbackAt,
+                tableEntry: resize.tableEntry
+                  ? { width: resize.tableEntry.width, height: resize.tableEntry.height }
+                  : null,
+                deckEntry: resize.deckEntry
+                  ? { width: resize.deckEntry.width, height: resize.deckEntry.height }
+                  : null,
+                updates: resize.updates,
+                updateAt: resize.updateAt,
+                currentTableIsObserved: resize.currentTableIsObserved,
+                outcome: resize.outcome,
+                suspendedReturns: resize.suspendedReturns,
+                zeroReturns: resize.zeroReturns,
+                assignments: resize.assignments,
+                unchanged: resize.unchanged,
+                measurement: resize.measurement
+                  ? {
+                      width: resize.measurement.width,
+                      height: resize.measurement.height,
+                      cardWidth: resize.measurement.cardWidth,
+                    }
+                  : null,
+                assignmentAt: resize.assignmentAt,
+                unchangedAt: resize.unchangedAt,
+                cleanupAt: resize.cleanupAt,
+                disconnectedAt: resize.disconnectedAt,
+                previousCleanup: resize.previousCleanup
+                  ? {
+                      generation: resize.previousCleanup.generation,
+                      cleanupAt: resize.previousCleanup.cleanupAt,
+                      disconnectedAt: resize.previousCleanup.disconnectedAt,
+                    }
+                  : null,
+              }
+            : null,
         }),
     );
   } catch {

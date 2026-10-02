@@ -55,6 +55,37 @@
     handLinks = {},
   }: Props = $props();
   let table: HTMLElement;
+  // DEV 진단은 rune가 아닌 plain 값이다. DOM 소유 세대와 마지막 두 entry만 보존한다.
+  interface ResizeMeasurementRecord {
+    generation: number;
+    setupAt: number;
+    tableObservedAt: number | null;
+    deckObservedAt: number | null;
+    callbacks: number;
+    callbackAt: number | null;
+    tableEntry: { width: number; height: number } | null;
+    deckEntry: { width: number; height: number } | null;
+    updates: number;
+    updateAt: number | null;
+    currentTableIsObserved: boolean | null;
+    outcome: 'pending' | 'suspended' | 'zero' | 'assigned' | 'nochange';
+    suspendedReturns: number;
+    zeroReturns: number;
+    assignments: number;
+    unchanged: number;
+    measurement: { width: number; height: number; cardWidth: number } | null;
+    assignmentAt: number | null;
+    unchangedAt: number | null;
+    cleanupAt: number | null;
+    disconnectedAt: number | null;
+    previousCleanup: {
+      generation: number;
+      cleanupAt: number | null;
+      disconnectedAt: number | null;
+    } | null;
+  }
+  let resizeMeasurementGeneration = 0;
+  let previousResizeCleanup: ResizeMeasurementRecord['previousCleanup'] = null;
   let bounds = $state<MonthFloorBounds>({ width: 0, height: 0, cardWidth: 48, obstacles: [] });
   let measurementActive = $state(false);
   let monthLayout = $state.raw<MonthFloorLayout>();
@@ -230,13 +261,91 @@
         height: r.height + top + bottom,
       };
     };
-    const update = () => {
+    let observedTable: HTMLElement | undefined;
+    let observedDeck: Element | null = null;
+    let diagnostic: ResizeMeasurementRecord | undefined;
+    if (import.meta.env.DEV) {
+      try {
+        // 추가 rune 추적 없이 해당 effect 세대의 관측 대상만 고정한다.
+        observedTable = untrack(() => table);
+        diagnostic = {
+          generation: ++resizeMeasurementGeneration,
+          setupAt: performance.now(),
+          tableObservedAt: null,
+          deckObservedAt: null,
+          callbacks: 0,
+          callbackAt: null,
+          tableEntry: null,
+          deckEntry: null,
+          updates: 0,
+          updateAt: null,
+          currentTableIsObserved: null,
+          outcome: 'pending',
+          suspendedReturns: 0,
+          zeroReturns: 0,
+          assignments: 0,
+          unchanged: 0,
+          measurement: null,
+          assignmentAt: null,
+          unchangedAt: null,
+          cleanupAt: null,
+          disconnectedAt: null,
+          previousCleanup: previousResizeCleanup,
+        };
+        (
+          observedTable as HTMLElement & { __monthStackResizeRecord?: ResizeMeasurementRecord }
+        ).__monthStackResizeRecord = diagnostic;
+      } catch {
+        // 진단 property 생성 실패도 기존 observer 설치를 막지 않는다.
+      }
+    }
+    const noteResize = (write: (record: ResizeMeasurementRecord) => void) => {
+      try {
+        if (diagnostic) write(diagnostic);
+      } catch {
+        // 진단 읽기·쓰기 오류는 native callback/update/cleanup을 바꾸지 않는다.
+      }
+    };
+    const update = (entries?: ResizeObserverEntry[]) => {
+      if (import.meta.env.DEV) {
+        noteResize((record) => {
+          record.updates++;
+          record.updateAt = performance.now();
+          record.currentTableIsObserved = untrack(() => table) === observedTable;
+          if (entries) {
+            record.callbacks++;
+            record.callbackAt = record.updateAt;
+            for (const entry of entries) {
+              if (entry.target === observedTable)
+                record.tableEntry = {
+                  width: entry.contentRect.width,
+                  height: entry.contentRect.height,
+                };
+              else if (entry.target === observedDeck)
+                record.deckEntry = {
+                  width: entry.contentRect.width,
+                  height: entry.contentRect.height,
+                };
+            }
+          }
+        });
+      }
       if (monthStacks && layoutSuspended) {
+        if (import.meta.env.DEV)
+          noteResize((record) => {
+            record.outcome = 'suspended';
+            record.suspendedReturns++;
+          });
         measurementActive = false;
         return;
       }
       const rect = table.getBoundingClientRect();
       if (monthStacks && (rect.width <= 0 || rect.height <= 0)) {
+        if (import.meta.env.DEV)
+          noteResize((record) => {
+            record.outcome = 'zero';
+            record.zeroReturns++;
+          });
         measurementActive = false;
         return;
       }
@@ -260,14 +369,65 @@
               .map((el) => paintRect(el, rect))
           : [],
       };
-      if (JSON.stringify(measured) !== JSON.stringify(untrack(() => bounds))) bounds = measured;
+      if (JSON.stringify(measured) !== JSON.stringify(untrack(() => bounds))) {
+        bounds = measured;
+        if (import.meta.env.DEV)
+          noteResize((record) => {
+            record.outcome = 'assigned';
+            record.assignments++;
+            record.assignmentAt = performance.now();
+          });
+      } else if (import.meta.env.DEV)
+        noteResize((record) => {
+          record.outcome = 'nochange';
+          record.unchanged++;
+          record.unchangedAt = performance.now();
+        });
+      if (import.meta.env.DEV)
+        noteResize((record) => {
+          // 기존 계산 결과만 복사하며 bounds rune를 추가로 읽지 않는다.
+          record.measurement = {
+            width: measured.width,
+            height: measured.height,
+            cardWidth: measured.cardWidth,
+          };
+        });
     };
     const observer = new ResizeObserver(update);
     observer.observe(table);
+    if (import.meta.env.DEV)
+      noteResize((record) => {
+        record.tableObservedAt = performance.now();
+      });
     const deck = table.querySelector('.deck-area');
     if (deck) observer.observe(deck);
+    if (import.meta.env.DEV)
+      noteResize((record) => {
+        observedDeck = deck;
+        if (deck) record.deckObservedAt = performance.now();
+      });
     update();
-    return () => observer.disconnect();
+    return () => {
+      if (import.meta.env.DEV)
+        noteResize((record) => {
+          record.cleanupAt = performance.now();
+          previousResizeCleanup = {
+            generation: record.generation,
+            cleanupAt: record.cleanupAt,
+            disconnectedAt: null,
+          };
+        });
+      observer.disconnect();
+      if (import.meta.env.DEV)
+        noteResize((record) => {
+          record.disconnectedAt = performance.now();
+          previousResizeCleanup = {
+            generation: record.generation,
+            cleanupAt: record.cleanupAt,
+            disconnectedAt: record.disconnectedAt,
+          };
+        });
+    };
   });
   $effect(() => {
     if (monthStacks || !options.length || !table) return;
