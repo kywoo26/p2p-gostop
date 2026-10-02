@@ -388,6 +388,8 @@ root가 known30 후보27쌍을 원본 해상도로 직접 비교하여 hand focu
 
 최종 계측/검증 단위는 `scripts/measure-game-transfer.mjs`의 홈 핫스팟1곳만 실제 Kit link로 정합하고 이 plan을 함께 고정한다. 같은 fixture/첫 입력 가능 endpoint·단계·응답 수집/예산은 유지한다. 고정 HEAD에서 lock/설치 핀 불변이면 npm ci를 반복하지 않고 lint→check→Node(max4)→web browser(max4)→build→원형 smoke(일반max4·timing직렬)→Android(max4)를 한 묶음으로 실행한다. smoke의 외부 config는 동일 HEAD에서 성공한 최종 dist를 preview에 재사용하고 test/fixture/expect/threshold/project 의존 관계를 유지한다. 초기 body 실측과 raw/속도·사람 실기기는 별도 판정하며 실패한 단계는 원인 수정 후 해당 범위만 재검증한다. 결과는 실행 HEAD·원로그/근거에 연결하고 검사 뒤 문서만 바꾸어 CI를 취소하지 않는다.
 
+고정208 검증은 lint/check·Node589·browser1098·build21·Android3작업 PASS, 원 smoke487PASS/11FAIL/2미실행이다. 실패는 fonts 초점1·desktop PNG6·짧은 desktop 고/스톱 겹침4로 분리한다. 겹침 후속은 `board-layout.css`의 portrait go-stop 조건만 `:where`로 낮춰 기존 wide/short 높이가 우선하게 한다. 같은 DOM에서240px 선언1개 제거 시 C/W 두 폭 모두 겹침이 사라진 근거를 보존하고, 새 수치·자식 clipping·threshold 변경 없이 원형 버튼/Tab/정보 검사와 대표 portrait 불변을 표적으로 확인한다. timing2는 원 의존 관계로 미실행이며 별도 직렬 실행 전에는 통과로 합산하지 않는다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.

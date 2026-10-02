@@ -510,7 +510,7 @@
   grid-template-rows: minmax(0, 1fr);
 }
 
-:root [data-board-layout].go-stop .decision-area {
+:root [data-board-layout]:where(.go-stop) .decision-area {
   top: calc((100% + var(--fan-top) - var(--fan-hand)) / 2);
   bottom: auto;
   transform: translateY(-50%);
