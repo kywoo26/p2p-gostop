@@ -495,6 +495,12 @@ FR-RP-08 (Q-RP-10 확정): 앱 실행·친구와 대전 진입의 LOHS/포그라
 | NF-RP-05 | 원격 복귀 5초는 연결 가능한 망·중계·호스트 조건의 목표이며 WAN 보장 아님. 자동 재접속은 지수 백오프 0.5→30초, host 부재와 중계 불통을 구별해 안내하고 수동 재시도/종료를 제공한다. 한도/만료/인증 오류에는 제한된 재시도 후 이유 안내. 중계 부하/한도 초과는 가능하면 429/503·retry 안내, 서버 자체 불통에도 로컬 UI로 대기 표시. 이미 확인한 상태/머니를 임의로 변경하지 않음 |
 | NF-RP-06 | 동일 웹 artifact를 APK와 정적 서버에 배포, PC가 Galaxy APK에 맞는 호환 release 웹 경로를 제공하고 wire 불일치 시 hello에서 시작 차단·업데이트 안내. 세부 호환 경로/선택 정책은 사용자 위임(Q-RP-04) 범위에서 설계한다. 임의 구버전 허용 금지. **B207-2 예산 정책 승인·병합(#228):** LAN 첫 로딩≤2초 목표 유지, NF-03/AC-07의 초기 encoded HTTP body≤1,500,000 B와 동일 artifact 전체 raw≤2,097,152 B를 각각 적용한다(예산 정책 승인 범위). 원격 로드/왕복 시간과 WS/전송 계층 비용은 별도 실측. 프레임 내용의 원격 저장 없이 지연 요약만 사용자 측 기록 |
 
+**SK3 정적 호환 준비(NP-08·NF-RP-06):** Kit 채택 시 생성되는 정확한 `_app/version.json`은 source build ID를 가진 client 버전 확인 파일이며, 앱 `version.json`의 `{wireVersion,hash}` 및 relay `/version` 제어 응답과 구별한다. 생성된 Kit 파일만 artifact 해시에 포함하고 relay는 기존 release/hash prefix 안에서 JSON MIME·`no-store`로 제공한다. 임의 JSON·root alias·source map·중간 서버 출력은 추가 공개하지 않는다. Android는 동일 dist를 루트에서 제공하며 기존 JSON MIME/no-store, 생성된 content hash 자산의 장기 캐시를 유지한다. 파일이 없는 기존 Vite artifact의 해시·wire 형식은 변하지 않는다. 이 정적 호환 준비는 Kit 생산 전환·자동 업데이트/재시작 정책이나 사용자 성능 수용의 완료를 뜻하지 않는다.
+
+**SK3 branch 채택 계약(NF-01/02/03/07/08/09·MN-05):** 사용자 위임의 Kit 3 static hash SPA는 동일 dist의 Android 루트/LAN 버전 prefix 서빙과 기존 게임/저장/wire 동작을 보존한다. Kit navigation은 화면 수명만 다루고 세션·worker 권위 상태는 문서 수명 coordinator/기존 controller에 둔다. 초대 fragment는 router 해석 전에 인수하며 HTTP·history state·title·announcer·오류에 비밀을 싣지 않는다. 제한 HTML 경로 변환은 정확 핀·두 build graph·고정 지원 문법이 정합할 때만 허용하고 미지 구조는 빌드를 실패시킨다. 외부 origin 요청·SSR 서버·service worker를 도입하지 않는다. 이 계약은 이행 branch의 구현 기준이며 전체 자동/실기기 수용 완료 선언이 아니다.
+
+**공개 고지 정적 계약(NF-07·NP-08·NF-RP-06):** 공개 고지는 정확한 `cards/ATTRIBUTION.md`, `pro/NOTICE.md`, `oss/NOTICE.txt` 세 경로다. UI는 배포 base를 보존하고 UTF-8 plain text·nosniff로 원문을 읽는다. 새 산출물은 앱 manifest에 `assetSetVersion:2`를 기록하고 세 파일을 모두 artifact hash에 포함한다. 필드가 없는 기존 산출물은 기존 hash 집합으로만 검증하며 고지 세 파일은 무결성 보장 밖이므로 `no-store`로 제공한다. 2 이외의 명시 값·필수 고지 누락·hash 불일치는 거절하고 legacy digest로 재시도하지 않는다. 새 consumer는 옛 산출물을 인수하지만 옛 consumer는 새 산출물을 거절하므로 consumer 갱신→새 산출물 순서가 필요하다. 이 구분자는 게임 wire 4와 독립적이며 운영 배포를 실행한 기록이 아니다. 임의 txt/md/JSON 전체 공개는 추가하지 않는다.
+
 ### 13.5 승인 후 수용 기준
 
 | ID | 조건 |

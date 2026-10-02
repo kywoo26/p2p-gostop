@@ -19,6 +19,7 @@ interface Release {
   readonly wireVersion: number;
   readonly path: string;
   readonly files: Map<string, Asset>;
+  readonly assetSetVersion: 1 | 2;
 }
 const TYPES: Readonly<Record<string, string>> = {
   html: 'text/html; charset=utf-8',
@@ -40,6 +41,9 @@ const TYPES: Readonly<Record<string, string>> = {
   mp4: 'video/mp4',
 };
 const RELEASE_ID = /^v[0-9]+\.[0-9]+\.[0-9]+$/;
+// Kit가 생성한 source build ID. 앱 wire/hash version.json은 공개 파일이 아니다.
+const KIT_VERSION_FILE = '_app/version.json';
+const PUBLIC_NOTICES = new Set(['cards/ATTRIBUTION.md', 'pro/NOTICE.md', 'oss/NOTICE.txt']);
 
 async function filesIn(root: string): Promise<Map<string, Asset>> {
   const result = new Map<string, Asset>();
@@ -54,7 +58,11 @@ async function filesIn(root: string): Promise<Map<string, Asset>> {
       if (!entry.isFile()) continue;
       const key = relative(root, path).split(sep).join('/');
       const ext = entry.name.split('.').at(-1)?.toLowerCase() ?? '';
-      const type = TYPES[ext];
+      const type = PUBLIC_NOTICES.has(key)
+        ? 'text/plain; charset=utf-8'
+        : key === KIT_VERSION_FILE
+          ? 'application/json; charset=utf-8'
+          : TYPES[ext];
       if (!type || entry.name.endsWith('.map')) continue;
       result.set(key, { body: await readFile(path), type });
     }
@@ -79,14 +87,6 @@ export class StaticSite {
       ids.add(config.id);
       const root = resolve(config.distDir);
       if (!(await lstat(root)).isDirectory()) throw new Error('web dist must be a directory');
-      const files = await filesIn(root);
-      const hash = createHash('sha256');
-      for (const [name, asset] of [...files].toSorted(([a], [b]) => a.localeCompare(b))) {
-        hash.update(name);
-        hash.update('\0');
-        hash.update(asset.body);
-      }
-      const digest = hash.digest('hex');
       let metadata: unknown;
       try {
         const metadataPath = join(root, 'version.json');
@@ -103,9 +103,30 @@ export class StaticSite {
         typeof metadata.wireVersion !== 'number' ||
         !Number.isSafeInteger(metadata.wireVersion) ||
         metadata.wireVersion < 1 ||
-        metadata.hash !== digest
+        typeof metadata.hash !== 'string'
       )
         throw new Error('artifact version/hash mismatch');
+      let assetSetVersion: 1 | 2 = 1;
+      // absent만 legacy다. null/string/unknown 값이나 digest 실패에 대한 downgrade는 없다.
+      if ('assetSetVersion' in metadata) {
+        if (metadata.assetSetVersion !== 2) throw new Error('unsupported artifact assetSetVersion');
+        assetSetVersion = 2;
+      }
+      const files = await filesIn(root);
+      if (assetSetVersion === 2) {
+        for (const name of PUBLIC_NOTICES) {
+          if (!files.has(name)) throw new Error(`missing public notice: ${name}`);
+        }
+      }
+      const hash = createHash('sha256');
+      for (const [name, asset] of [...files].toSorted(([a], [b]) => a.localeCompare(b))) {
+        if (assetSetVersion === 1 && PUBLIC_NOTICES.has(name)) continue;
+        hash.update(name);
+        hash.update('\0');
+        hash.update(asset.body);
+      }
+      const digest = hash.digest('hex');
+      if (metadata.hash !== digest) throw new Error('artifact version/hash mismatch');
       if (releases.length === 0 && metadata.wireVersion !== PROTOCOL_VERSION)
         throw new Error('current artifact wire version mismatch');
       releases.push({
@@ -114,6 +135,7 @@ export class StaticSite {
         wireVersion: metadata.wireVersion,
         path: `/r/${config.id}/${digest}/`,
         files,
+        assetSetVersion,
       });
     }
     return new StaticSite(releases);
@@ -183,7 +205,11 @@ export class StaticSite {
       response.setHeader('Content-Length', asset.body.length);
       response.setHeader(
         'Cache-Control',
-        name === 'index.html' ? 'no-store' : 'public, max-age=31536000, immutable',
+        name === 'index.html' ||
+          name === KIT_VERSION_FILE ||
+          (release.assetSetVersion === 1 && PUBLIC_NOTICES.has(name))
+          ? 'no-store'
+          : 'public, max-age=31536000, immutable',
       );
       response.setHeader('X-Content-Type-Options', 'nosniff');
       response.setHeader('Referrer-Policy', 'no-referrer');

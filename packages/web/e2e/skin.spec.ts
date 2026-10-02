@@ -20,7 +20,7 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height });
     await page.goto('./#/dev/gallery/home');
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.getByRole('button', { name: '핫스팟 대전' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '핫스팟 대전' })).toBeVisible();
     const geometry = await page.locator('.home button, .home a').evaluateAll((elements) =>
       elements.map((el) => {
         const r = el.getBoundingClientRect();

@@ -516,22 +516,6 @@
   }
 
   /* 메뉴 버튼 자리: 상대 정보 줄 오른쪽을 비운다 */
-  .menu-button {
-    position: absolute;
-    top: max(var(--space-2), env(safe-area-inset-top));
-    right: max(var(--space-3), env(safe-area-inset-right));
-    display: grid;
-    place-items: center;
-    width: var(--touch-min);
-    height: var(--touch-min);
-    padding: 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-m);
-    background: oklch(20% 0.03 160 / 0.8);
-    color: var(--color-text);
-    font-size: 1.25rem;
-    z-index: 70;
-  }
 
   .notice {
     position: fixed;

@@ -75,7 +75,7 @@ async function fixture(prefix: string) {
 }
 
 async function firstGame(host: Page, guest: Page) {
-  await host.getByRole('button', { name: '핫스팟 대전' }).click();
+  await host.getByRole('link', { name: '핫스팟 대전' }).click();
   await guest.getByRole('textbox', { name: '내 이름' }).fill('합성 게스트');
   await guest.getByRole('button', { name: '입장' }).click();
   await expect(host.getByTestId('host-start')).toBeEnabled();

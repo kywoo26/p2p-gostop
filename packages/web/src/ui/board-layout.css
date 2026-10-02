@@ -1,0 +1,725 @@
+/* SK3-R1: Board의 portrait/desktop 구조 정본. floor-layout/WAAPI pose는 이 파일에서 계산하지 않는다. */
+/* UX-06·UX-11: 한 카드 스케일, 네 글자 단계, 중앙 더미. 2026-09-30 사용자 결정. */
+:root [data-board-layout] {
+  --table-card: 48px;
+  --table-card-height: calc(var(--table-card) / 0.614);
+  --capture-card: 32px;
+  --capture-card-height: calc(var(--capture-card) / 0.614);
+  --table-gap: calc(var(--table-card) / 4);
+  --fan-top: 48px;
+  --fan-capture: calc(var(--capture-card-height) + 18px);
+  --fan-seat: 52px;
+  --fan-hand: 102px;
+  --fan-gap: 8px;
+  --color-hud-muted: var(--table-muted);
+  --color-hud-mine: #9bcebb;
+  --color-event-ppeok-text: #e99d95;
+  row-gap: var(--fan-gap);
+  grid-template-areas: 'header' 'opponent-capture' 'opponent-score' 'table' 'my-score' 'my-capture' 'hand';
+  grid-template-rows:
+    var(--fan-top) var(--fan-capture) var(--fan-seat) minmax(0, 1fr) var(--fan-seat)
+    var(--fan-capture) var(--fan-hand);
+  display: grid;
+  position: relative;
+  height: 100dvh;
+  min-height: 0;
+  padding: max(8px, var(--board-safe-top, env(safe-area-inset-top)))
+    max(12px, env(safe-area-inset-right))
+    max(8px, var(--board-safe-bottom, env(safe-area-inset-bottom)))
+    max(12px, env(safe-area-inset-left));
+  overflow: hidden;
+  background: var(--board-background);
+  color: var(--skin-paper);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+:root [data-board-layout]::before,
+:root [data-board-layout]::after {
+  display: none;
+}
+:root [data-board-layout] :is(h1, h2, h3, p, button, span, strong, b) {
+  letter-spacing: 0;
+  text-shadow: none;
+}
+:root [data-board-layout] :is(strong, button) {
+  font-weight: 600;
+}
+:root [data-board-layout] .hud {
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 4px;
+  align-items: center;
+}
+:root [data-board-layout] .table-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 14px;
+}
+:root [data-board-layout] .table-heading span {
+  flex: none;
+  color: var(--table-muted);
+}
+:root [data-board-layout] .table-heading strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:root .game .menu-button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  z-index: 70;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--skin-paper);
+  font-size: 14px;
+  font-weight: 400;
+}
+:root [data-board-layout] .menu-reserved {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--skin-paper);
+  font-size: 14px;
+}
+:root .game .menu-reserved {
+  visibility: hidden;
+}
+:root [data-board-layout] .captured-zone {
+  position: relative;
+  display: block;
+  min-width: 0;
+  --card-w-s: var(--capture-card);
+  --card-h-s: var(--capture-card-height);
+}
+:root [data-board-layout] .captured-zone > .captured {
+  position: static;
+  inset: auto;
+  visibility: visible;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--table-gap);
+  min-height: 0;
+  height: 100%;
+}
+:root [data-board-layout] .captured-zone .group {
+  display: grid;
+  grid-template-rows: 16px 1fr;
+  gap: 2px;
+  min-width: 0;
+}
+:root [data-board-layout] .captured-zone .name {
+  display: block;
+  min-height: 0;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--table-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+:root [data-board-layout] .captured-zone .name :is(b, small) {
+  display: none;
+}
+:root [data-board-layout] .captured-zone .stack {
+  position: relative;
+  display: flex;
+  width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 6px);
+  min-height: var(--capture-card-height);
+  height: var(--capture-card-height);
+}
+:root [data-board-layout] .captured-zone .stack > .card + .card {
+  margin-left: calc(6px - var(--capture-card));
+}
+:root [data-board-layout] .captured-zone .stack[data-count]:not([data-count='0'])::after {
+  content: attr(data-count);
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  border: 1px solid var(--table-border);
+  border-radius: var(--table-radius);
+  background: #172723;
+  color: var(--skin-paper);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+}
+:root [data-board-layout] :is(.opponent-hud, .mine-hud) {
+  min-width: 0;
+  padding: 2px 6px;
+  background: #eed5a108;
+  border-left: 2px solid transparent;
+  border-radius: var(--table-radius);
+}
+:root [data-board-layout] :is(.scoreboard, .scoreboard.expanded) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+:root [data-board-layout] :is(.seat-bar, .seat-bar.me) {
+  background: transparent;
+  box-shadow: none;
+}
+:root [data-board-layout] .seat-bar .identity {
+  display: flex;
+  -webkit-line-clamp: unset;
+  overflow: hidden;
+}
+:root [data-board-layout] .seat-bar .identity :is(.who, .name) {
+  display: block;
+  white-space: nowrap;
+}
+:root [data-board-layout] .seat-bar .amounts {
+  grid-column: auto;
+}
+:root [data-board-layout] .seat-bar .score {
+  border: 1px solid var(--table-border);
+  border-radius: var(--table-radius);
+  background: #101d19;
+}
+:root [data-board-layout] .center {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+:root [data-board-layout] .center::before {
+  display: none;
+}
+:root [data-board-layout] .table.compact {
+  --card-w-m: var(--table-card);
+  --card-h-m: var(--table-card-height);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  min-height: 0;
+}
+:root [data-board-layout] .table.compact .deck-area {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+}
+:root [data-board-layout] .table.compact .deck {
+  gap: 0;
+}
+:root [data-board-layout] .table.compact .deck-stack {
+  width: var(--table-card);
+  height: var(--table-card-height);
+  line-height: 0;
+}
+:root [data-board-layout] .table.compact .deck-count {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  border-radius: var(--table-radius);
+  border-color: var(--table-border);
+  background: #172723;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+:root [data-board-layout] .table.compact :is(.compact-ppeok, .ppeok-tag) {
+  display: none;
+}
+:root [data-board-layout] .table.compact :is(.kind-ppeok, .kind-natural) {
+  outline: none;
+}
+:root [data-board-layout] :is(.hand-zone, .two-hands .hand-zone) {
+  min-height: 0;
+  padding-top: 0;
+}
+:root [data-board-layout].two-hands .hand-zone {
+  padding-top: 0;
+}
+:root [data-board-layout] .hand.compact {
+  --card-w-l: var(--table-card);
+  --card-h-l: var(--table-card-height);
+  --hand-art-visible: var(--card-h-l);
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  touch-action: none;
+}
+:root [data-board-layout] .hand.compact .row {
+  width: 100%;
+  container-type: inline-size;
+}
+:root [data-board-layout] .hand.compact .slot {
+  z-index: var(--fan-index);
+  width: var(--table-card);
+  height: var(--table-card-height);
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  rotate: none;
+}
+:root [data-board-layout] .hand.compact .slot .art-window {
+  rotate: none;
+}
+:root [data-board-layout] .hand.compact .slot.selected {
+  z-index: 30;
+}
+:root [data-board-layout] .hand.compact .slot.selected .art-window {
+  transform: translateY(-4px);
+  outline: 1px solid var(--skin-paper);
+}
+:root [data-board-layout] .hand.compact .slot.selected::after {
+  content: '▼';
+  position: absolute;
+  top: -24px;
+  left: calc(50% - 7px);
+  color: var(--skin-paper);
+  font-size: 14px;
+  pointer-events: none;
+}
+:root [data-board-layout] .hand.compact .slot:focus-visible {
+  z-index: 31;
+  outline: 1px solid var(--skin-paper);
+  outline-offset: 2px;
+}
+:root [data-board-layout] .hand.compact .slot:focus-visible .art-window {
+  transform: translateY(-4px);
+}
+:root
+  [data-board-layout]
+  .hand.compact
+  .slot:is([data-hand-action='bomb'], [data-hand-action='shake'])
+  .art-window::after {
+  left: 2px;
+  right: auto;
+  width: 20px;
+  height: 20px;
+}
+:root [data-board-layout] .decision-area {
+  position: absolute;
+  top: auto;
+  bottom: max(8px, var(--board-safe-bottom, env(safe-area-inset-bottom)));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: var(--z-prompt);
+  display: block;
+  width: auto;
+  height: auto;
+  max-height: var(--fan-hand);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+:root [data-board-layout] .decision-area.idle-slot {
+  position: absolute;
+  top: auto;
+  bottom: calc(var(--fan-hand) + var(--fan-capture) + var(--fan-seat) + 24px);
+  pointer-events: none;
+  background: transparent;
+}
+:root [data-board-layout] :is(.decision-content, .idle-slot .decision-content) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  height: auto;
+  min-height: 0;
+}
+:root [data-board-layout] .decision-area .prompt {
+  height: auto;
+  max-height: var(--fan-hand);
+  border: 1px solid var(--table-border);
+  border-radius: var(--table-radius);
+  box-shadow: none;
+  background: #172723;
+}
+:root [data-board-layout] .decision-area :is(h2, .risk, button, button strong) {
+  font-size: 14px;
+  line-height: 20px;
+}
+:root [data-board-layout] .decision-area button {
+  border-radius: var(--table-radius);
+  box-shadow: none;
+}
+:root [data-board-layout] .decision-area .prompt-actions {
+  flex: none;
+}
+:root [data-board-layout] .timer-prompt {
+  display: none;
+}
+:root [data-board-layout].first-pick .decision-area,
+:root [data-board-layout].first-pick .decision-area .prompt {
+  max-height: 60dvh;
+}
+:root [data-board-layout][data-awaiting='me'] .mine-hud,
+:root [data-board-layout][data-awaiting='other'] .opponent-hud {
+  border-left-color: var(--skin-brass);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root [data-board-layout] .hand .art-window {
+    transition: none;
+    animation: none;
+  }
+}
+:root [data-board-layout] .table.compact .floor .group {
+  justify-content: center;
+}
+
+/* 전체 그림을 두 줄로 표시한다. */
+:root [data-board-layout].two-hands {
+  --fan-hand: 180px;
+}
+:root [data-board-layout] .hand.compact {
+  display: grid;
+  grid-template-rows: repeat(2, var(--table-card-height));
+  gap: 8px;
+  padding-top: 16px;
+}
+:root [data-board-layout] .hand.compact .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  height: var(--table-card-height);
+}
+:root [data-board-layout] .hand.compact .row + .row {
+  margin-top: 0;
+}
+:root [data-board-layout] .hand.compact .slot {
+  position: relative;
+  left: auto;
+  top: auto;
+  flex: none;
+}
+:root [data-board-layout] .seat-bar .score {
+  align-items: center;
+}
+:root [data-board-layout] .seat-bar .score span {
+  line-height: 28px;
+}
+:root [data-board-layout] .decision-area :is(h2, .risk-kind) {
+  font-weight: 600;
+}
+:root [data-board-layout] .hand.compact {
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+}
+:root [data-board-layout] .hand.compact .slot {
+  grid-template-rows: 1fr;
+  background: transparent;
+}
+:root [data-board-layout] .hand.compact .row .art-window {
+  height: var(--table-card-height);
+}
+@media (max-height: 760px) {
+  :root [data-board-layout] {
+    --fan-capture: calc(var(--capture-card-height) + 18px);
+    --fan-seat: 40px;
+    --fan-gap: 6px;
+  }
+  :root [data-board-layout].two-hands {
+    --fan-hand: calc(2 * var(--table-card-height) + 16px);
+  }
+  :root [data-board-layout] .captured-zone .group {
+    grid-template-rows: 12px 1fr;
+  }
+  :root [data-board-layout] .captured-zone .name {
+    height: 12px;
+    line-height: 12px;
+  }
+  :root [data-board-layout] :is(.opponent-hud, .mine-hud) {
+    padding-block: 0;
+  }
+  :root [data-board-layout] .seat-bar .identity {
+    height: 14px;
+    line-height: 14px;
+  }
+  :root [data-board-layout] .seat-bar .balance {
+    line-height: 26px;
+  }
+  :root [data-board-layout] .seat-bar .score {
+    height: 26px;
+  }
+  :root [data-board-layout] .seat-bar .score :is(b, span) {
+    line-height: 24px;
+  }
+  :root [data-board-layout] .seat-bar .score-meta {
+    line-height: 12px;
+  }
+  :root [data-board-layout] .hand.compact {
+    padding-top: 12px;
+  }
+  :root [data-board-layout] .hand.compact .slot.selected .art-window {
+    transform: none;
+  }
+  :root [data-board-layout] .hand.compact .slot.selected::after {
+    display: none;
+  }
+}
+
+/* 5×3 격자 좌표·셀 내부 흩뿌림은 floor-layout.ts가 계산한다. */
+:root [data-board-layout] .center {
+  align-items: stretch;
+  justify-items: stretch;
+}
+:root [data-board-layout] .table.compact .floor {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+:root [data-board-layout] .table.compact .floor .group {
+  position: absolute;
+  width: max-content;
+  height: var(--table-card-height);
+}
+:root [data-board-layout] .center {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+:root [data-board-layout]:where(.go-stop) .decision-area {
+  top: calc((100% + var(--fan-top) - var(--fan-hand)) / 2);
+  bottom: auto;
+  transform: translateY(-50%);
+  max-height: 240px;
+  left: 24px;
+  right: 24px;
+}
+:root [data-board-layout].go-stop .decision-area .prompt {
+  max-height: 240px;
+  padding: 12px;
+  gap: 8px;
+}
+:root [data-board-layout].go-stop .decision-area h2 {
+  font-size: 24px;
+  line-height: 30px;
+  text-align: center;
+}
+:root [data-board-layout].go-stop .decision-area .estimate {
+  text-align: center;
+}
+:root [data-board-layout].go-stop .decision-area button {
+  min-height: 48px;
+  font-size: 16px;
+}
+:root [data-board-layout].go-stop .decision-area .stop {
+  background: #843d38;
+  color: var(--skin-paper);
+  border: 1px solid var(--table-border);
+}
+:root [data-board-layout].go-stop .decision-area .go {
+  background: #285c4c;
+  color: var(--skin-paper);
+  border: 1px solid var(--table-border);
+}
+
+:root [data-board-layout] .decision-area .flip-only {
+  pointer-events: auto;
+}
+
+/* 획득 요약과 낼 손패는 크기·경계로 구분한다. 선택 가능한 카드 면은 그대로 둔다. */
+:root [data-board-layout] .captured-zone.mine::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  border-top: 1px solid var(--table-border);
+  pointer-events: none;
+}
+
+@media (max-height: 760px) {
+  :root [data-board-layout] .captured-zone.mine::after {
+    bottom: -9px;
+  }
+}
+
+/* 명시 영역: 7개 flow children. decision/event는 별도 overlay이며 암묵 행을 만들지 않는다. */
+:root [data-board-layout] > .hud {
+  grid-area: header;
+  display: grid;
+}
+:root [data-board-layout] > .captured-zone:not(.mine) {
+  grid-area: opponent-capture;
+}
+:root [data-board-layout] > .opponent-hud {
+  grid-area: opponent-score;
+}
+:root [data-board-layout] > .center {
+  grid-area: table;
+}
+:root [data-board-layout] > .mine-hud {
+  grid-area: my-score;
+}
+:root [data-board-layout] > .captured-zone.mine {
+  grid-area: my-capture;
+}
+:root [data-board-layout] > .hand-zone {
+  grid-area: hand;
+}
+:root [data-board-layout] .captured-zone [data-anchor='opp-hand'] {
+  padding-right: 0;
+}
+:root [data-board-layout] .hand-label {
+  height: 0;
+  background: transparent;
+}
+:root [data-board-layout].monthStacks {
+  row-gap: max(0px, calc(var(--fan-gap) - 2px / 3));
+}
+
+/* RP-06: 동일한 뷰와 행동을 세 영역에 배치한다. DOM 순서와 카드 슬롯 판정은 그대로다. */
+@media (min-width: 1024px), (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
+  :root [data-board-layout] {
+    --table-card: var(--board-card-wide);
+    --fan-hand: 110px;
+    --fan-seat: 52px;
+    --fan-capture: 110px;
+    --fan-top: 48px;
+    --fan-gap: 8px;
+    grid-template-areas: 'header header header' 'opponent table mine' '. hand .';
+    grid-template-columns: minmax(180px, 1fr) minmax(320px, 2fr) minmax(180px, 1fr);
+    grid-template-rows: var(--fan-top) minmax(0, 1fr) var(--fan-hand);
+    column-gap: clamp(12px, 2vw, 32px);
+    max-width: 1440px;
+    margin-inline: auto;
+  }
+  :root [data-board-layout] .hud {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  :root [data-board-layout] .center {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  :root [data-board-layout] .opponent-hud,
+  :root [data-board-layout] .mine-hud {
+    grid-row: 2;
+    align-self: start;
+    height: var(--fan-seat);
+  }
+  :root [data-board-layout] > .opponent-hud,
+  :root [data-board-layout] > .captured-zone:not(.mine) {
+    grid-area: opponent;
+  }
+  :root [data-board-layout] > .mine-hud,
+  :root [data-board-layout] > .captured-zone.mine {
+    grid-area: mine;
+  }
+  :root [data-board-layout] .captured-zone {
+    grid-row: 2;
+    align-self: start;
+    height: var(--fan-capture);
+    margin-top: calc(var(--fan-seat) + 8px);
+  }
+  :root [data-board-layout] .decision-area,
+  :root [data-board-layout] .decision-area.idle-slot {
+    position: relative;
+    inset: auto;
+    transform: none;
+    grid-column: 3;
+    grid-row: 2;
+    align-self: end;
+    width: 100%;
+    max-height: min(240px, calc(100% - var(--fan-seat) - var(--fan-capture) - 16px));
+    min-height: 56px;
+    margin: 0;
+    pointer-events: auto;
+  }
+  :root [data-board-layout].go-stop .decision-area {
+    top: auto;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    transform: none;
+  }
+  :root [data-board-layout] .hand-zone {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  :root [data-board-layout].two-hands,
+  :root [data-board-layout].first-pick {
+    --fan-hand: 206px;
+  }
+  :root [data-board-layout].first-pick {
+    --fan-hand: 0px;
+  }
+}
+
+/* 200% 확대의 720×450 상당: 카드 크기를 모바일과 같게 두고 영역 높이를 확보한다. */
+@media (min-width: 700px) and (max-height: 600px) and (pointer: fine) {
+  /* 기존 skin의 적용값을 보존하되 두 손패 행의 간격·여백은 Board가 소유한다. */
+  :root [data-board-layout] .hand.compact {
+    padding-top: 8px;
+  }
+  :root [data-board-layout] {
+    --table-card: var(--board-card-compact);
+    --fan-top: 48px;
+    --fan-seat: 40px;
+    --fan-capture: 68px;
+    --fan-hand: 100px;
+    --fan-gap: 8px;
+    grid-template-columns: 190px minmax(300px, 1fr) 190px;
+    column-gap: 8px;
+    padding-block: 4px;
+  }
+  :root [data-board-layout].two-hands {
+    --fan-hand: 160px;
+  }
+  :root [data-board-layout] .captured-zone {
+    margin-top: calc(var(--fan-seat) + 8px);
+  }
+  :root [data-board-layout] .captured-zone .stack {
+    width: calc(var(--capture-card) + max(0, var(--pile-count) - 1) * 1px);
+  }
+  :root [data-board-layout] .captured-zone .stack > .card + .card {
+    margin-left: calc(1px - var(--capture-card));
+  }
+  :root [data-board-layout] .captured-zone .group,
+  :root [data-board-layout] .captured-zone .name {
+    width: 100%;
+    min-width: 0;
+  }
+  :root [data-board-layout] .seat-bar .balance {
+    font-size: 12px;
+    line-height: 18px;
+    letter-spacing: -0.75px;
+  }
+  :root [data-board-layout] .decision-area,
+  :root [data-board-layout] .decision-area.idle-slot {
+    max-height: calc(100% - var(--fan-seat) - var(--fan-capture) - 8px);
+  }
+}

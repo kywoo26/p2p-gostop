@@ -73,7 +73,7 @@ for (const state of ['board', 'board-target', 'board-gostop']) {
 // #88 통합: 갤러리는 Board만 렌더하므로 실제 Game의 버튼도 별도로 검증한다.
 test('HUD 실제 메뉴: 예약 위치 일치·클릭·복귀', async ({ page }, info) => {
   await page.goto('./?speed=instant#/');
-  await page.getByRole('button', { name: '혼자 연습' }).click();
+  await page.getByRole('link', { name: '혼자 연습' }).click();
   await page.getByRole('button', { name: '시작', exact: true }).click();
   await expect(page.getByTestId('my-score')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);

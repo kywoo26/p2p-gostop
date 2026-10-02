@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import Scene from '../pro-assets/Scene.svelte';
   import { proEnabled } from '../pro-assets/runtime.ts';
   import { cardSrc } from '../ui/cards.ts';
@@ -25,12 +26,12 @@
   );
 
   const menu = [
-    { id: 'versus', label: '핫스팟 대전', primary: true, href: '#/versus' },
-    { id: 'remote', label: '친구와 원격 대전', primary: true, href: '#/remote' },
-    { id: 'solo', label: '혼자 연습', primary: true, href: '#/solo' },
-    { id: 'records', label: '기록', primary: false, href: '#/records' },
-    { id: 'settings', label: '설정', primary: false, href: '#/settings' },
-    { id: 'diagnostics', label: '진단', primary: false, href: '#/diagnostics' },
+    { id: 'versus', label: '핫스팟 대전', primary: true, href: '/versus' },
+    { id: 'remote', label: '친구와 원격 대전', primary: true, href: '/remote' },
+    { id: 'solo', label: '혼자 연습', primary: true, href: '/solo' },
+    { id: 'records', label: '기록', primary: false, href: '/records' },
+    { id: 'settings', label: '설정', primary: false, href: '/settings' },
+    { id: 'diagnostics', label: '진단', primary: false, href: '/diagnostics' },
   ] as const;
 </script>
 
@@ -58,16 +59,22 @@
       </button>
     {/if}
     {#each menu as item (item.id)}
-      <button
-        type="button"
+      {@const unavailable =
+        (item.id === 'remote' && activeMode === 'hotspot') ||
+        (item.id === 'versus' && activeMode === 'remote')}
+      <a
         class={['menu-button', item.primary && 'primary', item.id === 'versus' && 'versus']}
-        disabled={(item.id === 'remote' && activeMode === 'hotspot') ||
-          (item.id === 'versus' && activeMode === 'remote')}
-        onclick={() =>
-          (location.hash = item.id === 'remote' && !configured ? '#/settings' : item.href)}
+        href={unavailable
+          ? undefined
+          : resolve(item.id === 'remote' && !configured ? '/settings' : item.href)}
+        aria-disabled={unavailable || undefined}
+        role={unavailable ? 'link' : undefined}
+        tabindex={unavailable ? 0 : undefined}
+        data-sveltekit-preload-code={unavailable ? 'false' : 'tap'}
+        data-sveltekit-preload-data="false"
       >
         {item.label}<span aria-hidden="true">↗</span>
-      </button>
+      </a>
     {/each}
     {#if !configured}<p class="remote-hint">
         원격 대전은 설정에서 중계 주소와 생성 자격을 먼저 저장하세요.
@@ -79,7 +86,7 @@
   <footer>
     <span data-testid="build-id">빌드 {BUILD_ID}</span>
     <time datetime={BUILD_TIME}>{BUILD_TIME.slice(0, 16).replace('T', ' ')}</time>
-    <a href="#/license">라이선스</a>
+    <a href={resolve('/license')}>라이선스</a>
   </footer>
 </main>
 
@@ -97,7 +104,7 @@
 
   .hero {
     position: relative;
-    min-height: 320px;
+    min-height: 250px;
   }
   .hero-art {
     position: absolute;
@@ -161,6 +168,7 @@
     background: var(--color-surface);
     color: var(--color-text);
     font: inherit;
+    text-decoration: none;
     font-size: 14px;
     transition: background-color var(--dur-modal) ease-out;
   }
@@ -193,7 +201,7 @@
   .menu-button:active {
     background: var(--color-surface-raised);
   }
-  .menu-button:disabled {
+  .menu-button[aria-disabled='true'] {
     opacity: 0.5;
   }
 

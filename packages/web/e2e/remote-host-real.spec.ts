@@ -172,12 +172,13 @@ test('실제 공개 중계로 방 생성, 코드 승인, 게스트 좌석 획득
     proxy = await startTlsProxy(directory, relay.port);
     const relayOrigin = proxy.origin;
     await page.goto('./');
-    await page.getByRole('button', { name: '친구와 원격 대전' }).click();
+    await page.getByRole('link', { name: '친구와 원격 대전' }).click();
+    await page.getByRole('button', { name: '원격 연결', exact: true }).click();
     await page.getByRole('textbox', { name: '중계 URL' }).fill(relayOrigin);
     await page.getByLabel('생성 자격').fill(secret);
     await page.getByRole('button', { name: '원격 설정 저장' }).click();
     await page.getByRole('link', { name: '뒤로' }).click();
-    await page.getByRole('button', { name: '친구와 원격 대전' }).click();
+    await page.getByRole('link', { name: '친구와 원격 대전' }).click();
     await page.getByRole('button', { name: '방 만들기' }).click();
     const code = await page.getByTestId('remote-code').innerText();
     expect(code).toMatch(/^[A-Z2-9]{4}(?:-[A-Z2-9]{4}){2}$/);
@@ -211,18 +212,23 @@ test('실제 공개 중계로 방 생성, 코드 승인, 게스트 좌석 획득
       });
     }
     await page.getByRole('link', { name: '뒤로' }).click();
-    await expect(page.getByRole('button', { name: '핫스팟 대전' })).toBeDisabled();
+    await expect(page.getByRole('link', { name: '핫스팟 대전' })).toBeDisabled();
     await page.evaluate(() => {
-      location.hash = '#/versus';
+      // 비활성 홈 항목을 우회한 앱내 링크도 방 소유를 바꾸지 못한다.
+      const link = document.createElement('a');
+      link.href = '#/versus';
+      document.body.append(link);
+      link.click();
+      link.remove();
     });
     await expect(page).toHaveURL(/#\/remote$/);
-    await page.evaluate(() => {
-      location.hash = '#/settings';
-    });
+    await page.getByRole('link', { name: '뒤로' }).click();
+    await page.getByRole('link', { name: '설정', exact: true }).click();
+    await page.getByRole('button', { name: '원격 연결', exact: true }).click();
     await expect(page.getByRole('textbox', { name: '중계 URL' })).toBeDisabled();
     await expect(page.getByLabel('생성 자격')).toBeDisabled();
     await page.getByRole('link', { name: '뒤로' }).click();
-    await page.getByRole('button', { name: '친구와 원격 대전' }).click();
+    await page.getByRole('link', { name: '친구와 원격 대전' }).click();
     await expect(page.getByRole('heading', { name: '원격 방 열기' })).toBeVisible();
     const makeGuest = () =>
       createRemoteGuest({

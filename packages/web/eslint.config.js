@@ -5,7 +5,6 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import ts from 'typescript-eslint';
-import svelteConfig from './svelte.config.js';
 import workspace from '../../tools/lint/lint-imports.mjs';
 
 // 게스트 페이지는 비보안 컨텍스트(http://192.168.x.y)에서 돈다. Secure Context 전용 API 금지 (spec NF-02, AGENTS.md 3장).
@@ -86,7 +85,7 @@ const webRestrictions = {
 };
 
 export default defineConfig(
-  globalIgnores(['dist/', 'test-results/', 'playwright-report/']),
+  globalIgnores(['.svelte-kit/**', 'dist/', 'test-results/', 'playwright-report/']),
   js.configs.recommended,
   ts.configs.recommended,
   svelte.configs.recommended,
@@ -123,7 +122,6 @@ export default defineConfig(
       parserOptions: {
         extraFileExtensions: ['.svelte'],
         parser: ts.parser,
-        svelteConfig,
       },
     },
   },

@@ -141,4 +141,4 @@
     - code: https://creativecommons.org/licenses/by-sa/4.0/
     - paragraph: "Existing svgo-optimized Hwatu SVG: motif crop, circular mask, ink/paper duotone, resize. Derivative licensed CC BY-SA 4.0."
     - link "파일별 출처 목록":
-      - /url: /pro/NOTICE.md
+      - /url: ./pro/NOTICE.md

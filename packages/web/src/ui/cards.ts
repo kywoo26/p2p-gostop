@@ -5,7 +5,7 @@ import type { CardId } from '../lib/view-types.ts';
 /** s: 획득패 더미, m: 바닥, l: 손패 (tokens.css --card-w-*) */
 export type CardSize = 's' | 'm' | 'l';
 
-// vite.config.ts의 base가 './'라 BASE_URL도 상대 경로다(Android assets·로컬 미리보기 공통).
+// hash SPA의 문서 상대 경로. Vite define의 BASE_URL='./' 계약으로 동일 artifact의 root/prefix를 보존한다.
 const base = import.meta.env.BASE_URL;
 
 export function cardSrc(id: CardId): string {

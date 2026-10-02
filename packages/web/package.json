@@ -2,7 +2,7 @@
   "name": "@p2p-gostop/web",
   "version": "0.0.0",
   "private": true,
-  "description": "웹 앱 (Vite + Svelte 5): 호스트·게스트·솔로 모드",
+  "description": "SvelteKit 3 정적 hash SPA: 호스트·게스트·솔로 모드",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -10,10 +10,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-skin.mjs && node scripts/check-font.mjs && vite build && node scripts/compact-metadata.mjs && node scripts/write-version.mjs && node --test scripts/oss-notices.test.mjs scripts/check-skin.test.mjs scripts/compact-metadata.test.mjs scripts/check-bundle.test.mjs scripts/game-transfer-probe.test.mjs && node scripts/check-bundle.mjs",
+    "build": "node scripts/check-skin.mjs && node scripts/check-font.mjs && vite build && node scripts/compact-metadata.mjs && node scripts/write-version.mjs && node --test scripts/kit-entry-graph.test.mjs scripts/oss-notices.test.mjs scripts/check-skin.test.mjs scripts/compact-metadata.test.mjs scripts/check-bundle.test.mjs scripts/game-transfer-probe.test.mjs && node scripts/check-bundle.mjs",
     "oss:refresh": "vite build && node scripts/generate-oss-notices.mjs",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
@@ -52,6 +52,11 @@
     "vite": "8.3.1",
     "vitest": "5.0.2",
     "vitest-browser-svelte": "3.1.0",
-    "ws": "8.22.0"
+    "ws": "8.22.0",
+    "@sveltejs/kit": "3.0.0",
+    "@sveltejs/adapter-static": "4.0.0"
+  },
+  "imports": {
+    "#lib/*": "./src/lib/*"
   }
 }

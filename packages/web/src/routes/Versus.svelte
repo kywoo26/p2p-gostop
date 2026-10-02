@@ -1,4 +1,7 @@
 <script lang="ts">
+  import type { AppRoute } from '../app/navigation.ts';
+  import { onMount } from 'svelte';
+  let { onnavigate }: { onnavigate?: (route: AppRoute) => void } = $props();
   import { PRESETS } from '@p2p-gostop/engine';
   // 친구와 대전(호스트) 방 열기 화면의 동작 (spec 2.1, FR-01~05): 브리지로 핫스팟을 켜고(LAN 노출은 명시적으로, NF-06),
   // HostGame 로비에 규칙·금액을 넣고, 게스트가 연결되면 시작한다. 그리는 것은 HostRoom.svelte.
@@ -12,7 +15,10 @@
   const bridge = getBridge();
   // 화면을 열 때 방이 없으면(또는 끝났으면) 연다. 이미 판이 진행 중이면 게임 화면으로 보낸다
   if (p2p.host === null || p2p.host.phase === 'ended') p2p.openRoom(settings.value);
-  else if (p2p.host.phase === 'playing') location.hash = '#/match';
+  else if (p2p.host.phase === 'playing')
+    onMount(() => {
+      onnavigate?.('/match');
+    });
   hotspot.watch();
   const room = $derived(p2p.host as NonNullable<typeof p2p.host>);
 
@@ -58,7 +64,7 @@
 
   function start() {
     const ok = room.resumable !== null ? room.resumeSaved() : room.start();
-    if (ok) location.hash = '#/match';
+    if (ok) onnavigate?.('/match');
   }
 
   const resume = $derived(

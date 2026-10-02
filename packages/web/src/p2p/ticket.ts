@@ -9,7 +9,7 @@ export interface GuestTicket {
 }
 
 export function readTicket(hash: string = location.hash): GuestTicket {
-  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  const params = new URLSearchParams(hash.replace(/^#\/guest#/, '').replace(/^#/, ''));
   const token = params.get('g');
   const name = params.get('n');
   return {
@@ -27,7 +27,7 @@ export function writeTicket(ticket: GuestTicket): void {
     history.replaceState(
       history.state,
       '',
-      `${location.pathname}${location.search}${hash ? `#${hash}` : ''}`,
+      `${location.pathname}${location.search}${hash ? `#/guest#${hash}` : '#/guest'}`,
     );
   } catch {
     // 일부 환경은 replaceState를 막는다: 메모리에만 둔다

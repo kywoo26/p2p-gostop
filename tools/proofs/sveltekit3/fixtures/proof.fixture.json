@@ -1,0 +1,69 @@
+{
+  "plan": "2e8fa3c10a4a28748d52b72c6a86fd4176343187",
+  "scope": "SK3-P0 유한 shell만. 본문 App·제품·실기기 검증 아님.",
+  "node": "v24.21.0",
+  "npm": "11.19.0",
+  "playwright": "1.63.0",
+  "hashes": {
+    "fixtures/package.fixture.json": "9fcd235924053a8a2dbed90fea937db119fb4cd5958207d06d786bc1cf39713e",
+    "fixtures/package-lock.fixture.json": "4f98f136e1f88ee5fcffd7972759bad7faae9be5d124ad072a0b36ea15c8e49c",
+    "fixtures/source.fixture.json": "5fee7cae48f45c1b173da6b1b0d4fce0f3a2abb783fa490d839a39e9f03debeb",
+    "fixtures/split-original.fixture.json": "c4eb2ecb6da730354aa9c260ad032a1e32c2831b50a41849f7fdca3b6fa78d4f"
+  },
+  "font": {
+    "source": "packages/web/src/styles/fonts/GostopSans.woff2",
+    "target": "src/styles/font.woff2",
+    "sha256": "d3c14ffeed9d29771170b1bcd6f4e75587eaa04d437d84afa42f7962b48cd368"
+  },
+  "relocation": {
+    "kit": "3.0.0",
+    "adapter": "4.0.0",
+    "counts": {
+      "preloads": 11,
+      "styles": 1,
+      "imports": 2
+    },
+    "originalSha256": "45ba84157b2a8f9f49a66a2ef12a62326356f508290eea73d07153cf2d7b2565",
+    "resultSha256": "5190027ebf5bb7b1bd365941702489d72fe8bd743e5e48376fbbdf84cb2ee576",
+    "idempotent": true,
+    "negativeCases": 4
+  },
+  "notes": [
+    "14는 이 fixture의 관측값(11 preloads+1 stylesheet+2 imports). 다른 앱의 보편적 개수 아님.",
+    "preflight는 과거 npm 메타데이터 관측이며 현재 공급망 검증을 대신하지 않음. 설치를 자동 실행하지 않음.",
+    "기존 scratch 원형은 observed/scripts.json. 최종 source 텍스트는 바이트 그대로 source.fixture.json에 보관.",
+    "root cwd에서 실행. scratch는 저장소 밖 새 절대 경로로 지정; 기존 디렉토리는 준비 거절.",
+    "HTML은 formatter가 원형 바이트를 바꾸지 못하도록 JSON string fixture로 보관. 변환은 검증된 두 digest만 수용; 재빌드가 다르면 자동 완화하지 않고 실패.",
+    "기존 결과는 Chromium/WebKit 데스크톱 shell 관측. init token probe는 요청·history.state·title·본문·aria-live·오류만 검사하며 실제 인증/저장/전체 App 계약 증명 아님. 합성 token과 prefix 사용.",
+    "relocate(html, expected)는 source/result SHA-256·출력별 counts를 명시 인수로 요구한다. shell fixture의 counts만 build 호출자가 넘기며 App wrapper나 새 routes는 범위 밖."
+  ],
+  "commands": [
+    "node tools/proofs/sveltekit3/prepare.mjs \"$PROOF_SCRATCH\"",
+    "node tools/proofs/sveltekit3/preflight.mjs \"$PROOF_SCRATCH\"",
+    "npm ci --prefix \"$PROOF_SCRATCH\" --ignore-scripts --min-release-age=3 --min-release-age-exclude='@sveltejs/kit' --min-release-age-exclude='@sveltejs/adapter-static'",
+    "node tools/proofs/sveltekit3/build.mjs \"$PROOF_SCRATCH\"",
+    "node tools/proofs/sveltekit3/matrix-shell.mjs \"$PROOF_SCRATCH\"",
+    "node tools/proofs/sveltekit3/matrix-shell.mjs \"$PROOF_SCRATCH\" --root",
+    "node --test tools/proofs/sveltekit3/relocate.test.mjs"
+  ],
+  "commandNote": "PROOF_SCRATCH는 재현자가 저장소 밖 미존재 절대 경로로 설정하는 실행 환경변수. 설치는 두 정확핀의 명령 단위 예외 승인 범위에서 재현자가 명시 실행. 공식 메타데이터 검토 후 진행.",
+  "officialDocs": [
+    "https://svelte.dev/docs/kit/@sveltejs-kit-vite",
+    "https://svelte.dev/docs/kit/adapter-static",
+    "https://svelte.dev/docs/kit/hooks#init",
+    "https://svelte.dev/docs/kit/$app-paths",
+    "https://svelte.dev/docs/kit/$app-navigation",
+    "https://playwright.dev/docs/api/class-browser",
+    "https://playwright.dev/docs/api/class-page"
+  ],
+  "packagingValidation": {
+    "pureRelocationTests": 4,
+    "negativeInputCases": 18,
+    "originalSourcePreserved": true,
+    "syntaxChecked": true,
+    "build": false,
+    "browser": false,
+    "install": false,
+    "prepareExecution": false
+  }
+}

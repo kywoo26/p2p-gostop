@@ -11,7 +11,7 @@
   --skin-frame-shadow: inset 0 1px #f5e1b614, 0 3px 6px #0004;
 }
 
-/* 이번 PR의 두 화면에만 적용. Settings/Settlement 등은 후속 PR에서 같은 규칙으로 맞춘다. */
+/* 화면 재질. 구조/입력 영역은 해당 화면과 Board layout이 소유한다. */
 :root .home,
 :root .board {
   --color-border: var(--skin-brass);
@@ -26,8 +26,7 @@
 }
 
 /* 기존 12px 안쪽 여백에 배치. border/padding/grid 크기를 늘리지 않는다. */
-:root .board::before,
-:root .home::before {
+:root .board::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -37,8 +36,7 @@
   border-image: var(--skin-wood) 90 / 5px stretch;
   box-shadow: inset 0 0 0 1px var(--skin-brass);
 }
-:root .board::after,
-:root .home::after {
+:root .board::after {
   content: '';
   position: absolute;
   inset: 4px;
@@ -48,14 +46,14 @@
   border-image: var(--skin-gold) 35 / 1px stretch;
 }
 
-:root .home.home {
+:root .home {
   position: relative;
 }
 :root .home .hero-art {
   inset: 78px 0 0;
   width: auto;
   height: auto;
-  border: 1px solid var(--skin-brass);
+  border: 1px solid var(--color-divider);
   border-radius: 12px;
   background:
     var(--skin-key-art) 50% 48% / cover no-repeat,
@@ -83,7 +81,7 @@
 }
 :root .home .menu-button {
   border-radius: 10px;
-  box-shadow: var(--skin-frame-shadow);
+  box-shadow: none;
 }
 :root .home .menu-button.primary:not(.versus) {
   background: var(--skin-ink);

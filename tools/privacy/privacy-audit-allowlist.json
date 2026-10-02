@@ -443,7 +443,7 @@
     {
       "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/server/M4ServerTest.kt",
       "type": "network-address",
-      "line": 146,
+      "line": 205,
       "field": "network-address",
       "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -451,7 +451,7 @@
     {
       "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/server/M4ServerTest.kt",
       "type": "network-address",
-      "line": 157,
+      "line": 216,
       "field": "network-address",
       "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -555,7 +555,7 @@
     {
       "path": "packages/relay-dev/test/static.test.ts",
       "type": "literal-credential",
-      "line": 30,
+      "line": 37,
       "field": "secret",
       "sha256": "fd2cb544dd72aaa8b178b2504caad84bfab02c066a7471f6f362b876d053363e",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -643,7 +643,7 @@
     {
       "path": "packages/web/public/oss/NOTICE.txt",
       "type": "email",
-      "line": 88,
+      "line": 99,
       "field": "email",
       "sha256": "bdf9ce3b6fad26286e88dc74fe508107913344140b3282382d6ee4c290e7175c",
       "reason": "원저작자 라이선스 귀속 이메일 보존"
@@ -1159,6 +1159,38 @@
       "field": "secret",
       "sha256": "0ff6289462a47efb1b4eb8071a8f6df2772ec9d195601ac6171d1131d981c657",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/fixtures/source.fixture.json",
+      "type": "invite-secret",
+      "line": 5,
+      "field": "invite-secret",
+      "sha256": "38e89b94f3b8e89b3e8207ca9eb28c77e5fedb230d3d7e1761b3f9097144c888",
+      "reason": "SK3-P0: 고정 shell URL parser 정규식/코드 문자열, 실제 초대값 아님; 원형 바이트·digest 보존"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/matrix-shell.mjs",
+      "type": "literal-credential",
+      "line": 60,
+      "field": "literal-credential",
+      "sha256": "4eac9e18d08c6364abc0198edd9c4481761d4748f0daacdcc470ba0f15a180b4",
+      "reason": "SK3-P0: abcdef 순환으로 직접 만든 공개 합성 fixture 토큰, 환경/인증 조회 없음"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/observed/scripts.json",
+      "type": "invite-secret",
+      "line": 5,
+      "field": "invite-secret",
+      "sha256": "38e89b94f3b8e89b3e8207ca9eb28c77e5fedb230d3d7e1761b3f9097144c888",
+      "reason": "SK3-P0: 고정 shell URL parser 정규식/코드 문자열, 실제 초대값 아님; 원형 바이트·digest 보존"
+    },
+    {
+      "path": "tools/proofs/sveltekit3/observed/scripts.json",
+      "type": "literal-credential",
+      "line": 7,
+      "field": "literal-credential",
+      "sha256": "d4e3dfb4f69b5ea35b819bdee97a9f021f1b0e3968a13a1f37398ad4136962bc",
+      "reason": "SK3-P0: abcdef 순환으로 직접 만든 공개 합성 fixture 토큰, 환경/인증 조회 없음"
     }
   ],
   "pending": []

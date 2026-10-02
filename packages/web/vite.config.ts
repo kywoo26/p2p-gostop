@@ -1,7 +1,9 @@
-import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { sveltekit } from '@sveltejs/kit/vite';
+import relocatableStatic from './scripts/relocatable-static.mjs';
 import { defineConfig } from 'vite';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -44,51 +46,59 @@ function gitShortHash(): string {
   return 'dev';
 }
 
-export default defineConfig({
-  // Android assets(127.0.0.1:17777/)와 로컬 미리보기 어디서나 열리도록 상대 경로
-  base: './',
-  plugins: [
-    svelte(),
-    {
-      name: 'record-bundled-npm-packages',
-      apply: 'build',
-      generateBundle(_options, bundle) {
-        const names = new Set<string>();
-        for (const output of Object.values(bundle)) {
-          if (output.type !== 'chunk') continue;
-          for (const id of Object.keys(output.modules)) {
-            const match = id.replaceAll('\\', '/').match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/);
-            if (match?.[1]) names.add(match[1]);
+export default defineConfig(({ isPreview }) => {
+  // Kit preview는 adapter 전 중간 산출물을 읽는다. 배포 검증은 후처리된 dist만 서빙한다.
+  if (isPreview === true)
+    return {
+      appType: 'mpa',
+      publicDir: false,
+      build: { outDir: 'dist' },
+      preview: { host: '127.0.0.1', port: 4173, strictPort: true },
+    };
+  return {
+    plugins: [
+      sveltekit({
+        adapter: relocatableStatic(),
+        files: { assets: 'public' },
+        router: { type: 'hash' },
+        preprocess: vitePreprocess(),
+        compilerOptions: { runes: true },
+        version: { name: gitShortHash(), pollInterval: 0 },
+        serviceWorker: { register: false },
+      }),
+      {
+        name: 'record-bundled-npm-packages',
+        apply: 'build',
+        generateBundle(options, bundle) {
+          // SSR 중간물이 아닌 실제 출하 client chunk만 고지 집합으로 수집한다.
+          if (!String(options.dir).endsWith('/client')) return;
+          const names = new Set<string>();
+          for (const output of Object.values(bundle)) {
+            if (output.type !== 'chunk') continue;
+            for (const id of Object.keys(output.modules)) {
+              const match = id.replaceAll('\\', '/').match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+              if (match?.[1]) names.add(match[1]);
+            }
           }
-        }
-        this.emitFile({
-          type: 'asset',
-          fileName: 'oss/bundled-packages.json',
-          source: `${JSON.stringify([...names].sort())}\n`,
-        });
+          this.emitFile({
+            type: 'asset',
+            fileName: 'oss/bundled-packages.json',
+            source: `${JSON.stringify([...names].sort())}\n`,
+          });
+        },
       },
+    ],
+    define: {
+      'import.meta.env.BASE_URL': JSON.stringify('./'),
+      'import.meta.env.PRO_ASSET_REVIEW': JSON.stringify(process.env['PRO_ASSET_REVIEW'] === '1'),
+      __BUILD_ID__: JSON.stringify(gitShortHash()),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
-    {
-      name: 'exclude-prototype-assets-from-release',
-      closeBundle() {
-        if (process.env['PRO_ASSET_REVIEW'] === '1') return;
-        const dir = resolve(repoRoot, 'packages/web/dist/pro');
-        if (!existsSync(dir)) return;
-        for (const name of readdirSync(dir)) {
-          if (name !== 'NOTICE.md') rmSync(resolve(dir, name), { recursive: true, force: true });
-        }
-      },
+    build: {
+      // 게스트 iOS 17+ Safari (spec NF-02)
+      target: ['es2022', 'safari17'],
     },
-  ],
-  define: {
-    'import.meta.env.PRO_ASSET_REVIEW': JSON.stringify(process.env['PRO_ASSET_REVIEW'] === '1'),
-    __BUILD_ID__: JSON.stringify(gitShortHash()),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-  },
-  build: {
-    // 게스트 iOS 17+ Safari (spec NF-02)
-    target: ['es2022', 'safari17'],
-  },
-  server: { host: true, port: 5173, strictPort: true },
-  preview: { host: '127.0.0.1', port: 4173, strictPort: true },
+    server: { host: true, port: 5173, strictPort: true },
+    preview: { host: '127.0.0.1', port: 4173, strictPort: true },
+  };
 });

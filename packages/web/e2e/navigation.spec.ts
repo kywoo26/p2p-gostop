@@ -92,7 +92,7 @@ test('메뉴→설정→복귀, 홈→이어하기, 새 게임 취소, 종료→
 }) => {
   test.setTimeout(120_000);
   await page.goto('./?speed=instant#/');
-  await page.getByRole('button', { name: '혼자 연습' }).click();
+  await page.getByRole('link', { name: '혼자 연습' }).click();
   await page.getByRole('button', { name: '시작', exact: true }).click();
   const solo = page.getByTestId('solo');
   await expect(solo).toBeVisible();
@@ -120,7 +120,7 @@ test('메뉴→설정→복귀, 홈→이어하기, 새 게임 취소, 종료→
 
   await menuButton.click();
   await page.locator('[data-menu="home"]').click();
-  await page.getByRole('button', { name: '혼자 연습' }).click();
+  await page.getByRole('link', { name: '혼자 연습' }).click();
   await page.getByRole('button', { name: '시작', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '새 게임을 시작할까요?' })).toBeVisible();
   await page.locator('[data-choice="cancel-new"]').click();
@@ -198,7 +198,7 @@ test('P2P 호스트 Back → 메뉴 → 설정 → 뒤로에서 과거 Back을 �
     const base = baseURL ?? 'http://127.0.0.1:4173';
     const query = `?speed=instant&relay=127.0.0.1:${relay.port}`;
     await page.goto(`${base}/${query}&role=host#/`);
-    await page.getByRole('button', { name: '핫스팟 대전' }).click();
+    await page.getByRole('link', { name: '핫스팟 대전' }).click();
     await expect(page.getByRole('heading', { name: '방 열기' })).toBeVisible();
     const guest = await guestContext.newPage();
     await guest.goto(`${base}/${query}&role=guest`);
@@ -226,7 +226,7 @@ test('손상 저장은 안내하고 새 게임 취소 뒤 원본을 유지한다
   await page.addInitScript(() => localStorage.setItem('gostop.solo.v1', '{broken'));
   await page.goto('./#/');
   await expect(page.getByRole('alert')).toContainText('저장된 세션을 읽을 수 없습니다');
-  await page.getByRole('button', { name: '혼자 연습' }).click();
+  await page.getByRole('link', { name: '혼자 연습' }).click();
   await page.getByRole('button', { name: '시작', exact: true }).click();
   await page.locator('[data-choice="cancel-new"]').click();
   expect(await page.evaluate(() => localStorage.getItem('gostop.solo.v1'))).toBe('{broken');
@@ -239,6 +239,7 @@ test('구문은 정상이나 구조가 손상된 저장은 이어하기를 막�
   await page.getByRole('button', { name: '시작', exact: true }).click();
   await page.getByTestId('game-menu').click();
   await page.locator('[data-menu="home"]').click();
+  await expect(page.getByRole('heading', { name: '맞고 P2P', exact: true })).toBeVisible();
   const damaged = await page.evaluate(() => {
     const save = JSON.parse(localStorage.getItem('gostop.solo.v1') ?? 'null');
     delete save.session.game.firstPick;

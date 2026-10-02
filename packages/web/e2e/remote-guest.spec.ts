@@ -46,7 +46,7 @@ test('하위 배포 경로에서 링크·코드·승인 대기·불가 화면 (F
   await expect.poll(() => page.url()).toBe(`${origin}${prefix}#/join`);
   await capture('link');
 
-  await page.goto(`${origin}${prefix}#/join`);
+  // 현재 주소는 scrub된 #/join이다. 별도 goto와 reload를 경합시키지 않는다.
   await page.reload();
   await expect(page.getByRole('heading', { name: '코드로 참여' })).toBeVisible();
   await capture('code');

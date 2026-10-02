@@ -59,7 +59,7 @@ test('PA-03 first screen defers VFX/audio and download failure preserves control
   await page.route('**/pro/felt-*.webp', (route) => route.abort());
   await page.goto('/?visual=pro#/dev/gallery/home');
   await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '혼자 연습' })).toBeEnabled();
+  await expect(page.getByRole('link', { name: '혼자 연습' })).toBeEnabled();
   expect(requests.some((url) => /\.(ogg|m4a)$|\/pro\/(ppeok|jjok|bomb|ttadak)-/.test(url))).toBe(
     false,
   );

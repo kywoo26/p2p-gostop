@@ -1,8 +1,18 @@
 {
   "web": [
     {
+      "name": "@sveltejs/kit",
+      "version": "3.0.0",
+      "license": "MIT"
+    },
+    {
       "name": "clsx",
       "version": "2.1.1",
+      "license": "MIT"
+    },
+    {
+      "name": "devalue",
+      "version": "5.9.4",
       "license": "MIT"
     },
     {

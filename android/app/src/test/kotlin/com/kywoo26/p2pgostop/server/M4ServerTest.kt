@@ -68,6 +68,65 @@ class M4ServerTest {
         assertFalse(page.bodyAsText().contains("https://"), "인덱스에 외부 URL 없음(NP-08)")
     }
 
+    @Test fun `Kit 버전은 JSON no-store이고 생성 hash 자산만 immutable이다`() = testApplication {
+        val version = "{\"version\":\"source-build-fixture\"}\n"
+        val files = mapOf(
+            "index.html" to "<html>static shell</html>",
+            "_app/version.json" to version,
+            "version.json" to "{\"wireVersion\":4,\"hash\":\"fixture\"}",
+            "_app/immutable/entry/start.abcdefgh.js" to "export const start = true;",
+            "_app/immutable/chunks/abcdefgh.js" to "export const chunk = true;",
+            "_app/immutable/workers/ai.worker-abcdefgh.js" to "self.onmessage = () => {};",
+            "_app/immutable/assets/0.abcdefgh.css" to "body{}",
+            "_app/immutable/assets/font.abcdefgh.woff2" to "font",
+            "_app/immutable/entry/plain.js" to "short-name",
+            "_app/immutable/chunks/abcdefgh.js.map" to "source-map",
+            ".svelte-kit/output/server/index.js" to "server-only",
+        )
+        application { smokeModule(env(files)) }
+        val response = client.get("/_app/version.json")
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(version, response.bodyAsText())
+        assertEquals("application/json; charset=utf-8", response.headers[HttpHeaders.ContentType])
+        assertTrue(response.headers[HttpHeaders.CacheControl]!!.contains("no-store"))
+        // 기존 Android의 wire 파일 서빙을 바꾸지 않는다. relay의 /version 제어 응답과도 별개다.
+        assertTrue(client.get("/version.json").bodyAsText().contains("wireVersion"))
+        assertTrue(client.get("/version.json").headers[HttpHeaders.CacheControl]!!.contains("no-store"))
+        for ((path, mime) in listOf(
+            "_app/immutable/entry/start.abcdefgh.js" to "text/javascript",
+            "_app/immutable/chunks/abcdefgh.js" to "text/javascript",
+            "_app/immutable/workers/ai.worker-abcdefgh.js" to "text/javascript",
+            "_app/immutable/assets/0.abcdefgh.css" to "text/css",
+            "_app/immutable/assets/font.abcdefgh.woff2" to "font/woff2",
+        )) {
+            val asset = client.get("/$path")
+            assertEquals(HttpStatusCode.OK, asset.status)
+            assertEquals(files[path], asset.bodyAsText())
+            assertTrue(asset.headers[HttpHeaders.ContentType]!!.startsWith(mime), path)
+            assertTrue(asset.headers[HttpHeaders.CacheControl]!!.contains("immutable"), path)
+        }
+        assertTrue(client.get("/_app/immutable/entry/plain.js").headers[HttpHeaders.CacheControl]!!.contains("no-store"))
+        for (path in listOf(
+            "_app/missing.json", "_app/immutable/chunks/abcdefgh.js.map",
+            ".svelte-kit/output/server/index.js", "r/v0.4.1/fixture/_app/version.json",
+        )) assertEquals(HttpStatusCode.NotFound, client.get("/$path").status, path)
+    }
+
+    @Test fun `공개 고지 세 경로는 루트에서 원문 UTF8 nosniff no-store로 읽는다`() = testApplication {
+        val paths = listOf("cards/ATTRIBUTION.md", "pro/NOTICE.md", "oss/NOTICE.txt")
+        val files = paths.associateWith { "# 합성 고지 원문\n" }
+        application { smokeModule(env(files)) }
+        for (path in paths) {
+            val response = client.get("/$path")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(files[path], response.bodyAsText())
+            assertEquals("text/plain; charset=utf-8", response.headers[HttpHeaders.ContentType])
+            assertEquals("nosniff", response.headers["X-Content-Type-Options"])
+            assertTrue(response.headers[HttpHeaders.CacheControl]!!.contains("no-store"))
+        }
+        assertEquals(HttpStatusCode.NotFound, client.get("/oss/missing.txt").status)
+    }
+
     @Test fun `최신 소켓이 역할을 교체하고 알림과 양방향 전달 순서가 유지된다`() = testApplication {
         val e = env()
         application { smokeModule(e) }

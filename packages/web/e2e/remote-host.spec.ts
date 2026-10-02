@@ -65,13 +65,14 @@ test('설정에서 중계 등록 후 방 생성과 코드 참여 승인을 한�
     });
   });
   await page.goto('./');
-  await page.getByRole('button', { name: '친구와 원격 대전' }).click();
+  await page.getByRole('link', { name: '친구와 원격 대전' }).click();
   await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+  await page.getByRole('button', { name: '원격 연결', exact: true }).click();
   await page.getByRole('textbox', { name: '중계 URL' }).fill(origin);
   await page.getByLabel('생성 자격').fill(secret);
   await page.getByRole('button', { name: '원격 설정 저장' }).click();
   await page.getByRole('link', { name: '뒤로' }).click();
-  await page.getByRole('button', { name: '친구와 원격 대전' }).click();
+  await page.getByRole('link', { name: '친구와 원격 대전' }).click();
   await expect(page.getByRole('heading', { name: '원격 방 열기' })).toBeVisible();
   await page.getByRole('button', { name: '방 만들기' }).click();
   await expect(page.getByTestId('remote-code')).toHaveText('ABCD-EFGH-JKLM');

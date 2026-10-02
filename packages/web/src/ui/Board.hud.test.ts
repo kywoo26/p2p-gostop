@@ -29,7 +29,10 @@ for (const state of ['play', 'target', 'gostop'] as const) {
     expect(box('[data-testid="decision-timer"]').right).toBeLessThanOrEqual(
       box('.me .score-area').left,
     );
-    expect(getComputedStyle(screen.container.querySelector('.balance')!).fontSize).toBe('24px');
+    expect(getComputedStyle(screen.container.querySelector('.balance')!).fontSize).toBe('16px');
+    expect(getComputedStyle(screen.container.querySelector('.score b')!).fontSize).toBe('24px');
+    expect(getComputedStyle(screen.container.querySelector('.balance')!).fontWeight).toBe('400');
+    expect(getComputedStyle(screen.container.querySelector('.score b')!).fontWeight).toBe('600');
   });
 }
 test('좌석 반전에서도 실제 수치와 월·종류 접근성 이름 유지', async () => {

@@ -47,7 +47,7 @@
   --hud-line-height: 20px;
   --hud-score-font-size: 24px;
   --hud-score-line-height: 24px;
-  --hud-score-font-weight: 750;
+  --hud-score-font-weight: 600;
   --hud-money-line-height: 18px;
   /* 시각 스킨은 디자인 리드 결정 후 토큰으로 교체. 높이는 UX-H01a의 예산이다. */
   --hud-height-compact: 56px;
@@ -91,7 +91,7 @@
   --card-w-s: 26px;
   --card-w-m: 44px;
   --card-w-l: 62px;
-  /* RP-06: 배치가 참조하는 폭. 모바일의 실제 48/32px 계약은 스킨이 유지한다. */
+  /* RP-06: 배치가 참조하는 폭. 모바일의 실제 48/32px 계약은 Board layout이 유지한다. */
   --board-card-wide: 56px;
   --board-card-compact: 44px;
   /* 카드 높이: 원본 비율을 1% 이내로 근사. SVG 내부 비율은 보존한다.
@@ -120,7 +120,7 @@
   /* A · 사이: 의미 역할. 카드 크기/표식 및 --dur-*는 기존 소유 계약 유지. */
   --color-control-border: var(--color-border);
   --color-divider: oklch(49% 0.03 160);
-  --color-focus: var(--color-accent);
+  --color-focus: var(--color-text);
   --color-selected: var(--color-accent);
   --color-error: oklch(78% 0.13 25);
   --color-warning: oklch(86% 0.1 85);

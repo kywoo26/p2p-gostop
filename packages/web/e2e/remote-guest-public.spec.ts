@@ -99,8 +99,9 @@ async function createRoom(base: string, secret: string): Promise<Room> {
 }
 
 async function enterCode(page: Page, code: string): Promise<void> {
+  // 링크/코드를 새 문서로 여는 계약. 앱내 hash 이동과 연속 reload를 섞지 않는다.
+  await page.goto('about:blank');
   await page.goto(`${origin}${prefix}#/join`);
-  await page.reload();
   await page.getByRole('textbox', { name: '이름' }).fill('동료');
   await page.getByRole('textbox', { name: '12자리 방 코드' }).fill(code);
   await page.getByRole('button', { name: '참여하기' }).click();
@@ -157,8 +158,8 @@ test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 �
     expect(registered.status).toBe(201);
     await relay.advance(1_001);
     const beforeExpired = serverCloseCodes.length;
+    await page.goto('about:blank');
     await page.goto(`${origin}${prefix}#/join?room=${expiredRoom.roomId}&t=${token}`);
-    await page.reload();
     await page.getByRole('textbox', { name: '이름' }).fill('동료');
     await page.getByRole('button', { name: '참여하기' }).click();
     await expect(page.getByRole('alert')).toContainText('초대 만료');
@@ -167,8 +168,8 @@ test('공개 중계 결과를 거절·만료·불가·위조 초대 안내로 �
     const invalidRoom = await createRoom(relay.base, relay.secret);
     const forgedToken = randomBytes(32).toString('base64url');
     const beforeInvalid = serverCloseCodes.length;
+    await page.goto('about:blank');
     await page.goto(`${origin}${prefix}#/join?room=${invalidRoom.roomId}&t=${forgedToken}`);
-    await page.reload();
     await page.getByRole('textbox', { name: '이름' }).fill('동료');
     await page.getByRole('button', { name: '참여하기' }).click();
     await expect(page.getByRole('alert')).toContainText(
