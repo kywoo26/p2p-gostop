@@ -40,6 +40,8 @@ const TYPES: Readonly<Record<string, string>> = {
   mp4: 'video/mp4',
 };
 const RELEASE_ID = /^v[0-9]+\.[0-9]+\.[0-9]+$/;
+// Kit가 생성한 source build ID. 앱 wire/hash version.json은 공개 파일이 아니다.
+const KIT_VERSION_FILE = '_app/version.json';
 
 async function filesIn(root: string): Promise<Map<string, Asset>> {
   const result = new Map<string, Asset>();
@@ -54,7 +56,7 @@ async function filesIn(root: string): Promise<Map<string, Asset>> {
       if (!entry.isFile()) continue;
       const key = relative(root, path).split(sep).join('/');
       const ext = entry.name.split('.').at(-1)?.toLowerCase() ?? '';
-      const type = TYPES[ext];
+      const type = key === KIT_VERSION_FILE ? 'application/json; charset=utf-8' : TYPES[ext];
       if (!type || entry.name.endsWith('.map')) continue;
       result.set(key, { body: await readFile(path), type });
     }
@@ -183,7 +185,9 @@ export class StaticSite {
       response.setHeader('Content-Length', asset.body.length);
       response.setHeader(
         'Cache-Control',
-        name === 'index.html' ? 'no-store' : 'public, max-age=31536000, immutable',
+        name === 'index.html' || name === KIT_VERSION_FILE
+          ? 'no-store'
+          : 'public, max-age=31536000, immutable',
       );
       response.setHeader('X-Content-Type-Options', 'nosniff');
       response.setHeader('Referrer-Policy', 'no-referrer');

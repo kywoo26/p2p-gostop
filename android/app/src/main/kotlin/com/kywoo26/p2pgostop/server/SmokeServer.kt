@@ -397,9 +397,11 @@ internal class RelayEnqueuePolicy<T>(
 }
 
 private val HASHED_ASSET = Regex("^assets/[A-Za-z0-9_/-]+-[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9]+$")
+// Kit의 생성 namespace 안 content hash 파일만 장기 캐시한다. _app/version.json은 no-store다.
+private val KIT_HASHED_ASSET = Regex("^_app/immutable/(?:assets|chunks|entry|nodes|workers)/(?:[A-Za-z0-9_./-]*[.-])?[A-Za-z0-9_-]{8,}\\.(?:js|css|woff2|svg|png|jpg|jpeg|webp|avif|wasm|ogg|mp3|wav)$")
 
 private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall, env: ServerEnv, path: String) {
-    if (path.startsWith('/') || path.split('/').any { it == ".." || it == "." || it.isEmpty() } ||
+    if (path.startsWith('/') || path.endsWith(".map") || path.split('/').any { it.startsWith('.') || it.isEmpty() } ||
         !path.matches(Regex("[A-Za-z0-9_./-]+"))) {
         call.respondText("Not found", status = HttpStatusCode.NotFound)
         return
@@ -420,7 +422,7 @@ private suspend fun serveAsset(call: io.ktor.server.application.ApplicationCall,
         "woff2" -> ContentType.parse("font/woff2")
         else -> ContentType.Application.OctetStream
     }
-    call.response.header(HttpHeaders.CacheControl, if (path != "index.html" && HASHED_ASSET.containsMatchIn(path))
+    call.response.header(HttpHeaders.CacheControl, if (path != "index.html" && (HASHED_ASSET.matches(path) || KIT_HASHED_ASSET.matches(path)))
         "public, max-age=31536000, immutable" else CacheControl.NoStore(null).toString())
     val content = bytes ?: "<!doctype html><html lang=\"ko\"><meta charset=\"utf-8\"><title>맞고</title><body><p>웹 번들이 없습니다.</p><a href=\"/smoke\">연결 확인</a></body></html>".toByteArray()
     call.respondBytes(content, type)

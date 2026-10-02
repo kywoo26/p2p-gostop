@@ -443,7 +443,7 @@
     {
       "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/server/M4ServerTest.kt",
       "type": "network-address",
-      "line": 146,
+      "line": 190,
       "field": "network-address",
       "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -451,7 +451,7 @@
     {
       "path": "android/app/src/test/kotlin/com/kywoo26/p2pgostop/server/M4ServerTest.kt",
       "type": "network-address",
-      "line": 157,
+      "line": 201,
       "field": "network-address",
       "sha256": "26702f5a55cf837a9e456c664f8446e98715ff614c9c085c9014150f05ebfc9f",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -555,7 +555,7 @@
     {
       "path": "packages/relay-dev/test/static.test.ts",
       "type": "literal-credential",
-      "line": 30,
+      "line": 32,
       "field": "secret",
       "sha256": "fd2cb544dd72aaa8b178b2504caad84bfab02c066a7471f6f362b876d053363e",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"

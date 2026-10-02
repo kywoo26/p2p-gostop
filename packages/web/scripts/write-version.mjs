@@ -35,9 +35,11 @@ async function visit(dir) {
       continue;
     }
     if (!entry.isFile() || entry.name.endsWith('.map')) continue;
+    const name = relative(root, path).split(sep).join('/');
     const ext = entry.name.split('.').at(-1)?.toLowerCase();
-    if (!types.has(ext)) continue;
-    files.push([relative(root, path).split(sep).join('/'), await readFile(path)]);
+    // Kit의 source build ID와 앱 wire/hash manifest는 별개다. 정확한 생성 파일만 포함한다.
+    if (!types.has(ext) && name !== '_app/version.json') continue;
+    files.push([name, await readFile(path)]);
   }
 }
 await visit(root);
