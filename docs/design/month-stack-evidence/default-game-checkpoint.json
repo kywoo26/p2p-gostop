@@ -1,0 +1,119 @@
+{
+  "run": "20261002T005112988Z",
+  "requirements": [
+    "UX-02",
+    "UX-05",
+    "UX-06",
+    "UX-H05",
+    "UX-08",
+    "UX-09",
+    "NF-03",
+    "NF-08",
+    "AC-06",
+    "AC-07"
+  ],
+  "baseSha": "3fc4d18263636f02f3db13d7b5f35c6e07aa6338",
+  "kind": "actual Game without opt-in flag, real Playback/controller fixture snapshots; actual SoloSession regressions are separate",
+  "implementation": "Game always supplies monthStacks to Board; optional Game prop removed; no release setting. Floor/layout/Board geometry unchanged from base.",
+  "errors": [],
+  "results": [
+    {
+      "fixture": "normal",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "ids": [3, 7, 12, 13, 15, 27, 38, 45, 48, 50],
+      "idMatch": true,
+      "fits": "true",
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "minimumPaintGap": {
+        "groups": 12.1172366415704,
+        "deck": 12.1171875
+      },
+      "modelDomMaximumError": 0.015267092853452624,
+      "png": {
+        "path": "default-game-normal.png",
+        "sha256": "5fcf9c8454eaf697e41edfad062e9dbe7da3b2e4b3830efe78e31c6a73c89dc7",
+        "bytes": 92920,
+        "metadataChunks": []
+      }
+    },
+    {
+      "fixture": "crowded",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "ids": [11, 12, 15, 18, 31, 32, 33, 34, 38, 40, 42, 46],
+      "idMatch": true,
+      "fits": "true",
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "minimumPaintGap": {
+        "groups": 12.124834996937409,
+        "deck": 12.124124041437454
+      },
+      "modelDomMaximumError": 0.0133020729118698,
+      "png": {
+        "path": "default-game-crowded.png",
+        "sha256": "be048a025519d43888997db4e81c7431fdedda1a00b9ef69e7bf9355ae557acf",
+        "bytes": 102632,
+        "metadataChunks": []
+      }
+    },
+    {
+      "fixture": "mixed",
+      "viewport": {
+        "width": 360,
+        "height": 780
+      },
+      "sameBeforeAfterCapture": true,
+      "ids": [0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44],
+      "idMatch": true,
+      "fits": "true",
+      "crossingPairs": [],
+      "outsideIds": [],
+      "handHudCrossings": [],
+      "minimumPaintGap": {
+        "groups": 12.125,
+        "deck": 12.3203125
+      },
+      "modelDomMaximumError": 0.0132847947882766,
+      "png": {
+        "path": "actual-size-mixed-360.png",
+        "sha256": "45333079f6e2b3630920f02d660385aa9cc51fabafeb1963bdfe30b7f0b9b668",
+        "bytes": 100049,
+        "metadataChunks": []
+      }
+    }
+  ],
+  "controllerValidation": {
+    "gameAndExistingSoloLifecycle": {
+      "chromium": 25,
+      "webkit": 25,
+      "unhandled": 0
+    },
+    "strongerNextRoundNonemptyFloorSeparateRun": {
+      "chromium": 1,
+      "webkit": 1,
+      "skipped": 14,
+      "unhandled": 0
+    },
+    "checked": "Default Game original candidate selection/FIFO/reservation release/resize/end; normal/fast/reduced/skip actual settlement and next round; nonempty round2 floor IDs/reservations0/settlement dismissal.",
+    "limits": "Finite tested boundaries only; not complete seeded-deal/P2P/device/WAAPI coverage."
+  },
+  "failureBoundary": "Typed failed/cells[] is not a normal user fallback. These tested default paths did not fail; unvalidated supported/legal states may still fail and show no cards. This remains a release review gate, not universal safety acceptance.",
+  "normStatus": "Narrow layout/selection clauses synchronized as PR amendment; independent review/merge acceptance pending.",
+  "remaining": [
+    "Exact new-head mandatory suite and independent review.",
+    "Actual screenshot failures and first-assertion unreachable paths must be classified before any baseline change.",
+    "Typed failure card omission outside validated witness, naturalness of emergency rows, global minimum relocation and 200% gates are unresolved.",
+    "Original target beforepose/settled/motion and P2P/device acceptance are separate #200 work."
+  ]
+}

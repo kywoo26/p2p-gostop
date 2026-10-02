@@ -1,0 +1,260 @@
+{
+  "requirements": [
+    "UX-02",
+    "UX-05",
+    "UX-06",
+    "NF-03",
+    "NF-08",
+    "AC-06",
+    "AC-07"
+  ],
+  "status": "working fixed-stage checkpoint; not release acceptance",
+  "sourceBase": "52c8bff6390487449bce16749c8c5f774e35cfc8",
+  "run": "20261002T014245355Z",
+  "sourceKind": "actual current #235 Game/SoloSession, existing seed1/dealer1/history play1 then play10; development build; #237 not merged",
+  "contract": {
+    "fixedPaint": "Always measure a separate native-stage reserve including the visible 2px/4px depth shadow and outline. Empty/current stages use the same rectangle. Moving canonical/ghost frame rectangles are not settled obstacles.",
+    "stagingCapacity": "rules R1/B2: up to three bonus cards plus current monthly flip; chronological staging IDs, last card on top; all original CardIds retain unique positive DOM rectangles.",
+    "counter": "Separate area beside deck; current face and shadow do not cover count.",
+    "motion": "A fixed CSS slot does not make animated canonical cards static. #237 owns no-target/bonus/hand-bonus ghost transitions, active held beforepose and contact paint."
+  },
+  "originalFailure": {
+    "sourceTree": "d744ad263840219253bd3518e761661b63b5dd13",
+    "parents": [
+      "3fc4d18263636f02f3db13d7b5f35c6e07aa6338",
+      "84030f7406d9db9957a5836db05a49a5d3f2f2c6"
+    ],
+    "displayedFloorIds": [
+      1,
+      4,
+      8,
+      10,
+      20,
+      27,
+      31,
+      35,
+      45
+    ],
+    "originalDOMIds": [],
+    "positiveBounds": [
+      369,
+      168.5
+    ],
+    "note": "Original joined tree and current235 are distinct sources; not an integrated237 PASS."
+  },
+  "results": [
+    {
+      "engine": "chromium",
+      "errors": [],
+      "sampledFrames": 116,
+      "frameIdsMatch": true,
+      "fixedBoundsUnchanged": true,
+      "phaseIds": [
+        1,
+        4,
+        8,
+        10,
+        20,
+        27,
+        31,
+        35,
+        45
+      ],
+      "sameFloorPosesBeforeAfterCapture": true,
+      "sameStageRectsBeforeAfterCapture": true,
+      "bounds": {
+        "width": 369,
+        "height": 168.5,
+        "cardWidth": 42,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 163.5,
+            "y": 50.0546875,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 162.5,
+            "y": 49.0546875,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 211.5,
+            "y": 97.4453125,
+            "width": 25.59375,
+            "height": 20
+          },
+          {
+            "x": 162.5,
+            "y": 49.0546875,
+            "width": 47,
+            "height": 73.390625
+          }
+        ]
+      },
+      "deck": {
+        "x": 163.5,
+        "y": 50.0546875,
+        "width": 42,
+        "height": 68.390625
+      },
+      "counter": {
+        "x": 211.5,
+        "y": 97.4453125,
+        "width": 25.59375,
+        "height": 20
+      },
+      "stage": [
+        {
+          "id": 30,
+          "rect": {
+            "x": 163.5,
+            "y": 50.0546875,
+            "width": 42,
+            "height": 68.390625
+          }
+        }
+      ],
+      "paint": {
+        "groupCrossings": 0,
+        "obstacleCrossings": 0,
+        "outside": 0,
+        "minimumGroupGap": 12.125,
+        "minimumObstacleGap": 21.703125
+      },
+      "png": {
+        "name": "fixed-stage-flip.png",
+        "sha256": "c4ac67a5feafb0851058a399fb45850639dc8368fa4385a7dd2ddd0a0a4c5598",
+        "bytes": 88725,
+        "metadataChunks": [
+          "IDAT",
+          "IEND",
+          "IHDR"
+        ]
+      }
+    },
+    {
+      "engine": "webkit",
+      "errors": [],
+      "sampledFrames": 116,
+      "frameIdsMatch": true,
+      "fixedBoundsUnchanged": true,
+      "phaseIds": [
+        1,
+        4,
+        8,
+        10,
+        20,
+        27,
+        31,
+        35,
+        45
+      ],
+      "sameFloorPosesBeforeAfterCapture": true,
+      "sameStageRectsBeforeAfterCapture": true,
+      "bounds": {
+        "width": 369,
+        "height": 168.5,
+        "cardWidth": 42,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 163.5,
+            "y": 50.25,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 162.5,
+            "y": 49.25,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 211.5,
+            "y": 97.640625,
+            "width": 26.34375,
+            "height": 20
+          },
+          {
+            "x": 162.5,
+            "y": 49.25,
+            "width": 47,
+            "height": 73.390625
+          }
+        ]
+      },
+      "deck": {
+        "x": 163.5,
+        "y": 50.25,
+        "width": 42,
+        "height": 68.390625
+      },
+      "counter": {
+        "x": 211.5,
+        "y": 97.640625,
+        "width": 26.34375,
+        "height": 20
+      },
+      "stage": [
+        {
+          "id": 30,
+          "rect": {
+            "x": 163.5,
+            "y": 50.25,
+            "width": 42,
+            "height": 68.390625
+          }
+        }
+      ],
+      "paint": {
+        "groupCrossings": 0,
+        "obstacleCrossings": 0,
+        "outside": 0,
+        "minimumGroupGap": 12.125,
+        "minimumObstacleGap": 20.953125
+      },
+      "png": {
+        "name": "local WebKit source retained",
+        "sha256": "53610d3fda10f46948fe2f4b41922389f2275f05905de0f6a2200862ddaeb65d",
+        "bytes": 99976,
+        "metadataChunks": null
+      }
+    }
+  ],
+  "validation": {
+    "boardChromium": 10,
+    "boardWebKit": 10,
+    "boardUnhandled": 0,
+    "gameChromium": {
+      "passed": 6,
+      "failed": 2
+    },
+    "gameWebKit": {
+      "passed": 6,
+      "failed": 2
+    },
+    "gameFailures": [
+      "360x780 mixed16 original IDs omitted",
+      "actual SoloSession mixed16 initial floor IDs omitted"
+    ],
+    "originalFloorSlotsE2E": {
+      "unrelatedContinuousFrames": "Chromium/WebKit PASS after this depth-shadow change",
+      "rotation": "Chromium/WebKit pass landscape/current IDs and portrait recovery; fail old floor48 assertion at line145; captured32 assertion behind it not executed"
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "fullSuiteRepeated": false,
+    "baselineUpdated": false
+  },
+  "remaining": [
+    "Mixed16 positive-bounds fit failure introduced by added fixed stage/counter paint remains release blocker.",
+    "Separate legal18 prior/fresh search counterexample remains; geometric impossibility not proved.",
+    "Old48/5x3 audit alignment and18 screenshot failures require finite diff review; no baseline update.",
+    "#237 staging/landing/strong integration and real devices not validated."
+  ]
+}

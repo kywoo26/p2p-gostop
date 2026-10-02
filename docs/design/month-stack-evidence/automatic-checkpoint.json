@@ -1,0 +1,181 @@
+{
+  "run": "20261001T165412510Z",
+  "artifact": "actual Board fixture / automatic solver / no manual override",
+  "status": "opt-in implementation checkpoint; default false; canonical delta unadopted",
+  "requirements": [
+    "UX-02",
+    "UX-05",
+    "UX-06",
+    "UX-H05",
+    "UX-H23",
+    "UX-H24",
+    "UX-H25",
+    "NF-03",
+    "NF-08",
+    "AC-06",
+    "AC-07"
+  ],
+  "rows": [
+    {
+      "name": "normal",
+      "png": "automatic-normal.png",
+      "sha256": "cb2f1333b0e3e7b356a6b230cdc7faf7c444633d7605c48e40c70add3f3b21ad",
+      "firstSearches": 9,
+      "firstCapacityPrunes": 2,
+      "firstExhausted": false,
+      "firstFits": true,
+      "stabilizedSearches": 0,
+      "floor": {
+        "width": 336,
+        "height": 243.78125,
+        "cardWidth": 44,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 146,
+            "y": 86.0625,
+            "width": 48,
+            "height": 75.65625
+          },
+          {
+            "x": 145,
+            "y": 85.0625,
+            "width": 46,
+            "height": 73.65625
+          },
+          {
+            "x": 163.40625,
+            "y": 136.71875,
+            "width": 25.59375,
+            "height": 20
+          }
+        ]
+      },
+      "cardIds": [
+        3,
+        7,
+        12,
+        13,
+        15,
+        27,
+        38,
+        45,
+        48,
+        50
+      ],
+      "sameCaptureFrame": true,
+      "maximumModelDOMError": 0.012598967696796137,
+      "DOMCrossings": 0,
+      "outOfBounds": 0,
+      "modelFootprintGroupGap": 12.125,
+      "modelFootprintDeckGap": 12.125,
+      "measuredPaintGroupGap": 12.121045131250042,
+      "measuredPaintDeckGap": 12.116006365656204,
+      "method": "DOM transformed card AABB expanded by rotated 1px outline; union per month. Deck obstacles include measured outline/offset shadows. Conservative rect clearance; highlight/motion not measured.",
+      "pngChunks": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ],
+      "metadata": "no ancillary chunks"
+    },
+    {
+      "name": "crowded",
+      "png": "automatic-crowded.png",
+      "sha256": "02e383757e2c6e083a026a708a21feb16bda59f6864b9413528726d460620eb9",
+      "firstSearches": 23,
+      "firstCapacityPrunes": 14,
+      "firstExhausted": false,
+      "firstFits": true,
+      "stabilizedSearches": 0,
+      "floor": {
+        "width": 336,
+        "height": 243.78125,
+        "cardWidth": 44,
+        "paintPadding": 1,
+        "obstacles": [
+          {
+            "x": 146,
+            "y": 86.0625,
+            "width": 48,
+            "height": 75.65625
+          },
+          {
+            "x": 145,
+            "y": 85.0625,
+            "width": 46,
+            "height": 73.65625
+          },
+          {
+            "x": 162.40625,
+            "y": 136.71875,
+            "width": 26.59375,
+            "height": 20
+          }
+        ]
+      },
+      "cardIds": [
+        11,
+        12,
+        15,
+        18,
+        31,
+        32,
+        33,
+        34,
+        38,
+        40,
+        42,
+        46
+      ],
+      "sameCaptureFrame": true,
+      "maximumModelDOMError": 0.015125684464095457,
+      "DOMCrossings": 0,
+      "outOfBounds": 0,
+      "modelFootprintGroupGap": 12.125,
+      "modelFootprintDeckGap": 12.125,
+      "measuredPaintGroupGap": 12.120872775966575,
+      "measuredPaintDeckGap": 12.12997322183378,
+      "method": "DOM transformed card AABB expanded by rotated 1px outline; union per month. Deck obstacles include measured outline/offset shadows. Conservative rect clearance; highlight/motion not measured.",
+      "pngChunks": [
+        "IHDR",
+        "IDAT",
+        "IEND"
+      ],
+      "metadata": "no ancillary chunks"
+    }
+  ],
+  "limits": [
+    "normal right singles still form a 2x2 perceptual grid",
+    "capacity witness tests are not a completeness proof",
+    "failure/cells:[] is a development diagnostic, not product fallback",
+    "global minimum relocation cost unresolved",
+    "minimum ppeok/bonus clues and small-height/200% fit unresolved",
+    "actual Game/P2P/beforepose/WAAPI integration, device/OSSR/performance and final full suite not verified"
+  ],
+  "verification": {
+    "targetedBrowserTests": {
+      "chromium": 11,
+      "webkit": 11,
+      "passed": 22,
+      "failed": 0,
+      "unhandled": 0
+    },
+    "webCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "previousRun": {
+      "passed": 12,
+      "fitFailures": 4,
+      "unhandledPointerErrors": 4
+    },
+    "intermediateRun": {
+      "passed": 20,
+      "failedWorldPoseExpectation": 2,
+      "unhandled": 0
+    },
+    "fullSuite": "not run in this bounded checkpoint",
+    "physicalDevice": "not verified"
+  }
+}

@@ -139,10 +139,16 @@ test('floor coarse rotation: cover locks input and portrait restores card slots 
   ).toHaveCount(0);
   expect(await page.locator('.hand button:not([disabled])').count()).toBeGreaterThan(0);
   expect(await cards()).toEqual(before);
-  const widths = await page
-    .locator('.floor .card, .hand .card')
+  const floorWidths = await page
+    .locator('.floor .card, .deck .card')
     .evaluateAll((els) => els.map((el) => getComputedStyle(el).width));
-  expect(widths.every((w) => w === '48px')).toBe(true);
+  expect(floorWidths.length).toBeGreaterThan(0);
+  expect(floorWidths.every((w) => w === '42px')).toBe(true);
+  const handWidths = await page
+    .locator('.hand .card')
+    .evaluateAll((els) => els.map((el) => getComputedStyle(el).width));
+  expect(handWidths.length).toBeGreaterThan(0);
+  expect(handWidths.every((w) => w === '48px')).toBe(true);
   const captured = await page
     .locator('.captured-zone .card')
     .evaluateAll((els) => els.map((el) => getComputedStyle(el).width));

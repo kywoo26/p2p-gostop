@@ -320,6 +320,7 @@
   <div class="board-wrap" inert={summary !== null || pushDecision != null || menuOpen || ended}>
     <Board
       view={pb.board}
+      monthStacks
       soloDifficulty={controller.mode === 'solo' ? soloDifficulty : undefined}
       soloPlayerView={controller.mode === 'solo' ? controller.hintPlayerView : undefined}
       {extras}

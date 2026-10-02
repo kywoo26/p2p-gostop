@@ -1,0 +1,570 @@
+{
+  "requirements": ["UX-02", "UX-05", "UX-06", "NF-08"],
+  "baseline": "192ca1e59ecec8898a8f2ea9d4c0e0ffbfc7f56d",
+  "kind": "source235 actual Game/SoloSession: legal constructed4-turn state, real user play17 growth; fresh5-turn snapshots separate; no237 integration/dev build",
+  "css": "mobile portrait width<=699px only: max(0px,fan-gap - 1px/3) -> max(0px,fan-gap - 2px/3); global tokens unchanged",
+  "runs": {
+    "before": "20261002T021900962Z",
+    "fresh": "20261002T021922148Z",
+    "live": "20261002T022242937Z",
+    "settledPaint": "20261002T022428002Z",
+    "resizeVerification": "20261002T024300300Z"
+  },
+  "validation": {
+    "componentPassed": 66,
+    "componentFailed": 0,
+    "unhandled": 0,
+    "checkErrors": 0,
+    "checkWarnings": 0,
+    "fontMissing": 0
+  },
+  "unchanged": [
+    "floor/deck42",
+    "captured32",
+    "hand/popup48",
+    "captured label-card gap2",
+    "hand internal row gap4",
+    "paint solver gap12.125",
+    "authority CardId/order and ppeok final month top",
+    "deck anchor/size, fixed-stage paint lifetime; no anim/wire edits"
+  ],
+  "image": {
+    "file": "legal18-space.png",
+    "sha256": "0b55e18d269cc841a1e1fcb8b4cf0808cdaac7a18a06bc3bc4a74d28083a4e6a",
+    "bytes": 97340,
+    "chunks": [
+      "IHDR",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IDAT",
+      "IEND"
+    ]
+  },
+  "results": [
+    {
+      "engine": "chromium",
+      "errors": [],
+      "before": {
+        "parent": {
+          "rowGap": "5.66667px",
+          "fanGap": "6px",
+          "rows": "48px 70.1094px 40px 243.5px 40px 70.1094px 172.344px",
+          "boardHeight": 734,
+          "floorHeight": 243.5,
+          "center": {
+            "x": 162,
+            "y": 87.5546875,
+            "width": 42,
+            "height": 68.390625
+          }
+        },
+        "displayedIds": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 18, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "originalIds": [],
+        "fits": "false"
+      },
+      "freshAfter": {
+        "parent": {
+          "rowGap": "5.33333px",
+          "fanGap": "6px",
+          "rows": "48px 70.1094px 40px 245.469px 40px 70.1094px 172.344px",
+          "boardHeight": 734,
+          "floorHeight": 245.46875,
+          "center": {
+            "x": 162,
+            "y": 88.5390625,
+            "width": 42,
+            "height": 68.390625
+          }
+        },
+        "fits": "true",
+        "captureStable": true,
+        "idSetMatchesLiveFinal": true
+      },
+      "live": {
+        "initialIds": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "finalIds": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 18, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "sampledFrames": 26,
+        "floorIdMismatches": 0,
+        "failedMeasuredFrames": 0,
+        "captureStable": true,
+        "changedExistingCardIDs": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 28, 32, 36, 40, 44
+        ],
+        "activeFloorSynchronousCalls": [
+          {
+            "cardCount": 16,
+            "ms": 11.299999997019768,
+            "searches": 129,
+            "witnessSearches": 13,
+            "relocated": 0
+          },
+          {
+            "cardCount": 17,
+            "ms": 1.7999999970197678,
+            "searches": 13,
+            "witnessSearches": 13,
+            "relocated": 0
+          },
+          {
+            "cardCount": 18,
+            "ms": 8.199999988079071,
+            "searches": 129,
+            "witnessSearches": 25,
+            "relocated": 10
+          }
+        ],
+        "steadyReuse": {
+          "calls": 4,
+          "searches": 0,
+          "maxSynchronousMs": 0.5
+        }
+      },
+      "resizes": [
+        {
+          "parent": {
+            "rowGap": "7.33333px",
+            "fanGap": "8px",
+            "rows": "48px 70.1094px 52px 247.812px 52px 70.1094px 180px",
+            "boardHeight": 780,
+            "floorHeight": 247.8125,
+            "center": {
+              "x": 147,
+              "y": 89.7109375,
+              "width": 42,
+              "height": 68.390625
+            }
+          },
+          "currentModelBounds": {
+            "width": 336,
+            "height": 247.8125,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 147,
+                "y": 89.7109375,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 146,
+                "y": 88.7109375,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 195,
+                "y": 137.1015625,
+                "width": 26.59375,
+                "height": 20
+              },
+              {
+                "x": 146,
+                "y": 88.7109375,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
+          "fits": "true",
+          "originalIdCount": 18,
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 13.3046875,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.0132847947882766
+          }
+        },
+        {
+          "parent": {
+            "rowGap": "5.33333px",
+            "fanGap": "6px",
+            "rows": "48px 70.1094px 40px 245.469px 40px 70.1094px 172.344px",
+            "boardHeight": 734,
+            "floorHeight": 245.46875,
+            "center": {
+              "x": 162,
+              "y": 88.5390625,
+              "width": 42,
+              "height": 68.390625
+            }
+          },
+          "currentModelBounds": {
+            "width": 366,
+            "height": 245.46875,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 162,
+                "y": 88.5390625,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 161,
+                "y": 87.5390625,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 210,
+                "y": 135.9296875,
+                "width": 26.59375,
+                "height": 20
+              },
+              {
+                "x": 161,
+                "y": 87.5390625,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
+          "fits": "true",
+          "originalIdCount": 18,
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 12.1328125,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.013283794788279124
+          }
+        }
+      ],
+      "desktop": {
+        "rowGap": "8px",
+        "fanGap": "8px",
+        "applies": false
+      },
+      "actualSettledPaint": {
+        "monthGap": 12.125,
+        "obstacleGap": 12.1328125,
+        "boundsOutsideCount": 0,
+        "modelDomMaxDelta": 0.013283794788279124,
+        "floorStyle": {
+          "outline": "1px",
+          "offset": "0px",
+          "shadow": "none"
+        },
+        "fixedObstacles": [
+          {
+            "x": 162,
+            "y": 88.5390625,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 161,
+            "y": 87.5390625,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 210,
+            "y": 135.9296875,
+            "width": 26.875,
+            "height": 20
+          },
+          {
+            "x": 161,
+            "y": 87.5390625,
+            "width": 47,
+            "height": 73.390625
+          }
+        ],
+        "compactPpeokDisplay": ["none"]
+      }
+    },
+    {
+      "engine": "webkit",
+      "errors": [],
+      "before": {
+        "parent": {
+          "rowGap": "5.666667px",
+          "fanGap": "6px",
+          "rows": "48px 70.109375px 40px 243.5px 40px 70.109375px 172.34375px",
+          "boardHeight": 734,
+          "floorHeight": 243.5,
+          "center": {
+            "x": 162,
+            "y": 87.75,
+            "width": 42,
+            "height": 68.390625
+          }
+        },
+        "displayedIds": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 18, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "originalIds": [],
+        "fits": "false"
+      },
+      "freshAfter": {
+        "parent": {
+          "rowGap": "5.333333px",
+          "fanGap": "6px",
+          "rows": "48px 70.109375px 40px 245.46875px 40px 70.109375px 172.34375px",
+          "boardHeight": 734,
+          "floorHeight": 245.46875,
+          "center": {
+            "x": 162,
+            "y": 88.734375,
+            "width": 42,
+            "height": 68.390625
+          }
+        },
+        "fits": "true",
+        "captureStable": true,
+        "idSetMatchesLiveFinal": true
+      },
+      "live": {
+        "initialIds": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "finalIds": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 18, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "sampledFrames": 23,
+        "floorIdMismatches": 0,
+        "failedMeasuredFrames": 0,
+        "captureStable": true,
+        "changedExistingCardIDs": [
+          0, 1, 4, 5, 8, 9, 12, 13, 16, 20, 24, 28, 32, 36, 40, 44
+        ],
+        "activeFloorSynchronousCalls": [
+          {
+            "cardCount": 16,
+            "ms": 16,
+            "searches": 129,
+            "witnessSearches": 13,
+            "relocated": 0
+          },
+          {
+            "cardCount": 17,
+            "ms": 12,
+            "searches": 129,
+            "witnessSearches": 25,
+            "relocated": 8
+          },
+          {
+            "cardCount": 18,
+            "ms": 7,
+            "searches": 129,
+            "witnessSearches": 25,
+            "relocated": 5
+          }
+        ],
+        "steadyReuse": {
+          "calls": 4,
+          "searches": 0,
+          "maxSynchronousMs": 1
+        }
+      },
+      "resizes": [
+        {
+          "parent": {
+            "rowGap": "7.333333px",
+            "fanGap": "8px",
+            "rows": "48px 70.109375px 52px 247.8125px 52px 70.109375px 180px",
+            "boardHeight": 780,
+            "floorHeight": 247.8125,
+            "center": {
+              "x": 147,
+              "y": 89.90625,
+              "width": 42,
+              "height": 68.390625
+            }
+          },
+          "currentModelBounds": {
+            "width": 336,
+            "height": 247.8125,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 147,
+                "y": 89.90625,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 146,
+                "y": 88.90625,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 195,
+                "y": 137.296875,
+                "width": 26.34375,
+                "height": 20
+              },
+              {
+                "x": 146,
+                "y": 88.90625,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
+          "fits": "true",
+          "originalIdCount": 18,
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 13.109375,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.0132847947882766
+          }
+        },
+        {
+          "parent": {
+            "rowGap": "5.333333px",
+            "fanGap": "6px",
+            "rows": "48px 70.109375px 40px 245.46875px 40px 70.109375px 172.34375px",
+            "boardHeight": 734,
+            "floorHeight": 245.46875,
+            "center": {
+              "x": 162,
+              "y": 88.734375,
+              "width": 42,
+              "height": 68.390625
+            }
+          },
+          "currentModelBounds": {
+            "width": 366,
+            "height": 245.46875,
+            "cardWidth": 42,
+            "paintPadding": 1,
+            "obstacles": [
+              {
+                "x": 162,
+                "y": 88.734375,
+                "width": 46,
+                "height": 72.390625
+              },
+              {
+                "x": 161,
+                "y": 87.734375,
+                "width": 44,
+                "height": 70.390625
+              },
+              {
+                "x": 210,
+                "y": 136.125,
+                "width": 26.34375,
+                "height": 20
+              },
+              {
+                "x": 161,
+                "y": 87.734375,
+                "width": 47,
+                "height": 73.390625
+              }
+            ]
+          },
+          "modelMatchesDOM": true,
+          "fits": "true",
+          "originalIdCount": 18,
+          "idSetMatchesFinal": true,
+          "actualSettledPaint": {
+            "monthGap": 12.125,
+            "obstacleGap": 12.125,
+            "boundsOutside": 0,
+            "modelDOMMaxDelta": 0.013283794788279124
+          }
+        }
+      ],
+      "desktop": {
+        "rowGap": "8px",
+        "fanGap": "8px",
+        "applies": false
+      },
+      "actualSettledPaint": {
+        "monthGap": 12.125,
+        "obstacleGap": 15.34375,
+        "boundsOutsideCount": 0,
+        "modelDomMaxDelta": 0.0132847947882766,
+        "floorStyle": {
+          "outline": "1px",
+          "offset": "0px",
+          "shadow": "none"
+        },
+        "fixedObstacles": [
+          {
+            "x": 162,
+            "y": 88.734375,
+            "width": 46,
+            "height": 72.390625
+          },
+          {
+            "x": 161,
+            "y": 87.734375,
+            "width": 44,
+            "height": 70.390625
+          },
+          {
+            "x": 210,
+            "y": 136.125,
+            "width": 26.875,
+            "height": 20
+          },
+          {
+            "x": 161,
+            "y": 87.734375,
+            "width": 47,
+            "height": 73.390625
+          }
+        ],
+        "compactPpeokDisplay": ["none"]
+      }
+    }
+  ],
+  "limitations": [
+    "emergency row layout; not final natural layout acceptance",
+    "same-engine capture stability; Chromium and WebKit placements differ",
+    "changed unrelated group IDs reported; no global minimal-movement proof",
+    "old positive bounds remain a search failure, not impossibility proof",
+    "compact ppeok visible badge is hidden by existing skin; existing Game feedback/ARIA remains; not new visual-clue acceptance",
+    "no shipping build/CI, no device/OS zoom/performance acceptance",
+    "final E2E audit/baseline and #237 integration remain separate gates"
+  ],
+  "resizeVerification": {
+    "supersedes": "resizes from022242937Z read parent360 before model390 RO/effect commit; that observation is not actual360 paint acceptance",
+    "condition": "fits true AND model width/height equal current DOM table rect before reading; no sleep/retry/threshold change",
+    "gameComponentTests": 18,
+    "failures": 0
+  }
+}

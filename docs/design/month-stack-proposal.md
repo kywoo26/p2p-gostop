@@ -1,6 +1,6 @@
 # 같은 월 겹침·선택 제안 (#202)
 
-상태: **최신 사용자 정정에 따른 compact revision·독립 리뷰 대기; 제품 변경0·정본 개정 미시행**. Refs [#202](https://github.com/kywoo26/p2p-gostop/issues/202), [#200](https://github.com/kywoo26/p2p-gostop/issues/200), [Draft #233](https://github.com/kywoo26/p2p-gostop/pull/233). UX-05/06/H05/23~25·NF-03/08·AC-06/07 / plan §1.6·§3-2. 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`; 계획 SHA `e67b767fe1d1781240117381223d6ef18d1e8b90`; 이전 제안 SHA `b11d3b88cd43d26b4aab62ffd90681af7efed30d`.
+상태: **#233 제안 인수·A 기각·상용 조사 뒤 첫 opt-in 제품 prototype도 사용자 시각 검토에서 거절. 현재 #235 실제 Game opt-in·자동 배치 checkpoint. 기존 실패 근거 보존·기본 활성화0·정본 개정 미시행**. Refs [#202](https://github.com/kywoo26/p2p-gostop/issues/202), [#200](https://github.com/kywoo26/p2p-gostop/issues/200), [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233). UX-02/05/06/H05/23~25·NF-03/08·AC-06/07 / plan §1.6·§3-2. 기준 `42c374d61bb2df6dafe608792044c4ae01355c1f`; 계획 SHA `e67b767fe1d1781240117381223d6ef18d1e8b90`; 이전 제안 SHA `b11d3b88cd43d26b4aab62ffd90681af7efed30d`.
 
 ## 1. 사용자 선택과 root 판단
 
@@ -16,11 +16,11 @@
 
 실제 일반 engine 순서는 Played→Flipped→Matched(play/flip)→Captured다. 합성 시험의 Played→Matched→Flipped를 실제 근거로 쓰지 않는다. 획득은 실제 Captured/PiStolen만 따른다. 폭탄은 실제 Captured가 덱 전에 일어나는 별도 경로다. 손패가 짝 위에 떨어진 모습을 덱 전 먹기 확정으로 표현하지 않는다.
 
-#200 분석에서 Matched는 정확한 target/source를 가지지만 Played/Flipped는 target이 없었다. 손패 대상 선택 뒤 다른 월 뒤집기 대상 선택을 기다릴 때 앞선 playTarget은 engine ctx에만 있고 BoardView/inFlight에 없다. 로컬 클릭만으로 관찰자·복원에 정확한 착지를 보장하지 못한다. root의 별도 좁은 public-match-target 담당이 실제 합법 연쇄 선택 재현과 최소 공개 계약을 검토한다.[Draft #234](https://github.com/kywoo26/p2p-gostop/pull/234) `f7a17156bf939b7ebd91a14e1a381356184e6215`의현재관계전달안은독립리뷰대상이며필드/wire채택아니다.복구는과거모션재연보다현재관계수렴을우선한다. #202는 engine/protocol/display/Playback/choreo를 편집하지 않는다. 연속 Matched 강조 교체와 획득 summary 최근4장 밖 목적 DOM 부재는 정적 우려이며 실행 해결로 기록하지 않는다.
+#200 분석에서 Matched는 정확한 target/source를 가지지만 Played/Flipped는 target이 없었다. 손패 대상 선택 뒤 다른 월 뒤집기 대상 선택을 기다릴 때 앞선 playTarget은 engine ctx에만 있고 BoardView/inFlight에 없다. 로컬 클릭만으로 관찰자·복원에 정확한 착지를 보장하지 못한다. root의 별도 좁은 public-match-target 담당이 실제 합법 연쇄 선택 재현과 최소 공개 계약을 검토한다.[#234](https://github.com/kywoo26/p2p-gostop/pull/234)의 설계/repro는 main `4a62c95fd1633371e2bf4ee5b4296eeaaa1ae440`으로 인수됐다. 별도 제품 [#236](https://github.com/kywoo26/p2p-gostop/pull/236)은 root가 리뷰/연결하며 이 #202는 미승인 wire 소비를 선취하지 않는다. 복구는 과거 모션 재연보다 현재 관계 수렴을 우선한다. #202는 engine/protocol/display/Playback/choreo를 편집하지 않는다. 연속 Matched 강조 교체와 획득 summary 최근4장 밖 목적 DOM 부재는 정적 우려이며 실행 해결로 기록하지 않는다.
 
-## 3. 두 장 식별과3+ 묶음 인지의 분리
+## 3. 두 장 식별과3+ 묶음 인지의 분리 (42a779f 역사·현재 A 기각)
 
-**추천 A: 첫 두 카드의 구별 공간을 유지하고3·4장은 얇은 층,5장부터4번째 카드 위치를 공유하는 묶음.** 회전0·원 순서/z/CardId 유지, 중요한 카드를 임의로 앞에 옮기지 않는다. 두 장의36/−24는 역사 도상 비교를 출발점으로 쓰는 잠정치이며 모든 뒷장에 반복할 최종 규칙이 아니다.3+에서는 원 월 카드의 부분 그림·층·장수와 뻑/보너스 최소 단서로 묶음을 읽는다. 자동 묶음의 숨은 각각을 평시에 모두 식별시키려 하지 않는다.
+**당시 추천 A(현재 기각): 첫 두 카드의 구별 공간을 유지하고3·4장은 얇은 층,5장부터4번째 카드 위치를 공유하는 묶음.** 회전0·원 순서/z/CardId 유지, 중요한 카드를 임의로 앞에 옮기지 않는다. 두 장의36/−24는 역사 도상 비교를 출발점으로 쓰는 잠정치이며 모든 뒷장에 반복할 최종 규칙이 아니다.3+에서는 원 월 카드의 부분 그림·층·장수와 뻑/보너스 최소 단서로 묶음을 읽는다. 자동 묶음의 숨은 각각을 평시에 모두 식별시키려 하지 않는다.
 
 첫 카드의 **실제 원점**을(0,0)으로 잡은 append 예시는 다음이다. i는 원 순서0기준이며 새 규범 수치는 아직 미승인이다.
 
@@ -127,7 +127,7 @@ root가 승인한 **후속 diff 범위 설계**는 Floor/layout/전용 시험과
 
 originalCardId→현재pose매핑은숨은원본의공유대표pose까지포함하고round/snapshotSeq예약과맞춘다.특정wire필드선취0.공개관계가미확정이면target을추측하지않으며restore는현재pose/관계수렴을우선한다.P2P 지연/restore 때 이전 재생이 새 후보·anchor를 되살리지 않아야 한다. #202는 레이아웃 정보만 제공한다. transform AABB/angle/추가 offset 중복 계산0, 기존 moved0.5px는 착지 허용오차 사용자 승인 아님. 두 파일 소유를 겹치지 않고 공통값은 root가 중재한다.
 
-## 7. proposed spec/ui-spec delta (수정안)
+## 7. proposed spec/ui-spec delta (42a779f 역사·A 재검토 필요)
 
 | 정본·현재 기준                                              | 추천 개정 문구·승인 상태                                                                                                                                                                       |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -168,3 +168,174 @@ scratch 원본은 `.visual-source/month-stack/`에 보존한다. `index.html`은
 초기208px 가정720조건은 예비 모형으로만 보존했다. 교정된132조건은 single-cell overlay/12월 고정 자리 기각 근거다. 역사2764e의 후속은15개 fresh footprint 표적(10fit/5미발견)과 지원430×822의 동일5장뻑 **한 표적만** 추가했다.이11fit/5미발견 및650fullfront실패는 새compact정책의제품기하증거가아니다. 미발견과 불가능을 구분하고 무관0px/성능 최적성을 주장하지 않는다. 선택창 원본컴포넌트8조건+reset4경계역사관측은보존한다.이번추가는구성engine2action·작은A/B그림·동일2→3→6→7의survivorpose·단서100/200%뿐이며새seed탐색/큰행렬/제품suite없다. CSS200% 글자 모형은 실제 Safari zoom 아님. 빛의 후속 mock 수정은 시각 방향 시연이며 실제 Playback/reduced/취소 시험이 아니다.
 
 AGENTS/RTK·정본/ui-spec/규칙§12·관련 이슈/#223 계약 읽기와 Node24.21.0/npm11.19.0 npm ci를 수행했다. Context7 callable이 없어 [Playwright Page](https://playwright.dev/docs/api/class-page), [MDN dialog](https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement), [Svelte snippet](https://svelte.dev/docs/svelte/snippet)·[imperative API](https://svelte.dev/docs/svelte/imperative-component-api), [Vite config](https://vite.dev/config/)·[plugin config](https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/config.md)를 공식 원문으로 확인했다. 새 dependency0·외부 mock 요청0. 커밋 전 lint:fix/개인정보/whitespace 검사를 수행하며 제품 full suite는 이번 문서 단계에 반복하지 않는다.
+
+## 10. 상용 화면 관측·사용자 시각 검토 묶음 (A 기각 뒤, 미채택)
+
+### 현재 상태와 A 기각 원인
+
+#233의 `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 문서로 인수됐다. 그 뒤 실행계획 `aaa36ec3bc025a666a37e2611d9e7779c2d24893`의 변경5파일은 `intent/{plan,spec}.md`, `docs/design/{ui-spec,month-stack-proposal}.md`, `docs/design/month-stack-evidence/summary.json`이다. 제품 변경0이며 정본 안의 Draft delta도 미채택이다. 사용자에게 장수별 모형을 보여준 뒤 **여러 장이 한 장처럼 보인다**는 피드백을 받았다. A의 index3 이상은 모두 `(44,−32)`를 공유하므로5→6에 새 모서리/층이 생기지 않는다. 장수 문구는 이 형태 손실을 해결하지 못했다. §§3/4/7의 A는 역사로 보존하고 제품 작업을 중단했다. 단순 offset 미세 조정으로 방어하지 않는다.
+
+### 공식 출처와 직접 관측
+
+조사 범위는 맞고3곳이다. 공식 스토어 이미지21개와 한게임 가이드1개를 먼저 보았으나 대부분 광고 문구·캐릭터·합성 배경이 있었다. 홍보 화면을 실제 연속 동작 증거로 쓰지 않고 아래 공식 게임사 가이드의 플레이 화면을 직접 열었다. 아래는 **정적 가이드 화면**이며 영상 시각은 해당 없음이다. 현재 앱의 모든 상태/전환을 실행 확인한 것이 아니다. 상용 코드·규칙을 우리 엔진의 정답으로 채택하지 않는다.
+
+| 출처·관측 화면 | 직접 보이는 것 | 확인하지 못한 것 |
+| --- | --- | --- |
+| [한게임 신맞고 모바일 게임방 가이드](https://mgostop.hangame.com/guide/combine/03_02_contents.html), [원본 화면](https://hangame-images.toastoven.net/hangame/mgostop/gameguide/page/08_image_01.png) | 중앙덱 왼쪽의2월3장은 오른쪽·아래로 조금씩 어긋나 뒤의 두 카드 상단/왼쪽 테두리가 각각 남는다. 앞 패 매화, 중간 띠 일부, 뒤 모서리가 보인다. 획득 영역 장수 표시는 바닥 표시와 구분된다. | 이3장 묶음의 내부 상태가 뻑인지 초기 자연3인지, 늘어나는 과정,4+·묻힌 보너스 |
+| [피망 뉴맞고 기본 게임방법](https://dl.gostop.pmang.cloud/gamerule/basicRule.md), [뻑 화면](https://dl.gostop.pmang.cloud/upload/guide_mob_matgo_ppeok_250527.png), [따닥 화면](https://dl.gostop.pmang.cloud/upload/guide_mob_matgo_ddadak_250527.png) | 따닥 화면 왼쪽3월 두 장은 가로로 벌려 각 그림 일부를 남긴다. 뻑 화면 위쪽11월은 세 카드의 세로 가장자리와 그림 조각이 따로 보이며 큰 뻑 글자는 별도 효과다. 덱·타월·손패는 분리돼 있다. | 따닥4장 정확 좌표는 큰 효과가 가려 입증하지 못함. 뻑6/획득직전7·보너스 묻힘·선택창·과밀 재배치 |
+| [윈조이 대박맞고 공식 가이드](https://static.winjoygame.com/v1/gostop_guide/dbmatgo.html), [게임방 화면](https://static.winjoygame.com/v1/gostop_guide/dbmatgo/8.html), [선택 설명](https://static.winjoygame.com/v1/gostop_guide/dbmatgo/9.html), [선택 이미지](https://static.winjoygame.com/v1/gostop_guide/img/dbmatgo/rule_02.jpg) | 바닥3월 두 장은 대각선으로 어긋나 앞 광과 뒤 모서리가 보인다. 선택 이미지는 두 후보를 별도 창에서 나란히 전체 그림으로 보여준다. 설명은 바닥 동일월2장일 때 두 후보 중 선택한다고 명시한다. | popup 열림/닫힘 시간·focus/gesture/timeout 동작의 실행,3+·6/7·보너스·과밀 동작 |
+
+따라서 **4장 정확 겹침·상용6/7장·묻힌 보너스·도달 과밀의 배치 알고리즘은 이번 조사에서 미관측**이다. 관련 공식 영상의 실제 프레임을 확보하지 못했으며 영상 시간을 만들어 쓰지 않는다. 가이드 자산의 제작 시점/모바일·PC 세대 차이도 있으므로 현재 버전 모두가 같은 표현이라고 일반화하지 않는다. 공식 원본은 비교 인용용 로컬 scratch에만 보존하고 브랜드/그림을 제품이나 추적 자산에 편입하지 않는다. 원저작권은 NHN/NEOWIZ/ZEMPOT에 있다.
+
+### 관측에서 얻은 원칙과 우리 자산 비교 두 안
+
+관측으로부터의 **설계 추론**은 각 카드의 다른 가장자리·모서리와 앞 패 그림을 함께 남겨 묶음이 여러 장임을 읽게 한다는 것이다. 이것이 상용의 숨은 알고리즘을 알아냈다는 뜻은 아니다. 공간 상한은 우리 규칙§12의 정지6·획득직전7을 기준으로 설계할 수 있으나 같은 pose로 카드를 지우거나 숫자 문구만으로 층을 대체하지 않는다. 선택시에는 원 CardId의 전체 후보를 보여주는 기존 사용자 수락 방향을 유지한다.
+
+- **비교1, 대각 겹침:** 첫 두 카드 다음에도 각 카드를 다른 위치에 놓아 늘어난 층을 남긴다. 하나의 묶음으로 읽히고 세로 예산이 작아 root가 현재 검토 기준으로 추천했다. 임시 예시는 first `(0,0)`, second `(24,−12)`, 이후 append마다 `(10,−4)`이며7장 카드 bbox는122×110.171875px다. 수치/방향/도상 식별의 최종 사용자 수락은 아니다. 뒤 보너스의 숫자나 원 월 도상이 부분 가려질 수 있고 단서/200%·앞뒤 반전의 수용은 미검증이다.
+- **비교2, 월패+보너스 붙인 줄:** 월패와 보너스를 각각 눈에 보이는 카드 줄로 유지해 보너스 숫자를 더 보여준다. 세로 예약은6장162.171875px·획득직전7장168.171875px이고 두 묶음처럼 오인할 위험이 있다. 총 pose는 모두 다르고 원 순서/z/CardId를 유지한다. 초기 월패는 그대로 두며 보너스 추가/남은 월패 접촉은 append다. 새 보너스 종류/규칙/권위 필드를 만들지 않는다. 현재 대안이며 최종 추천/수락이 아니다.
+
+![비교1 대각 겹침과 정상/과밀 합성판](month-stack-evidence/commercial-diagonal-review.png)
+
+![비교2 월패/보너스 줄과 정상/과밀 합성판](month-stack-evidence/commercial-bonus-row-review.png)
+
+두 도판의2장 일반·3장 뻑 예시와4~6장 뻑3+보너스 구성은 구분한다.7은 정지 floor7이 아니라6에 남은 월패가 붙은 획득직전 transient다. 상용 화면에서 이를 확인했다는 뜻은 아니다. 우리 합법 경계의 기존 정적/구성 실행 근거는 §3에 보존한다. 두 안의 첫 두 패와 늘어난 층은 보이지만 모든 종류를 충분히 읽는다는 사람 수용 판정은 아직 없다.
+
+### 모형 관측과 안전 경계
+
+부모 예산은 역사 실제 실측360×780의 floor336×243.78125px를 참고했다. **실제 Board 제품 screenshot이 아닌 합성 모형**이며 손패/HUD도 합성이다. 정상 모형 floor의10개 CardId/6월group는 기존seed1827/action9 공개 fixture 그대로이고, 임시 anchor의 한 배치에서 두 안 모두 rectangle상 floor 초과0·덱 교차0·타group pair 교차0이었다. 이는 한 모형 배치 관측이며 실제 Board/solver fit·안정성·실기기 PASS가 아니다.
+
+오른쪽17패는12월 전부+뻑6을 정해진 위치에 강제로 놓은 **미도달 합성 stress**다. 대각 안은 floor 초과5·덱 교차1·타group pair 교차1, 별도 줄 안은2/1/3이었다. 현재 위치가 충돌한다는 관측이며 모든 배치 불가능·solver 미발견·상용도 불가능이라는 증거가 아니다. 강제 배치·축소·가림을 안전 fallback으로 채택하지 않는다. 이 두 안 외 변형/대형 행렬/새seed 탐색 없이 사용자에게 현재 검토 묶음을 보여준다.
+
+원본 scratch의 `research/review.html?mode=diagonal|bonusrow`와 `research/sources-review.html`은 기존 격리 Vite4258에서 재현한다. 실행은 저장소 루트에서 `source "$HOME/.nvm/nvm.sh"`, `nvm use` 후 `node node_modules/vite/bin/vite.js .visual-source/month-stack --host 127.0.0.1 --port 4258 --strictPort`다. `$HOME`은 호스트 환경변수이며 치환 자리표시자가 아니다. 이미 해당 포트가 실행 중이면 서버를 중복 실행하지 않는다. 원본 html/51개 카드/광고 이미지/log는 추적하지 않고 자체 자산 도판2개와 익명 [관측 JSON](month-stack-evidence/commercial-observations.json)만 추가했다.
+
+제품 진입 전 미결은 사용자 시각 검토, 실제 Floor/Board footprint/FIFO·same-seq 예약,1→2/2→3 기존 pose·resize/UX-02 gesture 수명,도달 과밀 최소 반례,200%/작은 높이 실패 대응과 #200 beforepose/settled 분리 통합이다. 현재 원 CardId→pose 관계는 유지할 요구이며 특정 wire 필드를 선취하지 않는다. 실기기/OSSR/모션 성능 PASS0·제품 suite 미실행·baseline 변경0이다. privacy의 앞선1finding은 기존 취소선 표현의 홈 경로 오탐이었다. 원문 재출력 없이 해당1줄을동일의미 HTML취소선으로 바꾼 뒤 finding0을 별도로 확인했다. 앞선 실패와 이후 성공을 혼동하지 않는다.
+
+
+## 11. 첫 실제 Board 배치 거절 뒤 재설계 (working·미채택)
+
+### 배치 단위와 다음 구현 순서
+
+첫 checkpoint는 `SLOT_ORDER`의5×3 슬롯 선호와 장애물 가장자리 후보를 그대로 사용했다. 둘 이상의 카드가 있는 모든 월에7장 cap을 예약해 실제 카드보다 공간을 크게 차지했고, 처음 두 장 `(24,−12)`와 이후 `(10,−4)` 간격도 달랐다. 원본을 서로 다른 pose로 그렸다는 사실은 일렬 배치·어색한 층 간격을 해결하지 못한다. 사용자 거절 이후 이 dirty prototype의 완성/기본 전환을 멈추고 실패 시험과 원본을 보존한다.
+
+추천하는 다음 구조는 **현재 월 묶음의 실제 footprint가 소유한 영역 안에서 일정한 간격으로 포개기**, **그 월의 영역을 덱 주변 빈 공간에 서로 다른 높이로 배치**다. 고정 월 위치/hand 좌표나5×3 슬롯 순서를 시각 목표로 쓰지 않는다. 매번 무작위 흩뿌림도 쓰지 않으며 기존 월의 anchor·남은 CardId의 pose·방향은 유지한다. 묶음 전체의 작은 기울기는 회전 AABB가 검증되는 범위의 시안일 뿐 수락 규범이 아니다.
+
+후속 solver는 실측 bounds에서 덱/뒤집기 자리·기존 월 영역·same-seq 제거 예약을 뺀 빈 영역을 먼저 다루고, 원래 영역 유지 가능한 해를 우선한다. 변경 월은 실제 크기와 들어오는 공개 카드의 증가분으로 공간을 계산하며 일반2장에 무조건7장 공간을 점유시키지 않는다. 증가 공간이 충돌하면 무관 월을 고정한 해부터 찾고, 불가능이 확인된 경우에만 기존 #223의 이동 개수/anchor 보존 우선을 반영한 최소 재배치를 검토한다. 시안 좌표를 fixture별 solver 하드코드로 옮기지 않는다. 현재 격자 Manhattan 비용을 연속 공간 거리로 바꾸는 문구·resize 재탐색 예외는 별도 proposed delta이며 이번 그림으로 자동 채택하지 않는다.
+
+그 다음 최소 검증은 같은 두 실제 fixture의 최초 배치와1→2/2→3/보너스 뻑6·회수7 성장, 제거 전후 원 CardId pose/무관 월 이동, same-seq 예약 유지/큐 해제, resize와 활성 선택 버튼 gesture 수명이다. 덱/손패/점수 비가림, 자동 solver fit 실패 안전 경로가 없으면 제품 gate를 통과했다고 쓰지 않는다. 수동 배치2건을 성장 예약·선택 UX·모든 화면/실기기 성공으로 확대하지 않는다.
+
+### 뻑 저장 순서와 눈에 보이는 층 순서
+
+규칙§12 B2/E1은 연속 뒤집힌 보너스가 뻑에 묻히는 조건을 정한다. 마지막 월패가 맨 위에 보여야 한다는 사용자 피드백을 따른다. [flipStep/resolve](../../packages/engine/src/turn.ts)는 `heldBonuses`에 먼저 뒤집힌 보너스를 모으지만 최종 저장 `pile`을 `[...floorCards, played, flipped, ...heldBonuses]`로 만든다. 이 저장 배열은 시간순 z-order 계약이 아니다. [display](../../packages/web/src/game/display.ts)의 CardPlayed는 월패를 floor에 추가하고 CardFlipped는 staging에 쌓으며 Ppeok은 이벤트 `cards` 그대로 floor group에 복사한다. 그러므로 `원순서/z 보존`이라는 이전 표현을 저장 배열 그대로 그리는 근거로 쓰지 않는다.
+
+| 좁은 근거 | 저장/실제 display | 추천 시각 층, 뒤→앞 |
+| --- | --- | --- |
+| 실제 seed1827/action9 저장 history 재실행 | 원 floor13, Played15, Flipped48→50→12, Ppeok 저장 `[13,15,12,48,50]`; 뒤집기 동안 staging `[48]→[48,50]→[48,50,12]` | `[13,15,48,50,12]`. 보너스는 중간, 마지막4월12가 맨 위 |
+| 기존 표준분배 구성의 합법 뻑6 실행 | Played1, Flipped48→49→50→2; 저장 `[0,1,2,48,49,50]`, Captured 없음 | `[0,1,48,49,50,2]`.1/2번째 원 pose 유지, 마지막1월2가 맨 위 |
+| 위 뻑6을 다른 좌석이 회수하는 합법 구성 | CardPlayed3가 display의 기존6에 append되어7 transient; Matched/PpeokTaken 뒤 actual Captured7에서 floor 제거 | 기존6의 층 그대로 위에3 append: `[0,1,48,49,50,2,3]`. 정지 floor7 아님 |
+| 기존 뻑3 회수에 새 보너스가 뒤집힌 합법 구성 | 기존 `[0,1,2]`+Played3은 floor4, Flipped48→35는 staging; Captured `[0,1,2,3]`와 별도 Captured `[48]` | 기존 뻑의 위에 회수월패3. 새48을 기존 뻑 중간에 넣지 않고 별도 staging/실제 획득을 따른다 |
+
+seed1827은 기존 고정 history만 재실행했고 새 seed 탐색을 하지 않았다. 구성6/7·추가 보너스는 합법 engine reduce와 실제 display.applyEvent 확인이며 자연 진행 seed reachability/WAAPI Playback/기기 실행 PASS가 아니다. 이미3보너스를 가진 뻑6에는 덱에 네 번째 보너스가 남는 상황이 없다(R1). 초기 자연뻑의 원 도상 순서는 이 뻑 생성 시간순 증거와 구분하며 출처가 없는 최초 배치 순서를 만들어 쓰지 않는다.
+
+후속 presentation은 `originalCardId→{local position,angle,z}`를 권위 group 배열과 분리한다. Ppeok 생성 이벤트가 있는 재생에서는 공개 시간순을 사용하고, 이 저장 계약의 뻑 snapshot에서는 먼저 저장된 월패3장의 마지막 패가 뻑 생성 최종 월패이고 보너스가 뒤에 묶인 구조임을 근거로 복원한다. 뒤에 실제로 append된 회수 월패는 맨 위로 더한다. 전역 bonus 정렬·ID 숫자 정렬·권위 배열/선택 target 변경을 하지 않는다. 이벤트/저장 계약으로 확인하지 못하는 복원 순서는 추정으로 표시하며 새로운 wire 필드를 선취하지 않는다.
+
+#200 접점: 선택 원 CardId의 실제 beforepose, 월 anchor와 이후 settled-top은 서로 다르다. 첫 바닥13/낸15의 local pose는 유지하고 보너스48/50과 마지막12의 층만 공개 동작 순서에 맞춘다. staging에서 들어오는 카드의 beforepose와 floor 삭제 전 pose는 측정 owner 계약에 따른다. 최종 snapshot의 저장 순서가 다시 들어와도 층이 뒤집히거나 숨은 원 CardId가 다른 카드로 대체되면 안 된다. 두 쌍 획득은 실제 Captured에서 각 짝을 유지한 두 묶음이 함께 출발한다는 기존 사용자 방향을 보존한다.
+
+### 같은 두 fixture의 수동 시각 검토
+
+scratch `natural-replan.mjs`가 기존 실제 Board DOM/동일 공개 fixture 위에서 위치·기울기·시각 index/z만 override한다. 카드 SVG48px/기존 Hand·HUD·더미·권위 배열/DOM CardId는 유지한다. **새 solver 출력/제품 기본 화면/수용 완료가 아니다.** 현 시안의 append `(12,+6)`는 첫2장/3+ 동일하며 수치 수락을 받았다는 뜻이 아니다. 실제 부모336×243.78125px/viewport360×780px 한 상태에서 다음 변환 AABB를 측정했다.
+
+- 보통10패/6월group: 월간 최소 거리15.632237px, 덱 최소3.6328125px. 뻑5는 마지막4월12가 맨 위다. 이전 최소1.301px 하단 경계를 같은 시안의 한 위치 조정으로 벌렸다.
+- 혼잡12패/8월group: 월간 최소12.825800px, 덱 최소3.0234375px. 왼쪽 아래11월 묶음 높이를 달리해 아래12월/10월과 한 줄처럼 붙어 보이는 경계를 분리했다. 이전 최소5.825802px와 구분한다.
+- 두 시안의 영역 밖/타월 AABB 교차/덱 AABB 교차는 각각0이다. 교차0은 지각상 충분한 월 구분·도상 식별·물리 기기에서 읽힘을 보장하지 않는다. 덱3px대는 아직 좁으며 최종 clearance 규범이나 모든 상태 결과가 아니다.
+
+수정 그림은 scratch `replan-normal-ppeok.png`/`replan-crowded-ppeok.png`, 익명 관측은 `natural-replan-observations.json`/`ppeok-order-observations.json`이다. 맨 위 보너스였던 기존 normal과 첫 경계 배치는 scratch에 기각 근거로 보존한다. root 직접 시각 검토 뒤 사용자에게 제시하며 이번 단계는 working 자료로 새 게시 SHA가 없다. dirty 제품 표적 시험12통과·4실패·미처리 오류4는 미통과 상태 그대로다. 기본값 전환/정본 채택/전체suite 반복/baseline 갱신0이다.
+
+
+### 사용자 크기 정정 후 같은 두 판 비교 (working·최종 수치 미채택)
+
+사용자가 바닥/덱 또는 획득패 크기를 줄여 타월과 덱 사이 빈 공간을 넓히라고 명시했다. 이전48px 고정은 이번 개정 검토의 제약이 아니다. Floor.table의 로컬 opt-in `--table-card`/높이44px와 Board root의 opt-in `--capture-card`28px만 편집했다. Card/Hand/CapturedPile/skin/global tokens에는 손대지 않았다. 기존 CSS의 `capture-card-height→fan-capture→grid row`가 부모 예약까지 줄이므로 단순 이미지 축소와 다르다. 실제 Board 크기/행 변경 위에 수동 영역 배치를 유지한 시안이며 새 solver 성공이 아니다.
+
+| 비교 | 실제 바닥/덱·획득 폭 | 실제 중앙336px 폭의 높이 | 정상 최소 월/덱 거리 | 혼잡 최소 월/덱 거리 |
+| --- | --- | --- | --- | --- |
+| 이전 수정48 시안 | 48·32px | 243.78125px | 15.632/3.633px | 12.826/3.023px |
+| 후보1 | 44·32px | 243.78125px | 20.526/13.406px | 17.155/12.281px |
+| 후보2 | 44·28px | 256.8125px | 20.526/18.929px | 17.155/14.844px |
+
+획득32→28은 양쪽 capture 행70.109375→63.59375px로 각각6.515625px 감소해 중앙에13.03125px를 돌려줬다. 손패 폭48px·선택 후보 전체 이미지48px×2·버튼157×80.171875px는 유지됐다. popup 측정용 data-card-id 중복0이다. floor/덱은44px와44/0.614 높이로 같은 비율이다. 시안의 포개기 간격도44/48 비율로 함께 줄였으며 저장 CardId/뻑5의 마지막 월패 top은 그대로다. 혼잡 최하단10월은 같은 시안에서 y164→170px로 한 번 조정했으므로 전후 간격 차이를 전부 순수 축소 효과로 설명하지 않는다.
+
+직접 그림에서44px 바닥의 큰 도상과 늘어나는 층은 보이지만 모든 뒤 카드 종류 식별/실기기 읽힘은 별도다.28px 획득에서도 큰 도상은 구별되나 작은光 표기·띠 글자는32px보다 불리하다. 현재 후보1을 먼저 추천하는 이유는 두 시안에서 덱 AABB 여백12px 이상을 얻으면서 획득패의 추가 식별 손실을 줄이기 때문이다. 숫자를 사용자가 선택했다거나 모든 상태/기기에서 수용했다고 쓰지 않는다.
+
+표의 거리는 변환된 group/deck AABB 사이 Euclidean 간격이며 카드 외곽1px·기존덱 우/아래4px 장식 shadow까지 포함한 최소 무음영 간격과 같지 않다. 특히 후보1 혼잡 하단의 실질 빈 공간은12.281px보다 작다. 하이라이트/접촉 광과 이동 경로까지 가림0을 보증하는 수치로 쓰지 않는다. 두 후보의 정적 영역밖/타월 교차/덱 교차 각각0은 이 수동 배치 관측으로만 남긴다.
+
+그림 `spacing-capture32.png`/`spacing-capture28.png`는 각720×900px 비교판이며 안쪽 실제 Board fixture360×780 두 장을 나란히 놓았다. 채팅 축소 표시를 실기기 CSS48/44px 검증으로 오인하지 않는다. 익명 scratch `spacing-observations.json`은 실제 card CSS 폭·capture 행·부모bounds·AABB 거리·popup 크기를 별도로 보존한다. root에게 먼저 전달했고 최종 사용자 시각 판단/자동 배치·성장·회수/snapshot/FIFO·실제 모션과 실패 안전 경로는 미완이다. 기존 표적 실패12pass/4fail/미처리4와 이번 sizing 측정을 구별하며 전체suite/baseline 갱신0이다.
+
+
+### 자동 배치 구현 checkpoint (opt-in·제품 수용 아님)
+
+현재 Floor/layout은 uniform append `(12,+6)×44/48`, CardId별 distinct pose, 작은 결정적 묶음 angle과 실제 outline footprint를 사용한다. slot은 내부 표식일 뿐 격자/identity/DOM key가 아니다. 첫 두 카드만 간격을 벌리거나 모든2장에7장 크기를 예약하지 않는다. 전역 skin/Hand/HUD/Card/CapturedPile/PromptPanel API는 편집하지 않았다. Board 최소 popup은 기존 native PromptPanel title/actions를 사용하고 전체48px 그림·최소48px 버튼·원 candidate ID를 보존한다. opt-in 기본값은 false이며 Game 경로는 아직 연결하지 않았다.
+
+**실패 정정:** 앞선 auto-normal/crowded PNG는 solver 미발견 뒤 unsafe 좌상단 fallback의 실제 DOM였다. model→DOM 오차 약0.012px로 transform 문제 증거는 없었다. 먼저 성공했던 실행 수치와 같은 파일명에 덮어쓴 실패 그림을 혼합한 보고를 정정했다. 실패 PNG/immutable audit `20261001T164548556Z`는 scratch에 보존한다. 새 타입은 placed/fits:true와 failed/fits:false/cells:[]를 분리하며 실패 좌표를 다음 anchor로 재사용하지 않는다. cells[]는 개발 진단이며 카드 없는 사용자 정상판을 허용한 fallback이 아니다. 필요한 모든 ID의 안전 표시/입력 실패 UX는 여전히 제품 차단 항목이다.
+
+deck 측정에서 computed outline-width3px이더라도 outline-style:none은 실제 paint0이다. 이 phantom padding을 제거하고 실제 solid outline1px·덱 우/하4px shadow를 유지했다. 방문 예산8192·간격 후보12.125는 증액/완화하지 않았다. finite 원인은 큰 묶음을 놓은 뒤 남은 영역의 수용량이 부족한 가지에서 작은 월 후보를 계속 탐색한 것이었다. maximal empty rectangle cover의 보수적 capacity 상한으로 그 가지를 기각했다. 각 남은 AABB는 어떤 cover 안에 완전히 들어가며, 최소 폭/높이+gap의 origin 구획마다 최대 한 개만 들어갈 수 있다. cover가 겹쳐도 합산하므로 상한을 작게 만들지 않는다. 남은 group 소유 예약은 이 상한의 장애물에서 제외한다. 작은2/3/4개 유효 구성·덱 양쪽 분리 구성의 기각 여부를 전용 회귀로 대조했다. 후보 집합의 완전성/모든 가능한 배치 증명은 아니다.
+
+고정 run `20261001T165412510Z`는 font ready+모든 이미지 decode+5회 연속 같은 table DOM/높이 RAF를 기다려 전후 DOM이 동일한 프레임을 캡처했다. 파일 hash·시각·카드 ID·model/DOM 측정은 scratch immutable manifest에 함께 보존하고 최소 익명 [checkpoint JSON](month-stack-evidence/automatic-checkpoint.json)만 게시한다. 캡처 뒤 좌표 override/fixture별 solver 좌표/카드 누락은 없다.
+
+| 실제 fixture | 최초 탐색/상한 pruning | 안정 후 탐색 | ID/DOM 타월교차/범위초과 | 최대 model→DOM 오차 | 월간 / 덱간 paint 여백 |
+| --- | --- | --- | --- | --- | --- |
+| normal, seed1827/action9 뻑5·10패/6월 | 9 / 2 | 0 | 10일치 / 0 / 0 | 0.01260px | 12.121 / 12.116px |
+| crowded, seed2 합법 경계·12패/8월 | 23 / 14 | 0 | 12일치 / 0 / 0 | 0.01513px | 12.121 / 12.130px |
+
+최초 탐색은 같은 input을 previous 없이 순수 layout에 재입력한 방문 수다. DOM의 searches0은 안정 후 유효 배치 재사용값으로 최초 비용0/성능 PASS를 뜻하지 않는다. paint 여백은 실제 카드 변환 DOM AABB에 회전된1px outline을 보수적으로 확장한 월 union과 측정 덱 outline/shadow 장애물 사이 거리다. model footprint 간격12.125와 구분하며 highlight 광/WAAPI 경로/실기기 읽힘은 미측정이다.
+
+![실제 Board normal 자동 solver fixture](month-stack-evidence/automatic-normal.png)
+
+![실제 Board crowded 자동 solver fixture](month-stack-evidence/automatic-crowded.png)
+
+두 그림은 실제 Board/Floor DOM fixture의 자동 출력이다. 전체 Game 녹화/실기기 screenshot은 아니다. normal 오른쪽 네 단패가2×2로 모이는 시각 약점은 남는다. 사용자 격자 거절을 해소했다고 쓰지 않고 이번 후보 탐색은 여기서 멈췄다. 뻑5 최종 월패12가 bonus48/50 위에 보이며 저장 배열/원본 선택 ID는 불변이다.
+
+전용 회귀는 이전12pass/4fitfail/미처리 pointer4와 구분한다. 새1차 표적은20pass/2fail/미처리0이었다. 실패2건은2→6 성장에서 기존 world pose를 무조건 고정한 기대였으며 실제 증가 footprint가 덱 paint 여백과 충돌했다. 해당 월 origin 재배치와 원 CardId local 위치/angle/index·무관 월 고정을 분리한 검증으로 고쳤다. 같은 viewport/작은1→2 strict 가능시 원위치를 보존한다. 같은 seq 삭제 예약은 카드 제거와 별개이고 release/seq/round에서 해제한다. 예약의 독립 bounds를 유지해 연속 resize에서 마지막 성공 배치 기준 이중 투영을 피한다. 구성6/재생7 presentation·snapshot은 전용 model/DOM 조건이며 실제 Playback/WAAPI 통과가 아니다.
+
+최종 전용 실행은 Chromium/WebKit22표적 통과·미처리0이며 web check는 오류0/경고0이다. 이전4fitfail과 pointer 미처리4가 현재44/32의 해당 표적에서 재발하지 않았음을 구분하며 과거48px/cap7/격자 구현이 통과했다고 기록하지 않는다. 커밋 전 lint:fix의 reactive dependency bare-expression4건은 명시적 void read로 정리했고 재실행은 성공했다.
+
+입력 NotFoundError만 active gesture/release를 취소한다. 늦은 pointerup/click은 선택을 제출하지 않고 새 실제 pointer 입력은 정상 선택하며 이미 제출된 선택은 rollback하지 않는다. 합성 dispatchEvent는 browser active pointer를 만들지 않는 시험 한계가 있고, provider 실제 click 경로를 별도로 검증했다. 무관 예외는 rethrow한다. pointercancel·resize·old candidate·held Enter repeat·native dialog 후보48px/원 data-card-id 중복0도 전용 표적이다.
+
+잔여 gate: 정상 시각 자연스러움 수용, 비strict #223 전역 최소 이동 비용, 실패 UX/최소 뻑·bonus 단서, 좁은 높이/200%에서 전체 필요한 정보 fit, UX-02 원격수락/timeout/focus/pose 수명, #200 정확 beforepose→settled·Game 기본 적용/기존 분기 정리·P2P·모션·실기기/OSSR·성능·NF-03 예산. 필수 전체suite는 제품 최종 checkpoint에 한 번 수행하며 이번 단계에서 미실행이다. baseline/threshold 변경0·새seed/큰 행렬0·기본 적용0·정본 최종 채택0이다.
+
+### 53443613 독립 리뷰의 두 지적 후속 (제품 gate 유지)
+
+[CI36898053439](https://github.com/kywoo26/p2p-gostop/actions/runs/36898053439)는 exact `53443613a65efd26af0e47b4d1ed84d566ce80e0`에서 폰트 검사 `폰트 코퍼스/CSS 누락: 곽밑끼물훔갈`로 build와 양E2E webServer가 실패했고 Android는 미실행이었다. 앞선 component 통과를 이 build 이후 검증 성공으로 쓰지 않는다. 같은 로컬 build 실패 원문은 scratch에 보존했다. floor-layout의 해당 주석6줄 표현만 기존 corpus 문자로 바꿨으며 UI 문구·폰트 corpus/CSS/자산·gate는 그대로다. 변경 뒤 폰트140.9KiB/UI문자703/누락0, 전체 web build 및 내장16시험 통과, artifact75파일1553.4KiB/2048KiB였다. 초기 encoded1.5MB·실기기 성능을 이 raw 결과로 대신하지 않는다.
+
+held Enter→resize 또는 held Space→target 교체 뒤 keyup을 보내지 않는 새 회귀를 먼저 적용하자 양 브라우저4건 모두 실제 pointer 제출0으로 실패했다. 기존 cancelledTargetKey가 모든 click을 막은 재현이다. 후속은 targetRelease에 pointer/keyboard source를 분리한다. detail1 click은 현재 후보의 검증된 pointer release만 소비하고 취소 키 플래그로 막지 않는다. 취소 키의 detail0 click/repeat는 계속 막으며 pointer release도 소비하지 않는다. 취소 키의 keyup 역시 keyboard release만 취소한다. NotFoundError의 좁은 catch와 기존 수락 권위는 바꾸지 않는다.
+
+변경 후 Board 전용 Chromium7+WebKit7=14통과/미처리0이며, 새 두 회귀는 keyup 없이 pointer 선택1·뒤 취소 키 click/repeat 추가 제출0·release 재사용0·이미 제출된 선택 보존을 확인했다. 이전22표적 전체 실행은 이전 head 근거로 남기고 이번 head에서 반복 실행했다고 쓰지 않는다. solver는 주석만 바꿨으며 후보/간격/기울기/지원 bounds/baseline/threshold는 그대로다. 새로운 실제판 그림을 만들거나 기존 immutable run/PNG를 덮어쓰지 않았다.
+
+비차단 관측: pair `[0,1]→[1]`의 surviving local offset을 보존하면서 footprint가 빈 prefix도 예약한다. 실제 single44×71.661px보다57×79.161px를 점유한다. 독립 리뷰의54×100 구성 반례는 지원 Board가 아니므로 실사용 차단 결함으로 확정하지 않는다. actual-footprint/예약 수명 후속과 함께 검토하고 이번 두 fix로 확대하지 않았다. capacity pruning의 한정 경계 대조는 반례 미관측이며 전체 완전성 증명은 아니다. 기본false·정본미채택·normal2×2/실패UX/최소단서/모션/전체 수용 gate는 유지한다. 새 head CI는 앞선 실패 및 component 결과와 별도로 PR에 기록한다.
+
+## 12. Game opt-in·actual footprint·긴급 경계 배치 checkpoint (기본false)
+
+`c155b061e89f27d81a00288a6e01054792e7afb1`의 두 리뷰 결함은 동일 head CI36903732478 3success 및 동일 리뷰어의 좁은 재검토에서 해소됐다. 이번 단위는 별도 후속이다. Game에는 optional monthStacks/defaultfalse/Board 전달3줄만 연결했고 controller/attach/metadata/Playback/choreo/engine/protocol은 편집하지 않았다. surviving 카드의 실제 paint union으로 빈 prefix를 제외하되 카드 index/local 위치·선택 ID·same-seq 삭제 예약은 그대로다.
+
+42px 비교에서 12월 구성은 처음 primary8193 뒤 DOM0이었다. 구성은 Scenario의 표준 카드 분배(10/10손패·8바닥·23덱·51고유ID)에서 실제 합법 play32→flip36, play40→flip44를 reduce한 결과이며 seed fresh deal 도달/전체 재생 증거가 아니다. 임의 round 필드를 권위로 만들지 않고 Scenario roundNumber2부터 만든다. 기존 회전 최대 paint 높이71.531569px로 3행 증인 최소242.844707px가 실제390 부모241.4375px보다1.407207px 높았다. 이것은 max-envelope 증인의 경계이며 모든 배치 불가능 증명이 아니다.
+
+획득행의18px는 heading16+gap2 실제 내용이다. 이를17px/gap1로 줄이는 작업은 root 정정에 따라 되돌렸고 최종 Board diff0·기존2px/행높이/글자·카운터·outline/획득32·손패48·popup48을 유지한다. 대신 primary 실패 때만 회전0°로 actual shape를 새로 계산한다. 같은 local index/append 순서·뻑 마지막 월패 top은 유지하고 과거 rotation을 이중 적용하지 않는다. 최대 높이70.403909px의 3행 증인은239.461726px이며 실제 덱 shadow·outline·현재 예약·모든 카드/영역/간격 검사를 다시 통과해야만 placed로 반환한다. 경계 슬롯은 현재 부모와 최대 실제 크기로 한 번 생성하고 유한 matching을 검증하며 fixture 좌표/더 작은 숫자/8192 예산 증액은 없다. 정상 scatter/이전 유효 pose가 우선이다. 이 긴급 grid는 자연스러운 배치 승인이나 보편적 안전 fallback 완료가 아니다. 두 경로 모두 실패하면 개발 failed/cells[]가 남고 기본 적용을 막는 제품 gate다.
+
+고정 run `20261001T184342864Z`의 [익명 JSON](month-stack-evidence/game-checkpoint.json)은 실제 Game+실제 Playback snapshot을 사용하는 fixture controller의 DOM, 같은 프레임 PNG/hash/원ID·paint 측정을 묶는다. 일반 solo/P2P controller/deal/replay·실기기 증거와 구분한다. scratch의 누락된 메뉴 그림 publicDir 문제로 엄격 decode가 실패한 캡처 시도도 보존했고, 기존 공개 자산을 로컬 제공한 뒤 모든 이미지 decode·5회 같은 DOM/rect RAF·캡처 전후 동일 검사로 새 run을 생성했다. 이후 override0이다.
+
+| 실제 fixture | 부모 bounds | 최초 primary 방문 / host 순수 함수 시간 | ID·교차·범위 | 월간 / 덱간 paint 여백 |
+| --- | --- | --- | --- | --- |
+| normal360×780, 뻑5 포함 | 336×243.78125 | 7 / 2.31ms | 10일치·0·0 | 12.118 / 12.113px |
+| crowded360×780 | 336×243.78125 | 86 / 4.45ms | 12일치·0·0 | 12.125 / 12.124px |
+| 12월360 fresh | 336×243.78125 | 8193 / 134.59ms | 12일치·0·0 | 13.594 / 14.305px |
+| 12월390 fresh | 366×241.4375 | 8193 / 102.53ms | 12일치·0·0 | 13.125 / 13.133px |
+
+정상/혼잡은 scatter 기울기를 유지하며 뻑5 top월패12, bonus중간이다. 12월은 긴급0° 행 배치다. 같은 run의390→360 resize는 필요한 재탐색 후 전체ID/paint 유효였으며 strict0 성공으로 쓰지 않는다. model→DOM 최대0.01561px, 모든 hand/HUD교차0, PNG metadata(text/EXIF)0을 확인했다. 초기 탐색 수치와 안정 후 searches0은 구분하고 Node host 시간은 실제 동기 UI호출/60fps/100ms 수용을 대신하지 않는다.
+
+![실제 Game opt-in normal fixture](month-stack-evidence/game-normal.png)
+
+![실제 Game opt-in crowded fixture](month-stack-evidence/game-crowded.png)
+
+![실제 Game opt-in 390 fresh12월 긴급 grid fixture](month-stack-evidence/game-twelve.png)
+
+표적 Chromium/WebKit38통과·미처리0은 footprint/presentation/성장·삭제예약/resize·기존 pointer 취소 및 keyup 없는 회복·Game 기본false·Game fresh12월·native 전체48px 선택→실제 reduce 수락→Playback 완료/예약 해제를 포함한다. 이 한 선택 재생을 #200 정확 beforepose·모든 연쇄선택/모션 수용으로 확대하지 않는다. check 오류0/경고0, font703/누락0. 전체suite/기준샷/threshold/새agent/seed행렬0, 새 CI는 이전c155 CI와 분리한다.
+
+다음 성능 작업은 이12월 한 경계에서 유효 witness를 먼저 확보하고 정상/유효 prior 우선과 제한 scatter 비용을 양립시키는 최소 후속이다. primary8193 소진 의존·실제 동기 UI시간을 분리해 개선하며 예산 증액/타이밍 assert 완화/새worker/dependency는 없다. 기본 활성화·canonical 최종채택·자연스러움·모든 실패UX/최소단서·beforepose/P2P·실기기/OSSR·NF-03 초기 encoded/모션은 남는다.
