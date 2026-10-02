@@ -42,8 +42,8 @@ export function createCoordinator() {
   });
 
   afterNavigate(({ from, to, shallow, type }) => {
-    if (shallow || to?.route.id !== '/settings') return;
-    // Kit anchor 진입도 버튼과 같은 복귀 상태를 저장한다. reload/popstate의 기존 상태는 유지한다.
+    if (shallow || (to?.route.id !== '/settings' && page.error === null)) return;
+    // Kit anchor의 설정/오류 진입도 출발 화면을 보존한다. reload/popstate의 기존 상태는 유지한다.
     const state = uiState(page.state);
     state.returnTo ??= returnRoute(type === 'enter' ? null : from?.route.id);
     void goto(page.url.href, {
@@ -52,7 +52,7 @@ export function createCoordinator() {
       reset: false,
       persistState: true,
       state,
-    }).catch(() => log.error('설정의 복귀 화면을 저장하지 못했습니다.'));
+    }).catch(() => log.error('복귀 화면을 저장하지 못했습니다.'));
   });
 
   const mode = detectMode();

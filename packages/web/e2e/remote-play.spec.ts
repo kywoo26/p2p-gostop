@@ -192,6 +192,7 @@ interface Pair {
   setHostUnavailable(value: boolean): void;
   stop(): Promise<void>;
   restart(): Promise<void>;
+  coldHost(): Promise<void>;
 }
 
 async function pair(browser: Browser, guestBrowser = browser): Promise<Pair> {
@@ -221,6 +222,17 @@ async function pair(browser: Browser, guestBrowser = browser): Promise<Pair> {
       relay,
       path,
       setHostUnavailable: proxy.setHostUnavailable,
+      async coldHost() {
+        // 실제 UI로 저장한 설정만 이어받는다. 방 생성 전이므로 권위/세션 복원 fixture가 아니다.
+        const old = session.host.context();
+        const fresh = await browser.newContext({
+          ignoreHTTPSErrors: true,
+          storageState: await old.storageState(),
+        });
+        contexts.push(fresh);
+        session.host = await fresh.newPage();
+        await old.close();
+      },
       async stop() {
         for (const context of contexts) await context.close();
         for (const socket of proxy.sockets) socket.destroy();
@@ -246,7 +258,10 @@ async function pair(browser: Browser, guestBrowser = browser): Promise<Pair> {
   }
 }
 
-async function openHost(run: Pair): Promise<{ invite: string; code: string }> {
+async function openHost(
+  run: Pair,
+  coldSettings = false,
+): Promise<{ invite: string; code: string }> {
   await run.host.goto(`${appOrigin}/?speed=instant#/`);
   await run.host.getByRole('link', { name: '친구와 원격 대전' }).click();
   await run.host.getByRole('button', { name: '원격 연결', exact: true }).click();
@@ -254,6 +269,12 @@ async function openHost(run: Pair): Promise<{ invite: string; code: string }> {
   await run.host.getByLabel('생성 자격').fill(run.secret);
   await run.host.getByRole('button', { name: '원격 설정 저장' }).click();
   await run.host.getByRole('link', { name: '뒤로' }).click();
+  // 이전 문서의 preload/module cache에 의존하지 않는 고장 주입. 방 생성 전 새 context다.
+  if (coldSettings) {
+    await expect(run.host).toHaveURL(/#\/$/);
+    await run.coldHost();
+    await run.host.goto(`${appOrigin}/?speed=instant#/`);
+  }
   await run.host.getByRole('link', { name: '친구와 원격 대전' }).click();
   await expect(run.host.getByText('중계 응답 정상')).not.toBeVisible();
   await run.host.getByRole('button', { name: '연결 확인' }).click();
@@ -338,6 +359,138 @@ async function guestCredential(page: Page): Promise<{ roomId: string; token: str
   expect(value.roomId).toMatch(/^[\w-]{22}$/);
   expect(value.token).toMatch(/^[\w-]{43}$/);
   return value;
+}
+
+/** 현재 빌드의 route node만 고장낸다. chunk 번호/해시를 고정하지 않는다. */
+async function recoveryChunk(route: 'settings' | 'diagnostics') {
+  const manifest = JSON.parse(
+    await readFile('.svelte-kit/output/client/.vite/manifest.json', 'utf8'),
+  ) as Record<string, { file: string }>;
+  for (const [path, entry] of Object.entries(manifest)) {
+    if (!/^\.svelte-kit\/generated\/build\/client-optimized\/nodes\/\d+\.js$/.test(path)) continue;
+    if ((await readFile(path, 'utf8')).includes('routes/' + route + '/+page.svelte'))
+      return entry.file;
+  }
+  throw new Error('recovery route missing from current build');
+}
+
+for (const origin of ['match', 'both-match', 'both-solo'] as const) {
+  test(
+    'SK3 recovery: ' + origin + ' 오류는 출발 게임과 원격 권위를 보존한다 @guest',
+    async ({ browser }) => {
+      const run = await pair(browser);
+      try {
+        const { invite } = await openHost(run, true);
+        await joinLink(run.guest, invite);
+        await expect(run.guest.getByTestId('lobby')).toBeVisible();
+        await run.host.getByTestId('host-start').click();
+        await expect(run.host.getByTestId('match')).toBeVisible();
+        await expect
+          .poll(async () => {
+            await run.host.evaluate(playStep);
+            await run.guest.evaluate(playStep);
+            return (await gameState(run.host)).seq;
+          })
+          .toBeGreaterThan(0);
+        let soloBefore: string | null = null;
+        if (origin !== 'match') {
+          await run.host.getByTestId('game-menu').click();
+          await run.host.locator('[data-menu="home"]').click();
+          await run.host.getByRole('link', { name: '혼자 연습', exact: true }).click();
+          await run.host.getByRole('button', { name: '시작', exact: true }).click();
+          await expect(run.host.getByTestId('solo')).toBeVisible();
+          soloBefore = await run.host.evaluate(() => localStorage.getItem('gostop.solo.v1'));
+          expect(soloBefore).not.toBeNull();
+          if (origin === 'both-match') {
+            await run.host.getByTestId('game-menu').click();
+            await run.host.locator('[data-menu="home"]').click();
+            await run.host.getByRole('button', { name: /대전으로 돌아가기/ }).click();
+            await expect(run.host.getByTestId('match')).toBeVisible();
+          }
+        }
+        const beforeSeq = (await gameState(run.guest)).seq;
+        await run.host.evaluate(() => {
+          (window as unknown as { __recoveryDoc: boolean }).__recoveryDoc = true;
+        });
+        const target = origin === 'both-solo' ? 'settings' : 'diagnostics';
+        const chunk = await recoveryChunk(target);
+        let injected = 0;
+        await run.host.route('**/' + chunk, (route) => {
+          injected += 1;
+          return route.fulfill({ status: 503, contentType: 'text/javascript', body: '' });
+        });
+        await run.host.getByTestId('game-menu').click();
+        await run.host.locator('[data-menu="' + target + '"]').click();
+        await expect(
+          run.host.getByRole('heading', { name: '화면을 열지 못했습니다', exact: true }),
+        ).toBeVisible();
+        expect(injected).toBeGreaterThan(0);
+        const back = run.host.getByRole('link', { name: '게임으로 돌아가기', exact: true });
+        await expect(back).toHaveAttribute(
+          'href',
+          origin === 'both-solo' ? /#\/game$/ : /#\/match$/,
+        );
+        await expect(run.host.getByRole('alert')).not.toContainText('진행 중인 게임은 유지됩니다');
+        await expect(
+          run.host.getByText(
+            '새로고침하면 이 기기의 원격 대전 상태를 잃습니다. 새로고침하지 않고 돌아가세요.',
+            { exact: true },
+          ),
+        ).toBeVisible();
+        await run.host.getByRole('button', { name: '다시 시도', exact: true }).click();
+        await expect(
+          run.host.getByRole('button', { name: '다시 시도', exact: true }),
+        ).toBeEnabled();
+        await expect(run.host.getByRole('button', { name: '새로고침', exact: true })).toHaveCount(
+          0,
+        );
+        await back.click();
+        await expect(run.host.getByTestId(origin === 'both-solo' ? 'solo' : 'match')).toBeVisible();
+        expect(
+          await run.host.evaluate(
+            () => (window as unknown as { __recoveryDoc?: boolean }).__recoveryDoc,
+          ),
+        ).toBe(true);
+        await expect(run.guest.getByTestId('match')).toBeVisible();
+        expect((await gameState(run.guest)).seq).toBeGreaterThanOrEqual(beforeSeq);
+        if (soloBefore !== null)
+          expect(await run.host.evaluate(() => localStorage.getItem('gostop.solo.v1'))).toBe(
+            soloBefore,
+          );
+        if (origin !== 'both-solo')
+          expect((await gameState(run.host)).seq).toBeGreaterThanOrEqual(beforeSeq);
+        if (origin === 'both-match') {
+          // 살아 있는 솔로가 남아 있어도 종료한 대전을 유지한다고 안내하지 않는다.
+          await run.host.getByTestId('game-menu').click();
+          const menu = run.host.getByRole('dialog', { name: '메뉴', exact: true });
+          await menu.locator('[data-menu="end"]').click();
+          await menu.locator('[data-menu="end"]').click();
+          await expect(run.host).toHaveURL(/#\/$/);
+          const settingsNode = await recoveryChunk('settings');
+          await run.host.route('**/' + settingsNode, (route) =>
+            route.fulfill({ status: 503, contentType: 'text/javascript', body: '' }),
+          );
+          await run.host.getByRole('link', { name: '설정', exact: true }).click();
+          await expect(
+            run.host.getByRole('heading', { name: '화면을 열지 못했습니다', exact: true }),
+          ).toBeVisible();
+          await expect(
+            run.host.getByText(/새로고침하면 이 기기의 원격 대전 상태를 잃습니다/),
+          ).toHaveCount(0);
+          await expect(run.host.getByRole('link', { name: '홈으로', exact: true })).toHaveAttribute(
+            'href',
+            /#\/$/,
+          );
+          await run.host.getByRole('button', { name: '다시 시도', exact: true }).click();
+          await expect(
+            run.host.getByRole('button', { name: '새로고침', exact: true }),
+          ).toBeVisible();
+        }
+      } finally {
+        await run.stop();
+      }
+    },
+  );
 }
 
 test('AC-RP-01 @smoke @paired 설정→방→정적 경로 링크→두 브라우저 로비·1판 정산', async ({

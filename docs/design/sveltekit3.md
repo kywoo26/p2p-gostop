@@ -204,6 +204,12 @@ Kit preview는 adapter 이전의 client/prerendered를 제공하여 최종 dist�
 
 남은 merge gate:29 PNG의 의도 변화 검토·필요 좁은 기준 갱신, 새 immutable 독립 review, 이후 최종 필수 smoke/직렬 timing·Android/full 영향 검사 및 초기 body 확인. 사람 실기기와 운영 배포는 별도다. 새 디자인 기능을 추가하지 않고 이 단위를 먼저 고정한다.
 
+### R1 독립 오류 복구 검토 후속
+
+exact `48356cc` 독립 C/W 반례에서 두 결함을 확인했다. 대전과 솔로를 함께 보유할 때 오류 복귀가 솔로 존재를 먼저 골랐고, 비영속 원격 호스트에 새로고침을 제공하면서 게임 유지 문구를 표시했다. 기존 `page.state.returnTo`를 버튼·anchor 오류 진입에도 보존하고, 그 화면의 현재 유효 소유만 복귀 대상으로 고른다. 종료된 솔로·대전은 다른 게임으로 대체하지 않는다. 새 registry·권위 저장 형식은 없다. 원격 방이 살아 있는 동안 앱의 수동 reload를 노출하지 않고 상태 손실 위험을 알린다. 주소창/브라우저 자체 reload를 복구한다는 보장은 하지 않는다.
+
+표적 분모는14행이다: 실제 relay 단일 대전·둘 공존의 대전/솔로 기원6, 종료 솔로2, 기존 503/잘못200 같은 문서 복귀4, manual5032(C/W). 최초13 PASS/1 FAIL은 WebKit 설정 모듈이 정상 열려 고장 주입이 성립하지 않은 하네스 결과다. 해당 setup은 방 생성 전 실제 UI가 저장한 설정만 새 browser context로 옮겨, 이전 module cache와 분리했다. 원격 세션 복원이나 cache 우회 제품 기능이 아니다. 수정 후 remote6 PASS(양 기원·실제503 주입·대전 종료 후 손실 안내 제거 포함)는 앞선6을 대체하며, 유지된8과 합한 표적14 PASS다. check0/0·build21 PASS이며 전체 필수 gate 성공으로 확대하지 않는다. 잘못200/503 원실패와 WebKit manual reload 한계는 그대로 보존한다. 외부 config의 ESM/cwd 실수로 테스트 시작 전에 실패한 시도도 별도 보존하며 제품 검증으로 세지 않는다.
+
 ## 이행·되돌리기
 
 SK3-P0 설계/유한 proof → P1 build shell·entry/token/path/오류·도구 → P2 route·coordinator 분리 → P3 필수 검증·독립 review·root 통합 순서다. proof 실패로 조정한 선택은 코드와 같은 commit에 문서화한다. v0.4.1 배포는 계속 유지한다. 저장/wire 형식을 바꾸지 않아 검증 실패 시 branch 또는 미출하 변경을 revert하고 원 artifact를 사용할 수 있다. 운영 포인터·main 병합·tag/release·서명은 root만 소유한다. Galaxy/iPhone 사람 수용은 별도 절차/사람 결과가 필요하며 자동 테스트로 PASS 처리하지 않는다.

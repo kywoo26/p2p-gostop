@@ -34,19 +34,17 @@ export function uiState(state: App.PageState = {}): App.PageState {
   return result;
 }
 export function go(route: AppRoute, options: Parameters<typeof goto>[1] = {}) {
-  const state =
-    route === '/settings'
-      ? {
-          returnTo: returnRoute(
-            page.route.id === '/settings' ? page.state.returnTo : page.route.id,
-          ),
-          ...uiState(options.state),
-        }
-      : uiState(options.state);
+  // 실패한 목적지에서도 출발 화면을 안다. 권위 객체 대신 기존 UI 복귀 문자열만 넘긴다.
+  const state = {
+    returnTo: returnRoute(
+      page.error || page.route.id === '/settings' ? page.state.returnTo : page.route.id,
+    ),
+    ...uiState(options.state),
+  };
   void goto(resolve(route), {
     ...options,
     state,
-    ...(route === '/settings' ? { persistState: true } : {}),
+    persistState: true,
   }).catch(() => {
     log.error('화면을 열지 못했습니다.');
   });

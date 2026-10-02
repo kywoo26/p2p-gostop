@@ -376,6 +376,8 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 
 Kit route/state/오류·Board 구조 단일 소유와 이미 구현한 UI 단면을 고정한다. source53파일 snapshot과 실제7PNG/2영상·원실패/표적검사를 [단일 설계의 포함관계 표](../docs/design/sveltekit3.md#r1-검증-checkpoint-첫-병합-전)에 연결했다. Node589·browser 원1092/6→해당HUD18·핵심35·RP07 31초·표적48의 분모는 겹치므로 합산하지 않는다. W503은 reload 오류 자체를 보존하고 안전 복귀만 보장한다. 최종 dist-only preview 경계·글자24/16·굵기600/400 정합은 R1 소유에 포함한다. PNG29 갱신0·최종 smoke/timing/Android·초기 body·새 독립 review 미완이며 전체 Kit/UX/성능 수용을 완료로 승격하지 않는다. 추가 디자인 고도화는 첫 병합 이후 별도 분배한다.
 
+독립 exact483 오류 P2 두 건 후속은 `navigation.ts`·coordinator·`+error.svelte`와 remote-play/kit-navigation 표적에 한정한다. 기존 `page.state.returnTo`의 출발 게임을 우선하고 현재 유효 소유만 복귀시킨다. 원격 방 보유 중 수동 reload는 숨기며 무조건 유지 문구를 제거한다. 단일/공존 양기원·종료 소유와 기존 같은 문서 복귀/503 한계14행 PASS(check0/0·build21 PASS)이며, 원FAIL·하네스 실패·수정 source를 분리 보존한다. CSS 소유 이관·cards readiness·root 검토37장 baseline은 각각 별도 commit이며 새 UI 기능·전체 수용 승격은 없다.
+
 ### #202 월 묶음 자동 배치 checkpoint·제품 Draft 진행 (UX-02/05/06/H05/23~25·NF-03/08·AC-06/07)
 
 - 착수 기준 main `2bc8eb2861428c77e2429d91e2771d6822dd6435`, branch `feat/month-stack-implementation`. [선행 #233](https://github.com/kywoo26/p2p-gostop/pull/233) 승인 head `42a779f7faec5f2dfec94ff38ed60dab8e7c8fce`는 제안 인수이며 제품 수용/정본 최종 채택이 아니다. 역사 PNG·scratch 원본은 보존한다. [#234](https://github.com/kywoo26/p2p-gostop/pull/234) 공개 target 계약은 별도 담당 소유이며 필드를 미리 발명하지 않는다.

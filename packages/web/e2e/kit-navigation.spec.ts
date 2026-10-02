@@ -343,6 +343,31 @@ test('SK3: 503 수동 reload의 Chromium 복구·WebKit 실패와 저장 게임 
   }
 });
 
+test('SK3 recovery: 종료된 솔로는 복귀 대상으로 고르지 않는다 @layout', async ({ page }) => {
+  const site = await faultSite('unavailable');
+  try {
+    await startSolo(page, site.origin);
+    await page.getByTestId('game-menu').click();
+    const menu = page.getByRole('dialog', { name: '메뉴', exact: true });
+    await menu.locator('[data-menu="end"]').click();
+    await menu.locator('[data-menu="end"]').click();
+    await expect(page.getByTestId('session-ended')).toBeVisible();
+    expect(JSON.parse((await soloSave(page))!).session.phase).toBe('ended');
+    await page.getByRole('button', { name: '기록 보기', exact: true }).click();
+    await page.getByRole('link', { name: '뒤로', exact: true }).click();
+    await page.getByRole('link', { name: '설정', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: '화면을 열지 못했습니다', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: '게임으로 돌아가기', exact: true })).toHaveCount(0);
+    await page.getByRole('link', { name: '홈으로', exact: true }).click();
+    await expect(page.getByRole('heading', { name: '맞고 P2P', exact: true })).toBeVisible();
+    await expect(page.getByTestId('solo')).toHaveCount(0);
+  } finally {
+    await site.close();
+  }
+});
+
 for (const failure of ['syntax', 'unavailable'] as const) {
   test(`SK3: ${failure === 'syntax' ? 'malformed 200' : 'HTTP 503'}은 같은 문서에서 오류 재시도 후 같은 게임으로 안전 복귀한다 @layout`, async ({
     page,
