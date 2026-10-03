@@ -66,6 +66,9 @@ function autoStep(opts: StepOptions): string | false {
     note(auto.taken, name);
     return name;
   };
+  const acknowledge = root.querySelector<HTMLButtonElement>('[data-choice="acknowledge"]');
+  if (acknowledge && !acknowledge.disabled && acknowledge.getClientRects().length > 0)
+    return 'acknowledge';
   const refill = document.querySelector('[data-choice="refill"]');
   if (refill !== null) return click(refill, 'refill');
   const next = document.querySelector('[data-choice="next"]');
@@ -109,6 +112,12 @@ function autoStep(opts: StepOptions): string | false {
     return click(card, 'bomb');
   }
   return click(card, 'play');
+}
+
+/** poll은 공개된 확인 버튼을 찾기만 하고, 결과를 읽은 뒤 실제 locator로 누른다. */
+async function acknowledgeDisplayedResult(page: Page): Promise<void> {
+  await expect(page.getByTestId('settlement-headline')).toBeVisible();
+  await page.locator('[data-choice="acknowledge"]').click();
 }
 
 async function attrs(page: Page) {
@@ -239,6 +248,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
             { polling: 20, timeout: 60_000 },
           );
           r = String(await handle.jsonValue());
+          if (r === 'acknowledge') await acknowledgeDisplayedResult(hostPage);
         } catch (error) {
           throw await stalled('호스트', error);
         }
@@ -291,6 +301,7 @@ test('호스트(Chromium)·게스트(WebKit) 20판 · 원장 제로섬 · 순번
             { polling: 20, timeout: stopAtSettlement ? 60_000 : 2_000 },
           );
           r = String(await handle.jsonValue());
+          if (r === 'acknowledge') await acknowledgeDisplayedResult(guestPage);
         } catch (error) {
           // 2초 동안 누를 것이 없었다(호스트 차례·끊김 처리 중): 조건을 새로 넣어 다시 기다린다
           if (!stopAtSettlement && String(error).includes('Timeout')) continue;

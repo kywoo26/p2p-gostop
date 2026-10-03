@@ -2,13 +2,15 @@
 import {
   reduce,
   redactEvent,
+  settle,
+  applySettlement,
   type Action,
   type EngineEvent,
   type GameState,
   type Seat,
 } from '@p2p-gostop/engine';
 import type { BoardView, HostSession } from '@p2p-gostop/protocol';
-import { gukjinPlacements, withSeatExtras } from '../game/adapter.ts';
+import { gukjinPlacements, toSettlementView, withSeatExtras } from '../game/adapter.ts';
 import type { RoundSummary } from '../game/playback.svelte.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
 
@@ -53,6 +55,44 @@ export function hostSummary(session: HostSession | null): RoundSummary | null {
       points: p.points,
     })),
     nextCarry: settlement.winner === null ? settlement.nextCarry : null,
+  };
+}
+
+/** 받기를 고를 경우의 읽기 전용 표시. 순수 반환값만 쓰며 세션 원장·기록에는 대입하지 않는다. */
+export function pendingHostSummary(session: HostSession): RoundSummary | null {
+  const state = session.state;
+  if (state?.phase !== 'end') return null;
+  const settlement = settle(state);
+  const ledger = session.ledger;
+  const projected = applySettlement(
+    {
+      perPoint: ledger.perPoint,
+      startBalance: ledger.startBalance,
+      balances: ledger.balances,
+      entries: [],
+    },
+    settlement,
+    session.rules,
+  );
+  const winner = settlement.winner;
+  const names = session.names;
+  return {
+    view: toSettlementView({
+      settlement,
+      captured: [state.seats[0].captured, state.seats[1].captured],
+      names,
+      unit: session.toJSON().unit,
+      perPoint: ledger.perPoint,
+      amount: winner === null ? 0 : projected.balances[winner] - ledger.balances[winner],
+      before: ledger.balances,
+      after: projected.balances,
+    }),
+    instant: settlement.instantPayouts.map((p) => ({
+      label: INSTANT_LABEL[p.kind] ?? p.kind,
+      name: names[p.to],
+      points: p.points,
+    })),
+    nextCarry: winner === null ? settlement.nextCarry : null,
   };
 }
 

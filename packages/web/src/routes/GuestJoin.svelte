@@ -3,7 +3,7 @@
   import type { MoneyUnit } from '../lib/view-types.ts';
   import type { TimerSettings } from '@p2p-gostop/protocol';
   import { REMOTE_ERROR_MESSAGES } from '../p2p/remote-messages.ts';
-  import type { RemoteErrorCode } from '../p2p/remote.ts';
+  import type { RemoteErrorCode, RemoteState } from '../p2p/remote.ts';
 
   export type GuestConnection =
     'idle' | 'connecting' | 'open' | 'closed' | 'replaced' | 'stopped' | 'rejected';
@@ -28,15 +28,7 @@
 
   export interface RemoteJoinView {
     mode: 'link' | 'code' | 'resume';
-    state:
-      | 'idle'
-      | 'checking'
-      | 'creating'
-      | 'waiting'
-      | 'connected'
-      | 'reconnecting'
-      | 'ended'
-      | 'error';
+    state: RemoteState;
     error?: RemoteJoinError | undefined;
     peerPresent: boolean;
     reconnectAttempt?: number | undefined;

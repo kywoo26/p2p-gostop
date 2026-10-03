@@ -20,7 +20,15 @@ import type {
 
 /** 원격 방 연결의 UI 상태. */
 export type RemoteState =
-  'idle' | 'checking' | 'creating' | 'waiting' | 'connected' | 'reconnecting' | 'ended' | 'error';
+  | 'idle'
+  | 'checking'
+  | 'creating'
+  | 'waiting'
+  | 'admitting'
+  | 'connected'
+  | 'reconnecting'
+  | 'ended'
+  | 'error';
 
 /** 원인별 복구/안내에 사용할 코드. 사용자에게 보여 줄 문구는 UI가 결정한다. */
 export type RemoteErrorCode =
@@ -766,6 +774,8 @@ class HostController extends SnapshotSource implements RemoteHostController {
     if (!this.transport?.sendControl({ t: 'relay-accept', requestId, token: token32() }))
       throw new RemoteFailure('network');
     this.removeRequest(requestId);
+    // 승인 송신은 게임 hello 완료가 아니다. 연결 통지가 오기 전에는 새 요청 대기와 구별한다.
+    if (!this.value.peerPresent) this.update({ state: 'admitting' });
   }
 
   deny(requestId: string): void {

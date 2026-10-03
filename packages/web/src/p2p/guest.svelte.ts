@@ -29,9 +29,13 @@ import {
 import {
   AutoChoice,
   latestBalanceChanges,
+  remoteResultKey,
+  remoteResultVisible,
   type GameController,
   type GameStats,
   type PushDecision,
+  type DisplayRoundResult,
+  type RemoteRoundResult,
 } from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
@@ -126,6 +130,9 @@ export class GuestGame implements GameController {
   private pushPending = $state(false);
   private roundInstant: EngineEvent[] = [];
   private disposed = false;
+  private roundResults = $state.raw<readonly RemoteRoundResult[]>([]);
+  private resultEpoch: string | null = null;
+  private resetResultSnapshot = false;
   private autoHeld = true;
   private timerVersion = $state(0);
   private clockReceivedAt = 0;
@@ -298,6 +305,94 @@ export class GuestGame implements GameController {
     return this.bankruptSeats.includes(ME);
   }
 
+  private cacheRoundResult(
+    view: BoardView,
+    ended?: Extract<EngineEvent, { type: 'RoundEnded' }>,
+  ): void {
+    const epoch = this.session.epoch;
+    if (
+      epoch === null ||
+      view.phase !== 'end' ||
+      (this.session.status !== null && view.round !== this.session.status.round)
+    )
+      return;
+    const existing = this.roundResults.find(
+      (result) => result.identity.epoch === epoch && result.identity.round === view.round,
+    );
+    const summary = this.settlementSummary();
+    if (
+      ended === undefined &&
+      existing?.displaySeq === view.eventSeq &&
+      existing.committed === (summary !== null)
+    )
+      return;
+    const identity = existing?.identity ?? {
+      epoch,
+      round: view.round,
+      terminalSeq: view.eventSeq,
+      viewer: ME,
+    };
+    const priorPublic = existing && 'publicResult' in existing ? existing.publicResult : null;
+    const result: RemoteRoundResult = {
+      key: existing?.key ?? remoteResultKey(identity),
+      identity,
+      displaySeq: view.eventSeq,
+      acknowledged: existing?.acknowledged ?? false,
+      presented: existing?.presented ?? false,
+      committed: summary !== null,
+      ...(summary !== null
+        ? { summary }
+        : {
+            summary: null,
+            publicResult: {
+              names: [view.seats[0].name, view.seats[1].name] as const,
+              scores: [view.seats[0].score, view.seats[1].score] as const,
+              winner:
+                ended !== undefined
+                  ? ended.winner
+                  : (priorPublic?.winner ??
+                    (view.legal.some((action) => action.type === 'push' && action.seat === ME)
+                      ? ME
+                      : undefined)),
+              reason: ended?.reason ?? priorPublic?.reason,
+            },
+          }),
+    };
+    this.roundResults = [
+      ...this.roundResults.filter(
+        (item) =>
+          item.identity.epoch === epoch &&
+          item.identity.round >= this.playback.board.round &&
+          item.identity.round !== view.round,
+      ),
+      result,
+    ];
+  }
+
+  get pendingRoundResult(): DisplayRoundResult | null {
+    if (this.disposed) return null;
+    const result = this.roundResults.find(
+      (item) => item.identity.round === this.playback.board.round,
+    );
+    return result && remoteResultVisible(this.playback, result, this.session.epoch) ? result : null;
+  }
+
+  markRoundResultPresented(key: string): void {
+    if (this.pendingRoundResult?.key !== key) return;
+    if (this.roundResults.find((item) => item.key === key)?.presented) return;
+    this.roundResults = this.roundResults.map((item) =>
+      item.key === key ? { ...item, presented: true } : item,
+    );
+  }
+
+  acknowledgeRoundResult(key: string): void {
+    const result = this.pendingRoundResult;
+    if (result?.key !== key || result.acknowledged) return;
+    this.roundResults = this.roundResults.map((item) =>
+      item.key === key ? { ...item, acknowledged: true } : item,
+    );
+  }
+
   get pushDecision(): PushDecision | null {
     const view = this.view;
     if (
@@ -311,7 +406,7 @@ export class GuestGame implements GameController {
     return {
       winner: canPush,
       canPush,
-      nextMultiplier: 2 ** ((view.pushes ?? 0) + 1),
+      nextMultiplier: view.pushes === undefined ? null : 2 ** (view.pushes + 1),
       acceptAmount: null,
       forfeitedPoints: null,
     };
@@ -418,7 +513,13 @@ export class GuestGame implements GameController {
 
   /** 세션 상태를 화면 상태로 옮긴다 (onChange) */
   private sync(): void {
+    if (this.disposed) return;
     const s = this.session;
+    if (s.epoch !== this.resultEpoch) {
+      this.resetResultSnapshot = this.resultEpoch !== null;
+      this.resultEpoch = s.epoch;
+      this.roundResults = [];
+    }
     this.connection = s.connection;
     this.hostPresent = s.hostPresent;
     this.stage = s.status?.stage ?? null;
@@ -440,6 +541,7 @@ export class GuestGame implements GameController {
     if (s.settlement !== null || this.stage !== 'settled') this.pushPending = false;
     if (this.persist) saveGuestState(this.name, s.toJSON());
     this.seq = s.seq;
+    if (!this.resetResultSnapshot && s.view !== null) this.cacheRoundResult(s.view);
     if (
       s.decision !== null &&
       (s.decision.timerRev !== this.lastClockRevision ||
@@ -454,6 +556,7 @@ export class GuestGame implements GameController {
   }
 
   private after(raw: string): void {
+    if (this.disposed) return;
     const parsed = decode(raw, 'host');
     if (!parsed.ok) return;
     this.handle(parsed.message);
@@ -474,10 +577,14 @@ export class GuestGame implements GameController {
         break;
       case 'snapshot':
         // GuestSession은 순번이 뒤로 가지 않는 스냅샷만 받는다(호스트 복원은 welcome의 세대로 되감는다)
-        if (s.seq !== m.seq) break;
+        if (s.seq !== m.seq || s.view?.eventSeq !== m.seq || s.view.round !== m.view.round) break;
         this.awaiting = null;
         this.started = true;
-        this.playback.enqueue([], m.view);
+        if (this.resetResultSnapshot) {
+          // 호스트 복원의 새 세대는 직접 확정 스냅이다. 이전 표시/재생 세대를 이어 붙이지 않는다.
+          this.playback.reset(s.view, this.settlementSummary());
+          this.resetResultSnapshot = false;
+        } else this.playback.enqueue([], m.view);
         this.maybeSettled(m.view);
         break;
       case 'expiryCheck':
@@ -520,6 +627,10 @@ export class GuestGame implements GameController {
     view: BoardView,
     acceptedPlayTarget?: AcceptedPlayTarget,
   ): void {
+    this.cacheRoundResult(
+      view,
+      list.findLast((event) => event.type === 'RoundEnded'),
+    );
     if (list.some((e) => e.type === 'Dealt')) this.roundInstant = [];
     for (const e of list) if (e.type === 'InstantPayout') this.roundInstant.push(e);
     // 보낸 액션 뒤의 첫 묶음이 그 응답이다 (좌석 1은 자기 차례에만 보낸다). 탭→재생 끝 시간을 잰다(AC-06)
@@ -603,14 +714,35 @@ export class GuestGame implements GameController {
 
   /** 정산 화면 → 다음 판 요청 (시작은 호스트, #26) */
   nextRound(): void {
-    if (this.stage === 'bankrupt' || this.pushDecision !== null) return;
+    if (
+      this.disposed ||
+      this.playback.busy ||
+      this.playback.settlement === null ||
+      !this.pendingRoundResult?.acknowledged ||
+      this.stage === 'bankrupt' ||
+      this.pushDecision !== null
+    )
+      return;
+    const displayedRound = this.playback.board.round;
     this.playback.release();
+    // 먼저 도착한 다음 판을 여는 조작은 그 새 판의 ready/받기 동의가 아니다.
+    if (displayedRound !== this.session.status?.round) return;
     this.ready = true;
     this.session.requestNextRound();
   }
 
   choosePush(push: boolean): void {
-    if (!this.pushDecision?.winner || this.pushPending || this.ready || this.link !== 'open')
+    if (
+      this.disposed ||
+      !this.pendingRoundResult?.acknowledged ||
+      !this.playback.idle ||
+      this.playback.board.round !== this.view?.round ||
+      this.playback.board.eventSeq !== this.view?.eventSeq ||
+      !this.pushDecision?.winner ||
+      this.pushPending ||
+      this.ready ||
+      this.link !== 'open'
+    )
       return;
     if (push) {
       this.pushPending = true;

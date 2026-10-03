@@ -60,14 +60,20 @@
 
   const pb = $derived(controller.playback);
   const pendingResult = $derived(controller.pendingRoundResult ?? null);
-  const summary = $derived(pb.settlement ?? pendingResult?.summary ?? null);
-  const pushDecision = $derived(
-    controller.mode === 'solo'
-      ? pendingResult?.acknowledged && pb.idle
-        ? controller.pushDecision
-        : null
-      : controller.pushDecision,
+  const summary = $derived((!pb.busy ? pb.settlement : null) ?? pendingResult?.summary ?? null);
+  const displayedPending = $derived(
+    pendingResult?.committed && pendingResult.acknowledged && !pb.busy && pb.settlement !== null
+      ? null
+      : pendingResult,
   );
+  const pushDecision = $derived(
+    pendingResult?.acknowledged && pb.idle ? controller.pushDecision : null,
+  );
+  $effect(() => {
+    const c = controller;
+    const result = pendingResult;
+    if (result !== null) untrack(() => c.markRoundResultPresented?.(result.key));
+  });
   const autoCandidate = $derived(automaticAction(pb.board));
   let root = $state<HTMLElement | null>(null);
 
@@ -317,7 +323,10 @@
   data-play-plans={playPlans}
 >
   <p class="timer-announcement" role="status">{timerAnnouncement}</p>
-  <div class="board-wrap" inert={summary !== null || pushDecision != null || menuOpen || ended}>
+  <div
+    class="board-wrap"
+    inert={summary !== null || pendingResult !== null || pushDecision != null || menuOpen || ended}
+  >
     <Board
       view={pb.board}
       monthStacks
@@ -381,7 +390,7 @@
         >기록 보기</button
       >
     </div>
-  {:else if summary || pushDecision}
+  {:else if summary || displayedPending || pushDecision}
     <div class="overlay" inert={menuOpen}>
       <Settlement
         view={summary?.view ?? null}
@@ -389,7 +398,7 @@
         instant={summary?.instant ?? []}
         nextCarry={summary?.nextCarry ?? null}
         decision={pushDecision}
-        pending={pendingResult}
+        pending={displayedPending}
         onacknowledge={(key) => controller.acknowledgeRoundResult?.(key)}
         guest={controller.mode === 'guest'}
         onpush={(push) => controller.choosePush(push)}
