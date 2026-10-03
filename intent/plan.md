@@ -334,13 +334,13 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 [AI-native SDLC playbook의 Build](https://claude.com/blog/the-ai-native-sdlc-playbook)는 파일·순서·위험·증명, 수락된 계획 commit, 구현 이탈의 같은 commit 동기화, 단계 산출물의 다음 단계 연결과 정본 지정을 권고한다. 아래는 이 프로젝트의 적용이며 원문의 서비스·hooks·자동화 도입을 뜻하지 않는다. 기존 `intent/intent.md → intent/spec.md → intent/plan.md → 코드`를 유지한다.
 
 - 착수할 변경은 이슈/요구 ID, 기준 SHA, 사용자 결과, 소유 파일, 구현 순서, 위험, 증명, 선행 소유권, 수락 기록을 적는다. 미착수 backlog는 다음 준비 조건만 두고 세부 계획을 확정한 것으로 표시하지 않는다.
-- 기존 사용자 승인 아래 통상 구현은 root가 범위·인계를 수락하면 구현 브랜치에 계획 commit을 만들고 바로 재현·구현·검증한다. 별도 문서 PR 병합을 기다리지 않는다. 실질 spec 변경은 근거 리뷰와 사용자 승인을 유지한다. 승인된 작업에 별도 승인 질문을 반복하지 않는다.
-- 계획 commit은 자기 SHA를 같은 파일에 적을 수 없으므로 PR 본문에 실제 full SHA와 수락 기록 참조를 남긴다. 이슈에는 PR/계획 commit 링크를 연결한다. 구현 이탈은 이유·승인 범위와 함께 코드와 같은 commit에서 계획을 갱신한다. #213/#214/#206에는 소급 승인·가짜 최초 계획 SHA를 만들지 않고 현재부터 보완한다.
+- 기존 사용자 승인 아래 통상 구현은 root가 범위·인계를 수락하면 바로 재현·구현·검증한다. 계획 commit·PR 작성은 위임으로 승인된 경우에만 수행한다. 위임되지 않았으면 commit/push/PR 없이 기준 SHA·계획·수락 기록을 호출자에게 인계하고 승인된 소유 범위에서 구현한다. 별도 문서 PR 병합을 기다리지 않는다. 실질 spec 변경은 근거 리뷰와 사용자 승인을 유지한다. 승인된 작업에 별도 승인 질문을 반복하지 않는다.
+- 계획 commit·PR 작성이 위임된 경우 PR 본문에 실제 full SHA와 수락 기록 참조를 남기고 이슈에는 PR/계획 commit 링크를 연결한다. commit 전 인계는 기준 SHA·계획 내용·수락 기록과 실제 diff를 연결하며 가짜 계획 SHA를 만들지 않는다. 구현 이탈은 이유·승인 범위와 함께 계획에 기록하고, commit이 위임된 시점에 코드와 같은 commit으로 동기화한다. #213/#214/#206에는 소급 승인·가짜 최초 계획 SHA를 만들지 않고 현재부터 보완한다.
 
 | 단계 | 산출물·다음 단계 trigger |
 |---|---|
 | 의도·요구 | `intent/intent.md`의 목적과 `intent/spec.md` ID/수락 범위를 확인 → 실행계획 작성. 실질 요구 변경은 사용자 승인 뒤 진행 |
-| 계획·구현 | root 수락 기록 + 계획 commit → 소유 파일의 재현·코드·검증; 이탈은 같은 commit에 동기화 |
+| 계획·구현 | root 수락 기록 + 기준 SHA·계획 인계 → 소유 파일의 재현·코드·검증; commit·PR이 위임된 경우 계획 commit을 연결하고 이탈은 코드와 같은 commit에 동기화 |
 | 검토·출하 | PR의 계획 SHA·실제 diff·검증/한계 → 독립 reviewer 판정 + 병합 대상 동일 head 필수 CI → 사람 또는 지시받은 root의 병합·출하 |
 | 후속 | 사람 관측·결함은 기존 이슈/§3-2에 결과와 미완 범위를 연결 → 다음 필요한 변경 준비; 실기기 결과를 추정하지 않음 |
 
@@ -377,7 +377,23 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 ### MAINT-01 검증 명령·에이전트 지침 정합 (NF-08·NF-09, 진행)
 
 - 사용자 요청에 따라 정비 총괄과 독립 구현 담당을 분리했다. 첫 범위는 `verify`의 Chromium worker 4 / WebKit worker 1 순차 실행, 개발 Docker 삭제 역사와 운영 relay 구분, 명시 위임 없는 계획 커밋 금지의 세 가지다. 기존 검증 순서·full E2E·CI·의존성은 유지한다.
-- JSON·명령 구문·역치환 및 소유 밖 바이트 검토를 마쳤다. 이 변경에서 전체 시험을 새로 실행했다고 주장하지 않으며 게시 전 검사·CI·리뷰는 남아 있다. 네트워크 시험의 기본 진입점 누락 가능성, 활성 기술 문서 정합과 서버 재사용 귀속은 별도 후속으로 조사한다. 문서 증가 자체를 완료 기준으로 삼지 않는다.
+- JSON·명령 구문·역치환 및 소유 밖 바이트 검토 후 최초 설치·lint·check를 통과했다. 설치 추가 262개와 registry 버전 대조 256개를 구분한다. 게시 head `adc528e`의 CI는 통과했으며 독립 리뷰에서 발견한 계획 commit 조건 불일치를 계약 3줄에서 정정했다. 새 main 통합 head의 CI·리뷰는 별도로 확인한다. 이 변경의 검증 명령 자체를 전체 실행했다고 주장하지 않는다. 네트워크 시험의 기본 진입점 누락 가능성, 활성 기술 문서 정합과 서버 재사용 귀속은 별도 후속으로 조사한다. 문서 증가 자체를 완료 기준으로 삼지 않는다.
+
+
+### RP-UI01 참가 상태·결과 확인 순서 (#242·#131, 진행; FR-05/06/18·NF-05·UX-24)
+
+- #242는 참가 요청 대기, 수락 후 연결 확인, 참가자 연결과 게임 준비를 구분한다. 시작 가능 조건은 연결 상태·상대 존재·게임 준비에 맞춘다. 방이 남아 있는 오류에는 기존 retry의 다시 연결 버튼을 제공하며 재연결 중 중복 실행을 막는다. 화면 재생성·controller 교체 때 이전 구독을 정리한다. GuestJoin의 상태 타입은 공유 RemoteState로 맞추되 게스트 동작 분기는 바꾸지 않는다.
+- #242 표적 Chromium16은 모두 통과했다. 상태7·기존 조건·실제 unmount/remount/controller 교체·이전 controller 발행 무시·stale peer·오류 retry/중복 방지까지 도달했다. 실제 settings 경로 E2E나 실제 network retry 성공의 대체는 아니다. 초기13의 4통과/9실패는 exact 전체 문구 기대의 착오였고 원문을 보존했으며, 보정 후13통과와 회복 경계 추가 후16통과를 합산하지 않는다.
+- #131은 최종 재생 완료 후 결과를 먼저 읽고 로컬 결과 확인을 거쳐 기존 권한의 받기/밀기·다음 판을 선택한다. 결과 확인은 송신·원장 변경·상대 동의가 아니다. epoch/round/종료 순번/시점 좌석의 key로 중복·옛 확인을 막으며, 이미 확정된 같은 결과의 순번 변경은 확인을 유지한다. 게스트 복귀에 없는 승자·사유·금액을 추정하지 않는다. Solo 기본 확정 summary와 공개 게스트의 nullable summary를 구별한다.
+- 미래 판이 먼저 도착해도 공개 Playback 정산 hold의 완료 증거로 이전 판 결과를 유지한다. 이전 판의 다음 버튼은 이미 진행한 권위 판에 ready를 보내지 않는다. 새 epoch의 첫 유효 snapshot은 공개 reset으로 이전 재생 세대를 무효화하며 duplicate/stale/거절은 reset하지 않는다. 엔진·프로토콜 정산·저장 권위·Playback 내부 큐를 변경하거나 원장 적용을 로컬 확인까지 지연하지 않는다.
+- 원 manual Stop 조건은 busy 중 받기/밀기 화면 노출로 실패했다. 후속 C10은 8통과/2시험 locator 실패, scoped2는 같은 viewport 고정 overlay의 pointer 간섭으로2실패했다. guest만 렌더한 영향3 보정은 host를 공개 getter/key/ack로 구동하고 guest 실제 UI를 검증했다. 원 실패·시험 의미 변경·후행 미도달을 보존한다.
+- 최신 Chromium 표적18은 remote9·기존 Solo225 2·session2·wiring5 모두 통과(원JSON50 중32이름 미선택)했다. 새 committed-summary epoch1은 정상 저장 snapshot의 금액/summary 복원과 이전 future 재생 완료 뒤에도 round1/summary/원장이 보존되는 두 경계를 한 시험으로 확인했다. host 실제 UI와 guest-only fixture의 수용 범위를 구별한다.
+- 후속 E2E는 full 필터의 정확10제목을 Chromium project/worker1/retry0으로 한 번 실행해10통과·실행 skip0이었다. 내부 WebKit guest를 쓰는5건과 Chromium context만 쓰는5건을 구별한다. 참가·복귀/호스트 부재·여러 판 원장·자동 단일 수·밀기/명시 선택의 기존 후행 검사를 유지했다. 원 webServer 빌드1의 새 dist149와 시작/종료 소스·바이트를 연결했다. 이는 WebKit-host recovery3이나 PR/full 전체 행렬 수용이 아니다.
+- full check 통과와 privacy 시험16통과를 보존한다. 기존 privacy 등록7개의 원문·fingerprint가 같은 상태에서 줄 번호만 이동해 초기 lint가 멈춘 원문을 남겼다. 등록 수149·path/type/hash/reason은 유지한 채 정확7줄 위치만 정합하고 privacy 검사와 미도달 Oxc/web lint를 각각 통과했다. 새 credential 허용이나 검출 규칙 완화는 없다.
+- 사용자 후속 확인은 “마지막 패를 직접 눌렀는데 결과를 볼 틈 없이 선택창이 떴다”이다. 자동 패 제출·시간 만료로 해석하지 않는다. 마지막 손패 자동 Stop의 엔진 벡터와 규칙 문서 간 정합은 별도 미완이며, 이 UI 수정으로 규칙 정답을 확정하지 않는다.
+- 필수 묶음은 Node589·Chromium/WebKit 각각569·Android JUnit93과 APK 웹 자산149 일치를 확인했다. PR smoke는457통과·참가 화면 locator 중복1실패·의존 timing2미실행이었다. 당시 snapshot 옵션은 요청한 none이 아닌 기본 missing이었으나 기준140개 전후 경로·바이트는 같았다. 기존 참여 요청 영역으로 locator만 한정한 후속 C1과 미실행 timingC2는 explicit none/worker1/retry0으로 각각 통과했다. 원 실패·옵션 차이와 후속 결과는 분리 보존한다. 후속은 동일 dist149의 private preview adapter이며 재빌드하지 않았다.
+- exact commit CI·독립 review·실기기 수용은 남아 있다. 운영 중계기·릴리스·기준샷·timeout은 바꾸지 않는다.
+
 
 ### SK3-HF01 v0.5.1 Android 출시 부팅 회귀 (진행; FR-31·NF-10·§5)
 
