@@ -42,6 +42,7 @@
 
         <activity
             android:name=".GameActivity"
+            android:theme="@style/Theme.P2PGostop.Game"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|fontScale|density|keyboardHidden"
             android:exported="false"
             android:launchMode="singleTask"

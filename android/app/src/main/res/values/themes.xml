@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.P2PGostop" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+    <style name="Theme.P2PGostop" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/panel</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <!-- API 33~34의 불투명 상태바. API 35 이상은 창/컨테이너 배경을 그린다. -->
+        <item name="android:statusBarColor">@color/panel</item>
+    </style>
+
+    <style name="Theme.P2PGostop.Game" parent="Theme.P2PGostop">
+        <item name="android:windowBackground">@color/game_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/game_surface</item>
+    </style>
 </resources>

@@ -374,6 +374,16 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
 
+### Android 상단 시스템 바 대비 (#244, FR-31·NF-08·UX-24)
+
+| 범위 | 상태 | 검증과 남은 경계 |
+| --- | --- | --- |
+| 기본 화면·게임 화면의 상태바 대비 | 최소 테마 수정·Android 유한 검증 완료, 실기기 수용 대기 | 기본 화면은 밝은 배경/어두운 아이콘, 게임은 기존 어두운 배경/밝은 아이콘을 명시한다. 투명 상태바 아래 게임 컨테이너도 같은 불투명 배경으로 그린다. |
+
+- 기준 `f34528927139ef7477f33becd25993569567909e` 위 Android 제품 4파일은 테마·색·GameActivity 테마 연결·게임 컨테이너/WebView 배경만 바꾼다. 기존 inset 계산/소비, uiMode 처리, WebView 수명·네트워크, 탐색 바 정책은 유지한다. API 33/34의 상태바 색과 API 35/36의 투명 상태바 아래 앱 배경을 구분하며 edge-to-edge opt-out은 추가하지 않는다. 사용자의 기기/OS/실제 아이콘 색은 아직 미확인이므로 원인 확정이나 실기기 해결로 기록하지 않는다.
+- 같은 working Android 5파일(제품 4+시험 1)과 승인된 v0.5.1 웹 번들 149파일에서 Gradle 한 호출로 실제 리소스 상속·Activity 연결·불투명 색 대비 계약 시험 3건이 통과했다. 해당 class 외 JVM 시험은 미실행이다. packageDebug·완성 APK 149파일 전수 검사·lint 분석/보고는 실제 실행했고 lint issues는 0이다. 기존 검사기 8건은 UP-TO-DATE여서 신규 실행으로 합산하지 않는다. configuration cache는 stored이며 실제 source 수정 전후 바이트는 같다.
+- 이 APK는 수정 중 소스의 debug 산출물(versionCode751, versionName `0.5.1-dirty`)이며 배포본이 아니다. JDK/XML·빌드·자산 검사는 실제 상태바 아이콘, 잘림, 인셋 배치를 증명하지 않는다. [사람 검증 절차](../docs/device-test/procedure.md#78-android-상태바-대비-244)를 적용하고 사람이 제공한 결과만 기록한다. 최종 CI·리뷰·병합·배포는 별도다.
+
 ### SK3-HF01 v0.5.1 Android 출시 부팅 회귀 (진행; FR-31·NF-10·§5)
 
 - 사용자 관측은 v0.5.0 APK를 기존 앱 위에 업데이트한 직후 `불러오는 중…`에서 정지한 것이다. 기준 main `f13909bb42e8e517bb284d47b3dfcbf14d202b75`, 공개 APK SHA-256 `87efeb056dcd41f0df9f4386af205f9e7fe7b29b681bc3859596999333b55f86`의 실제 `assets/web`는 68파일이며 `_app`는 0파일이다. APK 자체의 HTML 초기 참조 32개가 모두 누락되어 start/app 동적 import도 실패한다. 이번 비교기에 사용한 기대값은 별도로 고정한 before-dist 149파일이며, 이 기대값 대비 공개 APK의 missing81을 검출했다. 이를 원 v0.5.0 release 입력의 전수 바이트 attestation으로 해석하지 않는다. 원 release 입력 전체 바이트는 이번 대조에서 독립 확인하지 않았다. 기존 CI·서명·체크섬 성공은 이 패키징 누락을 검출하지 못했으며 실기기 정상 증거로 쓰지 않는다.
