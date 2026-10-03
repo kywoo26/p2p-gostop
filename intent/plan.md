@@ -600,6 +600,17 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 |---|---|---|---|
 | UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 P1 수정은 최종 head `6c9d3ff`에서 독립 재검토 완료 후 병합됐다. 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 회귀를 보존한다. [PR #188](https://github.com/kywoo26/p2p-gostop/pull/188)·[동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36729441463). | 재등장 경계 재검토 완료(자동 검사 범위). Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
 
+### RP-OPS01 운영 재사용·원격 측정 후속 (진행; FR-RP-07·NP-RP-07/08·NF-RP-02/05/06·AC-RP-06)
+
+사용자 후속 위임의 기준은 main `f34528927139ef7477f33becd25993569567909e`/v0.5.1이다. 기존 v0.5.1 운영은 그대로 유지하고 별도 개발 branch의 `tools/relay`만 개선한다. 실행 중인 wrapper·release 저장소·Funnel·container·기존 자격에는 이 변경을 적용하지 않는다. [운영·측정 설계](../docs/design/relay-operations.md)와 [명령 runbook](../tools/relay/README.md)을 연결한다. 라이브 적용·병합은 최종 검토 뒤 별도 운영 단계이며, 신규 의존성·protocol·방 persistence·게임 권위·UI 변경은 없다.
+
+| 단위 / 소유 | 구현·검증 경계 | 상태·남은 판정 |
+| --- | --- | --- |
+| RP-OPS01-A / 동일 구현자, 총괄 문서 | preflight/status·같은 버전 비파괴 start, exact release/검증 artifact 사전 준비, 소유권·잠금·활성 연결 거절, 명시적 세션 손실 확인 뒤 apply/restart와 소유 자원만 rollback. legacy는 원 wrapper로 종료·marker 처리 후 새 절차 초기화; 운영 대신 격리 fixture로 검증 | 구현·격리 검토 진행. review01에서 lifecycle 35건을 PowerShell Core 7.6.6/Desktop 5.1 각각 통과, Node 자산 검사 3건·기존 ownership43/native8/runtime9 통과. review02는 running 복구의 자산 검증 실패 뒤 명시 복구가 막히는 원 FAIL을 재현하고, 최소 수정 후 같은 반례 1건을 두 runtime에서 각각 통과했다. 이전 35건을 최신 delta 실행으로 소급하지 않는다. 승인 ZIP 149파일·초기 참조32·기존 served hash 대조 완료. 최종 규범 검사·immutable/PR·CI·실제 운영 적용은 별도 미완 |
+| RP-OPS01-B / 동일 구현자 측정, 총괄 해석 | 기존 AC-RP-01 paired C1(내부 WebKit guest), worker1/retry0/instant, 방1·판1·다음 판1. 보존 same-source dist·격리 loopback 공개 relay/TLS만. 원 hardassert/180초 시험·120초 진행 한도 불변 | 격리 C1/내부 W guest 1회 PASS(3.803초, retry0); N13=events12/reject1, 미응답·재송신0, M18(host9/guest9). 정산·잔액 일치·다음 판 원 hardassert/종료 정리 확인. 거절 원인은 미수집, request↔DOM 상관·WAN RTT·paint·실기기·성능 수용은 미검증 |
+
+Rooms의 방·코드·인증은 process-memory이며 프로세스 교체 시 종료된다(NP-RP-07). TCP 연결0은 방0을 증명하지 않고 rollback도 기존 방·토큰을 복구하지 않는다. 사전 준비로 중단 구간을 줄이는 절차이지 무중단 전환이 아니다. 이미 있는 방 수명·송신 한도·heartbeat를 새 미구현 기능으로 세지 않는다. 우선순위2~5는 실행 계획만 정리하고 이번에는 실험을 추가하지 않는다. 기존 local/main timing·재시도 PASS·실기기 미검증 이력은 원격 성능 증거와 분리해 보존한다.
+
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 
 | ID                | 상태 | 코드·검증 근거                                                                                                                                                                                                                                                                                                              | 남은 항목                                                                                 |

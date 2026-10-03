@@ -1,9 +1,9 @@
 # FR-RP-07 / NF-RP-06 / RP-03B. ASCII source for Windows PowerShell 5.1.
-param([Parameter(Mandatory = $true)][ValidateSet('start', 'stop')][string]$Action)
+param([ValidateSet('start', 'stop')][string]$Action, [switch]$Library)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'native.ps1')
 . (Join-Path $PSScriptRoot 'ownership.ps1')
-Write-Host ("Runtime: {0} {1}" -f $PSVersionTable.PSEdition, $PSVersionTable.PSVersion)
+if (-not $Library) { Write-Host ("Runtime: {0} {1}" -f $PSVersionTable.PSEdition, $PSVersionTable.PSVersion) }
 $Repo = $env:RELAY_WSL_REPO
 $Docker = $null
 $Target = 'http://127.0.0.1:17777'
@@ -158,7 +158,7 @@ function CleanupRelayInvocation($Run) {
   }
   if ($clean) { RemoveRelayLogs $Run.Lease; RemoveRelayLease $Run.Lease }
 }
-function InvokeRelayStart {
+function InvokeRelayStart([string]$RunId) {
   $run = [pscustomobject]@{ Lease = $null; Process = $null; ComposeAttempted = $false }
   $succeeded = $false
   try {
@@ -188,7 +188,7 @@ function InvokeRelayStart {
     if ($releaseInput -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { Fail 'Use the matching release tag or set RELAY_RELEASE to vMAJOR.MINOR.PATCH.' }
     $script:Release = $releaseInput
     $tag = (Wsl 'git rev-parse --short=12 HEAD' | Out-String).Trim()
-    $lease = NewRelayLease $dns $tag (RelayImageId $tag)
+    $lease = NewRelayLease $dns $tag (RelayImageId $tag) $RunId
     EnsureSecret
     WriteRelayLease $lease
     $run.Lease = $lease
@@ -218,7 +218,8 @@ function InvokeRelayStart {
     $succeeded = $true
     return 0
   } catch {
-    [Console]::Error.WriteLine("Start failed: $_")
+    if ($Library) { [Console]::Error.WriteLine('Owned start failed; native details are withheld.') }
+    else { [Console]::Error.WriteLine("Start failed: $_") }
     return 4
   } finally {
     if (-not $succeeded) { CleanupRelayInvocation $run }
@@ -251,4 +252,4 @@ function InvokeRelayAction([string]$RequestedAction) {
   } catch { [Console]::Error.WriteLine("Relay operation refused: $_"); return 2 }
   finally { if ($lock) { $lock.Dispose() } }
 }
-exit (InvokeRelayAction $Action)
+if (-not $Library) { exit (InvokeRelayAction $Action) }
