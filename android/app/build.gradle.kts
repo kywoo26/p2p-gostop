@@ -67,6 +67,15 @@ android {
     namespace = "com.kywoo26.p2pgostop"
     compileSdk = 36
 
+    androidResources {
+        // AGP asset merge의 기본 10개 중 Kit의 _app을 지우는 <dir>_*만 제외한다.
+        // 숨김/VCS/편집기 파일을 무시하는 나머지 9개 규칙은 그대로 유지한다.
+        ignoreAssetsPatterns.addAll(listOf(
+            "!.svn", "!.git", "!.ds_store", "!*.scc", ".*",
+            "!CVS", "!thumbs.db", "!picasa.ini", "!*~",
+        ))
+    }
+
     defaultConfig {
         applicationId = "com.kywoo26.p2pgostop"
         minSdk = 33
@@ -132,6 +141,9 @@ android {
         disable += "OldTargetApi"
     }
 }
+
+// 완성 APK의 전체 웹 자산을 검사한다. dist가 없는 서명 잡은 복사된 입력을 비교한다.
+apply(from = rootProject.file("gradle/verify-apk-web-assets.gradle.kts"))
 
 dependencies {
     implementation(libs.ktor.server.core)
