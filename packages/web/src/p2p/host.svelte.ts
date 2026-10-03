@@ -34,9 +34,13 @@ import { pushOffer, toRecordRow } from '../game/adapter.ts';
 import {
   AutoChoice,
   latestBalanceChanges,
+  remoteResultKey,
+  remoteResultVisible,
   type GameController,
   type GameStats,
   type PushDecision,
+  type DisplayRoundResult,
+  type RemoteRoundResult,
 } from '../game/controller.ts';
 import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
@@ -46,7 +50,13 @@ import { emptyBoard, random32, randomHex, vibrateFor } from './common.ts';
 import { linkStateOf, openLink, type LinkState, type RelayPeer } from './link.ts';
 import type { RelayAddress } from './role.ts';
 import { HostSaveStore, saveTimerPreference, type HostConfig, type HostSave } from './host-save.ts';
-import { hostBoard, hostEvents, hostSummary, type PendingAction } from './host-view.ts';
+import {
+  hostBoard,
+  hostEvents,
+  hostSummary,
+  pendingHostSummary,
+  type PendingAction,
+} from './host-view.ts';
 import { SessionPort } from './session-port.ts';
 
 // 호출자의 공개 import 경로를 유지한다.
@@ -121,6 +131,7 @@ export class HostGame implements GameController {
   private settledRound = 0;
   private clock: ReturnType<typeof setInterval> | null = null;
   private disposed = false;
+  private roundResults = $state.raw<readonly RemoteRoundResult[]>([]);
   private autoHeld = true;
   private readonly autoChoice = new AutoChoice(
     () => ({ view: this.board(), ready: !this.autoHeld && this.canAct && this.link === 'open' }),
@@ -234,6 +245,73 @@ export class HostGame implements GameController {
 
   get bankrupt(): boolean {
     return this.bankruptSeats.includes(ME);
+  }
+
+  private cacheRoundResult(): void {
+    const session = this.session;
+    const board = this.board();
+    if (session === null || board?.phase !== 'end' || board.round !== session.roundNumber) return;
+    const existing = this.roundResults.find(
+      (result) => result.identity.epoch === session.epoch && result.identity.round === board.round,
+    );
+    if (
+      existing?.displaySeq === board.eventSeq &&
+      existing.committed === (session.settlement !== null)
+    )
+      return;
+    const summary = hostSummary(session) ?? pendingHostSummary(session);
+    if (summary === null) return;
+    const identity = existing?.identity ?? {
+      epoch: session.epoch,
+      round: board.round,
+      terminalSeq: board.eventSeq,
+      viewer: ME,
+    };
+    const result: RemoteRoundResult = {
+      key: existing?.key ?? remoteResultKey(identity),
+      identity,
+      displaySeq: board.eventSeq,
+      summary,
+      acknowledged: existing?.acknowledged ?? false,
+      presented: existing?.presented ?? false,
+      committed: session.settlement !== null,
+    };
+    this.roundResults = [
+      ...this.roundResults.filter(
+        (item) =>
+          item.identity.epoch === session.epoch &&
+          item.identity.round >= this.playback.board.round &&
+          item.identity.round !== board.round,
+      ),
+      result,
+    ];
+  }
+
+  get pendingRoundResult(): DisplayRoundResult | null {
+    if (this.disposed) return null;
+    const result = this.roundResults.find(
+      (item) => item.identity.round === this.playback.board.round,
+    );
+    return result && remoteResultVisible(this.playback, result, this.session?.epoch ?? null)
+      ? result
+      : null;
+  }
+
+  markRoundResultPresented(key: string): void {
+    const result = this.pendingRoundResult;
+    if (result?.key !== key) return;
+    if (this.roundResults.find((item) => item.key === key)?.presented) return;
+    this.roundResults = this.roundResults.map((item) =>
+      item.key === key && !item.presented ? { ...item, presented: true } : item,
+    );
+  }
+
+  acknowledgeRoundResult(key: string): void {
+    const result = this.pendingRoundResult;
+    if (result?.key !== key || result.acknowledged) return;
+    this.roundResults = this.roundResults.map((item) =>
+      item.key === key ? { ...item, acknowledged: true } : item,
+    );
   }
 
   get pushDecision(): PushDecision | null {
@@ -454,6 +532,7 @@ export class HostGame implements GameController {
   // ---- 전송 ----
 
   private incoming(raw: string): void {
+    if (this.disposed) return;
     this.session?.advanceTime(this.now());
     const parsed = decode(raw, 'guest');
     if (!parsed.ok && parsed.reason === 'VERSION_MISMATCH' && this.session === null) {
@@ -518,6 +597,7 @@ export class HostGame implements GameController {
     if (board === null) return;
     const liveTarget = to > this.seq ? acceptedPlayTarget : undefined;
     this.seq = to;
+    this.cacheRoundResult();
     this.balances = [board.seats[0].balance, board.seats[1].balance];
     this.playback.enqueue(events, board, {
       action: pending?.mine ? pending.action : null,
@@ -593,6 +673,7 @@ export class HostGame implements GameController {
     if (session !== null) {
       const stage = session.stage;
       this.stage = stage;
+      this.cacheRoundResult();
       this.guestReady = session.guestReady;
       this.bankruptSeats = session.status.bankrupt;
       this.refilled = summarizeLedger(session.ledger).recharged;
@@ -682,14 +763,33 @@ export class HostGame implements GameController {
 
   /** 정산 화면 → 다음 판 (호스트가 시작한다, #26) */
   nextRound(): void {
-    if (this.stage !== 'settled' || this.session?.settlement === null) return;
+    if (
+      this.disposed ||
+      this.playback.busy ||
+      this.playback.settlement === null ||
+      !this.pendingRoundResult?.acknowledged ||
+      this.playback.board.round !== this.session?.roundNumber ||
+      this.playback.board.eventSeq !== this.session?.seq ||
+      this.stage !== 'settled' ||
+      this.session?.settlement === null
+    )
+      return;
     this.playback.release();
     this.session?.nextRound();
     this.afterChange();
   }
 
   choosePush(push: boolean): void {
-    if (!this.pushDecision?.winner) return;
+    if (
+      this.disposed ||
+      !this.pendingRoundResult?.acknowledged ||
+      !this.playback.idle ||
+      this.playback.board.round !== this.session?.roundNumber ||
+      this.playback.board.eventSeq !== this.session?.seq ||
+      this.link !== 'open' ||
+      !this.pushDecision?.winner
+    )
+      return;
     if (push) this.session?.push();
     else this.session?.acceptRound();
     this.afterChange();

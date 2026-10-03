@@ -4,7 +4,7 @@
   import type { Difficulty } from '@p2p-gostop/ai';
   import { conciseSoloNotice, playerLabel } from '../game/player-labels.ts';
   import type { SettlementDisplay } from '../game/adapter.ts';
-  import type { PendingRoundResult } from '../game/controller.ts';
+  import type { DisplayRoundResult } from '../game/controller.ts';
   import { formatMoney, formatNumber, formatSignedMoney } from '../lib/format.ts';
   import Screen from '../ui/Screen.svelte';
   import { REASON_LABEL, SCORE_LABEL, stepLabel } from '../ui/settle-labels.ts';
@@ -12,13 +12,13 @@
   interface Props {
     /** 국진 위치(gukjin)는 솔로 어댑터만 넣는다(프로토콜 뷰에는 아직 없다) */
     view: SettlementDisplay | null;
-    pending?: PendingRoundResult | null;
+    pending?: DisplayRoundResult | null;
     onacknowledge?: ((key: string) => void) | undefined;
     soloDifficulty?: Difficulty | undefined;
     decision?: {
       readonly winner: boolean;
       readonly canPush: boolean;
-      readonly nextMultiplier: number;
+      readonly nextMultiplier: number | null;
       readonly acceptAmount: number | null;
       readonly forfeitedPoints: number | null;
     } | null;
@@ -47,7 +47,6 @@
     onacknowledge,
     soloDifficulty,
     decision = null,
-    guest = false,
     onpush,
     instant = [],
     nextCarry = null,
@@ -63,6 +62,7 @@
 
   let heading = $state<HTMLParagraphElement | null>(null);
   let hadPendingResult = false;
+  const publicResult = $derived(pending && 'publicResult' in pending ? pending.publicResult : null);
   const stage = $derived(pending ? (pending.acknowledged ? '받기·밀기 선택' : '판 결과') : '정산');
   $effect(() => {
     void stage;
@@ -76,7 +76,11 @@
 
   const headline = $derived(
     view === null
-      ? '밀기 선택 대기'
+      ? publicResult?.winner === undefined
+        ? '판 종료 · 결과 확인 중'
+        : publicResult.winner === null
+          ? '나가리'
+          : `${publicResult.names[publicResult.winner]} 승리 · ${publicResult.reason === undefined ? '종료 사유 확인 중' : REASON_LABEL[publicResult.reason === 'floorChongtong' || publicResult.reason === 'bothChongtong' ? 'chongtong' : publicResult.reason]}`
       : view.pushed
         ? `${view.names[view.winner ?? 0]} 밀기 · 다음 판 ×${2 ** (view.nextPushes ?? 0)}`
         : view.winner === null
@@ -127,11 +131,28 @@
 
     {#if pending}
       <p class="pending-note" role="status" data-testid="pending-result-note">
-        {pending.acknowledged
-          ? '결과 확인 완료 · 받기·밀기 결정 대기'
-          : '결과를 확인한 뒤 받기·밀기를 진행합니다.'}
-        아직 정산되지 않았습니다.
+        {#if pending.committed}
+          정산이 확정되었습니다.
+          {pending.acknowledged ? '결과 확인 완료 · 정산 표시 준비 중' : '결과를 확인하세요.'}
+        {:else}
+          {pending.acknowledged
+            ? '결과 확인 완료 · 받기·밀기 결정 대기'
+            : '결과를 확인한 뒤 받기·밀기를 진행합니다.'}
+          아직 정산되지 않았습니다.
+        {/if}
       </p>
+    {/if}
+
+    {#if publicResult}
+      <section class="settlement-section" aria-label="공개 족보 점수">
+        <h2>공개 족보 점수</h2>
+        <p>
+          {publicResult.names[0]}
+          {publicResult.scores[0]}점 · {publicResult.names[1]}
+          {publicResult.scores[1]}점
+        </p>
+        <p>최종 정산 금액은 방장의 정산이 확정되면 표시합니다.</p>
+      </section>
     {/if}
 
     {#if view?.pushed}
@@ -149,7 +170,9 @@
               0}점 포기, 정산 0{view?.unit ?? '냥'} ·
             <span class="next-factor">다음 판 ×{decision.nextMultiplier}</span>
           {:else}
-            이번 판을 받고 정산하거나 포기하고 다음 판 ×{decision.nextMultiplier}로 밉니다.
+            이번 판을 받고 정산하거나 포기하고 밉니다.
+            {#if decision.nextMultiplier !== null}다음 판 ×{decision.nextMultiplier}
+            {:else}다음 판 배수 확인 중{/if}
           {/if}
         </p>
       {:else}
@@ -159,7 +182,7 @@
 
     {#if view && view.winner !== null}
       <section class="settlement-section amount-section" aria-labelledby="settle-amount">
-        <h2 id="settle-amount">{pending ? '받을 경우 예상 금액' : '금액'}</h2>
+        <h2 id="settle-amount">{pending && !pending.committed ? '받을 경우 예상 금액' : '금액'}</h2>
         <p class="amount">
           {view.finalPoints}점 × {formatMoney(view.pointValue, view.unit)} =
           <strong>{formatMoney(view.amount, view.unit)}</strong>
@@ -276,13 +299,16 @@
           type="button"
           class="button primary"
           data-choice="accept"
-          onclick={() => onpush?.(false)}>{guest ? '받기 · 다음 판 준비' : '받기'}</button
+          onclick={() => onpush?.(false)}>받기</button
         >
         {#if decision.canPush}<button
             type="button"
             class="button"
             data-choice="push"
-            onclick={() => onpush?.(true)}>밀기 · 다음 판 ×{decision.nextMultiplier}</button
+            onclick={() => onpush?.(true)}
+            >밀기{decision.nextMultiplier !== null
+              ? ` · 다음 판 ×${decision.nextMultiplier}`
+              : ''}</button
           >{/if}
       {/if}
     {:else if pending}

@@ -99,6 +99,12 @@ function legalOf(c: GameController): readonly Action[] {
   return c.playback.board.legal;
 }
 
+/** UI 없이 구동하는 fixture도 현재 공개 결과 getter와 유효 key를 거쳐 확인한다. */
+function acknowledgeResult(game: HostGame | GuestGame): void {
+  const result = game.pendingRoundResult;
+  if (result !== null && !result.acknowledged) game.acknowledgeRoundResult(result.key);
+}
+
 /** 조작 전에 구독하고 대상 상태를 담은 수신 메시지를 기다린다. 타이머는 실패 상한뿐이다. */
 function receiveState(
   wire: Transport,
@@ -335,7 +341,10 @@ test.each([
           (m.t === 'events' || m.t === 'snapshot') &&
           m.status.round === 2 &&
           m.status.stage === stage,
-        () => resumed.nextRound(),
+        () => {
+          acknowledgeResult(resumed);
+          resumed.nextRound();
+        },
       );
     } finally {
       random.mockRestore();
@@ -444,6 +453,7 @@ test('sessionEnd 뒤 게스트는 최종 정산과 종료 안내를 유지한다
   });
   await settle();
   await playOneRound(host, guest);
+  acknowledgeResult(guest);
   guest.nextRound();
   await settle();
   expect(guest.playback.settlement).toBeNull();
@@ -668,8 +678,14 @@ test('로비 → 시작 → 여러 판: 양쪽 화면이 같은 원장·순번, 
     });
   for (let step = 0; step < 4000; step++) {
     if (host.stats.roundsPlayed >= target && guest.stats.roundsPlayed >= target) break;
-    if (host.playback.settlement !== null) host.nextRound();
-    if (guest.playback.settlement !== null) guest.nextRound();
+    if (host.playback.settlement !== null) {
+      acknowledgeResult(host);
+      host.nextRound();
+    }
+    if (guest.playback.settlement !== null) {
+      acknowledgeResult(guest);
+      guest.nextRound();
+    }
     let acted = false;
     for (const c of [host, guest] as const) {
       if (!c.canAct) continue;
@@ -730,7 +746,10 @@ test('게스트가 끊겼다 돌아오면 같은 토큰으로 재동기화하고
   const pick = lcg(11);
   for (let step = 0; step < 30; step++) {
     for (const c of [host, guest] as const) {
-      if (c.playback.settlement !== null) c.nextRound();
+      if (c.playback.settlement !== null) {
+        acknowledgeResult(c);
+        c.nextRound();
+      }
       if (!c.canAct) continue;
       const legal = legalOf(c);
       const action = legal[pick(legal.length)];
