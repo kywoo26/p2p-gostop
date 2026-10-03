@@ -315,6 +315,9 @@ function playStep(): string | false {
     item.click();
     return item.dataset['choice'] ?? 'card';
   };
+  const acknowledge = match.querySelector<HTMLButtonElement>('[data-choice="acknowledge"]');
+  if (acknowledge && !acknowledge.disabled && acknowledge.getClientRects().length > 0)
+    return 'acknowledge';
   const decision = document.querySelector<HTMLElement>('[data-choice="accept"]');
   if (decision) return click(decision);
   const next = document.querySelector<HTMLElement>('[data-choice="next"]');
@@ -338,6 +341,16 @@ function playStep(): string | false {
     board.querySelector('[data-choice="flipOnly"]') ??
       board.querySelector('[aria-label="내 손패"] button:not([disabled])'),
   );
+}
+
+/** 결과 확인은 브라우저 내부의 즉시 click 대신 실제 locator 입력으로 거친다. */
+async function stepMatch(page: Page): Promise<string | false> {
+  const result = await page.evaluate(playStep);
+  if (result === 'acknowledge') {
+    await expect(page.getByTestId('settlement-headline')).toBeVisible();
+    await page.locator('[data-choice="acknowledge"]').click();
+  }
+  return result;
 }
 
 async function gameState(page: Page) {
@@ -387,8 +400,8 @@ for (const origin of ['match', 'both-match', 'both-solo'] as const) {
         await expect(run.host.getByTestId('match')).toBeVisible();
         await expect
           .poll(async () => {
-            await run.host.evaluate(playStep);
-            await run.guest.evaluate(playStep);
+            await stepMatch(run.host);
+            await stepMatch(run.guest);
             return (await gameState(run.host)).seq;
           })
           .toBeGreaterThan(0);
@@ -510,8 +523,8 @@ test('AC-RP-01 @smoke @paired 설정→방→정적 경로 링크→두 브라�
     await expect(run.guest.getByTestId('match')).toBeVisible();
     const deadline = Date.now() + 120_000;
     while (Date.now() < deadline) {
-      const host = await run.host.evaluate(playStep);
-      const guest = await run.guest.evaluate(playStep);
+      const host = await stepMatch(run.host);
+      const guest = await stepMatch(run.guest);
       if (host === 'settled' && guest === 'settled') break;
       await run.host.waitForTimeout(30);
     }
@@ -574,8 +587,8 @@ test('AC-RP-01/02 @full @paired 진행 중 게스트 reload·resume 뒤 snapshot
     await expect
       .poll(
         async () => {
-          await run.host.evaluate(playStep);
-          await run.guest.evaluate(playStep);
+          await stepMatch(run.host);
+          await stepMatch(run.guest);
           return (await gameState(run.host)).seq;
         },
         { timeout: 20_000 },
@@ -608,8 +621,8 @@ test('AC-RP-03 @full @paired 진행 중 호스트 부재는 판을 멈추고 복
     await expect
       .poll(
         async () => {
-          await run.host.evaluate(playStep);
-          await run.guest.evaluate(playStep);
+          await stepMatch(run.host);
+          await stepMatch(run.guest);
           return (await gameState(run.host)).seq;
         },
         { timeout: 20_000 },
@@ -640,8 +653,8 @@ test('AC-RP-03 @full @paired 진행 중 호스트 부재는 판을 멈추고 복
     await expect
       .poll(
         async () => {
-          await run.host.evaluate(playStep);
-          await run.guest.evaluate(playStep);
+          await stepMatch(run.host);
+          await stepMatch(run.guest);
           return (await gameState(run.guest)).seq;
         },
         { timeout: 20_000 },

@@ -571,7 +571,7 @@
     {
       "path": "packages/web/e2e/p2p.spec.ts",
       "type": "invite-secret",
-      "line": 202,
+      "line": 211,
       "field": "invite-secret",
       "sha256": "2043c7ae16000b68a8b0a8653dc8766e337ee48698541a60c2f391b9ba2d24fb",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -579,7 +579,7 @@
     {
       "path": "packages/web/e2e/p2p.spec.ts",
       "type": "invite-secret",
-      "line": 262,
+      "line": 272,
       "field": "invite-secret",
       "sha256": "10e71f9551880d82696310a98e8a4c06590a1d12e43306fd987188ee7e087b3e",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -859,7 +859,7 @@
     {
       "path": "packages/web/src/p2p/remote.net.ts",
       "type": "literal-credential",
-      "line": 490,
+      "line": 493,
       "field": "hostToken",
       "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -867,7 +867,7 @@
     {
       "path": "packages/web/src/p2p/remote.net.ts",
       "type": "literal-credential",
-      "line": 524,
+      "line": 527,
       "field": "hostToken",
       "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -875,7 +875,7 @@
     {
       "path": "packages/web/src/p2p/remote.net.ts",
       "type": "literal-credential",
-      "line": 555,
+      "line": 558,
       "field": "hostToken",
       "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -883,7 +883,7 @@
     {
       "path": "packages/web/src/p2p/remote.net.ts",
       "type": "literal-credential",
-      "line": 574,
+      "line": 577,
       "field": "hostToken",
       "sha256": "9b77730195dde87b7f00724241acc4ce0bf8b94cd461d93d4264772101353550",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
@@ -907,7 +907,7 @@
     {
       "path": "packages/web/src/p2p/wiring.test.ts",
       "type": "literal-credential",
-      "line": 462,
+      "line": 472,
       "field": "token",
       "sha256": "9d809894e7b68face05662af1c189ab3ddc3c87c0979af1a511701c6a1a9fdc0",
       "reason": "고정 입력으로 구성한 합성 정상·반례/저장 복원 fixture; 실제 환경 조회 없음"
