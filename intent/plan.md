@@ -622,6 +622,14 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 |---|---|---|---|
 | UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 P1 수정은 최종 head `6c9d3ff`에서 독립 재검토 완료 후 병합됐다. 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 회귀를 보존한다. [PR #188](https://github.com/kywoo26/p2p-gostop/pull/188)·[동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36729441463). | 재등장 경계 재검토 완료(자동 검사 범위). Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
 
+### RP-P1 상대 카드 재생 중복 작업 제거 (#252, UX-15~17·NF-03·NF-08·AC-06)
+
+| 범위 | 확인된 구현·검증 | 남은 판정 |
+| --- | --- | --- |
+| 상대 ordinary CardPlayed의 안전 contact | 공개 원본이 없던 카드의 안전 접촉 위치를 먼저 확보하고 같은 단계에서 재사용한다. 성공 시 숨겨질 native 원본의 중복 이동·뒤집기를 만들지 않으며, 실패 시 기존 native fallback을 유지한다. 내패·bonus·staging·deck 공개 경로, 시간표·hold·skip·generation·게임 권위는 변경하지 않는다. | 사용자 보고인 상대 패 입력 무렵의 화면 깨짐 원인·해소, 실제 paint/GPU·WAN·실기기 성능은 미확정이다. |
+| 소스별 한정 검증 | 기준 main `d73fd183d17c2ec904f28745b4c3cf86e8083b3f`에서 합성 ReplayHost 6건을 Chromium/WebKit 각각 통과했다. 실제 양쪽 앱의 고정 prefix8·card12→15 매칭/획득 한 조건을 수정 전후 각각 1회 관측했다. 관찰자 hidden native WAAPI 3→0, 실행자0 유지; 첫 ghost 이동 keyframes·최종 공개 상태·무관 바닥 카드 위치가 유지됐다. | 합성 DOM은 Game/Floor/실제 paint의 대체가 아니다. 한 쌍의 실행 시간은 성능 통계가 아니며, RAF의 동시 가시 중복0과 MutationObserver의 커밋 중간 상태를 구별한다. |
+| 게시·수용 | 좁은 독립 소스 검토에서 확정 차단 발견사항0. 관측 시험 타입 보정은 타입 제거 JS가 동일하고, 제품 주석의 폰트 검사 보정은 주석 제거 JS가 동일하다. 준비 시험 실패3·빌드 선행조건 실패·외부 타입/메타데이터 검산 오류와 각 수정 후 결과를 소스별로 보존한다. | 최종 plan 인수 뒤 AGENTS §5 필수 lint/check/Node/browser/PR smoke/Android 및 CI·리뷰를 수행한다. 기존 RP-OPS01 instant 기준선·#243 바닥 소실·전체 원격 성능 수용은 별도이며, 운영 적용0을 유지한다. |
+
 ### RP-OPS01 운영 재사용·원격 측정 후속 (진행; FR-RP-07·NP-RP-07/08·NF-RP-02/05/06·AC-RP-06)
 
 사용자 후속 위임의 기준은 main `f34528927139ef7477f33becd25993569567909e`/v0.5.1이다. 기존 v0.5.1 운영은 그대로 유지하고 별도 개발 branch의 `tools/relay`만 개선한다. 실행 중인 wrapper·release 저장소·Funnel·container·기존 자격에는 이 변경을 적용하지 않는다. [운영·측정 설계](../docs/design/relay-operations.md)와 [명령 runbook](../tools/relay/README.md)을 연결한다. 라이브 적용·병합은 최종 검토 뒤 별도 운영 단계이며, 신규 의존성·protocol·방 persistence·게임 권위·UI 변경은 없다.
