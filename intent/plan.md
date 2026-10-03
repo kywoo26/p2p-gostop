@@ -307,6 +307,7 @@ PA-05 / §1.8 손패 행동 그림 결정: 사용자 제공 폭탄·종 참고 �
 | SK3-P2 (P1 뒤) | host/guest shell과 route별 얇은 page, persistent coordinator 분리. engine/AI/protocol 규칙은 변경하지 않음 | session과 DOM 수명을 분리. settings Back/홈 dispose·resume/guest restore/정산 restart/target-before-pose·WAAPI 착지/skip/reduced 회귀. 실제 host/guest/solo body·raw와 기준 비교 |
 | SK3-P3 (P2 뒤) | 구현 owner 자기 검증 → 독립 reviewer → root 병합 판단 | AGENTS §5 필수 native lint/check/Node/browser/build/smoke/Android≤4 및 영향 full E2E. 현재 head/base/실제 시험 commit 연결. 예산/기준샷 완화 없음. 사람 기기 수용·main/tag/release/운영/서명 root 소유 |
 | SK3-R2 (검증 중) | 총괄은 설계·이 plan·검토, Sol6.1 high 단일 구현자는 제품12소스와 원인별 표적 시험·승인 기준샷 및 `.github/workflows/ci.yml`의 WebKit component 직렬 검증·임시 진단 제거를 소유. 독립 reviewer는 별도 읽기/유한 실행 | PR #240 승인50+54장과 원형 strict35 통과를 아래 R2 절에 기록한다. `fb58de8`에서도 새 크기의 RO callback 진입이 기록되지 않아 resize 병합 차단을 유지한다. 동일 runner의 원 전체548 PASS/1 FAIL 대비 직렬 전체549 PASS를 근거로 WebKit component를 worker1 실행격리 계약으로 전환하고 임시 진단을 제거한다. 새 정식 CI 통과 전까지 병합 차단을 유지한다. 기준샷 수용과 측정 실패 진단은 별도 변경으로 관리한다 |
+| SK3-HF01 (출시 부팅 회귀 수정 중) | 기존 총괄은 이 plan·Android 서빙/패키징 계약 검토, 같은 Sol6.1 high 구현자는 Android 자산 포함 설정·완성 APK 전수 검사·CI/release gate를 단독 소유. 기존 reviewer는 정확 핀·완성 diff 읽기 | v0.5.0의 시작 화면 정지: APK에서 `_app` 전체가 누락됐다. 기준 main `f13909b`에서 최소 ignore 규칙 수정→debug/release 완성 APK의 입력 dist와 전수 바이트 대조→APK 기반 Android 서빙/부팅 회귀→정확 head CI·독립 검토·root의 v0.5.1 발행. 사용자 데이터 초기화·UI/권위/서명 변경 없음 |
 
 P0L 독립 리뷰 P2: 0727ab3에서 pro 고지 링크를 base-aware로 고친 뒤 C/W gallery license ARIA 텍스트 기대값의 `/pro/NOTICE.md`가 남아 CI가 실패했다. `license-aria-{chromium,webkit}.txt`의 해당 URL 각 한 줄만 `./pro/NOTICE.md`로 맞춘다. 이미지 기준·임계값은 변경하지 않는다. 같은 CI의 벨 표본 timeout은 원인 미확정으로 분리하며 전체 녹색으로 보고하지 않는다. 원형 gallery license의 ARIA·기존 PNG·axe를 C 1개/W 1개로 실행해 PASS(각 ≤2 workers). W는 smoke 태그 필터에서 제외되어 full 설정에 해당 파일/name/project만 선택했으며 전체 suite를 실행한 것이 아니다. 실행 소스는 0727ab3+두 txt 변경이다.
 
@@ -372,6 +373,18 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 ---
 
 ## 3-2. 진행 매트릭스 (집계 기준 2026-09-29 `daa5e7d`; 좁은 상태 갱신 2026-10-01 main `17c8d29`)
+
+### SK3-HF01 v0.5.1 Android 출시 부팅 회귀 (진행; FR-31·NF-10·§5)
+
+- 사용자 관측은 v0.5.0 APK를 기존 앱 위에 업데이트한 직후 `불러오는 중…`에서 정지한 것이다. 기준 main `f13909bb42e8e517bb284d47b3dfcbf14d202b75`, 공개 APK SHA-256 `87efeb056dcd41f0df9f4386af205f9e7fe7b29b681bc3859596999333b55f86`의 실제 `assets/web`는 68파일이며 `_app`는 0파일이다. APK 자체의 HTML 초기 참조 32개가 모두 누락되어 start/app 동적 import도 실패한다. 이번 비교기에 사용한 기대값은 별도로 고정한 before-dist 149파일이며, 이 기대값 대비 공개 APK의 missing81을 검출했다. 이를 원 v0.5.0 release 입력의 전수 바이트 attestation으로 해석하지 않는다. 원 release 입력 전체 바이트는 이번 대조에서 독립 확인하지 않았다. 기존 CI·서명·체크섬 성공은 이 패키징 누락을 검출하지 못했으며 실기기 정상 증거로 쓰지 않는다.
+- 정확 AGP 9.4.1의 AAPT 스타일 기본 자산 제외 규칙 중 `<dir>_*`가 `_app`에 적용된다. 이는 AGP asset merge에서도 사용하는 정책이며 AAPT2 link 한 단계로 원인을 한정하지 않는다. 명시 nonempty 목록에서 이 토큰만 제거하고 나머지 9개 제외 규칙은 그대로 보존한다. 빈 목록이나 전체 제외 해제는 사용하지 않는다. 릴리스 당시 중간 산출물은 없으므로 단계별 실행 trace와 최종 APK 관측을 구분한다.
+- debug/release의 **완성 APK**마다 동일 입력 dist와 `assets/web`의 전체 경로 집합을 양방향 대조하고 모든 압축 해제 바이트가 같아야 한다. 누락·추가·중복·손상·비정상 경로는 실패시키며 초기 import/preload/CSS 참조도 확인한다. 입력 디렉터리 복사 성공이나 `_app` 일부 샘플로 대신하지 않고 Android 빌드와 release 업로드 전 gate로 연결한다. 원 v0.5.0 APK의 실패와 수정 APK의 결과를 같은 검사 경계에 남긴다.
+- Android 생산 서빙 코드가 완성 APK에서 읽은 초기 자산을 올바른 MIME으로 제공하고 홈으로 부팅하는 경계를 검증한다. Vite preview는 dist를 직접 읽고 기존 JVM 정적 파일 검사는 메모리 fixture를 사용했으므로 APK 패키징 검증과 별개다. 실제 단말 수용은 사용자 결과 전까지 미검증이다.
+- applicationId·서명 정책·DB/storage·기존 저장/권위 계약을 유지하고 데이터 삭제/재설치를 요구하지 않는다. 같은 서명 v0.5.1 업데이트를 목표로 versionCode가 749보다 증가하는지 최종 APK에서 확인한다. 로컬 release는 비밀 키 접근 없이 검증하며 실제 배포 서명·버전·체크섬은 root가 최종 release 산출물에서 확인한다. 기존 main full의 C3/W2 재시도 원인 미확정·WebKit timing record·실기기 미검증은 유지한다.
+- 로컬 수정은 기준 `f13909b` 위의 빌드/검사 4파일 working 변경과 부모 plan에 귀속된다. 새 비교기의 정상·누락·추가·바이트·비정상 경로·web 밖 자산·손상·중복 반례 8개가 통과했고, debug/release 완성 APK 각각은 해당 빌드의 입력 웹 149파일 전체 경로·압축 해제 바이트·CRC가 같았다. AGP 생성 `assets/dexopt/baseline.prof`·`baseline.profm` 두 경로만 web 밖에서 허용하며 `assets/web`의 전수 대조에는 예외가 없다. 이 두 생성 파일을 처음 거절한 검사기 시도는 원 APK의 missing81 실패와 구분한다.
+- production `smokeModule`과 APK `ZipFile`을 사용하는 신규 JVM 검사 포함 93개가 통과했다. 첫 synthetic peer의 loopback 정책403은 시험 환경을 기존 M4와 같은 loopback으로 명시해 보정했으며 제품 HTTP 정책은 바꾸지 않았다. 수정 release APK를 실제 production CIO로 한 번 서빙하고 pinned Chromium에서 `/?build=<기준 SHA>`로 열어 로딩 상태 제거·홈 `#/solo` 링크 표시·JavaScript/요청/외부 요청 오류0·서버 정상 종료를 확인했다. 첫 외부 도구의 `/solo` 기대는 기존 hash 경로와 어긋난 하네스 오류로 별도 보존했다. 이는 실제 Android WebView 또는 사용자 기기 수용이 아니다.
+- 위 자료의 `source:f139`는 원본 기준 SHA이며 실제 실행에는 working 수정이 포함된다. 같은 실행 자료의 소스별 SHA와 APK를 연결하고 새 exact commit 빌드로 소급하지 않는다. 당시 APK versionCode749와 로컬 debug 대체 서명은 원인 실증 fixture일 뿐 배포용 업그레이드가 아니다. 후속 commit의 versionCode 상승·정확 소스의 필수 CI·독립 검토와 최종 v0.5.1 서명 APK 확인은 별도로 남는다. release 업로드 전 검사는 복사 폴더가 아닌 원 전달 웹 artifact를 명시적 기대값으로 받고, 마지막 Gradle 검사 뒤 기존 always 키스토어/구성 캐시 정리를 실행한다.
+- 현재는 수정·검증 진행 중이다. 총괄의 제품 직접 편집, 신규 agent, 기준샷/threshold 완화, 불필요한 전체 반복은 없다. 구현자 단일 heavy lane에서 C≤4/W component1/Gradle≤4로 실행하며 원 실패와 실제 실행 소스·APK를 연결한다. 정확 diff/후속 검사·CI·독립 review 뒤 root가 병합·v0.5.1 태그/발행을 판단하고 발행 전 완료로 표시하지 않는다.
 
 ### SK3-R2 그래픽·UI/UX 후속 (진행)
 

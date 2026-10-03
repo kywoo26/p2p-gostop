@@ -180,11 +180,17 @@ jobs:
           (cd dist && sha256sum "$APK_NAME" > "$APK_NAME.sha256" && cat "$APK_NAME.sha256")
           echo "APK 크기: $(stat -c %s "dist/$APK_NAME") bytes"
 
+      - name: 업로드할 완성 APK를 원 웹 artifact와 전수 대조
+        run: |
+          android/gradlew -p android verifyPackagedWebAssets --max-workers=2 \
+            "-PwebAssetsExpectedDir=$RUNNER_TEMP/web-dist" \
+            "-PwebAssetsApk=$GITHUB_WORKSPACE/dist/$APK_NAME"
+
       - name: 키스토어 삭제
         if: always()
         run: |
           rm -f "$RUNNER_TEMP/release.jks"
-          # 서명 비밀을 담을 수 있는 구성 캐시는 릴리스에서 영속화하지 않는다.
+          # 마지막 Gradle gate 뒤에도 서명 비밀을 담을 수 있는 구성 캐시를 정리한다.
           rm -rf android/.gradle/configuration-cache
 
       - name: GitHub Release 업로드
