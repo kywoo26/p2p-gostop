@@ -1,7 +1,7 @@
 <script lang="ts">
   // 획득패: 광 / 열끗 / 띠 / 피 그룹 (spec 6.2 게임판 상단·하단).
   // 칸과 숫자는 엔진 점수 규칙(ui/seat-stats.ts)을 따른다: 국진을 쌍피로 세면 피 칸 끝에 그리고 제목에 "국진 쌍피"를 표시한다.
-  // 피 칸 숫자는 가치 합(쌍피 2, 보너스 2·3)이며 장수를 괄호로 덧붙인다(M3 리뷰 S-2).
+  // FR-42·NF-08: 피 가치는 피 단위, 실제 장수는 장 단위로 구별한다. 요약 그림 수와 전체 장수는 별개다.
   import { GUKJIN_ID, type CardId } from '@p2p-gostop/engine';
   import Card from './Card.svelte';
   import type { CapturedStats } from './seat-stats.ts';
@@ -18,7 +18,7 @@
   let { stats, label, highlight = [], summary = false }: Props = $props();
 
   function describe(name: string, value: number, cards: number, isPi: boolean): string {
-    return isPi ? `${name} ${value} (${cards}장)` : `${name} ${value}`;
+    return isPi ? `${name} 가치 ${value}피, 실제 ${cards}장` : `${name} ${value}장`;
   }
 </script>
 
@@ -27,14 +27,14 @@
     {@const isPi = pile.key === 'pi'}
     <li
       class={['group', `group-${pile.key}`]}
-      aria-label={`${describe(pile.name, pile.value, pile.cards.length, isPi)}${isPi && pile.cards.includes(GUKJIN_ID) ? ', 국진 쌍피' : ''}`}
+      aria-label={`${describe(pile.name, pile.value, pile.cards.length, isPi)}${isPi && pile.cards.includes(GUKJIN_ID) ? ', 국진 쌍피 포함' : ''}`}
       data-pile={pile.key}
       data-value={pile.value}
       data-cards={pile.cards.length}
     >
       <span class="name" aria-hidden="true"
-        >{pile.name}<b>{pile.value}</b>{#if isPi && pile.value !== pile.cards.length}<small
-            >({pile.cards.length}장)</small
+        >{pile.name}<b class={{ 'pi-value': isPi }}>{pile.value}{isPi ? '피' : ''}</b
+        >{#if isPi && pile.value !== pile.cards.length}<small>({pile.cards.length}장)</small
           >{/if}{#if isPi && pile.cards.includes(GUKJIN_ID)}<small class="pile-badge"
             >국진 쌍피</small
           >{/if}</span

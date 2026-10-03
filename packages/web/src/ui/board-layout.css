@@ -161,6 +161,10 @@
 :root [data-board-layout] .captured-zone .name :is(b, small) {
   display: none;
 }
+:root [data-board-layout] .captured-zone .name .pi-value {
+  display: inline;
+  font-weight: inherit;
+}
 :root [data-board-layout] .captured-zone .stack {
   position: relative;
   display: flex;
@@ -172,7 +176,7 @@
   margin-left: calc(6px - var(--capture-card));
 }
 :root [data-board-layout] .captured-zone .stack[data-count]:not([data-count='0'])::after {
-  content: attr(data-count);
+  content: attr(data-count) '장';
   position: absolute;
   right: 0;
   bottom: 0;
