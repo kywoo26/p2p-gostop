@@ -37,6 +37,7 @@ export type RemoteErrorCode =
   | 'replaced'
   | 'host-absent'
   | 'room-ended'
+  | 'room-create'
   | 'version'
   | 'network'
   | 'expired'
@@ -523,6 +524,7 @@ class HostController extends SnapshotSource implements RemoteHostController {
       )
         throw new RemoteFailure('version');
       const path = (current as { path: string }).path;
+      const creationStartedAt = this.now();
       const created = await responseJson(
         this.fetcher,
         `${settings.baseUrl}/api/rooms`,
@@ -538,27 +540,32 @@ class HostController extends SnapshotSource implements RemoteHostController {
         typeof created.roomId !== 'string' ||
         !ROOM_ID.test(created.roomId) ||
         typeof created.hostToken !== 'string' ||
-        !TOKEN.test(created.hostToken) ||
-        typeof created.code !== 'string' ||
-        !CODE.test(created.code) ||
-        typeof created.expiresAt !== 'number' ||
-        created.expiresAt <= this.now() ||
-        created.expiresAt > this.now() + ROOM_MS
+        !TOKEN.test(created.hostToken)
       )
         throw new RemoteFailure('invalid');
-      // 201 뒤 어떤 단계가 실패해도 이 자격으로 이미 생성된 방을 정리할 수 있다.
+      // 서버의 만료 값을 단말 시각과 비교하지 않는다. 로컬 수명은 요청 시작부터 최대 6시간.
+      const localExpiresAt = creationStartedAt + ROOM_MS;
       const provisional: PendingRoom = {
         origin: settings.baseUrl,
         roomId: created.roomId,
         hostToken: created.hostToken,
-        expiresAt: created.expiresAt,
+        expiresAt: localExpiresAt,
       };
       createdRoom = provisional;
-      active();
       this.addPending(provisional);
+      if (
+        typeof created.code !== 'string' ||
+        !CODE.test(created.code) ||
+        typeof created.expiresAt !== 'number' ||
+        !Number.isSafeInteger(created.expiresAt) ||
+        created.expiresAt < ROOM_MS
+      )
+        throw new RemoteFailure('invalid');
       active();
       const invite = token32();
-      const inviteExpires = Math.min(created.expiresAt, this.now() + INVITE_MS);
+      // 방은 중계 생성 시각부터 6시간, 초대는 같은 시각부터 15분이다.
+      // 서버 시각의 만료 값만 돌려 보내며 인증·TTL 검사는 중계가 그대로 수행한다.
+      const inviteExpires = created.expiresAt - ROOM_MS + INVITE_MS;
       await responseJson(
         this.fetcher,
         `${settings.baseUrl}/api/rooms/${created.roomId}/credentials`,
@@ -578,7 +585,7 @@ class HostController extends SnapshotSource implements RemoteHostController {
       const room: RemoteRoom = {
         roomId: created.roomId,
         code: created.code,
-        expiresAt: created.expiresAt,
+        expiresAt: localExpiresAt,
         inviteLink: `${settings.baseUrl}${path}#/join?${fragment}`,
       };
       const record: HostRecord = { origin: settings.baseUrl, hostToken: created.hostToken, room };
@@ -595,9 +602,10 @@ class HostController extends SnapshotSource implements RemoteHostController {
         const pending = createdRoom;
         await this.deletePending(pending).catch(() => this.addPending(pending));
       }
+      const failure = codeOf(error) === 'invalid' ? new RemoteFailure('room-create') : error;
       if (this.generation === generation && !abort.signal.aborted)
-        this.update({ state: 'error', error: codeOf(error) });
-      throw error;
+        this.update({ state: 'error', error: codeOf(failure) });
+      throw failure;
     } finally {
       if (this.createAbort === abort) this.createAbort = null;
     }
