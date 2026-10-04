@@ -1,4 +1,4 @@
-import { cardId, guaranteedCaptures, playerView } from '@p2p-gostop/engine';
+import { cardId, guaranteedCaptures, playerView, reduce, type GameState } from '@p2p-gostop/engine';
 import { createScenario } from '@p2p-gostop/engine/testing';
 import { expect, test } from 'vitest';
 import { toBoardView } from './adapter.ts';
@@ -157,4 +157,96 @@ test('실제 표시만 기록하고 사용 단계는 내려가지 않는다 (FR-
   expect(displayedHintLevel('off', 'basic', false)).toBe('off');
   expect(displayedHintLevel('off', 'basic', true)).toBe('basic');
   expect(displayedHintLevel('detail', 'off', false)).toBe('detail');
+});
+
+// CF11 / FR-41·46·48: 즉시 획득과 독점 보유의 공개 계산 경로를 분리한다.
+const heldPairState = (viewer: 0 | 1 = 0, split = 2) => {
+  const own = [c('5열'), c('5초'), c('12열')];
+  const other = [c('10열'), c('10청')];
+  const captured = [c('5피a'), c('5피b')];
+  return createScenario({
+    hands: viewer === 0 ? [own, other] : [other, own],
+    floor: [c('7열')],
+    captured: [captured.slice(0, split), captured.slice(split)],
+    deck: [c('8광'), c('11광'), c('6열')],
+    turn: viewer,
+  });
+};
+const heldMeta = { names: ['좌석0', '좌석1'] as const, balances: [1000, 1000] as const };
+
+for (const viewer of [0, 1] as const) {
+  for (const split of [0, 1, 2]) {
+    test(`CF11 좌석${viewer}·획득 ${split}/${2 - split}: 두 공개 뷰·복원·기본/상세가 같다`, () => {
+      const state = heldPairState(viewer, split);
+      const view = playerView(state, viewer);
+      const board = toBoardView(view, heldMeta);
+      const result = handAssist(board, 'basic');
+      expect(result.heldPair).toEqual([c('5열'), c('5초')]);
+      expect(result.secured).toEqual([]);
+      expect(result.matchable).toEqual([]);
+      expect(result.groups).toEqual([]);
+      expect(handAssistPlayer(view, 'basic')).toEqual(result);
+      expect(handAssist(board, 'detail')).toEqual(result);
+      expect(guaranteedCaptures(projectAssistView(board)!)).toEqual(guaranteedCaptures(view));
+      expect(projectAssistView(board)?.seats[viewer === 0 ? 1 : 0].hand).toBeNull();
+      const restored: GameState = JSON.parse(JSON.stringify(state));
+      expect(handAssistPlayer(playerView(restored, viewer), 'basic')).toEqual(result);
+      expect(handAssist(JSON.parse(JSON.stringify(board)), 'basic')).toEqual(result);
+      expect(handAssist(board, 'off').heldPair).toEqual([]);
+      expect(handAssistPlayer(view, 'off').heldPair).toEqual([]);
+    });
+  }
+}
+
+test('CF11 한 장만 자기 legal이면 두 장 모두 숨기고 다른 좌석 legal로 대신하지 않는다', () => {
+  const view = playerView(heldPairState(), 0);
+  const board = toBoardView(view, heldMeta);
+  for (const legal of [
+    [{ type: 'play', seat: 0, card: c('5열') }],
+    [
+      { type: 'play', seat: 0, card: c('5열') },
+      { type: 'play', seat: 1, card: c('5초') },
+    ],
+    [],
+  ] as const) {
+    expect(handAssist({ ...board, legal }, 'basic').heldPair).toEqual([]);
+    expect(handAssistPlayer({ ...view, legal }, 'basic').heldPair).toEqual([]);
+    expect(handAssist({ ...board, legal }, 'basic').secured).toEqual([]);
+    expect(handAssist({ ...board, legal }, 'basic').matchable).toEqual([]);
+  }
+});
+
+test('CF11 숨은 손패/더미 교체는 독점 보유 분류를 바꾸지 않는다', () => {
+  const first = heldPairState();
+  const second = createScenario({
+    hands: [first.seats[0].hand, [c('8광'), c('10청')]],
+    floor: [c('7열')],
+    captured: [[c('5피a'), c('5피b')], []],
+    deck: [c('10열'), c('11광'), c('6열')],
+  });
+  expect(handAssistPlayer(playerView(first, 0), 'basic')).toEqual(
+    handAssistPlayer(playerView(second, 0), 'basic'),
+  );
+  expect(handAssist(toBoardView(playerView(first, 0), heldMeta), 'basic')).toEqual(
+    handAssist(toBoardView(playerView(second, 0), heldMeta), 'basic'),
+  );
+});
+
+test('CF11 실제 내기→상대 차례 제거→다음 자기 H1/F1/C2 뷰에서 즉시 확정으로 전환', () => {
+  const state = heldPairState();
+  const first = reduce(state, { type: 'play', seat: 0, card: c('5열') });
+  if (!first.ok) throw new Error(first.message);
+  expect(first.state.seats[0].captured).toEqual(state.seats[0].captured);
+  expect(handAssistPlayer(playerView(first.state, 0), 'basic').heldPair).toEqual([]);
+  const next = reduce(first.state, { type: 'play', seat: 1, card: c('10열') });
+  if (!next.ok) throw new Error(next.message);
+  const view = playerView(next.state, 0);
+  const result = handAssistPlayer(view, 'basic');
+  expect(result.heldPair).toEqual([]);
+  expect(result.secured).toEqual([c('5초')]);
+  expect(result.matchable).toEqual([]);
+  expect(handAssist(toBoardView(view, heldMeta), 'basic')).toEqual(result);
+  expect(handAssistPlayer(playerView(JSON.parse(JSON.stringify(next.state)), 0), 'basic')).toEqual(
+    result,
+  );
 });

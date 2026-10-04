@@ -23,6 +23,8 @@ export interface HandAssist {
   readonly available: boolean;
   readonly matchable: readonly CardId[];
   readonly secured: readonly CardId[];
+  /** 바닥 매칭 없이 두 손패를 독점 보유한다. 즉시 획득과 구별한다. */
+  readonly heldPair: readonly CardId[];
   readonly groups: readonly HandVisualGroup[];
   readonly equivalentTarget: CardId | null;
 }
@@ -31,6 +33,7 @@ const EMPTY: HandAssist = {
   available: true,
   matchable: [],
   secured: [],
+  heldPair: [],
   groups: [],
   equivalentTarget: null,
 };
@@ -75,6 +78,9 @@ function calculateAssist(source: BoardView | PlayerView, view: CapturePublicView
   const secured = assessments
     .filter((item) => item.certainty === 'guaranteed')
     .map((item) => item.card);
+  const heldPair = assessments
+    .filter((item) => item.certainty === 'heldPair')
+    .map((item) => item.card);
   const hand = source.seats[source.viewer].hand ?? [];
   const groups: HandVisualGroup[] = [];
   for (const action of source.legal) {
@@ -115,7 +121,7 @@ function calculateAssist(source: BoardView | PlayerView, view: CapturePublicView
       ? equivalentTargets({ pending: source.pending, floor: source.floor }, source.pending)
           .representative
       : null;
-  return { available: true, matchable, secured, groups, equivalentTarget };
+  return { available: true, matchable, secured, heldPair, groups, equivalentTarget };
 }
 
 /** P2P: 전송된 BoardView의 공개 필드만 엔진 보조 입력으로 투영한다. */
