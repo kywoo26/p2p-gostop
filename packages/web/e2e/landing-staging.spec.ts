@@ -2,6 +2,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import {
+  classifyStage49,
+  installStage49Observer,
+  type Stage49Evidence,
+  type Stage49ObservationWindow,
+} from './landing-staging-contract.ts';
+import {
   handBonusLandingSave,
   ppeokLandingSave,
   targetChainLandingSave,
@@ -258,20 +264,54 @@ test('손패 보너스는 고정 원본과 ghost 이동을 유지하며 실제 �
   await page.getByRole('button', { name: /이어하기/ }).click();
   await expect(page.getByTestId('solo')).toHaveAttribute('data-can-act', 'true');
   await sample(page);
-  await page.locator('[aria-label="내 손패"] [data-slot="49"]').click();
-  await expect(page.getByTestId('solo')).toHaveAttribute('data-play-timings', /.+/, {
-    timeout: 5000,
-  });
-  const observed = await frames(page);
-  await writeFile(
-    testInfo.outputPath('frames.json'),
-    JSON.stringify({ seed: 2, events, observed }),
-  );
-  stageIntact(observed, '49');
-  expect(observed[0]!.counts.reduce((a, b) => a + b, 0)).toBe(0);
-  expect(observed.at(-1)!.counts.reduce((a, b) => a + b, 0)).toBe(1);
-  await expect(page.locator('[aria-label="내 손패"] [data-slot="38"]')).toBeVisible();
-  await expect(page.locator('[data-landing-scene]')).toHaveCount(0);
+  let observed: StageFrame[] = [];
+  let evidence: Stage49Evidence | null = null;
+  const collectionErrors: string[] = [];
+  try {
+    await page.evaluate(installStage49Observer);
+    await page.locator('[aria-label="내 손패"] [data-slot="49"]').click();
+    await expect(page.getByTestId('solo')).toHaveAttribute('data-play-timings', /.+/, {
+      timeout: 5000,
+    });
+    observed = await frames(page);
+    expect(observed[0]!.counts.reduce((a, b) => a + b, 0)).toBe(0);
+    expect(observed.at(-1)!.counts.reduce((a, b) => a + b, 0)).toBe(1);
+    await expect(page.locator('[aria-label="내 손패"] [data-slot="38"]')).toBeVisible();
+    await expect(page.locator('[data-landing-scene]')).toHaveCount(0);
+  } finally {
+    // timeout/원 후행 단언 실패에도 원 RAF와 새 identity 증거를 남기고 wrapper를 복원한다.
+    try {
+      evidence = await page.evaluate(() => {
+        const observation = (window as Stage49ObservationWindow).__stage49Observation;
+        return observation?.stop() ?? null;
+      });
+    } catch (cause) {
+      collectionErrors.push(`observer stop: ${cause instanceof Error ? cause.name : 'unknown'}`);
+    }
+    try {
+      observed = await frames(page);
+    } catch (cause) {
+      collectionErrors.push(`original frames: ${cause instanceof Error ? cause.name : 'unknown'}`);
+    }
+    if (evidence && collectionErrors.length)
+      evidence.errors.push('final-evidence-collection-error');
+    await writeFile(
+      testInfo.outputPath('frames.json'),
+      JSON.stringify({ seed: 2, events, observed }),
+    );
+    await writeFile(
+      testInfo.outputPath('stage49-contract.json'),
+      JSON.stringify({
+        evidence,
+        collectionErrors,
+        result: evidence ? classifyStage49(evidence, observed) : null,
+      }),
+    );
+  }
+  expect(evidence, 'stage49 observer evidence').not.toBeNull();
+  const result = classifyStage49(evidence!, observed);
+  expect(result.failures, 'stage49 source-bound movement/capture contract').toEqual([]);
+  expect(result.ok).toBe(true);
 });
 
 test('새 staging을 고른 다음에도 원본 target 관계를 이어 실제 획득한다 @guest', async ({
