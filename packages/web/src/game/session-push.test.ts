@@ -230,6 +230,12 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 2; i++) await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+/** 원격 컨트롤러 시험도 공개 완료된 현재 결과만 로컬 확인한다. */
+function acknowledgeResult(game: HostGame | GuestGame): void {
+  const result = game.pendingRoundResult;
+  if (result !== null && !result.acknowledged) game.acknowledgeRoundResult(result.key);
+}
+
 test('호스트·게스트 승자만 기존 push/ready 경로로 선택하고 최종 정산을 한 번 기록한다', async () => {
   const [hostWire, guestWire] = createMemoryTransportPair();
   const host = new HostGame({
@@ -296,6 +302,8 @@ test('호스트·게스트 승자만 기존 push/ready 경로로 선택하고 �
           }),
         );
       const currentRound = host.stats.round;
+      acknowledgeResult(host);
+      acknowledgeResult(guest);
       if (host.pushDecision !== null) {
         expect(guest.pushDecision?.winner).toBe(!host.pushDecision.winner);
         expect(host.records).toHaveLength(currentRound - 1);
@@ -338,8 +346,10 @@ test('호스트·게스트 승자만 기존 push/ready 경로로 선택하고 �
       }
       if (!hostPush || !guestPush || !hostAccept || !guestAccept) {
         const expectedPushes = host.playback.settlement?.view.nextPushes;
+        acknowledgeResult(guest);
         guest.nextRound();
         await flush();
+        acknowledgeResult(host);
         host.nextRound();
         await flush();
         expect(host.playback.board.pushes).toBe(expectedPushes);
@@ -400,8 +410,10 @@ test('호스트가 선택 대기 중 종료하면 받기 정산을 한 번 기�
         expect(host.stats.phase).toBe('ended');
         return;
       }
+      acknowledgeResult(guest);
       guest.nextRound();
       await flush();
+      acknowledgeResult(host);
       host.nextRound();
       await flush();
     }

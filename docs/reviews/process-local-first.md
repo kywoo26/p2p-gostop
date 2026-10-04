@@ -19,8 +19,8 @@ sudo가 필요한 apt 일괄 설치: 255개, 내려받기 262 MB, 디스크 +638
 
 ## 결정
 
-- 삭제: `.devcontainer/`, `compose.yaml`, `docker/`, `.github/actions/dev-image`.
+- 당시 개발 컨테이너 삭제: `.devcontainer/`, `compose.yaml`, `docker/`, `.github/actions/dev-image`. 현재 운영용 `docker/relay/`는 이 개발환경 삭제 결정과 별개다.
 - 호스트 설치는 `tools/setup-host.sh` 하나(여러 번 실행 가능, 단계 출력, sudo는 터미널에서만 묻고 비대화형이면 보류로 끝낸다. 재실행(exec)하지 않는다).
-- 검증은 `npm run verify` 또는 AGENTS §5의 개별 명령. 로컬 E2E 4 workers, `sim --workers 4`, Gradle `--max-workers=4`.
+- 현재 검증 명령의 정본은 [AGENTS.md §5](../../AGENTS.md)다. `npm run verify`는 main/full E2E 묶음이며 PR의 `e2e:smoke`와 구별한다. 엔진별 worker 상한과 개별 명령은 AGENTS §5를 따른다. 로컬 E2E 4 workers, `sim --workers 4`, Gradle `--max-workers=4`.
 - 로컬·CI 동일성은 버전 핀(`.nvmrc`, package-lock, Gradle 설정, JDK 21, Ubuntu 24.04)으로 담보한다.
 - JDK 배포판은 CI Temurin, 호스트 Ubuntu OpenJDK(같은 21.0.12 패치). Adoptium 저장소를 호스트에 추가하지 않는다.

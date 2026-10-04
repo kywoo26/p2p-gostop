@@ -1,6 +1,7 @@
 // RP-03B: Windows 실행 전 배포 경계와 수동 시작 계약을 정적으로 확인한다.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { directoryFiles, inspectBundle, sha256 } from './artifact.mjs';
 
 const [dockerfile, compose, start, stop, helper] = await Promise.all(
   [
@@ -64,3 +65,23 @@ assert.match(helper, /command -v docker/);
 assert.match(helper, /\$Repo = \$env:RELAY_WSL_REPO/);
 
 assert.doesNotMatch(publicDocs[0], /docker compose -f compose\.relay\.yaml (?:logs|ps|down)/);
+
+// RP-OPS01: 서비스 실행 없이 독립 helper와 library 진입 계약을 확인한다.
+assert.equal(typeof directoryFiles, 'function');
+assert.equal(typeof inspectBundle, 'function');
+assert.equal(
+  sha256(Buffer.from('')),
+  'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+);
+const [ops, lifecycle, fixtures, artifact] = await Promise.all(
+  ['ops.ps1', 'lifecycle.ps1', 'check-lifecycle.ps1', 'artifact.mjs'].map((name) =>
+    readFile(`tools/relay/${name}`, 'utf8'),
+  ),
+);
+assert.match(ops, /relay\.ps1'\) -Library/);
+assert.match(helper, /if \(-not \$Library\) \{ exit/);
+assert.match(lifecycle, /ZipFile\]::OpenRead/);
+assert.doesNotMatch(lifecycle, /ExtractToDirectory|funnel reset|tailscale down|--bg|npm ci/i);
+assert.match(fixtures, /REAL_NATIVE_ADAPTER_FORBIDDEN/);
+assert.doesNotMatch(artifact, /child_process|node:zlib|fetch\(|https?:\/\//);
+console.log('RP-OPS01 library·supported ZIP·isolated fixture 경계 확인 완료');

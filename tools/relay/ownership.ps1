@@ -75,8 +75,9 @@ function RemoveRelayLease($Lease) {
     [IO.File]::Delete($Marker)
   }
 }
-function NewRelayLease([string]$Node, [string]$ImageTag, [string]$ImageId) {
-  $runId = [Guid]::NewGuid().ToString('N')
+function NewRelayLease([string]$Node, [string]$ImageTag, [string]$ImageId, [string]$RunId) {
+  $runId = if ($RunId) { $RunId } else { [Guid]::NewGuid().ToString('N') }
+  if ($runId -cnotmatch '^[a-f0-9]{32}$') { Fail 'Invalid operation nonce.' }
   return [pscustomobject]@{
     Schema = 2; RunId = $runId; Project = 'p2p-gostop-relay-' + $runId
     OwnerSid = GetRelayUserSid; Repo = $Repo; Tailscale = $Tailscale; Node = $Node

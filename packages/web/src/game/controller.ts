@@ -7,6 +7,7 @@ import {
   type Action,
   type PlayerView,
   type LedgerEntry,
+  type EndReason,
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
 import type { DecisionClock, TimeoutResult } from '@p2p-gostop/protocol';
@@ -17,6 +18,65 @@ export interface PendingRoundResult {
   readonly key: string;
   readonly summary: RoundSummary;
   readonly acknowledged: boolean;
+  /** 원격 상대가 먼저 확정한 결과는 로컬 확인과 무관하게 확정 정산이다. */
+  readonly committed?: boolean;
+}
+
+/** 게스트에게 아직 정산 뷰가 오지 않은 공개 판 결과. 없는 정보를 정산처럼 만들지 않는다. */
+export interface PendingPublicRoundResult {
+  readonly key: string;
+  readonly summary: null;
+  readonly publicResult: {
+    readonly names: readonly [string, string];
+    readonly scores: readonly [number, number];
+    readonly winner: 0 | 1 | null | undefined;
+    readonly reason: EndReason | undefined;
+  };
+  readonly acknowledged: boolean;
+  readonly committed: boolean;
+}
+
+export type DisplayRoundResult = PendingRoundResult | PendingPublicRoundResult;
+
+/** 종료 결과와 뒤따르는 받기/밀기 정산은 같은 판에 속한다. 표시 순번은 확정 때 갱신할 수 있다. */
+export interface RemoteResultIdentity {
+  readonly epoch: string;
+  readonly round: number;
+  readonly terminalSeq: number;
+  readonly viewer: 0 | 1;
+}
+
+export type RemoteRoundResult = DisplayRoundResult & {
+  readonly identity: RemoteResultIdentity;
+  readonly displaySeq: number;
+  readonly committed: boolean;
+  readonly presented: boolean;
+};
+
+export function remoteResultKey(identity: RemoteResultIdentity): string {
+  return `${identity.epoch}:${identity.round}:${identity.terminalSeq}:${identity.viewer}`;
+}
+
+/** 처음 공개하는 결과는 최종 스냅과 재생 완료가 필요하다. 정산 hold 뒤의 미래 FIFO는 별개다. */
+export function remoteResultVisible(
+  playback: Playback,
+  result: RemoteRoundResult,
+  epoch: string | null,
+): boolean {
+  const board = playback.board;
+  const identity = result.identity;
+  if (
+    epoch !== identity.epoch ||
+    board.viewer !== identity.viewer ||
+    board.round !== identity.round ||
+    board.phase !== 'end'
+  )
+    return false;
+  if (result.presented)
+    return board.eventSeq === identity.terminalSeq || board.eventSeq === result.displaySeq;
+  if (board.eventSeq !== result.displaySeq || playback.busy) return false;
+  // settlement는 최종 commit/tick과 종료 hold 뒤 설정된다. 그 뒤의 다음 판 큐는 기다리지 않는다.
+  return result.committed ? playback.settlement !== null : playback.idle;
 }
 
 export type GameMode = 'solo' | 'host' | 'guest';
@@ -38,13 +98,15 @@ export interface GameStats {
 export interface PushDecision {
   readonly winner: boolean;
   readonly canPush: boolean;
-  readonly nextMultiplier: number;
+  readonly nextMultiplier: number | null;
   readonly acceptAmount: number | null;
   readonly forfeitedPoints: number | null;
 }
 
 export interface GameController {
-  readonly pendingRoundResult?: PendingRoundResult | null;
+  readonly pendingRoundResult?: DisplayRoundResult | null;
+  /** 실제 공개 가능한 결과만 표시됨으로 기록한다. 확인·송신·금액 적용과 별개다. */
+  markRoundResultPresented?(key: string): void;
   acknowledgeRoundResult?(key: string): void;
   /** 이 세션에 실제로 적용되는 점당 금액. */
   readonly perPoint?: number | undefined;

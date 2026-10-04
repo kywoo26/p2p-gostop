@@ -223,7 +223,10 @@ it('NP-RP-04/05: 코드 참여는 승인 전 좌석 없이 대기하고 승인 �
   expect(request.nickname).toBe('코드친구');
   expect(host.snapshot.peerPresent).toBe(false);
   await host.accept(request.id);
+  expect(host.snapshot).toMatchObject({ state: 'admitting', requests: [], peerPresent: false });
   expect(await joining).toEqual({ ok: true });
+  await until(host, (snapshot) => snapshot.peerPresent);
+  expect(host.snapshot.state).toBe('connected');
   await until(guest, (snapshot) => snapshot.peerPresent);
   expect(guestSockets()).toBe(2);
 }, 15_000);
