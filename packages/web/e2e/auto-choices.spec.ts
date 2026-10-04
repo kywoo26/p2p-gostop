@@ -139,6 +139,13 @@ async function startRelay(): Promise<{ port: number; proc: ChildProcess }> {
 
 /** 공개 화면만 조작한다. 게스트의 유일한 합법 play는 절대로 수동 대체하지 않는다. */
 async function stepMatch(page: Page, authority: { seq: number; view: BoardView } | null = null) {
+  const acknowledge = page.locator('[data-choice="acknowledge"]');
+  if (await acknowledge.isVisible()) {
+    await expect(page.getByTestId('settlement-headline')).toBeVisible();
+    await acknowledge.click();
+    // 로컬 결과 확인은 권위 응답/수동 play가 아니다. 기존 poll이 다음 실제 선택을 계속 찾는다.
+    return null;
+  }
   return page.evaluate((current) => {
     const root = document.querySelector<HTMLElement>('[data-testid="match"]');
     if (root === null) return null;

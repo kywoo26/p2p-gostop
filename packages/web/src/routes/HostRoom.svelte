@@ -76,11 +76,14 @@
       : remoteSnapshot.room.expiresAt - (6 * 60 - 15) * 60_000,
   );
   let remoteBusy = $state(false);
+  $effect(() => {
+    const controller = remote;
+    remoteSnapshot = null;
+    return controller?.subscribe((snapshot) => (remoteSnapshot = snapshot));
+  });
   onMount(() => {
-    const off = remote?.subscribe((snapshot) => (remoteSnapshot = snapshot));
     const timer = window.setInterval(() => (now = Date.now()), 1000);
     return () => {
-      off?.();
       window.clearInterval(timer);
     };
   });
@@ -183,9 +186,24 @@
   const permission = $derived(hotspot.error === 'permissionRequired');
   const canStart = $derived(
     remote
-      ? remoteSnapshot?.peerPresent === true && guest?.connected === true && !busy && !remoteBusy
+      ? remoteSnapshot?.state === 'connected' &&
+          remoteSnapshot.peerPresent &&
+          guest?.connected === true &&
+          !busy &&
+          !remoteBusy
       : resume !== null || (guest?.connected === true && !busy),
   );
+  const remoteStatus = $derived.by(() => {
+    if (remoteSnapshot?.state === 'ended') return '방 종료';
+    if (remoteSnapshot?.state === 'reconnecting') return '중계 재연결 중';
+    if (remoteSnapshot?.state === 'error') return '연결 확인 필요';
+    if (remoteSnapshot?.state === 'admitting') return '참가 승인 · 접속 대기';
+    if (remoteSnapshot?.state === 'checking') return '중계 응답 확인 중';
+    if (remoteSnapshot?.state === 'connected' && remoteSnapshot.peerPresent)
+      return guest?.connected ? '연결됨 · 준비 완료' : '연결됨 · 게임 연결 확인 중';
+    if (remoteSnapshot?.peerPresent) return '게임 연결 확인 대기';
+    return guest ? '상대 재접속 대기' : '접속 대기';
+  });
 </script>
 
 <Screen title={remote ? '원격 방 열기' : '방 열기'}>
@@ -195,10 +213,36 @@
         <h2>상대</h2>
         <p class="guest" role="status">
           <span class={['dot', { on: remoteSnapshot.peerPresent }]} aria-hidden="true"></span>
-          {guest?.name ?? '상대'} · {remoteSnapshot.peerPresent ? '연결됨' : '접속 대기'}
+          {guest?.name ?? '상대'} · {remoteStatus}
+        </p>
+        <p class="next-step">
+          {#if remoteSnapshot.state === 'ended'}새 방을 만들어 다시 초대하세요.
+          {:else if remoteSnapshot.state === 'reconnecting'}중계에 다시 연결되면 상대의 게임 연결을
+            확인합니다.
+          {:else if remoteSnapshot.state === 'error'}연결 안내를 확인한 뒤 다시 연결하세요.
+          {:else if remoteSnapshot.state === 'admitting'}참가 요청을 수락했습니다. 상대의 접속을
+            기다리고 있습니다.
+          {:else if remoteSnapshot.state === 'checking'}중계 응답 확인이 끝나면 상대의 게임 연결을
+            확인합니다.
+          {:else if remoteSnapshot.state === 'connected' && remoteSnapshot.peerPresent}
+            {#if guest?.connected}규칙·금액을 확인하고 아래 시작을 누르세요.
+            {:else}상대의 게임 연결을 확인하고 있습니다.{/if}
+          {:else if remoteSnapshot.peerPresent}중계 연결 상태를 확인한 뒤 상대의 게임 연결을
+            확인합니다.
+          {:else if guest}상대가 같은 방으로 돌아오면 시작할 수 있습니다.
+          {:else if remoteSnapshot.room}초대 링크를 보내거나 코드 참여 요청을 수락하세요.
+          {:else}중계 연결을 확인하고 방을 만드세요.{/if}
         </p>
       </section>
-      <RemoteGuide controller={remote} />
+      {#if !remoteSnapshot.room}<RemoteGuide controller={remote} />{/if}
+      {#if remoteSnapshot.room && (remoteSnapshot.state === 'error' || remoteSnapshot.state === 'reconnecting')}
+        <button
+          class="button"
+          type="button"
+          disabled={remoteBusy || remoteSnapshot.state === 'reconnecting'}
+          onclick={() => remote.retry()}>다시 연결</button
+        >
+      {/if}
       <section class="invite-section" aria-label="원격 초대">
         <h2>친구와 원격 대전</h2>
         {#if remoteSnapshot.room}
@@ -283,7 +327,11 @@
               >
             </div>
           </div>
-        {:else}<p class="hint">요청을 기다리는 중…</p>{/each}
+        {:else}
+          {#if remoteSnapshot.state === 'waiting' && !remoteSnapshot.peerPresent && !guest && remoteSnapshot.room}
+            <p class="hint">요청을 기다리는 중…</p>
+          {:else}<p class="hint">대기 중인 참여 요청이 없습니다.</p>{/if}
+        {/each}
       </section>
     {:else}
       <section class="connection-state" aria-labelledby={`${ids}-guest`}>

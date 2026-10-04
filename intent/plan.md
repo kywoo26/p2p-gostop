@@ -334,13 +334,13 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 [AI-native SDLC playbook의 Build](https://claude.com/blog/the-ai-native-sdlc-playbook)는 파일·순서·위험·증명, 수락된 계획 commit, 구현 이탈의 같은 commit 동기화, 단계 산출물의 다음 단계 연결과 정본 지정을 권고한다. 아래는 이 프로젝트의 적용이며 원문의 서비스·hooks·자동화 도입을 뜻하지 않는다. 기존 `intent/intent.md → intent/spec.md → intent/plan.md → 코드`를 유지한다.
 
 - 착수할 변경은 이슈/요구 ID, 기준 SHA, 사용자 결과, 소유 파일, 구현 순서, 위험, 증명, 선행 소유권, 수락 기록을 적는다. 미착수 backlog는 다음 준비 조건만 두고 세부 계획을 확정한 것으로 표시하지 않는다.
-- 기존 사용자 승인 아래 통상 구현은 root가 범위·인계를 수락하면 구현 브랜치에 계획 commit을 만들고 바로 재현·구현·검증한다. 별도 문서 PR 병합을 기다리지 않는다. 실질 spec 변경은 근거 리뷰와 사용자 승인을 유지한다. 승인된 작업에 별도 승인 질문을 반복하지 않는다.
-- 계획 commit은 자기 SHA를 같은 파일에 적을 수 없으므로 PR 본문에 실제 full SHA와 수락 기록 참조를 남긴다. 이슈에는 PR/계획 commit 링크를 연결한다. 구현 이탈은 이유·승인 범위와 함께 코드와 같은 commit에서 계획을 갱신한다. #213/#214/#206에는 소급 승인·가짜 최초 계획 SHA를 만들지 않고 현재부터 보완한다.
+- 기존 사용자 승인 아래 통상 구현은 root가 범위·인계를 수락하면 바로 재현·구현·검증한다. 계획 commit·PR 작성은 위임으로 승인된 경우에만 수행한다. 위임되지 않았으면 commit/push/PR 없이 기준 SHA·계획·수락 기록을 호출자에게 인계하고 승인된 소유 범위에서 구현한다. 별도 문서 PR 병합을 기다리지 않는다. 실질 spec 변경은 근거 리뷰와 사용자 승인을 유지한다. 승인된 작업에 별도 승인 질문을 반복하지 않는다.
+- 계획 commit·PR 작성이 위임된 경우 PR 본문에 실제 full SHA와 수락 기록 참조를 남기고 이슈에는 PR/계획 commit 링크를 연결한다. commit 전 인계는 기준 SHA·계획 내용·수락 기록과 실제 diff를 연결하며 가짜 계획 SHA를 만들지 않는다. 구현 이탈은 이유·승인 범위와 함께 계획에 기록하고, commit이 위임된 시점에 코드와 같은 commit으로 동기화한다. #213/#214/#206에는 소급 승인·가짜 최초 계획 SHA를 만들지 않고 현재부터 보완한다.
 
 | 단계 | 산출물·다음 단계 trigger |
 |---|---|
 | 의도·요구 | `intent/intent.md`의 목적과 `intent/spec.md` ID/수락 범위를 확인 → 실행계획 작성. 실질 요구 변경은 사용자 승인 뒤 진행 |
-| 계획·구현 | root 수락 기록 + 계획 commit → 소유 파일의 재현·코드·검증; 이탈은 같은 commit에 동기화 |
+| 계획·구현 | root 수락 기록 + 기준 SHA·계획 인계 → 소유 파일의 재현·코드·검증; commit·PR이 위임된 경우 계획 commit을 연결하고 이탈은 코드와 같은 commit에 동기화 |
 | 검토·출하 | PR의 계획 SHA·실제 diff·검증/한계 → 독립 reviewer 판정 + 병합 대상 동일 head 필수 CI → 사람 또는 지시받은 root의 병합·출하 |
 | 후속 | 사람 관측·결함은 기존 이슈/§3-2에 결과와 미완 범위를 연결 → 다음 필요한 변경 준비; 실기기 결과를 추정하지 않음 |
 
@@ -380,9 +380,49 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 | --- | --- | --- |
 | 기본 화면·게임 화면의 상태바 대비 | 최소 테마 수정·Android 유한 검증 완료, 실기기 수용 대기 | 기본 화면은 밝은 배경/어두운 아이콘, 게임은 기존 어두운 배경/밝은 아이콘을 명시한다. 투명 상태바 아래 게임 컨테이너도 같은 불투명 배경으로 그린다. |
 
-- 기준 `f34528927139ef7477f33becd25993569567909e` 위 Android 제품 4파일은 테마·색·GameActivity 테마 연결·게임 컨테이너/WebView 배경만 바꾼다. 기존 inset 계산/소비, uiMode 처리, WebView 수명·네트워크, 탐색 바 정책은 유지한다. API 33/34의 상태바 색과 API 35/36의 투명 상태바 아래 앱 배경을 구분하며 edge-to-edge opt-out은 추가하지 않는다. 사용자의 기기/OS/실제 아이콘 색은 아직 미확인이므로 원인 확정이나 실기기 해결로 기록하지 않는다.
+- 기준 `f34528927139ef7477f33becd25993569567909e` 위 Android 제품 4파일은 테마·색·GameActivity 테마 연결·게임 컨테이너/WebView 배경만 바꾼다. 기존 inset 계산/소비, uiMode 처리, WebView 수명·네트워크, 탐색 바 정책은 유지한다. API 33/34의 상태바 색과 API 35/36의 투명 상태바 아래 앱 배경을 구분하며 edge-to-edge opt-out은 추가하지 않는다. 사용자는 Android 16의 시계·배터리 상태바 문제라고 확인했다. 기기 모델·실제 아이콘 색과 수정 후 수용은 미확인이므로 원인 확정이나 실기기 해결로 기록하지 않는다.
 - 같은 working Android 5파일(제품 4+시험 1)과 승인된 v0.5.1 웹 번들 149파일에서 Gradle 한 호출로 실제 리소스 상속·Activity 연결·불투명 색 대비 계약 시험 3건이 통과했다. 해당 class 외 JVM 시험은 미실행이다. packageDebug·완성 APK 149파일 전수 검사·lint 분석/보고는 실제 실행했고 lint issues는 0이다. 기존 검사기 8건은 UP-TO-DATE여서 신규 실행으로 합산하지 않는다. configuration cache는 stored이며 실제 source 수정 전후 바이트는 같다.
 - 이 APK는 수정 중 소스의 debug 산출물(versionCode751, versionName `0.5.1-dirty`)이며 배포본이 아니다. JDK/XML·빌드·자산 검사는 실제 상태바 아이콘, 잘림, 인셋 배치를 증명하지 않는다. [사람 검증 절차](../docs/device-test/procedure.md#78-android-상태바-대비-244)를 적용하고 사람이 제공한 결과만 기록한다. 최종 CI·리뷰·병합·배포는 별도다.
+
+### 피 가치·획득 장수 구분 (#245, FR-40·FR-42·FR-46·FR-47·NF-08)
+
+| 범위 | 상태 | 검증과 남은 경계 |
+| --- | --- | --- |
+| 획득패 피 가치와 물리 장수 | 표시 수정·소스별 로컬·정적 검사와 한정 독립검토 완료, 최신 main 통합 CI 대기 | 피 제목에 `V피`, 기존 배지에 `N장`, 접근성 설명에 가치·실제 장수·국진 쌍피 역할을 구분한다. HUD 점수 산식·엔진·공개 카드 목록은 변경하지 않는다. |
+
+- 기준 `f34528927139ef7477f33becd25993569567909e`에서 CapturedPile과 획득패 표시 CSS만 수정했다. 물리 장수와 피 가치는 서로 다를 수 있으며, 그림은 기존처럼 최근 4장 요약이다. 사용자가 제공한 사진의 가려진 카드를 복원하거나 사진 속 5점의 정답을 확정한 변경이 아니다. 전체 점수 설명 #205와 국진 선택 중 점수 게시 시점 #212는 별도 미완이다.
+- 구성한 표시 조건 4개(10피/10장, 14피/10장, 국진 포함 10피/9장, 반대 좌석·힌트 끔)를 390×734에서 Chromium/WebKit 각 한 번, worker1·retry0으로 실행해 총 8건이 통과했다. 실제 수집 목록 각 4건과 실행·JSON 기하 자료 8건이 일치한다. 표시되는 피 값, ARIA, 전체 공개 카드·요약 카드 순서, 제목/카드 경계와 CSSOM에서 계산한 배지 영역의 포함 관계를 검사했다. 이전 소스의 단위 숨김은 source 관측이며 before 브라우저 실행은 없다.
+- 최초 통합 검증은 Node 589건, Chromium/WebKit 컴포넌트 각각 553건이 통과했다. 최초 smoke는 주석의 폰트 코퍼스 누락으로 시험에 도달하지 못했고, 그때 웹 입력 없이 시작한 Android 검증 실패도 별도로 보존했다. 주석만 정정한 smoke 460건은 330통과·128실패·timing 2미도달이었다. 실패는 새 피 값의 기본 굵기 700이 드러난 폰트 감사 104건, ARIA 8건, PNG 16건으로 분리했다.
+- 피 값의 굵기는 기존 제목을 상속하도록 수정했다. 최종 C/W 표적 각 4건은 실제 굵기 400을 확인했고, 같은 layout 104건은 폰트 감사를 모두 통과한 뒤 96통과·PNG 8실패였다. 원 expected/actual/diff를 검토해 PNG 38개·ARIA 8개만 승인 바이트로 갱신했다. 허용오차·시험 단언은 유지했다. 후행 비교 수집용 soft 실행은 통과 근거로 쓰지 않았으며, 최종 원본 hard 시험 32건(C17/W15)은 retry0·snapshot 갱신 없음으로 모두 통과했다. 후행 PNG 59개·ARIA 8개 도달은 원본 순차 코드와 정상 시험 완료에 근거하며 별도 per-expect 추적 관측으로 주장하지 않는다.
+- 최종 번들을 재사용한 별도 timing Chromium 2건은 통과했다. 준비 목록 누락 및 metadata 검산 실패 뒤 실행을 시작한 절차 오류는 원문과 실효 설정을 분리 보존했다. 최종 Android는 JUnit 19 suite/93건·lint를 통과했고 APK와 웹 입력 149파일의 경로·모든 해제 바이트가 일치했다. Gradle 55작업 중 11실행·44 UP-TO-DATE이며 검사기 반례 8건은 재사용이다. 이전 Android 통과 자료는 폰트 수정 전 소스로 유지한다.
+- 최종 소스에서 확인한 130개 case ID(layout 96·strict 32·timing 2)와 이전 소스의 330개 통과 기록은 귀속을 구분한다. 단일 최종 smoke 460건 전체 통과로 합산하지 않는다. 배지 문자 잉크·실제 iPhone 렌더링과 모든 화면 크기는 미수용이며 #243 바닥 카드 소실도 미해결이다. 기존 게시 소스의 최종 lint·check와 한정 독립검토는 완료했다. 기존 WebKit CI 실패 기록은 보존하며, 최신 main 통합 뒤 새 head CI·최종 검토·병합·배포는 별도다. 운영 중계기는 변경하지 않는다.
+
+### MAINT-01 검증 명령·에이전트 지침 정합 (NF-08·NF-09, 진행)
+
+- 사용자 요청에 따라 정비 총괄과 독립 구현 담당을 분리했다. 첫 범위는 `verify`의 Chromium worker 4 / WebKit worker 1 순차 실행, 개발 Docker 삭제 역사와 운영 relay 구분, 명시 위임 없는 계획 커밋 금지의 세 가지다. 기존 검증 순서·full E2E·CI·의존성은 유지한다.
+- JSON·명령 구문·역치환 및 소유 밖 바이트 검토 후 최초 설치·lint·check를 통과했다. 설치 추가 262개와 registry 버전 대조 256개를 구분한다. 게시 head `adc528e`의 CI는 통과했으며 독립 리뷰에서 발견한 계획 commit 조건 불일치를 계약 3줄에서 정정했다. 이후 통합 head `3e971bf`의 WebKit CI 실패와 관측 자료는 보존한다. 이번에는 main `71855e8`의 #200·#252 및 기존 계획을 유지해 통합하며, 새 게시 head의 CI·독립 검토는 별도로 확인한다. 기존 실패 원인이 main의 후속 통과만으로 해소됐다고 판단하지 않는다. 이 변경의 검증 명령 자체를 전체 실행했다고 주장하지 않는다. 네트워크 시험의 기본 진입점 누락 가능성, 활성 기술 문서 정합과 서버 재사용 귀속은 별도 후속으로 조사한다. 문서 증가 자체를 완료 기준으로 삼지 않는다.
+
+
+### #200 자기 카드 재생 완료 대기 정합 (진행; UX-15~17·AC-06·NF-08)
+
+- 소유는 `e2e/landing.spec.ts`의 paired/ppeok 두 완료 대기와 이 계획 기록이다. Board busy는 상대 차례·CPU 대기까지 포함하므로, fresh 단일 자기 입력의 최종 재생 완료는 기존 공개 local timing이 빈 배열에서 정확한 숫자 한 항목으로 추가되는 조건으로 구분한다. 연결된 동일 root·동일 판을 요구하며 제품 API·엔진·애니메이션·기존 5000/6000ms 한도와 후행 단언은 바꾸지 않는다.
+- 한정 검증은 원 시험 WebKit 2건을 worker2/retry0으로 각각 첫 시도 통과했다. 같은 root 내부 generation reset·다중 입력·100개 history cap에는 일반화하지 않는다. timing은 모든 paint나 다음 CPU 재생의 완료를 증명하지 않으며 원 scene/카드/캡처 단언을 유지한다.
+- 독립 source 검토에서 한정 추가 지적 0이다. 원 CI의 busy 실패와 E0/E1 관측·명령 준비 실패는 보존한다. 동일 단언 경계가 동일 원인이라는 판정은 하지 않으며, stage 관측 밀도·floor의 같은 배치 비교·원격 프레임 문제 #252는 별도 미해결이다. 최신 main 통합·최종 검사·게시 head CI·리뷰 및 병합은 후속 gate다.
+
+### RP-UI01 참가 상태·결과 확인 순서 (#242·#131, 진행; FR-05/06/18·NF-05·UX-24)
+
+- #242는 참가 요청 대기, 수락 후 연결 확인, 참가자 연결과 게임 준비를 구분한다. 시작 가능 조건은 연결 상태·상대 존재·게임 준비에 맞춘다. 방이 남아 있는 오류에는 기존 retry의 다시 연결 버튼을 제공하며 재연결 중 중복 실행을 막는다. 화면 재생성·controller 교체 때 이전 구독을 정리한다. GuestJoin의 상태 타입은 공유 RemoteState로 맞추되 게스트 동작 분기는 바꾸지 않는다.
+- #242 표적 Chromium16은 모두 통과했다. 상태7·기존 조건·실제 unmount/remount/controller 교체·이전 controller 발행 무시·stale peer·오류 retry/중복 방지까지 도달했다. 실제 settings 경로 E2E나 실제 network retry 성공의 대체는 아니다. 초기13의 4통과/9실패는 exact 전체 문구 기대의 착오였고 원문을 보존했으며, 보정 후13통과와 회복 경계 추가 후16통과를 합산하지 않는다.
+- #131은 최종 재생 완료 후 결과를 먼저 읽고 로컬 결과 확인을 거쳐 기존 권한의 받기/밀기·다음 판을 선택한다. 결과 확인은 송신·원장 변경·상대 동의가 아니다. epoch/round/종료 순번/시점 좌석의 key로 중복·옛 확인을 막으며, 이미 확정된 같은 결과의 순번 변경은 확인을 유지한다. 게스트 복귀에 없는 승자·사유·금액을 추정하지 않는다. Solo 기본 확정 summary와 공개 게스트의 nullable summary를 구별한다.
+- 미래 판이 먼저 도착해도 공개 Playback 정산 hold의 완료 증거로 이전 판 결과를 유지한다. 이전 판의 다음 버튼은 이미 진행한 권위 판에 ready를 보내지 않는다. 새 epoch의 첫 유효 snapshot은 공개 reset으로 이전 재생 세대를 무효화하며 duplicate/stale/거절은 reset하지 않는다. 엔진·프로토콜 정산·저장 권위·Playback 내부 큐를 변경하거나 원장 적용을 로컬 확인까지 지연하지 않는다.
+- 원 manual Stop 조건은 busy 중 받기/밀기 화면 노출로 실패했다. 후속 C10은 8통과/2시험 locator 실패, scoped2는 같은 viewport 고정 overlay의 pointer 간섭으로2실패했다. guest만 렌더한 영향3 보정은 host를 공개 getter/key/ack로 구동하고 guest 실제 UI를 검증했다. 원 실패·시험 의미 변경·후행 미도달을 보존한다.
+- 최신 Chromium 표적18은 remote9·기존 Solo225 2·session2·wiring5 모두 통과(원JSON50 중32이름 미선택)했다. 새 committed-summary epoch1은 정상 저장 snapshot의 금액/summary 복원과 이전 future 재생 완료 뒤에도 round1/summary/원장이 보존되는 두 경계를 한 시험으로 확인했다. host 실제 UI와 guest-only fixture의 수용 범위를 구별한다.
+- 후속 E2E는 full 필터의 정확10제목을 Chromium project/worker1/retry0으로 한 번 실행해10통과·실행 skip0이었다. 내부 WebKit guest를 쓰는5건과 Chromium context만 쓰는5건을 구별한다. 참가·복귀/호스트 부재·여러 판 원장·자동 단일 수·밀기/명시 선택의 기존 후행 검사를 유지했다. 원 webServer 빌드1의 새 dist149와 시작/종료 소스·바이트를 연결했다. 이는 WebKit-host recovery3이나 PR/full 전체 행렬 수용이 아니다.
+- full check 통과와 privacy 시험16통과를 보존한다. 기존 privacy 등록7개의 원문·fingerprint가 같은 상태에서 줄 번호만 이동해 초기 lint가 멈춘 원문을 남겼다. 등록 수149·path/type/hash/reason은 유지한 채 정확7줄 위치만 정합하고 privacy 검사와 미도달 Oxc/web lint를 각각 통과했다. 새 credential 허용이나 검출 규칙 완화는 없다.
+- 사용자 후속 확인은 “마지막 패를 직접 눌렀는데 결과를 볼 틈 없이 선택창이 떴다”이다. 자동 패 제출·시간 만료로 해석하지 않는다. 마지막 손패 자동 Stop의 엔진 벡터와 규칙 문서 간 정합은 별도 미완이며, 이 UI 수정으로 규칙 정답을 확정하지 않는다.
+- 필수 묶음은 Node589·Chromium/WebKit 각각569·Android JUnit93과 APK 웹 자산149 일치를 확인했다. PR smoke는457통과·참가 화면 locator 중복1실패·의존 timing2미실행이었다. 당시 snapshot 옵션은 요청한 none이 아닌 기본 missing이었으나 기준140개 전후 경로·바이트는 같았다. 기존 참여 요청 영역으로 locator만 한정한 후속 C1과 미실행 timingC2는 explicit none/worker1/retry0으로 각각 통과했다. 원 실패·옵션 차이와 후속 결과는 분리 보존한다. 후속은 동일 dist149의 private preview adapter이며 재빌드하지 않았다.
+- exact commit CI·독립 review·실기기 수용은 남아 있다. 운영 중계기·릴리스·기준샷·timeout은 바꾸지 않는다.
+
 
 ### SK3-HF01 v0.5.1 Android 출시 부팅 회귀 (진행; FR-31·NF-10·§5)
 
@@ -609,6 +649,25 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
 |---|---|---|---|
 | UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 P1 수정은 최종 head `6c9d3ff`에서 독립 재검토 완료 후 병합됐다. 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 회귀를 보존한다. [PR #188](https://github.com/kywoo26/p2p-gostop/pull/188)·[동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36729441463). | 재등장 경계 재검토 완료(자동 검사 범위). Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
+
+### RP-P1 상대 카드 재생 중복 작업 제거 (#252, UX-15~17·NF-03·NF-08·AC-06)
+
+| 범위 | 확인된 구현·검증 | 남은 판정 |
+| --- | --- | --- |
+| 상대 ordinary CardPlayed의 안전 contact | 공개 원본이 없던 카드의 안전 접촉 위치를 먼저 확보하고 같은 단계에서 재사용한다. 성공 시 숨겨질 native 원본의 중복 이동·뒤집기를 만들지 않으며, 실패 시 기존 native fallback을 유지한다. 내패·bonus·staging·deck 공개 경로, 시간표·hold·skip·generation·게임 권위는 변경하지 않는다. | 사용자 보고인 상대 패 입력 무렵의 화면 깨짐 원인·해소, 실제 paint/GPU·WAN·실기기 성능은 미확정이다. |
+| 소스별 한정 검증 | 기준 main `d73fd183d17c2ec904f28745b4c3cf86e8083b3f`에서 합성 ReplayHost 6건을 Chromium/WebKit 각각 통과했다. 실제 양쪽 앱의 고정 prefix8·card12→15 매칭/획득 한 조건을 수정 전후 각각 1회 관측했다. 관찰자 hidden native WAAPI 3→0, 실행자0 유지; 첫 ghost 이동 keyframes·최종 공개 상태·무관 바닥 카드 위치가 유지됐다. | 합성 DOM은 Game/Floor/실제 paint의 대체가 아니다. 한 쌍의 실행 시간은 성능 통계가 아니며, RAF의 동시 가시 중복0과 MutationObserver의 커밋 중간 상태를 구별한다. |
+| 게시·수용 | 좁은 독립 소스 검토에서 확정 차단 발견사항0. 관측 시험 타입 보정은 타입 제거 JS가 동일하고, 제품 주석의 폰트 검사 보정은 주석 제거 JS가 동일하다. 준비 시험 실패3·빌드 선행조건 실패·외부 타입/메타데이터 검산 오류와 각 수정 후 결과를 소스별로 보존한다. | 최종 plan 인수 뒤 AGENTS §5 필수 lint/check/Node/browser/PR smoke/Android 및 CI·리뷰를 수행한다. 기존 RP-OPS01 instant 기준선·#243 바닥 소실·전체 원격 성능 수용은 별도이며, 운영 적용0을 유지한다. |
+
+### RP-OPS01 운영 재사용·원격 측정 후속 (진행; FR-RP-07·NP-RP-07/08·NF-RP-02/05/06·AC-RP-06)
+
+사용자 후속 위임의 기준은 main `f34528927139ef7477f33becd25993569567909e`/v0.5.1이다. 기존 v0.5.1 운영은 그대로 유지하고 별도 개발 branch의 `tools/relay`만 개선한다. 실행 중인 wrapper·release 저장소·Funnel·container·기존 자격에는 이 변경을 적용하지 않는다. [운영·측정 설계](../docs/design/relay-operations.md)와 [명령 runbook](../tools/relay/README.md)을 연결한다. 라이브 적용·병합은 최종 검토 뒤 별도 운영 단계이며, 신규 의존성·protocol·방 persistence·게임 권위·UI 변경은 없다.
+
+| 단위 / 소유 | 구현·검증 경계 | 상태·남은 판정 |
+| --- | --- | --- |
+| RP-OPS01-A / 동일 구현자, 총괄 문서 | preflight/status·같은 버전 비파괴 start, exact release/검증 artifact 사전 준비, 소유권·잠금·활성 연결 거절, 명시적 세션 손실 확인 뒤 apply/restart와 소유 자원만 rollback. legacy는 원 wrapper로 종료·marker 처리 후 새 절차 초기화; 운영 대신 격리 fixture로 검증 | 구현·격리 검토 진행. review01에서 lifecycle 35건을 PowerShell Core 7.6.6/Desktop 5.1 각각 통과, Node 자산 검사 3건·기존 ownership43/native8/runtime9 통과. review02는 running 복구의 자산 검증 실패 뒤 명시 복구가 막히는 원 FAIL을 재현하고, 최소 수정 후 같은 반례 1건을 두 runtime에서 각각 통과했다. 이전 35건을 최신 delta 실행으로 소급하지 않는다. 승인 ZIP 149파일·초기 참조32·기존 served hash 대조 완료. 최종 규범 검사·immutable/PR·CI·실제 운영 적용은 별도 미완 |
+| RP-OPS01-B / 동일 구현자 측정, 총괄 해석 | 기존 AC-RP-01 paired C1(내부 WebKit guest), worker1/retry0/instant, 방1·판1·다음 판1. 보존 same-source dist·격리 loopback 공개 relay/TLS만. 원 hardassert/180초 시험·120초 진행 한도 불변 | 격리 C1/내부 W guest 1회 PASS(3.803초, retry0); N13=events12/reject1, 미응답·재송신0, M18(host9/guest9). 정산·잔액 일치·다음 판 원 hardassert/종료 정리 확인. 거절 원인은 미수집, request↔DOM 상관·WAN RTT·paint·실기기·성능 수용은 미검증 |
+
+Rooms의 방·코드·인증은 process-memory이며 프로세스 교체 시 종료된다(NP-RP-07). TCP 연결0은 방0을 증명하지 않고 rollback도 기존 방·토큰을 복구하지 않는다. 사전 준비로 중단 구간을 줄이는 절차이지 무중단 전환이 아니다. 이미 있는 방 수명·송신 한도·heartbeat를 새 미구현 기능으로 세지 않는다. 우선순위2~5는 실행 계획만 정리하고 이번에는 실험을 추가하지 않는다. 기존 local/main timing·재시도 PASS·실기기 미검증 이력은 원격 성능 증거와 분리해 보존한다.
 
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 

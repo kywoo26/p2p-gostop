@@ -259,6 +259,16 @@ async function move(page: Page): Promise<void> {
   });
 }
 
+/** 원격 결과 인지와 확인만 한다. 받기/밀기나 다음 판을 대신 선택하지 않는다. */
+async function acknowledgeRemoteResult(page: Page): Promise<void> {
+  const acknowledge = page.locator('[data-choice="acknowledge"]');
+  if (!(await acknowledge.isVisible())) return;
+  await expect(page.getByTestId('settlement-headline')).toBeVisible();
+  await expect(page.locator('[data-choice="accept"]')).toBeHidden();
+  await expect(page.locator('[data-choice="push"]')).toBeHidden();
+  await acknowledge.click();
+}
+
 test('호스트·게스트 승자: 실제 중계에서 밀기와 다음 판 배수 동기화 @guest @paired', async ({
   baseURL,
 }, info) => {
@@ -283,6 +293,8 @@ test('호스트·게스트 승자: 실제 중계에서 밀기와 다음 판 배�
     await expect(guest.getByTestId('match')).toBeVisible();
     let chosen: Page | null = null;
     for (let step = 0; step < 1200; step++) {
+      await acknowledgeRemoteResult(host);
+      await acknowledgeRemoteResult(guest);
       if (await host.locator('[data-choice="push"]').isVisible()) chosen = host;
       if (await guest.locator('[data-choice="push"]').isVisible()) chosen = guest;
       if (chosen) break;
@@ -333,6 +345,8 @@ test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 �
     await host.getByTestId('host-start').click();
     await expect(guest.getByTestId('match')).toBeVisible();
     for (let step = 0; step < 1500; step++) {
+      await acknowledgeRemoteResult(host);
+      await acknowledgeRemoteResult(guest);
       if (await guest.locator('[data-choice="push"]').isVisible()) break;
       if (await host.locator('[data-choice="push"]').isVisible()) {
         await host.locator('[data-choice="accept"]').click();
@@ -343,7 +357,7 @@ test('게스트 승자 이탈 뒤 호스트는 3분이 지나도 명시 선택 �
       await host.waitForTimeout(10);
     }
     await expect(guest.locator('[data-choice="push"]')).toBeVisible();
-    await expect(guest.locator('[data-choice="accept"]')).toHaveText('받기 · 다음 판 준비');
+    await expect(guest.locator('[data-choice="accept"]')).toHaveText('받기');
     const before = await host.getByTestId('match').getAttribute('data-rounds-played');
     await guest.close();
     await expect(host.getByText(/연결 끊김/)).toBeVisible();

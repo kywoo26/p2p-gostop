@@ -82,7 +82,9 @@ test('설정에서 중계 등록 후 방 생성과 코드 참여 승인을 한�
   await expect.poll(() => authenticated).toBe(true);
   await page.waitForTimeout(100);
   socket!.send(JSON.stringify({ t: 'relay-join-request', requestId }));
-  await expect(page.getByText(/코드 참여/)).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: '참여 요청' }).getByText(/코드 참여/),
+  ).toBeVisible();
   await page.getByRole('button', { name: '수락' }).click();
   await expect.poll(() => accepted).toBe(true);
   await mkdir('test-results/remote', { recursive: true });
