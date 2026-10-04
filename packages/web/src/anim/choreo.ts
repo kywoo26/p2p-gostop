@@ -433,6 +433,25 @@ async function runStep(
     const animation = scene.move(id, to, plannedMs - highlightMs, via);
     if (animation !== undefined) animations.push(animation);
   }
+  // 새 상대 일반패의 안전 contact만 먼저 소유한다. 실패는 원본 FLIP을 유지하고
+  // 뒤에서 재예약하지 않는다(contactPose는 실패 시 incoming을 release한다).
+  const newContactPoses = new Map<CardId, CardPose | undefined>();
+  for (const relation of contacts) {
+    if (
+      before.has(String(relation.card)) ||
+      next.staging.includes(relation.card) ||
+      !step.events.some(
+        (event) =>
+          event.type === 'CardPlayed' &&
+          !event.bonus &&
+          event.seat !== null &&
+          event.seat !== board.viewer &&
+          event.cards[0] === relation.card,
+      )
+    )
+      continue;
+    newContactPoses.set(relation.card, scene.contactPose(relation.target, relation.card));
+  }
   for (const el of originalCards(host.root)) {
     const key = el.dataset['cardId'];
     if (key === undefined) continue;
@@ -466,6 +485,8 @@ async function runStep(
   }
   // 새 공개 카드의 출발은 deck/상대 hand다. 내 손패는 예약한 beforepose다.
   for (const relation of [...contacts, ...revealed]) {
+    if (newContactPoses.has(relation.card) && newContactPoses.get(relation.card) === undefined)
+      continue;
     const held = scene.reserve(relation.card);
     if (held === undefined) continue;
     if (before.get(String(relation.card)) === undefined) {
@@ -499,7 +520,9 @@ async function runStep(
   } else {
     const placed: CardId[] = [];
     for (const relation of contacts) {
-      const to = scene.contactPose(relation.target, relation.card);
+      const to = newContactPoses.has(relation.card)
+        ? newContactPoses.get(relation.card)
+        : scene.contactPose(relation.target, relation.card);
       if (to === undefined) continue;
       placed.push(relation.card, relation.target);
       const a = scene.move(relation.card, to, plannedMs);

@@ -377,8 +377,14 @@ P1 실제 구현/검증 범위는 [설계 P1 checkpoint](../docs/design/svelteki
 ### MAINT-01 검증 명령·에이전트 지침 정합 (NF-08·NF-09, 진행)
 
 - 사용자 요청에 따라 정비 총괄과 독립 구현 담당을 분리했다. 첫 범위는 `verify`의 Chromium worker 4 / WebKit worker 1 순차 실행, 개발 Docker 삭제 역사와 운영 relay 구분, 명시 위임 없는 계획 커밋 금지의 세 가지다. 기존 검증 순서·full E2E·CI·의존성은 유지한다.
-- JSON·명령 구문·역치환 및 소유 밖 바이트 검토 후 최초 설치·lint·check를 통과했다. 설치 추가 262개와 registry 버전 대조 256개를 구분한다. 게시 head `adc528e`의 CI는 통과했으며 독립 리뷰에서 발견한 계획 commit 조건 불일치를 계약 3줄에서 정정했다. 새 main 통합 head의 CI·리뷰는 별도로 확인한다. 이 변경의 검증 명령 자체를 전체 실행했다고 주장하지 않는다. 네트워크 시험의 기본 진입점 누락 가능성, 활성 기술 문서 정합과 서버 재사용 귀속은 별도 후속으로 조사한다. 문서 증가 자체를 완료 기준으로 삼지 않는다.
+- JSON·명령 구문·역치환 및 소유 밖 바이트 검토 후 최초 설치·lint·check를 통과했다. 설치 추가 262개와 registry 버전 대조 256개를 구분한다. 게시 head `adc528e`의 CI는 통과했으며 독립 리뷰에서 발견한 계획 commit 조건 불일치를 계약 3줄에서 정정했다. 이후 통합 head `3e971bf`의 WebKit CI 실패와 관측 자료는 보존한다. 이번에는 main `71855e8`의 #200·#252 및 기존 계획을 유지해 통합하며, 새 게시 head의 CI·독립 검토는 별도로 확인한다. 기존 실패 원인이 main의 후속 통과만으로 해소됐다고 판단하지 않는다. 이 변경의 검증 명령 자체를 전체 실행했다고 주장하지 않는다. 네트워크 시험의 기본 진입점 누락 가능성, 활성 기술 문서 정합과 서버 재사용 귀속은 별도 후속으로 조사한다. 문서 증가 자체를 완료 기준으로 삼지 않는다.
 
+
+### #200 자기 카드 재생 완료 대기 정합 (진행; UX-15~17·AC-06·NF-08)
+
+- 소유는 `e2e/landing.spec.ts`의 paired/ppeok 두 완료 대기와 이 계획 기록이다. Board busy는 상대 차례·CPU 대기까지 포함하므로, fresh 단일 자기 입력의 최종 재생 완료는 기존 공개 local timing이 빈 배열에서 정확한 숫자 한 항목으로 추가되는 조건으로 구분한다. 연결된 동일 root·동일 판을 요구하며 제품 API·엔진·애니메이션·기존 5000/6000ms 한도와 후행 단언은 바꾸지 않는다.
+- 한정 검증은 원 시험 WebKit 2건을 worker2/retry0으로 각각 첫 시도 통과했다. 같은 root 내부 generation reset·다중 입력·100개 history cap에는 일반화하지 않는다. timing은 모든 paint나 다음 CPU 재생의 완료를 증명하지 않으며 원 scene/카드/캡처 단언을 유지한다.
+- 독립 source 검토에서 한정 추가 지적 0이다. 원 CI의 busy 실패와 E0/E1 관측·명령 준비 실패는 보존한다. 동일 단언 경계가 동일 원인이라는 판정은 하지 않으며, stage 관측 밀도·floor의 같은 배치 비교·원격 프레임 문제 #252는 별도 미해결이다. 최신 main 통합·최종 검사·게시 head CI·리뷰 및 병합은 후속 gate다.
 
 ### RP-UI01 참가 상태·결과 확인 순서 (#242·#131, 진행; FR-05/06/18·NF-05·UX-24)
 
@@ -620,6 +626,25 @@ main `e2fdb99` 통합 후 #188 inert·초점 복원 코드를 그대로 보존�
 | ID | 상태 | 코드·자동 검증 근거 | 남은 항목 |
 |---|---|---|---|
 | UX-07 / UX-24 | 회전 중 배경 잠금 수정·자동 검증 | `Board.svelte`가 모바일 가로 잠금과 선택창 잠금을 한 곳에서 합성하고, `prompt-focus.ts`는 선택창 상태와 초점만 관리한다. `Board.input.test.ts`와 `e2e/layout.spec.ts`에서 Chromium·WebKit 회전·배경 hit-test·초점·입력을 검사한다. #188 P1 수정은 최종 head `6c9d3ff`에서 독립 재검토 완료 후 병합됐다. 고/스톱·흔들기 300→30→350ms 반전의 동일 노드·초점·실제 클릭·Enter 회귀를 보존한다. [PR #188](https://github.com/kywoo26/p2p-gostop/pull/188)·[동일 head CI](https://github.com/kywoo26/p2p-gostop/actions/runs/36729441463). | 재등장 경계 재검토 완료(자동 검사 범위). Galaxy/iPhone 실기기 회전 및 VoiceOver/TalkBack은 `docs/device-test/procedure.md`에 따라 사람이 검증한다. |
+
+### RP-P1 상대 카드 재생 중복 작업 제거 (#252, UX-15~17·NF-03·NF-08·AC-06)
+
+| 범위 | 확인된 구현·검증 | 남은 판정 |
+| --- | --- | --- |
+| 상대 ordinary CardPlayed의 안전 contact | 공개 원본이 없던 카드의 안전 접촉 위치를 먼저 확보하고 같은 단계에서 재사용한다. 성공 시 숨겨질 native 원본의 중복 이동·뒤집기를 만들지 않으며, 실패 시 기존 native fallback을 유지한다. 내패·bonus·staging·deck 공개 경로, 시간표·hold·skip·generation·게임 권위는 변경하지 않는다. | 사용자 보고인 상대 패 입력 무렵의 화면 깨짐 원인·해소, 실제 paint/GPU·WAN·실기기 성능은 미확정이다. |
+| 소스별 한정 검증 | 기준 main `d73fd183d17c2ec904f28745b4c3cf86e8083b3f`에서 합성 ReplayHost 6건을 Chromium/WebKit 각각 통과했다. 실제 양쪽 앱의 고정 prefix8·card12→15 매칭/획득 한 조건을 수정 전후 각각 1회 관측했다. 관찰자 hidden native WAAPI 3→0, 실행자0 유지; 첫 ghost 이동 keyframes·최종 공개 상태·무관 바닥 카드 위치가 유지됐다. | 합성 DOM은 Game/Floor/실제 paint의 대체가 아니다. 한 쌍의 실행 시간은 성능 통계가 아니며, RAF의 동시 가시 중복0과 MutationObserver의 커밋 중간 상태를 구별한다. |
+| 게시·수용 | 좁은 독립 소스 검토에서 확정 차단 발견사항0. 관측 시험 타입 보정은 타입 제거 JS가 동일하고, 제품 주석의 폰트 검사 보정은 주석 제거 JS가 동일하다. 준비 시험 실패3·빌드 선행조건 실패·외부 타입/메타데이터 검산 오류와 각 수정 후 결과를 소스별로 보존한다. | 최종 plan 인수 뒤 AGENTS §5 필수 lint/check/Node/browser/PR smoke/Android 및 CI·리뷰를 수행한다. 기존 RP-OPS01 instant 기준선·#243 바닥 소실·전체 원격 성능 수용은 별도이며, 운영 적용0을 유지한다. |
+
+### RP-OPS01 운영 재사용·원격 측정 후속 (진행; FR-RP-07·NP-RP-07/08·NF-RP-02/05/06·AC-RP-06)
+
+사용자 후속 위임의 기준은 main `f34528927139ef7477f33becd25993569567909e`/v0.5.1이다. 기존 v0.5.1 운영은 그대로 유지하고 별도 개발 branch의 `tools/relay`만 개선한다. 실행 중인 wrapper·release 저장소·Funnel·container·기존 자격에는 이 변경을 적용하지 않는다. [운영·측정 설계](../docs/design/relay-operations.md)와 [명령 runbook](../tools/relay/README.md)을 연결한다. 라이브 적용·병합은 최종 검토 뒤 별도 운영 단계이며, 신규 의존성·protocol·방 persistence·게임 권위·UI 변경은 없다.
+
+| 단위 / 소유 | 구현·검증 경계 | 상태·남은 판정 |
+| --- | --- | --- |
+| RP-OPS01-A / 동일 구현자, 총괄 문서 | preflight/status·같은 버전 비파괴 start, exact release/검증 artifact 사전 준비, 소유권·잠금·활성 연결 거절, 명시적 세션 손실 확인 뒤 apply/restart와 소유 자원만 rollback. legacy는 원 wrapper로 종료·marker 처리 후 새 절차 초기화; 운영 대신 격리 fixture로 검증 | 구현·격리 검토 진행. review01에서 lifecycle 35건을 PowerShell Core 7.6.6/Desktop 5.1 각각 통과, Node 자산 검사 3건·기존 ownership43/native8/runtime9 통과. review02는 running 복구의 자산 검증 실패 뒤 명시 복구가 막히는 원 FAIL을 재현하고, 최소 수정 후 같은 반례 1건을 두 runtime에서 각각 통과했다. 이전 35건을 최신 delta 실행으로 소급하지 않는다. 승인 ZIP 149파일·초기 참조32·기존 served hash 대조 완료. 최종 규범 검사·immutable/PR·CI·실제 운영 적용은 별도 미완 |
+| RP-OPS01-B / 동일 구현자 측정, 총괄 해석 | 기존 AC-RP-01 paired C1(내부 WebKit guest), worker1/retry0/instant, 방1·판1·다음 판1. 보존 same-source dist·격리 loopback 공개 relay/TLS만. 원 hardassert/180초 시험·120초 진행 한도 불변 | 격리 C1/내부 W guest 1회 PASS(3.803초, retry0); N13=events12/reject1, 미응답·재송신0, M18(host9/guest9). 정산·잔액 일치·다음 판 원 hardassert/종료 정리 확인. 거절 원인은 미수집, request↔DOM 상관·WAN RTT·paint·실기기·성능 수용은 미검증 |
+
+Rooms의 방·코드·인증은 process-memory이며 프로세스 교체 시 종료된다(NP-RP-07). TCP 연결0은 방0을 증명하지 않고 rollback도 기존 방·토큰을 복구하지 않는다. 사전 준비로 중단 구간을 줄이는 절차이지 무중단 전환이 아니다. 이미 있는 방 수명·송신 한도·heartbeat를 새 미구현 기능으로 세지 않는다. 우선순위2~5는 실행 계획만 정리하고 이번에는 실험을 추가하지 않는다. 기존 local/main timing·재시도 PASS·실기기 미검증 이력은 원격 성능 증거와 분리해 보존한다.
 
 ### 원격 대전 RP-03A/B 상태 (2026-09-29, FR-RP-07·NF-RP-06)
 

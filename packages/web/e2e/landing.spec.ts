@@ -1,9 +1,43 @@
 // UX-15~17 / #200: 실제 Game/SoloSession/controller/Playback의 한 턴을 연속 관측한다.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { landingSave, ppeokLandingSave } from './landing-fixtures.ts';
 
 test.use({ video: 'on' });
+
+// Fresh fixture의 단일 내 입력만: CPU 묶음은 local timing을 추가하지 않는다.
+// 100개 cap·다중 내 입력·같은 root의 generation reset에는 일반화하지 않는다.
+async function localCardCompletion(page: Page, events: readonly { type: string }[]) {
+  expect(events.filter((event) => event.type === 'CardPlayed')).toHaveLength(1);
+  const root = await page.getByTestId('solo').elementHandle();
+  expect(root).not.toBeNull();
+  const original = await root!.getAttribute('data-play-timings');
+  expect(original).toBe('');
+  const prefix: number[] = original === '' ? [] : original!.split(',').map(Number);
+  expect(prefix).toHaveLength(0); // fresh·cap 미도달, 이전 내 입력 없음
+  const round = await root!.getAttribute('data-round');
+  return async (timeout: number) => {
+    await expect
+      .poll(
+        () =>
+          root!.evaluate((element, expectedRound) => {
+            if (
+              !element.isConnected ||
+              document.querySelector('[data-testid="solo"]') !== element ||
+              element.getAttribute('data-round') !== expectedRound
+            )
+              return null;
+            const raw = element.getAttribute('data-play-timings');
+            if (raw === '') return [];
+            if (raw === null || !/^\d+(,\d+)*$/.test(raw)) return null;
+            const timings = raw.split(',').map(Number);
+            return timings.every(Number.isFinite) ? timings : null;
+          }, round),
+        { timeout },
+      )
+      .toEqual([...prefix, expect.any(Number)]);
+  };
+}
 
 test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page }, testInfo) => {
   const { save, events } = landingSave();
@@ -23,6 +57,7 @@ test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page
   await page.reload();
   await page.getByRole('button', { name: /이어하기/ }).click();
   await expect(page.getByTestId('solo')).toHaveAttribute('data-can-act', 'true');
+  const waitForLocalCompletion = await localCardCompletion(page, events);
   const before = await page.evaluate(() =>
     Object.fromEntries(
       [8, 10, 30, 31].map((id) => {
@@ -126,7 +161,7 @@ test('원본 두 짝 접촉과 실제 획득 동시출발 @guest', async ({ page
     document.querySelector<HTMLElement>('[aria-label="내 손패"] [data-slot="10"]')!.click();
     requestAnimationFrame(sample);
   });
-  await expect(page.getByTestId('board')).toHaveAttribute('data-busy', 'false', { timeout: 5000 });
+  await waitForLocalCompletion(5000);
   const frames = await page.evaluate(
     () =>
       (
@@ -243,6 +278,7 @@ test('보너스 뻑은 약한 관계만 표시하고 실제 5장 잔류 @guest',
   await page.reload();
   await page.getByRole('button', { name: /이어하기/ }).click();
   await expect(page.getByTestId('solo')).toHaveAttribute('data-can-act', 'true');
+  const waitForLocalCompletion = await localCardCompletion(page, events);
   await page.evaluate(() => {
     const frames: {
       t: number;
@@ -277,7 +313,7 @@ test('보너스 뻑은 약한 관계만 표시하고 실제 5장 잔류 @guest',
     document.querySelector<HTMLElement>('[aria-label="내 손패"] [data-slot="15"]')!.click();
     requestAnimationFrame(sample);
   });
-  await expect(page.getByTestId('board')).toHaveAttribute('data-busy', 'false', { timeout: 6000 });
+  await waitForLocalCompletion(6000);
   const frames = await page.evaluate(
     () =>
       (
