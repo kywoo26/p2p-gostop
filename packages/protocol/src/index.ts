@@ -28,3 +28,4 @@ export {
   type QueuedLink,
   type Transport,
 } from './transport.ts';
+export * from './social.ts';

@@ -312,8 +312,8 @@ function complete(g: ReturnType<typeof game>) {
   };
 }
 
-it('wire4/v3 handshake는 필드 검사보다 먼저 명시 VERSION_MISMATCH다', () => {
-  expect(PROTOCOL_VERSION).toBe(4);
+it('wire5/v3 handshake는 필드 검사보다 먼저 명시 VERSION_MISMATCH다', () => {
+  expect(PROTOCOL_VERSION).toBe(5);
   expect(decode(JSON.stringify({ t: 'welcome', v: 3 }), 'host')).toEqual({
     ok: false,
     reason: 'VERSION_MISMATCH',

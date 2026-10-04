@@ -11,6 +11,7 @@ import {
 } from '@p2p-gostop/engine';
 import type { BoardView } from '@p2p-gostop/protocol';
 import type { DecisionClock, TimeoutResult } from '@p2p-gostop/protocol';
+import type { SocialControl } from './social-compose.ts';
 import type { Playback, RoundSummary } from './playback.svelte.ts';
 
 /** 솔로의 미확정 판 결과. 확인은 받기/밀기 동의와 별개다. */
@@ -104,6 +105,8 @@ export interface PushDecision {
 }
 
 export interface GameController {
+  /** 게임 권위와 독립인 당대전 임시 대화. 솔로에는 없다. */
+  readonly social?: SocialControl;
   readonly pendingRoundResult?: DisplayRoundResult | null;
   /** 실제 공개 가능한 결과만 표시됨으로 기록한다. 확인·송신·금액 적용과 별개다. */
   markRoundResultPresented?(key: string): void;

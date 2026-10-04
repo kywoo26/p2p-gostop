@@ -1,11 +1,14 @@
 // 세션은 전송 API만 안다. I/O는 브라우저 WebSocket(web src/net) 또는 테스트 전송이 담당한다.
 import { tryEncode } from './codec.ts';
+import type { SocialMessage } from './social.ts';
 import type { Message } from './messages.ts';
 import type { RelayNotice, RelayPeerState } from './relay.ts';
 
 export interface Transport {
   /** 보낸다. 상한 초과 등으로 보낼 수 없으면 조용히 버리고 예외를 던지지 않는다 */
   send(message: Message): void;
+  /** 열린 연결에만 즉시 송신. 구현이 없으면 대화는 사용할 수 없다. */
+  sendEphemeral?(message: SocialMessage): boolean;
   /** 프로토콜 메시지(중계 알림 제외) 수신 */
   onMessage(handler: (raw: string) => void): () => void;
   onClose(handler: () => void): () => void;
@@ -36,10 +39,22 @@ function make(): InternalTransport {
       return sent;
     },
     send(message: Message) {
+      if (message.t === 'social' || message.t === 'socialReady') {
+        const encoded = tryEncode(message);
+        if (encoded.ok && connected && peer?.connected)
+          for (const handler of peer.messages) handler(encoded.value);
+        return;
+      }
       sent.push(message);
       const encoded = tryEncode(message);
       if (encoded.ok && connected && peer?.connected)
         for (const handler of peer.messages) handler(encoded.value);
+    },
+    sendEphemeral(message: SocialMessage) {
+      const encoded = tryEncode(message);
+      if (!encoded.ok || !connected || !peer?.connected) return false;
+      for (const handler of peer.messages) handler(encoded.value);
+      return true;
     },
     onMessage(handler: (raw: string) => void) {
       messages.add(handler);
@@ -129,6 +144,7 @@ export function createQueuedTransportPair(): readonly [
     new Set<(notice: RelayNotice) => void>(),
     new Set<(notice: RelayNotice) => void>(),
   ] as const;
+  const connected = [true, true];
   const side = (index: 0 | 1): QueuedTransport => {
     const dropped: Message[] = [];
     const peer: 0 | 1 = index === 0 ? 1 : 0;
@@ -137,19 +153,34 @@ export function createQueuedTransportPair(): readonly [
       dropped,
       send(message: Message) {
         const encoded = tryEncode(message);
+        if (message.t === 'social' || message.t === 'socialReady') {
+          if (connected[index] && connected[peer] && encoded.ok)
+            queue.push({ to: peer, raw: encoded.value });
+          return;
+        }
         if (encoded.ok) queue.push({ to: peer, raw: encoded.value });
         else dropped.push(message);
+      },
+      sendEphemeral(message: SocialMessage) {
+        const encoded = tryEncode(message);
+        if (!connected[index] || !connected[peer] || !encoded.ok) return false;
+        queue.push({ to: peer, raw: encoded.value });
+        return true;
       },
       onMessage: subscribe(handlers[index]),
       onClose: subscribe(closes[index]),
       onRelay: subscribe(relays[index]),
-      reconnect() {},
+      reconnect() {
+        connected[index] = true;
+      },
       disconnect() {
+        connected[index] = false;
         for (let i = queue.length - 1; i >= 0; i--)
           if (queue[i]!.to === index || queue[i]!.to === peer) queue.splice(i, 1);
         for (const handler of closes[index]) handler();
       },
       reset() {
+        connected[index] = false;
         for (let i = queue.length - 1; i >= 0; i--)
           if (queue[i]!.to === index || queue[i]!.to === peer) queue.splice(i, 1);
         handlers[index].clear();

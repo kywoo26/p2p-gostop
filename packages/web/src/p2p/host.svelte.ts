@@ -1,3 +1,10 @@
+import { isSocialFrame } from '@p2p-gostop/protocol';
+import {
+  EMPTY_SOCIAL,
+  SocialConversation,
+  type SocialControl,
+  type SocialView,
+} from '../game/social-compose.ts';
 import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 // 호스트 모드 (spec 2.1·2.3·2.4, FR-01~07·11, MN-01·02·05, NP-02~06). 좌석 0 = 이 기기, 좌석 1 = 원격 게스트.
 // - 로비: 게스트의 hello가 오면 그 이름으로 protocol HostSession(autoStart:false)을 만들어 welcome을 보낸다.
@@ -131,6 +138,24 @@ export class HostGame implements GameController {
   private settledRound = 0;
   private clock: ReturnType<typeof setInterval> | null = null;
   private disposed = false;
+  private socialView = $state.raw<SocialView>(EMPTY_SOCIAL);
+  private readonly conversation: SocialConversation;
+  get social(): SocialControl {
+    return {
+      view: this.socialView,
+      send: (body) => {
+        this.syncSocial();
+        return this.conversation.send(body);
+      },
+      mute: (value) => this.conversation.mute(value),
+      open: () => {
+        this.syncSocial();
+        this.conversation.open();
+      },
+      validate: (text) => this.conversation.validate(text),
+    };
+  }
+
   private roundResults = $state.raw<readonly RemoteRoundResult[]>([]);
   private autoHeld = true;
   private readonly autoChoice = new AutoChoice(
@@ -159,7 +184,10 @@ export class HostGame implements GameController {
         const remote = options.transport;
         const off = remote.onConnection((event) => {
           const state = linkStateOf(event);
-          if (state !== null) this.link = state;
+          if (state !== null) {
+            this.link = state;
+            this.syncSocial();
+          }
         });
         this.ws = {
           dispose: off,
@@ -177,17 +205,27 @@ export class HostGame implements GameController {
         log: (line) => log.info(`호스트 ${line}`),
         onState: (state) => {
           this.link = state;
+          this.syncSocial();
           if (state === 'replaced') log.warn('다른 창이 호스트 연결을 가져갔습니다 (4001)');
         },
       });
       this.ws = ws;
       this.transport = ws;
     }
+    this.conversation = new SocialConversation({
+      now: this.now,
+      nonce: () => randomHex(16),
+      send: (frame) => this.transport.sendEphemeral?.(frame) ?? false,
+      publish: (view) => {
+        this.socialView = view;
+      },
+    });
     this.transport.onMessage((raw) => this.incoming(raw));
     this.transport.onClose(() => {
       // 닫힘도 입력과 같은 단조 시각에서 처리한다. 오래된 tick으로 잔여 예산을 환급하지 않는다.
       this.session?.advanceTime(this.now());
       this.port?.closes.forEach((h) => h());
+      this.syncSocial();
     });
     this.transport.onRelay?.((notice) => this.onRelay(notice));
     this.playback = new Playback(emptyBoard(ME, this.names, this.balances), {
@@ -195,10 +233,32 @@ export class HostGame implements GameController {
       names: () => this.names,
       onBanner: vibrateFor,
     });
+    document.addEventListener('visibilitychange', this.onSocialVisibility);
     if (options.clock ?? true) this.clock = setInterval(() => this.tick(), CLOCK_MS);
     if (options.clock ?? true) document.addEventListener('visibilitychange', this.onVisible);
   }
+  private syncSocial(): void {
+    const session = this.session;
+    this.conversation?.sync({
+      epoch: session?.epoch ?? '',
+      authenticated:
+        !this.disposed &&
+        session?.authenticated === true &&
+        session.state !== null &&
+        ['playing', 'settled', 'bankrupt'].includes(session.stage),
+      connected:
+        this.link === 'open' &&
+        session?.connected === true &&
+        this.peer !== 'left' &&
+        this.peer !== 'absent',
+      visible: document.visibilityState === 'visible',
+    });
+  }
+
+  private readonly onSocialVisibility = () => this.syncSocial();
+
   private readonly onVisible = () => {
+    this.syncSocial();
     const session = this.session;
     if (session === null) return;
     session.advanceTime(this.now());
@@ -533,6 +593,11 @@ export class HostGame implements GameController {
 
   private incoming(raw: string): void {
     if (this.disposed) return;
+    if (isSocialFrame(raw)) {
+      this.syncSocial();
+      if (this.session?.authenticated) this.conversation.receive(raw);
+      return;
+    }
     this.session?.advanceTime(this.now());
     const parsed = decode(raw, 'guest');
     if (!parsed.ok && parsed.reason === 'VERSION_MISMATCH' && this.session === null) {
@@ -689,6 +754,7 @@ export class HostGame implements GameController {
     }
     this.version++;
     this.updateOffline();
+    this.syncSocial();
   }
 
   private updateOffline(): void {
@@ -854,9 +920,11 @@ export class HostGame implements GameController {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.syncSocial();
     this.autoChoice.dispose();
     if (this.clock !== null) clearInterval(this.clock);
     document.removeEventListener('visibilitychange', this.onVisible);
+    document.removeEventListener('visibilitychange', this.onSocialVisibility);
     this.ws?.dispose();
     this.playback.dispose();
   }

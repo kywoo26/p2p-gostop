@@ -1,3 +1,10 @@
+import { isSocialFrame } from '@p2p-gostop/protocol';
+import {
+  EMPTY_SOCIAL,
+  SocialConversation,
+  type SocialControl,
+  type SocialView,
+} from '../game/social-compose.ts';
 import type { AcceptedPlayTarget } from '@p2p-gostop/protocol';
 // 게스트 모드 (spec 2.2·2.3·2.4, FR-04·05·30, NP-02~06·09, NF-04·05). 좌석 1 = 이 기기(iPhone Safari).
 // - protocol GuestSession(v3)이 hello·커밋 교환·순번·재동기화·공정성 검증을 맡는다. 호스트 이벤트는 이미 좌석 1로 가려져 있다.
@@ -41,7 +48,7 @@ import { log } from '../game/log.svelte.ts';
 import { Playback, type RoundSummary } from '../game/playback.svelte.ts';
 import { INSTANT_LABEL } from '../ui/settle-labels.ts';
 import { WsTransport } from '../net/index.ts';
-import { emptyBoard, random32 } from './common.ts';
+import { emptyBoard, random32, randomHex } from './common.ts';
 import { linkStateOf, openLink, type LinkState } from './link.ts';
 import type { RelayAddress } from './role.ts';
 import { saveGuestState, writeTicket, type GuestTicket } from './ticket.ts';
@@ -130,6 +137,25 @@ export class GuestGame implements GameController {
   private pushPending = $state(false);
   private roundInstant: EngineEvent[] = [];
   private disposed = false;
+  private socialResyncNeeded = false;
+  private socialView = $state.raw<SocialView>(EMPTY_SOCIAL);
+  private readonly conversation: SocialConversation;
+  get social(): SocialControl {
+    return {
+      view: this.socialView,
+      send: (body) => {
+        this.syncSocial();
+        return this.conversation.send(body);
+      },
+      mute: (value) => this.conversation.mute(value),
+      open: () => {
+        this.syncSocial();
+        this.conversation.open();
+      },
+      validate: (text) => this.conversation.validate(text),
+    };
+  }
+
   private roundResults = $state.raw<readonly RemoteRoundResult[]>([]);
   private resultEpoch: string | null = null;
   private resetResultSnapshot = false;
@@ -181,6 +207,14 @@ export class GuestGame implements GameController {
       this.ws = ws;
       inner = ws;
     }
+    this.conversation = new SocialConversation({
+      now: this.now,
+      nonce: () => randomHex(16),
+      send: (frame) => inner.sendEphemeral?.(frame) ?? false,
+      publish: (view) => {
+        this.socialView = view;
+      },
+    });
     this.hasRelayNotices = inner.onRelay !== undefined;
     this.playback = new Playback(emptyBoard(ME, ['호스트', options.name], [0, 0]), {
       viewer: ME,
@@ -191,11 +225,21 @@ export class GuestGame implements GameController {
       send: (message) => inner.send(message),
       onMessage: (handler) =>
         inner.onMessage((raw) => {
+          if (isSocialFrame(raw)) {
+            this.syncSocial();
+            if (this.session.socialAuthenticated) this.conversation.receive(raw);
+            return;
+          }
           this.prevSeq = this.session.seq;
           handler(raw);
           this.after(raw);
         }),
-      onClose: (handler) => inner.onClose(handler),
+      onClose: (handler) =>
+        inner.onClose(() => {
+          this.socialResyncNeeded = true;
+          handler();
+          this.syncSocial();
+        }),
       reconnect: () => inner.reconnect(),
       ...(inner.onRelay ? { onRelay: inner.onRelay.bind(inner) } : {}),
     };
@@ -211,6 +255,7 @@ export class GuestGame implements GameController {
     // 중계는 현재 상대가 있으면 present, 나중에 붙으면 joined를 보낸다. 여기서도 hello를
     // 대기열에 넣으면 present의 hello와 겹쳐 옛 로비 welcome이 설정 변경 뒤에 도착할 수 있다.
     if (!this.hasRelayNotices) this.session.join();
+    document.addEventListener('visibilitychange', this.onSocialVisibility);
     if (options.clock ?? true) {
       this.clock = setInterval(() => this.tick(), CLOCK_MS);
       document.addEventListener('visibilitychange', this.onVisible);
@@ -218,7 +263,30 @@ export class GuestGame implements GameController {
     log.info(`게스트 참가 요청: ${options.name}${options.token ? ' (토큰으로 복귀)' : ''}`);
   }
 
+  private syncSocial(): void {
+    const session = this.session;
+    this.conversation?.sync({
+      epoch: session?.epoch ?? '',
+      authenticated:
+        !this.disposed &&
+        !this.socialResyncNeeded &&
+        session?.socialAuthenticated === true &&
+        session.view !== null &&
+        ['playing', 'settled', 'bankrupt'].includes(session.status?.stage ?? ''),
+      connected: this.link === 'open' && this.hostPresent !== false,
+      visible: document.visibilityState === 'visible',
+    });
+  }
+
+  private readonly onSocialVisibility = () => {
+    if (document.visibilityState !== 'visible') {
+      this.socialResyncNeeded = true;
+      this.syncSocial();
+    }
+  };
+
   private readonly onVisible = () => {
+    this.syncSocial();
     if (document.visibilityState === 'visible') {
       this.tick();
       // 소켓이 열린 채 숨김→복귀할 때도 hello로 재인증·snapshot·새 offer를 요청한다.
@@ -244,6 +312,7 @@ export class GuestGame implements GameController {
       }
     }
     this.timerVersion++;
+    this.syncSocial();
   }
 
   // ---- 표시 값 ----
@@ -553,6 +622,7 @@ export class GuestGame implements GameController {
       this.suspectedDecision = null;
     }
     this.timerVersion++;
+    this.syncSocial();
   }
 
   private after(raw: string): void {
@@ -560,6 +630,12 @@ export class GuestGame implements GameController {
     const parsed = decode(raw, 'host');
     if (!parsed.ok) return;
     this.handle(parsed.message);
+    // 기존 join/resync 순서를 유지하며 실제 최신 snapshot/events를 처리한 뒤에만 대화 복귀.
+    if (
+      (parsed.message.t === 'snapshot' || parsed.message.t === 'events') &&
+      this.session.socialAuthenticated
+    )
+      this.socialResyncNeeded = false;
     this.sync();
   }
 
@@ -682,8 +758,10 @@ export class GuestGame implements GameController {
 
   private onLinkState(state: LinkState): void {
     this.link = state;
+    this.syncSocial();
     if (state === 'replaced') log.warn('다른 창이 게스트 연결을 가져갔습니다 (4001)');
     if (state !== 'open') {
+      this.socialResyncNeeded = true;
       this.awaiting = null;
       this.session.decisionUnavailable('resync');
     }
@@ -792,9 +870,11 @@ export class GuestGame implements GameController {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.syncSocial();
     this.autoChoice.dispose();
     if (this.clock !== null) clearInterval(this.clock);
     document.removeEventListener('visibilitychange', this.onVisible);
+    document.removeEventListener('visibilitychange', this.onSocialVisibility);
     this.ws?.dispose();
     this.playback.dispose();
   }

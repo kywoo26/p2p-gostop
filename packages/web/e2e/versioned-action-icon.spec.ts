@@ -99,6 +99,20 @@ async function firstGame(host: Page, guest: Page) {
     )
     .toBe(10);
   await expect(guest.locator('[aria-label="내 손패"] button')).toHaveCount(10);
+  // 손패 10장이어도 분배 총통 질문이 남을 수 있다. 정상 UI로 계속한 뒤 배경 비가림을 잰다.
+  await expect
+    .poll(async () => {
+      for (const page of [host, guest]) {
+        const prompt = page.getByRole('dialog', { name: '총통!', exact: true });
+        if (
+          (await prompt.isVisible()) &&
+          (await page.getByTestId('match').getAttribute('data-can-act')) === 'true'
+        )
+          await prompt.getByRole('button', { name: '계속하기', exact: true }).click();
+      }
+      return Promise.all([host, guest].map((page) => page.locator('dialog[open]').count()));
+    })
+    .toEqual([0, 0]);
 }
 
 for (const mode of ['root', 'versioned'] as const) {

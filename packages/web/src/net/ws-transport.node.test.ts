@@ -346,3 +346,50 @@ describe('WsTransport + 가짜 Android 중계 + 세션', () => {
     }
   }, 30_000);
 });
+
+// NP-SC-01: offline 대화는 게임 pending·ping/probe 응답에 섞이지 않는다.
+describe('사회표현 immediate-only 전송', () => {
+  const social = { t: 'socialReady', epoch: 'epoch', receiveNonce: 'a'.repeat(32) } as const;
+  it('connecting/closed social은 queue0, 열린 연결의 immediate send만 true', () => {
+    vi.useFakeTimers();
+    const transport = new WsTransport({ role: 'host', socketFactory: factory, ...noDom });
+    expect(transport.sendEphemeral(social)).toBe(false);
+    transport.send(social);
+    last().open();
+    expect(last().sent).toEqual([]);
+    expect(transport.sendEphemeral(social)).toBe(true);
+    expect(last().sent).toHaveLength(1);
+    last().close(1006);
+    expect(transport.sendEphemeral(social)).toBe(false);
+    vi.advanceTimersByTime(500);
+    last().open();
+    expect(last().sent).toEqual([]);
+    transport.dispose();
+  });
+  it('public socket 인증 완료 전 social send는 false, 인증 후만 true', () => {
+    vi.useFakeTimers();
+    const transport = new WsTransport({
+      role: 'host',
+      authToken: 'x'.repeat(43),
+      socketFactory: factory,
+      ...noDom,
+    });
+    last().open();
+    expect(transport.sendEphemeral(social)).toBe(false);
+    last().receive('{"t":"relay","peer":"present"}');
+    expect(transport.sendEphemeral(social)).toBe(true);
+    transport.dispose();
+  });
+  it('사회표현 수신은 ping 미응답 감시를 해제하지 않는다', () => {
+    vi.useFakeTimers();
+    const transport = new WsTransport({ role: 'guest', socketFactory: factory, ...noDom });
+    last().open();
+    vi.advanceTimersByTime(25000);
+    last().receive(JSON.stringify(social));
+    vi.advanceTimersByTime(25000);
+    last().receive(JSON.stringify(social));
+    vi.advanceTimersByTime(25000);
+    expect(sockets).toHaveLength(2);
+    transport.dispose();
+  });
+});
