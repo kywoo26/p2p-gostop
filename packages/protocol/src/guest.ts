@@ -1,3 +1,4 @@
+import { isSocialFrame } from './social.ts';
 // 게스트 세션. 호스트가 보낸 가린 뷰만 들고, 액션은 요청으로 보낸다(FR-11).
 // - commit-reveal 메시지는 중복·재전송을 견딘다: 같은 판·같은 해시면 같은 응답을 다시 보내고 새 난수를 뽑지 않는다(#13).
 // - 원문을 공개한 판에 다른 commitHost가 오면 거부한다(재추첨 방지, #16). 공개한 판의 revealHost 없이 다음 판
@@ -277,6 +278,11 @@ export class GuestSession {
    * 말없이 버려진다. 연결이 끊긴 동안의 요청은 outbox에 두었다가 welcome 뒤에 보낸다(액션은 마지막 것 하나).
    */
   private linked = false;
+  /** 현재 welcome 및 resync 완료 여부만. 대화 입력은 게임 요청과 독립이다. */
+  get socialAuthenticated(): boolean {
+    return this.linked && !this.awaitingResync && this.connection === 'joined';
+  }
+
   /** welcome 뒤 호스트의 재동기화 프레임을 먼저 소비한 뒤 outbox를 보낸다. */
   private awaitingResync = false;
   private readonly outbox = new Map<string, GuestMessage>();
@@ -1084,6 +1090,8 @@ export class GuestSession {
     }
   }
   private receive(raw: string): void {
+    // 사회표현은 인증 이후 adapter가 처리한다. 시계·활동·원장·ACK를 건드리지 않는다.
+    if (isSocialFrame(raw)) return;
     if (isRelayFrame(raw)) return; // 전송이 거르지 못한 알림은 메시지로 쓰지 않는다
     const parsed = decode(raw, 'host');
     if (!parsed.ok) {

@@ -1,3 +1,4 @@
+import { isSocialFrame } from './social.ts';
 // 호스트 권위 세션. 엔진과 원장은 이 안에서만 갱신하고 게스트에는 가린 뷰(BoardView)를 보낸다.
 // 설계 요점 (M4 리뷰 수정 라운드):
 // - 판 사이 commit-reveal은 단계별로 재전송할 수 있고 모든 처리가 멱등이다(#13). 재접속 hello에 빠진 것을 다시 보낸다.
@@ -1193,6 +1194,8 @@ export class HostSession {
     this.changed();
   }
   receive(raw: string): void {
+    // 사회표현은 인증 이후 adapter가 처리한다. 시계·활동·원장·ACK를 건드리지 않는다.
+    if (isSocialFrame(raw)) return;
     if (isRelayFrame(raw)) {
       // 전송 계층이 거르지 못한 relay 모양 프레임은 게스트가 위조한 것일 수 있다: 알림으로도, 메시지로도 쓰지 않는다.
       this.diag('relay 모양 프레임을 메시지 경로에서 받아 버림');

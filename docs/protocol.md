@@ -349,3 +349,16 @@ P2P baseSeq는 세션 seq=live from−1이다. 인증 welcome의 epoch와 성공
 현재 웹 consumer 경계: `GuestGame.settlementNote`의 기존 셔플 공정성 문구와 시간 결과는 유지한다. 새 `check.publicTargets`는 같은 기존 note에 선택 정보 일치/불일치/검증 불가로 분리한다. 없는 옛 결과도 선택 정보 미관찰이며 false conflict로 만들지 않는다. 전용 배지/새 화면·wire/seq 숫자는 추가하지 않는다. 기존 verified와 새 conflict가 동시에 존재해도 셔플 검증 문구만 보이며 모순을 묵살하지 않는다.
 
 저장 reader invalid/truncation은 실패(null)이며 ticket load 자체는 기존 탭 key에서 원문을 덮어쓰거나 지우지 않는다. 다만 현행 호출자는 null restore로 새 세션을 생성할 수 있고 GuestGame.sync가 이후 현재 세션을 같은 key에 저장한다. 이 기존 재참가 경로는 손상 원문의 보존/백업을 보장하지 않으며 이번 Draft에서 새 저장소/백업 UI 정책을 도입하지 않는다. 직접 restore의 잘못된 v3는 constructor가 오류로 거부한다. 구store의 없는 영역은 빈 gap 관찰로 명시하여 기존 원문·기존 판검증을 보존한다. 구wire handshake VERSION_MISMATCH/새로고침 안내와 저장 데이터 처리 정책은 독립이다.
+
+
+## 13. 사회표현 wire 5 통합 계약 (#246, 현행 wire 4와 구분)
+
+근거: spec §14 NP-SC-01/02·NF-SC-01 및 plan §3-2 SC-01. 아래는 구현할 추가 계약이며 위 v4 배포 계약이 이미 바뀌었다는 뜻이 아니다.
+
+- `socialReady`는 현재 epoch와 `receiveNonce`(32자리 hex 또는 null), `social`은 epoch·대상 수신 nonce·독립 `socialSeq`(1 이상의 안전 정수)·유한 body(emote/phrase/text)를 가진다. 원래 envelope/인증을 유지하며 발신 좌석을 payload에서 신뢰하지 않는다. 게임 action/seq/원장 필드는 추가하지 않는다.
+- 기존 인증 완료·현재 연결/상대·재동기화 완료를 먼저 확인한다. Host/Guest wrapper의 게임 tick·dispatch·afterChange/save 및 session 활동 갱신 전에 사회표현을 분리한다. 인증 전 메시지는 표시하지 않는다. 잘못된 사회표현은 별도 유한 예산에서 버리고 게임 오류·원장·시한을 갱신하지 않는다.
+- 각 수신자는 보이는 상태·수신 켜짐·세션 준비 완료일 때 nonce를 발급한다. 숨김/mute/교체/단절/새 epoch/방 종료 때 폐기하고 복귀 시 새 값을 쓴다. nonce·epoch·증가 순번이 맞지 않으면 버린다. nonce는 인증 비밀이 아니며 독립 난수 주입을 사용하고 게임 seed를 소비하지 않는다.
+- `sendEphemeral`은 열린 현재 연결에 즉시 보낼 때만 true다. offline pending/outbox/inflight에 넣지 않으며 ACK·재전송·저장·snapshot/welcome 복원을 하지 않는다. ready 손실은 채팅 준비 실패로만 표시한다. 패널 재열기/재인증은 유한 ready 시도이며 반사 응답 루프·주기 재시도는 없다.
+- text 및 속도 상한은 spec §14를 따른다. receiver nonce가 바뀌어도 content 예산을 초기화하지 않는다. malformed/잘못된 nonce를 반복해도 메모리는 유한해야 한다. 사회표현 callback 실패가 게임 진행을 중단하거나 본문을 로그에 남기지 않도록 분리한다.
+- 새로운 필수 메시지는 wire 5에서만 송신한다. 구버전과는 기존 명시적 버전 불일치 경로로 차단하며 mute로 wire4 호환을 흉내 내지 않는다. 변경 전후의 hello/welcome·공개 health/version·번들 hash·Android/LAN 웹 정합은 실제 통합 검증 항목이다. 공개 relay controlVersion과 게임 wire 번호는 별개다.
+- 인증 전/후, 양방향, 세대 복구·duplicate/old nonce, 게임 상태·시한·저장 불변, offline queue0 및 이전/새 버전 양방향 반례를 실제 통합 시험으로 확인한다. 현재 이 절 자체는 시험 PASS나 배포 승인이 아니다.

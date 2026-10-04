@@ -10,10 +10,17 @@ import type {
 } from './messages.ts';
 import { validInFlightTarget } from './view.ts';
 import { isRelayFrame } from './relay.ts';
-import { guestSchema, headSchema, hostSchema } from './schema.ts';
+import { guestSchema, headSchema, hostSchema, socialSchema } from './schema.ts';
 
-/** v4: 공개 수락 대상·현재 관계 (FR-14·NP-03/04). guest 저장 v3와 별개다. */
-export const PROTOCOL_VERSION = 4;
+import {
+  isSocialFrame,
+  parseSocialMessage,
+  SOCIAL_LIMITS,
+  splitSocialGraphemes,
+} from './social.ts';
+
+/** v5: 사회표현 독립 envelope. v4의 공개 수락 대상·현재 관계 (FR-14·NP-03/04). guest 저장 v3와 별개다. */
+export const PROTOCOL_VERSION = 5;
 /** NP-07: 개별 뷰(스냅샷)와 엔진 한 수 이벤트의 상한. */
 export const MAX_MESSAGE_BYTES = 16 * 1024;
 /** NP-09와 중계의 최종 UTF-8 프레임 상한. log·ledgerPage만 이 한도까지 쓴다. */
@@ -60,6 +67,7 @@ export function byteLength(value: string): number {
 
 /** 메시지 종류별 바이트 상한: log·ledgerPage는 64KB, 나머지는 16KB */
 export function messageLimit(t: Message['t']): number {
+  if (t === 'social' || t === 'socialReady') return SOCIAL_LIMITS.frameBytes;
   return t === 'log' || t === 'ledgerPage' ? RELAY_MAX_PAYLOAD_BYTES : MAX_MESSAGE_BYTES;
 }
 
@@ -110,6 +118,12 @@ export function decode(raw: unknown, from: Role): ParseResult<Message> {
     if (!head.success) return { ok: false, reason: 'MALFORMED' };
     if ((head.data.t === 'hello' || head.data.t === 'welcome') && head.data.v !== PROTOCOL_VERSION)
       return { ok: false, reason: 'VERSION_MISMATCH' };
+    if (isSocialFrame(raw)) {
+      if (bytes > SOCIAL_LIMITS.frameBytes) return { ok: false, reason: 'TOO_LARGE' };
+      const valid = socialSchema.safeParse(value);
+      const social = valid.success ? parseSocialMessage(raw, splitSocialGraphemes) : null;
+      return social === null ? { ok: false, reason: 'MALFORMED' } : { ok: true, message: social };
+    }
     const parsed = (from === 'guest' ? guestSchema : hostSchema).safeParse(value);
     if (!parsed.success) return { ok: false, reason: 'MALFORMED' };
     // JSON의 선택 필드(`?: T | undefined`)를 exactOptionalPropertyTypes 공개 타입으로 좁힌다.

@@ -4,6 +4,31 @@
 import * as z from 'zod/mini';
 import { ERROR_CODES } from './messages.ts';
 
+// NP-SC-01: 게임 envelope와 분리된 정확 필드 집합. 문자 의미는 social validator가 검사한다.
+const socialEpoch = z.string().check(z.regex(/^[A-Za-z0-9_-]{1,64}$/));
+const socialNonce = z.string().check(z.regex(/^[a-f0-9]{32}$/));
+export const socialSchema = z.union([
+  z.strictObject({
+    t: z.literal('socialReady'),
+    epoch: socialEpoch,
+    receiveNonce: z.nullable(socialNonce),
+  }),
+  z.strictObject({
+    t: z.literal('social'),
+    epoch: socialEpoch,
+    toNonce: socialNonce,
+    socialSeq: z.number().check(z.int(), z.minimum(1), z.maximum(Number.MAX_SAFE_INTEGER)),
+    body: z.union([
+      z.strictObject({ kind: z.literal('text'), text: z.string().check(z.maxLength(640)) }),
+      z.strictObject({ kind: z.literal('emote'), id: z.enum(['smile', 'thanks', 'surprise']) }),
+      z.strictObject({
+        kind: z.literal('phrase'),
+        id: z.enum(['hello', 'good-game', 'one-moment']),
+      }),
+    ]),
+  }),
+]);
+
 const nat = z.number().check(z.int(), z.minimum(0));
 const seat = z.literal([0, 1]);
 const card = z.number().check(z.int(), z.minimum(0), z.maximum(50));
@@ -252,6 +277,7 @@ const timeoutResult = z.object({
 const name = z.string().check(z.minLength(1), z.maxLength(80), z.regex(/^[^\p{Cc}]+$/u));
 
 export const guestSchema = z.union([
+  socialSchema,
   z.object({
     t: z.literal('hello'),
     v: nat,
@@ -313,6 +339,7 @@ export const publicTargetObservationSchema = z.object({
 });
 
 export const hostSchema = z.union([
+  socialSchema,
   z.object({
     t: z.literal('welcome'),
     v: nat,

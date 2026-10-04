@@ -1,5 +1,6 @@
 // NP-02: 호스트↔게스트 메시지 타입. 스키마는 schema.ts, 직렬화는 index.ts.
 import type { Action, EngineEvent, RoundOptions, RuleOptions, Seat } from '@p2p-gostop/engine';
+import type { SocialMessage } from './social.ts';
 import type { LedgerSummary, SessionLedgerEntry } from './ledger.ts';
 import type { AcceptedPlayTarget, BoardView, SettlementView } from './view-types.ts';
 
@@ -90,6 +91,7 @@ export interface TimeoutResult {
 }
 
 export type GuestMessage =
+  | SocialMessage
   | {
       readonly t: 'hello';
       readonly v: number;
@@ -137,6 +139,7 @@ export type GuestMessage =
   | { readonly t: 'timeoutGet'; readonly round: number; readonly from: number };
 
 export type HostMessage =
+  | SocialMessage
   | {
       readonly t: 'welcome';
       readonly v: number;

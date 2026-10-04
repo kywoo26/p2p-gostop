@@ -1,3 +1,4 @@
+import { isSocialFrame, type SocialMessage } from '@p2p-gostop/protocol';
 // NP-01·NP-05: 브라우저 WebSocket 전송. 세션 메시지의 해석은 protocol이 맡는다.
 // 중계 계약(protocol relay.ts, #24):
 // - 중계 알림({"t":"relay"}·옛 {"type":"relay"})은 세션 메시지로 넘기지 않고 onRelay·onConnection으로 알린다.
@@ -344,7 +345,12 @@ export class WsTransport implements Transport {
     }
   }
   private receive(raw: string, id: number): void {
-    // 어떤 프레임이든 받으면 살아 있는 소켓이다.
+    // 사회표현은 게임 생존 ping·재접속 probe의 응답을 대신하지 않는다.
+    if (isSocialFrame(raw)) {
+      for (const handler of this.messages) handler(raw);
+      return;
+    }
+    // 게임/중계 프레임을 받으면 살아 있는 소켓이다.
     this.missed = 0;
     this.awaiting = false;
     if (this.probe !== null) {
@@ -445,7 +451,24 @@ export class WsTransport implements Transport {
       // 이미 닫힌 소켓
     }
   }
+  /** NP-SC-01: 현재 인증된 열린 소켓만. queue/retry/log/heartbeat 변경0. */
+  sendEphemeral(message: SocialMessage): boolean {
+    const socket = this.socket;
+    if (this.stateValue !== 'open' || socket?.readyState !== 1) return false;
+    const encoded = tryEncode(message);
+    if (!encoded.ok) return false;
+    try {
+      socket.send(encoded.value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
   send(message: Message): void {
+    if (message.t === 'social' || message.t === 'socialReady') {
+      this.sendEphemeral(message);
+      return;
+    }
     if (this.stateValue === 'disposed') return;
     if (this.socket?.readyState === 1 && this.stateValue === 'open') {
       this.rawSend(this.socket, message);

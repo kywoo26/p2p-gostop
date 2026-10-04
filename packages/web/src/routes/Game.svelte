@@ -18,6 +18,9 @@
   import { automaticAction, type GameController } from '../game/controller.ts';
   import { formatMoney } from '../lib/format.ts';
   import { settings } from '../settings/settings.svelte.ts';
+  import { SOCIAL_EMOTE_CHOICES, SOCIAL_PHRASE_CHOICES } from '../game/social-compose.ts';
+  import SocialPanel from '../ui/SocialPanel.svelte';
+  import SocialNotice from '../ui/SocialNotice.svelte';
   import Board from '../ui/Board.svelte';
   import Settlement from './Settlement.svelte';
 
@@ -192,20 +195,72 @@
   let confirming = $state<MenuItem | null>(null);
   let menuOpen = $state(false);
   let boardInfoOpen = $state(false);
+  let socialOpen = $state(false);
   let visible = $state(document.visibilityState === 'visible');
   const autoHeld = $derived(
     !visible ||
       menuOpen ||
       boardInfoOpen ||
+      socialOpen ||
       waiting ||
       ended ||
       !pb.idle ||
       !controller.canAct ||
       controller.pushDecision !== null,
   );
-  let previousFocus: HTMLElement | null = null;
+  const social = $derived(controller.social ?? null);
+  let socialDialog = $state<HTMLDialogElement | null>(null);
+  let socialButton = $state<HTMLButtonElement | null>(null);
+  let socialViewport = $state<number | undefined>(undefined);
+  let socialViewportTop = $state(0);
   // 새 Game 인스턴스는 이미 전달된 Back을 소비한 상태에서 시작한다.
   let handledBackToken = untrack(() => backToken);
+  const socialBlocked = $derived(
+    menuOpen ||
+      boardInfoOpen ||
+      waiting ||
+      ended ||
+      summary !== null ||
+      pendingResult !== null ||
+      pushDecision !== null ||
+      (pb.board.pending !== null && pb.board.pending.kind !== 'play') ||
+      pb.board.firstPick !== null,
+  );
+  $effect(() => {
+    const viewport = window.visualViewport;
+    const update = () => {
+      socialViewport = viewport ? Math.max(1, viewport.height - 26) : undefined;
+      socialViewportTop = viewport?.offsetTop ?? 0;
+    };
+    update();
+    viewport?.addEventListener('resize', update);
+    viewport?.addEventListener('scroll', update);
+    return () => {
+      viewport?.removeEventListener('resize', update);
+      viewport?.removeEventListener('scroll', update);
+    };
+  });
+  $effect(() => {
+    if (!visible || socialBlocked || social === null) {
+      // 같은 갱신의 Back은 열린 대화를 닫는 데 소비한다. 새 게임 prompt 위에 메뉴를 열지 않는다.
+      if (socialDialog?.open) handledBackToken = untrack(() => backToken);
+      socialOpen = false;
+      socialDialog?.close();
+    }
+  });
+  function closeSocial() {
+    socialDialog?.close();
+    socialOpen = false;
+    // 새 prompt/정산 focus를 덮지 않는다. 정상 닫기만 원래 대화 버튼으로 복귀한다.
+    if (!socialBlocked && visible) socialButton?.focus({ preventScroll: true });
+  }
+  function openSocial() {
+    if (social === null || socialBlocked || !visible || socialDialog?.open) return;
+    social.open();
+    socialOpen = true;
+    socialDialog?.showModal();
+  }
+  let previousFocus: HTMLElement | null = null;
 
   $effect(() => {
     const onVisibility = () => (visible = document.visibilityState === 'visible');
@@ -215,7 +270,7 @@
 
   $effect(() => {
     const c = controller;
-    // 재생 큐·연결·응답 대기·메뉴·판 정보 열람이 끝난 뒤 최신 뷰에서 다시 판정한다.
+    // 대화는 새 자기 자동 입력만 보류한다. 닫으면 기존 경로에서 최신 뷰를 다시 판정한다.
     void pb.board;
     const held = autoHeld;
     untrack(() => c.autoAdvance(held));
@@ -231,6 +286,7 @@
 
   function openMenu() {
     if (menuDialog?.open) return;
+    if (socialDialog?.open) closeSocial();
     previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     confirming = null;
     menuOpen = true;
@@ -251,7 +307,8 @@
   $effect(() => {
     if (backToken === handledBackToken) return;
     handledBackToken = backToken;
-    if (menuDialog?.open) closeMenu();
+    if (socialDialog?.open) closeSocial();
+    else if (menuDialog?.open) closeMenu();
     else openMenu();
   });
 
@@ -308,6 +365,7 @@
 
 <div
   class="game"
+  class:with-social={social !== null}
   data-testid={controller.mode === 'solo' ? 'solo' : 'match'}
   data-mode={controller.mode}
   data-round={stats.round}
@@ -319,6 +377,8 @@
   data-seq={stats.seq ?? ''}
   data-can-act={controller.canAct}
   data-auto-held={autoHeld}
+  data-playback-pending={pb.pending}
+  data-decision-id={decision?.key.decisionId ?? ''}
   data-play-timings={playTimings}
   data-play-plans={playPlans}
 >
@@ -366,6 +426,53 @@
   >
     <span aria-hidden="true">메뉴</span>
   </button>
+
+  {#if social !== null}
+    <button
+      type="button"
+      class="social-button"
+      bind:this={socialButton}
+      aria-haspopup="dialog"
+      aria-label="대전 대화"
+      disabled={socialBlocked || !visible}
+      onclick={openSocial}><span aria-hidden="true">대화</span></button
+    >
+    <div class="social-received" hidden={socialBlocked || !visible}>
+      <SocialNotice
+        entries={social.view.entries}
+        muted={social.view.muted || socialBlocked || !visible}
+        now={social.view.now}
+        announceId={social.view.announceId}
+      />
+    </div>
+    <dialog
+      class="social-dialog"
+      style:top={`${socialViewportTop + 12}px`}
+      bind:this={socialDialog}
+      aria-label="대전 대화"
+      oncancel={(event) => {
+        event.preventDefault();
+        closeSocial();
+      }}
+      onclose={() => {
+        if (!socialDialog?.open) socialOpen = false;
+      }}
+    >
+      <SocialPanel
+        open={socialOpen}
+        muted={social.view.muted}
+        available={social.view.available}
+        emotes={SOCIAL_EMOTE_CHOICES}
+        phrases={SOCIAL_PHRASE_CHOICES}
+        validate={social.validate}
+        onsendtext={(text) => social.send({ kind: 'text', text })}
+        onsendchoice={(kind, id) => social.send({ kind, id })}
+        onmute={social.mute}
+        onclose={closeSocial}
+        {...socialViewport === undefined ? {} : { viewportHeight: socialViewport }}
+      />
+    </dialog>
+  {/if}
 
   {#if controller.notice}
     <p class="notice" role="status" data-testid="game-notice">{controller.notice}</p>
@@ -509,6 +616,51 @@
 </div>
 
 <style>
+  .social-button {
+    position: absolute;
+    top: max(8px, env(safe-area-inset-top));
+    right: calc(max(12px, env(safe-area-inset-right)) + 56px);
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    font: inherit;
+    z-index: 70;
+  }
+  /* 기존 상단 메뉴와 대화에 각각 48px를 예약한다. 손패 크기/배치는 건드리지 않는다. */
+  .game.with-social :global([data-board-layout] .hud) {
+    grid-template-columns: minmax(0, 1fr) 104px;
+  }
+  .game.with-social :global([data-board-layout] .menu-reserved) {
+    width: 104px;
+  }
+  .social-received {
+    position: absolute;
+    top: 60px;
+    inset-inline-end: 12px;
+    max-width: min(55vw, 20rem);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .social-dialog {
+    position: fixed;
+    bottom: auto;
+    margin-block: 0;
+    width: min(24rem, calc(100% - 24px));
+    max-height: calc(100dvh - 24px);
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+  .social-dialog::backdrop {
+    background: oklch(0% 0 0 / 0.55);
+  }
+
   .timer-announcement {
     position: absolute;
     width: 1px;
