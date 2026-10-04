@@ -326,3 +326,15 @@ test('FR-RP-04 #242: 설정 왕복으로 다시 마운트해도 연결 상태를
   await screen.rerender({ guest: { name: '친구', connected: true } });
   await expect.element(screen.getByRole('status')).toHaveTextContent('친구 · 연결됨 · 준비 완료');
 });
+
+test('방 생성 응답 오류는 주소·코드를 고치라는 안내와 구분한다 (FR-RP-01/07)', async () => {
+  const remote = new FakeRemoteHost();
+  const screen = await render(HostRoom, { hotspot, guest: null, rules, remote });
+  remote.set({ state: 'error', error: 'room-create' });
+  await expect
+    .element(screen.getByRole('alert'))
+    .toHaveTextContent(
+      '방 만들기 실패. 앱과 중계를 같은 최신 버전으로 업데이트한 뒤 다시 시도하세요.',
+    );
+  expect(screen.getByRole('alert').element().textContent).not.toContain('주소와 코드를');
+});

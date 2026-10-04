@@ -608,3 +608,76 @@ it('FR-RP-01: checkHealth의 외부 signal 취소는 fetch를 중단하고 snaps
   expect(seen).toHaveLength(1);
   unsubscribe();
 }, 15_000);
+
+it.each([-60_000, 0, 60_000])(
+  'FR-RP-01/02: 호스트 시각 차이 %i ms에도 방 생성·초대 등록·참여가 된다',
+  async (skew) => {
+    const base = await startRelay();
+    const adapter = adapt(base);
+    const settings = memory();
+    const storage = memory();
+    saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+    const localNow = () => Date.now() + skew;
+    const before = localNow();
+    const host = createRemoteHost({
+      settings,
+      storage,
+      now: localNow,
+      ...adapter,
+      onTransport: () => {},
+    });
+    cleanup.push(() => host.close());
+    const room = await host.createRoom();
+    expect(room.expiresAt).toBeGreaterThanOrEqual(before + 6 * 60 * 60_000);
+    expect(room.expiresAt).toBeLessThanOrEqual(localNow() + 6 * 60 * 60_000);
+    expect(host.snapshot.state).toBe('waiting');
+    const guest = createRemoteGuest({
+      allowedOrigin: origin,
+      storage: memory(),
+      socketFactory: adapter.socketFactory,
+      onTransport: () => {},
+    });
+    cleanup.push(() => guest.leave());
+    expect(await guest.joinByLink(room.inviteLink, '친구')).toEqual({ ok: true });
+    await until(host, (snapshot) => snapshot.peerPresent);
+    await until(guest, (snapshot) => snapshot.peerPresent);
+    await host.close();
+    expect(storage.getItem('p2p-gostop.remote-room.v1')).toBeNull();
+    expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+  },
+);
+
+it.each([0, null, Number.MAX_SAFE_INTEGER + 1, Date.now() - 6 * 60 * 60_000])(
+  'FR-RP-01/05: 잘못되거나 지난 중계 만료 값 %s는 거절하고 생성된 방을 정리한다',
+  async (expiresAt) => {
+    const base = await startRelay();
+    const adapter = adapt(base);
+    const settings = memory();
+    const storage = memory();
+    saveRemoteHostSettings(settings, { baseUrl: origin, creationSecret });
+    let deleted = 0;
+    const host = createRemoteHost({
+      settings,
+      storage,
+      socketFactory: adapter.socketFactory,
+      fetcher: async (input, init) => {
+        const response = await adapter.fetcher(input, init);
+        if (init?.method === 'DELETE') deleted++;
+        if (String(input).endsWith('/api/rooms') && response.status === 201) {
+          const value = (await response.json()) as Record<string, unknown>;
+          return new Response(JSON.stringify({ ...value, expiresAt }), { status: 201 });
+        }
+        return response;
+      },
+      onTransport: () => {
+        throw new Error('unexpected transport');
+      },
+    });
+    cleanup.push(() => host.close());
+    await expect(host.createRoom()).rejects.toThrow('room-create');
+    expect(host.snapshot.error).toBe('room-create');
+    expect(deleted).toBe(1);
+    expect(storage.getItem('p2p-gostop.remote-room.v1')).toBeNull();
+    expect(storage.getItem('p2p-gostop.remote-room-pending.v1')).toBeNull();
+  },
+);

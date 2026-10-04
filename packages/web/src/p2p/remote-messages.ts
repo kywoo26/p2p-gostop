@@ -74,6 +74,11 @@ export const REMOTE_ERROR_MESSAGES: Record<RemoteErrorCode, RemoteMessage> = {
     detail: '방장이 돌아올 때까지 게임 입력을 기다립니다.',
     action: '방장에게 앱과 인터넷 연결을 확인해 달라고 하세요.',
   },
+  'room-create': {
+    title: '방 만들기 실패',
+    detail: '중계가 방 또는 초대 정보를 처리하지 못했습니다.',
+    action: '앱과 중계를 같은 최신 버전으로 업데이트한 뒤 다시 시도하세요.',
+  },
   'room-ended': {
     title: '방 종료',
     detail: '이 방에서는 더 플레이할 수 없습니다.',
