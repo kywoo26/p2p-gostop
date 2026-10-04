@@ -2,23 +2,23 @@
   - text: 3판 · 점당 100냥
   - strong: 컴퓨터 · 상용급
   - list "상대 획득패":
-    - listitem "광 1":
+    - listitem "광 1장":
       - img "3월 광"
-      - text: "1"
-    - listitem "열끗 2":
+      - text: 1장
+    - listitem "열끗 2장":
       - img "7월 열끗"
       - img "12월 열끗"
-      - text: "2"
-    - listitem "띠 2":
+      - text: 2장
+    - listitem "띠 2장":
       - img "4월 초단"
       - img "6월 청단"
-      - text: "2"
-    - listitem "피 5 (4장)":
+      - text: 2장
+    - listitem "피 가치 5피, 실제 4장":
       - img "3월 피"
       - img "4월 피"
       - img "7월 피"
       - img "11월 쌍피"
-      - text: "4"
+      - text: 4장
   - heading "상대 컴퓨터 · 상용급" [level=2]
   - text: 4만8800냥 0냥 0 점 0고 0고, 배수 미정, 스톱 예상액 미제공
   - group:
@@ -47,24 +47,24 @@
     - img "뻑 0회, 흔들기 1회"
   - text: 5만1200냥 0냥 8 점 1고 · ×2 1고, 배수 2, 스톱 예상액 미제공
   - list "내 획득패":
-    - listitem "광 1":
+    - listitem "광 1장":
       - img "1월 광"
-      - text: "1"
-    - listitem "열끗 3":
+      - text: 1장
+    - listitem "열끗 3장":
       - img "2월 고도리"
       - img "4월 고도리"
       - img "8월 고도리"
-      - text: "3"
-    - listitem "띠 3":
+      - text: 3장
+    - listitem "띠 3장":
       - img "1월 홍단"
       - img "2월 홍단"
       - img "3월 홍단"
-      - text: "3"
-    - listitem "피 4 (3장)":
+      - text: 3장
+    - listitem "피 가치 4피, 실제 3장":
       - img "1월 피"
       - img "2월 피"
       - img "보너스 2피"
-      - text: "3"
+      - text: 3장
   - group "내 손패":
     - button "8월 피, 내기":
       - img "8월 피"
