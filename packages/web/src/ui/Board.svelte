@@ -288,7 +288,10 @@
   $effect(() => {
     const level = localHintLevel;
     const shown =
-      assist.matchable.length > 0 || assist.secured.length > 0 || assist.groups.length > 0;
+      assist.matchable.length > 0 ||
+      assist.secured.length > 0 ||
+      assist.heldPair.some((card) => playable.includes(card)) ||
+      assist.groups.length > 0;
     // 상세 전용 설명은 #81/#82에서 붙는다. 지금 보이는 기본 표식은 기본 사용으로 기록한다.
     if (shown && onhintdisplayed) onhintdisplayed(level === 'detail' ? 'basic' : level);
   });
@@ -805,6 +808,11 @@
         ...assist.secured.map((card) => ({
           id: `secured-${card}`,
           kind: 'secured' as const,
+          cards: [card],
+        })),
+        ...assist.heldPair.map((card) => ({
+          id: `heldPair-${card}`,
+          kind: 'heldPair' as const,
           cards: [card],
         })),
       ]}

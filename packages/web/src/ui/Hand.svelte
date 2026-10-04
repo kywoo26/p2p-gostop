@@ -220,11 +220,18 @@
         {@const canPlay = playable.includes(id)}
         {@const canMatch = cuesEnabled && canPlay && matchable.includes(id)}
         {@const group = cuesEnabled
-          ? visualGroups.find((group) => group.kind !== 'secured' && group.cards.includes(id))
+          ? visualGroups.find(
+              (group) =>
+                group.kind !== 'secured' && group.kind !== 'heldPair' && group.cards.includes(id),
+            )
           : undefined}
         {@const secured =
           cuesEnabled &&
           visualGroups.some((group) => group.kind === 'secured' && group.cards.includes(id))}
+        {@const heldPair =
+          cuesEnabled &&
+          canPlay &&
+          visualGroups.some((group) => group.kind === 'heldPair' && group.cards.includes(id))}
         {@const month = getCard(id).month}
         {@const monthGroup =
           cuesEnabled &&
@@ -245,7 +252,13 @@
           style:--fan-index={i + 1}
           aria-label={[
             cardLabel(id),
-            secured ? '확정 획득 짝' : canMatch ? '먹을 수 있음' : null,
+            heldPair
+              ? HAND_CUES.heldPair.label
+              : secured
+                ? HAND_CUES.secured.label
+                : canMatch
+                  ? HAND_CUES.matchable.label
+                  : null,
             group ? HAND_CUES[group.kind].label : null,
             bombCards.includes(id) ? '폭탄 내기, 한 장만 내기: 길게 누르거나 Shift+Enter' : null,
             '내기',
@@ -257,7 +270,7 @@
           data-slot={id}
           data-hand-group={monthGroup ? month : undefined}
           data-hand-cue={cuesEnabled
-            ? secured
+            ? secured || heldPair
               ? 'secured'
               : canMatch
                 ? 'matchable'

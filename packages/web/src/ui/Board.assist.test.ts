@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 import { toBoardView } from '../game/adapter.ts';
+import { displayedHintLevel, type HintLevel } from '../game/assist.ts';
 import { settings } from '../settings/settings.svelte.ts';
 import Board from './Board.svelte';
 
@@ -109,4 +110,147 @@ test('동일 공개 뷰의 숨은 상대·더미 교환은 UI/ARIA 표식에 차
   const before = signature();
   await screen.rerender({ view: toBoardView(playerView(second, 0), metadata) });
   expect(signature()).toEqual(before);
+});
+
+// CF11 / #115: 보드에 실제 표시된 기본 표식만 이력으로 기록한다.
+const exclusiveState = () =>
+  createScenario({
+    hands: [
+      [c('5열'), c('5초'), c('12열')],
+      [c('10열'), c('10청')],
+    ],
+    floor: [c('7열')],
+    captured: [[c('5피a'), c('5피b')], []],
+    deck: [c('8광'), c('11광'), c('6열')],
+  });
+
+test('독점 보유: busy·끔·한 장 legal·늦은 솔로 뷰에서는 숨기고 복원 후 실제 표시만 basic 기록', async () => {
+  const state = exclusiveState();
+  const solo = playerView(state, 0);
+  const board = toBoardView(solo, metadata);
+  let usage: HintLevel = 'off';
+  const onhintdisplayed = vi.fn((level: HintLevel) => {
+    usage = displayedHintLevel(usage, level, true);
+  });
+  const onaction = vi.fn();
+  const onnotice = vi.fn();
+  const screen = await render(Board, {
+    view: board,
+    busy: true,
+    onhintdisplayed,
+    onaction,
+    onnotice,
+  });
+  const cues = () => screen.container.querySelectorAll('[data-hand-cue="secured"]');
+  expect(cues()).toHaveLength(0);
+  expect(onhintdisplayed).not.toHaveBeenCalled();
+  settings.update({ hintLevel: 'off' });
+  await screen.rerender({ busy: false });
+  expect(cues()).toHaveLength(0);
+  expect(usage).toBe('off');
+  const restricted = {
+    view: {
+      ...board,
+      legal: board.legal.filter((action) => action.type !== 'play' || action.card !== c('5초')),
+    },
+  };
+  // 끔 상태에서 제한 뷰를 먼저 적용해, 두 장이 합법인 중간 뷰를 실제 표시하지 않는다.
+  await screen.rerender(restricted);
+  expect(cues()).toHaveLength(0);
+  expect(onhintdisplayed).not.toHaveBeenCalled();
+  settings.update({ hintLevel: 'detail' });
+  await screen.rerender(restricted);
+  expect(cues()).toHaveLength(0);
+  expect(onhintdisplayed).not.toHaveBeenCalled();
+  await screen.rerender({ view: board, soloPlayerView: { ...solo, eventSeq: solo.eventSeq + 1 } });
+  expect(cues()).toHaveLength(0);
+  expect(onhintdisplayed).not.toHaveBeenCalled();
+  await screen.rerender({
+    view: JSON.parse(JSON.stringify(board)),
+    soloPlayerView: JSON.parse(JSON.stringify(solo)),
+  });
+  await vi.waitFor(() => expect(cues()).toHaveLength(2));
+  expect([...cues()].map((el) => el.getAttribute('aria-label'))).toEqual([
+    '5월 열끗, 독점 보유 짝, 내기',
+    '5월 초단, 독점 보유 짝, 내기',
+  ]);
+  await vi.waitFor(() => expect(onhintdisplayed).toHaveBeenCalledWith('basic'));
+  expect(onhintdisplayed.mock.calls.every(([level]) => level === 'basic')).toBe(true);
+  expect(usage).toBe('basic');
+  expect(onaction).not.toHaveBeenCalled();
+  expect(onnotice).not.toHaveBeenCalled();
+  expect(screen.container.querySelectorAll('[data-hand-action="heldPair"]')).toHaveLength(0);
+  for (const root of screen.container.querySelectorAll(
+    '.opponent-hud, [data-anchor="opp-hand"], [aria-live], [role="status"], [role="alert"]',
+  )) {
+    expect(root.querySelector('[data-hand-cue]')).toBeNull();
+    expect(root.textContent).not.toContain('독점 보유');
+    expect(root.outerHTML).not.toContain('독점 보유');
+  }
+  onhintdisplayed.mockClear();
+  await screen.rerender({ busy: true });
+  expect(cues()).toHaveLength(0);
+  expect(onhintdisplayed).not.toHaveBeenCalled();
+  expect(usage).toBe('basic');
+});
+
+test('독점 보유 실제 내기 후 상대 차례 제거, 다음 자기 차례는 확정 획득 이름으로 재계산', async () => {
+  const state = exclusiveState();
+  const screen = await render(Board, { view: toBoardView(playerView(state, 0), metadata) });
+  expect(screen.container.querySelectorAll('[data-hand-cue="secured"]')).toHaveLength(2);
+  const first = reduce(state, { type: 'play', seat: 0, card: c('5열') });
+  if (!first.ok) throw new Error(first.message);
+  await screen.rerender({ view: toBoardView(playerView(first.state, 0), metadata) });
+  expect(screen.container.querySelector('[data-hand-cue="secured"]')).toBeNull();
+  expect(
+    screen.container.querySelector(`[data-slot="${c('5초')}"]`)?.getAttribute('aria-label'),
+  ).not.toContain('독점 보유');
+  const next = reduce(first.state, { type: 'play', seat: 1, card: c('10열') });
+  if (!next.ok) throw new Error(next.message);
+  const board = toBoardView(playerView(next.state, 0), metadata);
+  await screen.rerender({ view: board });
+  const remaining = screen.container.querySelector(`[data-slot="${c('5초')}"]`)!;
+  expect(remaining.getAttribute('data-hand-cue')).toBe('secured');
+  expect(remaining.getAttribute('aria-label')).toContain('확정 획득 짝');
+  expect(remaining.getAttribute('aria-label')).not.toContain('독점 보유');
+  // 종료 공개 뷰는 손패가 남아 있어도 활성 표식이나 이력을 추가하지 않는다.
+  const onhintdisplayed = vi.fn();
+  await screen.rerender({
+    view: { ...board, phase: 'end', pending: null, playable: [], legal: [] },
+    onhintdisplayed,
+  });
+  expect(screen.container.querySelector('[data-hand-cue]')).toBeNull();
+  expect(onhintdisplayed).not.toHaveBeenCalled();
+});
+
+test('독점 보유의 숨은 손패/더미 교환은 실제 DOM·ARIA 서명과 표시 등급이 같다', async () => {
+  const first = exclusiveState();
+  const second = createScenario({
+    hands: [first.seats[0].hand, [c('8광'), c('10청')]],
+    floor: [c('7열')],
+    captured: [[c('5피a'), c('5피b')], []],
+    deck: [c('10열'), c('11광'), c('6열')],
+  });
+  const onhintdisplayed = vi.fn();
+  const onnotice = vi.fn();
+  const screen = await render(Board, {
+    view: toBoardView(playerView(first, 0), metadata),
+    onhintdisplayed,
+    onnotice,
+  });
+  const signature = () =>
+    [...screen.container.querySelectorAll('[aria-label], [data-hand-cue], [data-hand-action]')].map(
+      (el) => ({
+        label: el.getAttribute('aria-label'),
+        text: el.textContent,
+        cue: el.getAttribute('data-hand-cue'),
+        action: el.getAttribute('data-hand-action'),
+      }),
+    );
+  const before = signature();
+  await screen.rerender({ view: toBoardView(playerView(second, 0), metadata) });
+  expect(signature()).toEqual(before);
+  expect(screen.container.querySelectorAll('[data-hand-cue="secured"]')).toHaveLength(2);
+  expect(onhintdisplayed.mock.calls.every(([level]) => level === 'basic')).toBe(true);
+  expect(onnotice).not.toHaveBeenCalled();
 });

@@ -73,14 +73,15 @@ export function uniqueLegalAction(legal: readonly Action[]): Action | null {
   return legal.length === 1 && (only?.type === 'play' || only?.type === 'flipOnly') ? only : null;
 }
 
-export type CaptureCertainty = 'none' | 'match' | 'guaranteed';
+export type CaptureCertainty = 'none' | 'match' | 'guaranteed' | 'heldPair';
 export type CaptureReason =
   | 'notPlayable'
   | 'bonus'
   | 'noFloorMatch'
   | 'unseenMonth'
   | 'opponentRevealedMonth'
-  | 'noOpponentMonth';
+  | 'noOpponentMonth'
+  | 'exclusiveHeldPair';
 
 export interface CaptureAssessment {
   readonly card: CardId;
@@ -138,8 +139,8 @@ function unseenBaseCards(view: CapturePublicView): Set<CardId> {
 }
 
 /**
- * 자기 손패의 합법 play마다 현재 바닥 짝과 상대 손패의 같은 월 카드 유무를 판정한다.
- * 확정은 지금 해당 월의 짝을 먹을 수 있다는 뜻이며 미래 소유·점수를 보장하지 않는다.
+ * 자기 손패의 합법 play마다 현재 바닥 짝 또는 두 손패 독점 보유를 공개정보로 판정한다.
+ * heldPair는 즉시 획득이 아니며, 어느 분류도 미래 소유·점수를 보장하지 않는다.
  */
 export function guaranteedCaptures(view: CapturePublicView): CaptureAssessment[] {
   const hand = view.seats[view.viewer].hand ?? [];
@@ -149,12 +150,24 @@ export function guaranteedCaptures(view: CapturePublicView): CaptureAssessment[]
     view.pending?.kind === 'play' &&
     view.pending.seat === view.viewer;
   const legal = new Set(
-    view.legal.filter((action) => action.type === 'play').map((action) => action.card),
+    view.legal
+      .filter((action) => action.type === 'play')
+      .filter((action) => action.seat === view.viewer)
+      .map((action) => action.card),
+  );
+  const held = [...new Set(hand)];
+  const captured = new Set(
+    view.seats.flatMap((seat) => [
+      ...seat.captured.gwang,
+      ...seat.captured.yeol,
+      ...seat.captured.tti,
+      ...seat.captured.pi,
+    ]),
   );
   const unseen = unseenBaseCards(view);
   const opponent = view.viewer === 0 ? 1 : 0;
   const opponentRevealed = view.seats[opponent].revealed;
-  return [...new Set(hand)]
+  return held
     .toSorted((a, b) => a - b)
     .map((card) => {
       if (!playable || !legal.has(card)) {
@@ -166,6 +179,18 @@ export function guaranteedCaptures(view: CapturePublicView): CaptureAssessment[]
       }
       const preview = matchPreview(view, view.viewer, card);
       if (preview.kind === 'place' || preview.kind === 'bonus' || preview.floor.length === 0) {
+        const pair = held.filter((id) => getCard(id).month === month);
+        // CF11: 두 장이 함께 합법인 H2/F0/C2/U0에만 적용한다. 바닥 확정 분류는 그대로 둔다.
+        if (
+          pair.length === 2 &&
+          pair.every((id) => legal.has(id)) &&
+          !view.floor.some((group) => group.cards.some((id) => getCard(id).month === month)) &&
+          [...captured].filter((id) => getCard(id).month === month).length === 2 &&
+          ![0, 1, 2, 3].some((offset) => unseen.has((month - 1) * 4 + offset)) &&
+          !opponentRevealed.some((id) => getCard(id).month === month)
+        ) {
+          return { card, certainty: 'heldPair', reason: 'exclusiveHeldPair' };
+        }
         return { card, certainty: 'none', reason: 'noFloorMatch' };
       }
       if ([0, 1, 2, 3].some((offset) => unseen.has((month - 1) * 4 + offset))) {
