@@ -7,7 +7,6 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Color
 import android.graphics.Insets
 import android.os.Bundle
 import android.os.CombinedVibration
@@ -112,6 +111,8 @@ class GameActivity : ComponentActivity() {
             return
         }
         container = FrameLayout(this)
+        // 투명한 상태바 아래의 인셋 여백도 WebView와 같은 불투명 표면을 사용한다.
+        container.setBackgroundColor(getColor(R.color.game_surface))
         container.setOnApplyWindowInsetsListener { view, insets ->
             val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -147,7 +148,7 @@ class GameActivity : ComponentActivity() {
 
     private fun createWebView() {
         web = WebView(this).apply {
-            setBackgroundColor(Color.rgb(15, 25, 20))
+            setBackgroundColor(getColor(R.color.game_surface))
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.allowFileAccess = false

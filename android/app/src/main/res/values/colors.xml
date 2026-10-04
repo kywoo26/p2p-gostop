@@ -3,4 +3,5 @@
     <color name="brand">#FF0A7A2F</color>
     <color name="ic_background">#FF0A7A2F</color>
     <color name="panel">#FFF1F4F1</color>
+    <color name="game_surface">#FF0F1914</color>
 </resources>
