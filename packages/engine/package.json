@@ -16,8 +16,8 @@
     "test:full": "ENGINE_FULL=1 vitest run --config vitest.coverage.config.ts --coverage.enabled"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "5.0.2",
+    "@vitest/coverage-v8": "5.0.3",
     "fast-check": "4.10.2",
-    "vitest": "5.0.2"
+    "vitest": "5.0.3"
   }
 }
